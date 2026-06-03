@@ -106,13 +106,13 @@ function LoginContent() {
 
         {/* Feedback Messages */}
         {errorMsg && (
-          <div className="p-4 text-base font-medium text-[#FF3B6B] bg-[#FF3B6B]/10 border border-[#FF3B6B]/20 rounded-xl text-center">
+          <div className="p-4 text-base font-medium text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl text-center">
             {errorMsg}
           </div>
         )}
 
         {infoMsg && (
-          <div className="p-4 text-base font-medium text-[#38DDF8] bg-[#38DDF8]/10 border border-[#38DDF8]/20 rounded-xl text-center">
+          <div className="p-4 text-base font-medium text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-xl text-center">
             {infoMsg}
           </div>
         )}
@@ -127,14 +127,14 @@ function LoginContent() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="exemplo@email.com"
-              className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+              className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <label className="text-sm font-bold text-[#CBD5E1]">Senha</label>
-              <Link href="/esqueci-senha" className="text-sm text-[#38DDF8] hover:text-[#22D3EE] transition">
+              <Link href="/esqueci-senha" className="text-sm text-[#7DD3FC] hover:text-[#67E8F9] transition">
                 Esqueci minha senha
               </Link>
             </div>
@@ -144,14 +144,14 @@ function LoginContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+              className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 text-base font-bold bg-[#38DDF8] text-[#061923] hover:bg-[#22D3EE] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] rounded-xl transition duration-200 shadow-md shadow-[#38DDF8]/15 flex items-center justify-center gap-2"
+            className="w-full py-4 text-base font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
@@ -171,7 +171,7 @@ function LoginContent() {
           </p>
           <Link
             href="/ativar-acesso"
-            className="inline-block w-full py-3.5 text-base font-bold text-[#38DDF8] bg-[#0E2A38] border border-[#1F4D5C] hover:border-[#38DDF8] rounded-xl transition duration-200 text-center"
+            className="inline-block w-full py-3.5 text-base font-bold text-[#7DD3FC] bg-[#0E2A38] border border-[#1F4D5C] hover:border-[#7DD3FC] rounded-xl transition duration-200 text-center"
           >
             Ativar meu acesso
           </Link>
@@ -190,7 +190,7 @@ export default function LoginPage() {
     <Suspense fallback={
       <div className="flex min-h-screen items-center justify-center bg-[#061923] text-[#F8FAFC]">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-3 border-[#1F4D5C] border-t-[#38DDF8] rounded-full animate-spin mx-auto" />
+          <div className="w-8 h-8 border-3 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
           <p className="text-[#CBD5E1]">Carregando...</p>
         </div>
       </div>

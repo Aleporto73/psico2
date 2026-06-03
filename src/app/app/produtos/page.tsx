@@ -4,6 +4,35 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 
+// ── SVG Icons ────────────────────────────────────────────────────────────────
+
+function IconPlay() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function IconEmpty() {
+  return (
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+      <line x1="3" y1="6" x2="21" y2="6" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
+  );
+}
+
 export default function AppProdutosPage() {
   const supabase = createClient();
   const [profileType, setProfileType] = useState('unknown');
@@ -70,8 +99,11 @@ export default function AppProdutosPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center text-slate-400">
-        Carregando catálogo de produtos...
+      <div className="flex h-[60vh] items-center justify-center text-[#CBD5E1]">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
+          <p>Carregando catálogo de produtos...</p>
+        </div>
       </div>
     );
   }
@@ -98,63 +130,67 @@ export default function AppProdutosPage() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Vitrine de Produtos</h1>
-        <p className="text-slate-400 text-sm mt-1">
+        <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Vitrine de produtos</h1>
+        <p className="text-[#CBD5E1] text-base mt-1">
           Explore ferramentas de apoio operacional e recursos adicionais para sua prática profissional.
         </p>
       </div>
 
       {/* Warning if profile is unknown */}
       {profileType === 'unknown' && (
-        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-0.5">
-            <span className="font-bold text-amber-400 block text-xs uppercase tracking-wider">Recomendações Limitadas</span>
-            <p className="text-slate-300 text-xs">Preencha sua área de atuação na sua conta para liberar a vitrine completa de produtos especializados.</p>
+        <div className="p-5 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <span className="font-bold text-[#FACC15] block text-xs uppercase tracking-wider">Recomendações limitadas</span>
+            <p className="text-[#CBD5E1] text-sm leading-relaxed">Preencha sua área de atuação na sua conta para liberar a vitrine completa de produtos especializados.</p>
           </div>
-          <Link href="/app/minha-conta" className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg transition shrink-0 self-start md:self-auto">
-            Configurar Perfil
+          <Link href="/app/minha-conta" className="px-5 py-2.5 bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] text-sm font-bold rounded-xl transition shrink-0 self-start md:self-auto">
+            Configurar perfil
           </Link>
         </div>
       )}
 
       {/* Product List */}
       {filteredProducts.length === 0 ? (
-        <div className="p-12 text-center text-slate-500 bg-slate-900/20 rounded-2xl border border-slate-800">
-          Nenhum produto complementar disponível no momento.
+        <div className="p-12 text-center bg-[#0B2430]/50 border border-dashed border-[#1F4D5C] rounded-2xl space-y-3">
+          <div className="w-16 h-16 mx-auto rounded-full bg-[#0E2A38] flex items-center justify-center text-[#94A3B8]">
+            <IconEmpty />
+          </div>
+          <p className="text-[#CBD5E1] text-base">Nenhum produto disponível para o seu perfil agora.</p>
+          <p className="text-[#94A3B8] text-sm">Atualize seu perfil profissional para ver mais opções.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredProducts.map((prod) => (
             <div
               key={prod.id}
-              className="p-6 bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800 flex flex-col justify-between space-y-6 hover:border-slate-750 transition"
+              className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] flex flex-col justify-between gap-6 hover:border-[#7DD3FC]/40 transition"
             >
               <div className="space-y-4">
-                <div className="flex justify-between items-start gap-4">
-                  <div>
-                    <span className="inline-block px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-500 bg-amber-500/10 border border-amber-500/20 rounded-md">
+                <div className="flex justify-between items-start gap-3 flex-wrap">
+                  <div className="space-y-1">
+                    <span className="inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-full">
                       {prod.category || 'Geral'}
                     </span>
-                    <h3 className="text-lg font-bold text-white pt-1">{prod.name}</h3>
+                    <h3 className="text-lg font-bold text-[#F8FAFC] pt-1">{prod.name}</h3>
                   </div>
-                  <span className="px-2 py-0.5 text-[9px] font-semibold text-slate-400 bg-slate-800/40 rounded-full border border-slate-800">
-                    Público: {
+                  <span className="px-2.5 py-0.5 text-[10px] font-semibold text-[#CBD5E1] bg-[#0E2A38] rounded-full border border-[#1F4D5C]">
+                    {
                       prod.audience === 'all' ? 'Todos' :
                       prod.audience === 'psychologist' ? 'Psicólogos' :
                       prod.audience === 'psychopedagogue' ? 'Psicopedagogos' : 'Geral'
                     }
                   </span>
                 </div>
-                
-                <p className="text-xs text-slate-400 leading-relaxed line-clamp-4">{prod.description || 'Nenhuma descrição fornecida.'}</p>
-                
+
+                <p className="text-sm text-[#CBD5E1] leading-relaxed line-clamp-4">{prod.description || 'Nenhuma descrição fornecida.'}</p>
+
                 {prod.price && (
-                  <div className="pt-2">
-                    <span className="text-2xl font-extrabold text-white">
+                  <div className="pt-1">
+                    <span className="text-2xl font-extrabold text-[#F8FAFC]">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prod.price)}
                     </span>
                     {prod.billing_type && (
-                      <span className="text-slate-500 text-xs ml-1">
+                      <span className="text-[#94A3B8] text-sm ml-1.5">
                         / {prod.billing_type === 'yearly' ? 'ano' : prod.billing_type === 'monthly' ? 'mês' : 'único'}
                       </span>
                     )}
@@ -168,25 +204,25 @@ export default function AppProdutosPage() {
                     href={prod.checkout_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-grow py-2.5 text-center text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-lg transition duration-200 shadow-md shadow-amber-500/10"
+                    className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
                   >
-                    Comprar / Adquirir
+                    Comprar
                   </a>
                 )}
-                
+
                 {prod.video_url && (
                   <button
                     onClick={() => {
                       setActiveVideoUrl(prod.video_url);
                       setActiveVideoCta(
                         prod.checkout_url
-                          ? { text: 'Adquirir Agora', url: prod.checkout_url }
+                          ? { text: 'Adquirir agora', url: prod.checkout_url }
                           : null
                       );
                     }}
-                    className="flex-grow py-2.5 text-center text-xs font-semibold text-slate-300 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg transition duration-200"
+                    className="flex-grow inline-flex items-center justify-center gap-1.5 py-3 text-center text-sm font-semibold text-[#F8FAFC] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C] rounded-xl transition duration-200"
                   >
-                    🎬 Assistir Vídeo
+                    <IconPlay /> Assistir vídeo
                   </button>
                 )}
               </div>
@@ -196,30 +232,31 @@ export default function AppProdutosPage() {
       )}
 
       {/* Mandatory Disclaimer */}
-      <footer className="pt-8 border-t border-slate-850">
-        <div className="p-4 bg-slate-900/30 rounded-xl border border-slate-850 text-center text-xs text-slate-500 leading-relaxed max-w-3xl mx-auto">
+      <footer className="pt-8 border-t border-[#1F4D5C]">
+        <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
           <strong>Aviso de uso responsável:</strong> Nossos produtos e assistentes virtuais servem como recursos de apoio operacional. Eles auxiliam na organização de dados e agilizam cálculos. A utilização adequada requer a posse do manual técnico original de cada instrumento, e nenhuma ferramenta substitui a avaliação profissional ou diagnóstico clínico.
         </div>
       </footer>
 
       {/* Video Modal Overlay */}
       {activeVideoUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 relative flex flex-col space-y-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-              <h4 className="text-sm font-bold text-slate-200">Demonstração do Produto</h4>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#061923]/85 backdrop-blur-sm">
+          <div className="bg-[#0B2430] border border-[#1F4D5C] rounded-2xl max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-[#1F4D5C] pb-3">
+              <h4 className="text-base font-bold text-[#F8FAFC]">Demonstração do produto</h4>
               <button
                 onClick={() => {
                   setActiveVideoUrl(null);
                   setActiveVideoCta(null);
                 }}
-                className="text-slate-400 hover:text-slate-200 text-lg focus:outline-none"
+                className="text-[#CBD5E1] hover:text-[#F8FAFC] p-1 rounded-lg hover:bg-[#123340] transition"
+                aria-label="Fechar"
               >
-                ✕
+                <IconClose />
               </button>
             </div>
-            
-            <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-black border border-slate-800">
+
+            <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black border border-[#1F4D5C]">
               {activeVideoUrl.includes('youtube.com') || activeVideoUrl.includes('youtu.be') ? (
                 <iframe
                   src={getEmbedUrl(activeVideoUrl)}
@@ -243,7 +280,7 @@ export default function AppProdutosPage() {
                   href={activeVideoCta.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-2.5 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-lg transition"
+                  className="px-6 py-2.5 text-sm font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] rounded-xl transition"
                 >
                   {activeVideoCta.text}
                 </a>

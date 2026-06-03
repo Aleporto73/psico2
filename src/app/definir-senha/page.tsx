@@ -149,7 +149,7 @@ export default function DefinirSenhaPage() {
         {/* Loading state */}
         {checking && (
           <div className="text-center py-8 space-y-4">
-            <div className="w-8 h-8 border-3 border-[#1F4D5C] border-t-[#38DDF8] rounded-full animate-spin mx-auto" />
+            <div className="w-8 h-8 border-3 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
             <p className="text-[#CBD5E1] text-base">Verificando seu link...</p>
           </div>
         )}
@@ -158,8 +158,8 @@ export default function DefinirSenhaPage() {
         {!checking && linkExpired && (
           <div className="text-center py-4 space-y-6">
             <div className="space-y-3">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#FF3B6B]/10 border border-[#FF3B6B]/20 flex items-center justify-center">
-                <svg className="w-8 h-8 text-[#FF3B6B]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <div className="w-16 h-16 mx-auto rounded-full bg-[#FB7185]/10 border border-[#FB7185]/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-[#FB7185]" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
@@ -170,7 +170,7 @@ export default function DefinirSenhaPage() {
             </div>
             <Link
               href="/ativar-acesso"
-              className="inline-block w-full py-4 text-center text-base font-bold bg-[#38DDF8] text-[#061923] hover:bg-[#22D3EE] rounded-xl transition duration-200 shadow-md shadow-[#38DDF8]/15"
+              className="inline-block w-full py-4 text-center text-base font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
             >
               Receber novo link
             </Link>
@@ -192,15 +192,15 @@ export default function DefinirSenhaPage() {
 
             {/* Error */}
             {errorMsg && (
-              <div className="p-4 text-base font-medium text-[#FF3B6B] bg-[#FF3B6B]/10 border border-[#FF3B6B]/20 rounded-xl text-center">
+              <div className="p-4 text-base font-medium text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl text-center">
                 {errorMsg}
               </div>
             )}
 
             {success ? (
-              <div className="p-6 text-center space-y-3 bg-[#38DDF8]/10 border border-[#38DDF8]/20 rounded-xl">
-                <div className="w-12 h-12 mx-auto rounded-full bg-[#38DDF8]/20 flex items-center justify-center">
-                  <svg className="w-6 h-6 text-[#38DDF8]" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <div className="p-6 text-center space-y-3 bg-[#34D399]/10 border border-[#34D399]/20 rounded-xl">
+                <div className="w-12 h-12 mx-auto rounded-full bg-[#34D399]/20 flex items-center justify-center">
+                  <svg className="w-6 h-6 text-[#34D399]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
@@ -217,7 +217,7 @@ export default function DefinirSenhaPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Mínimo 6 caracteres"
-                    className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+                    className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
                   />
                 </div>
 
@@ -229,14 +229,14 @@ export default function DefinirSenhaPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Digite novamente"
-                    className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+                    className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-4 text-base font-bold bg-[#38DDF8] text-[#061923] hover:bg-[#22D3EE] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] rounded-xl transition duration-200 shadow-md shadow-[#38DDF8]/15 flex items-center justify-center gap-2"
+                  className="w-full py-4 text-base font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15 flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>

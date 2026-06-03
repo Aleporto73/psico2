@@ -48,73 +48,91 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ── Paleta Oficial PsicoPlanilhas — Azul Petróleo ────────────────────────── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Shadcn tokens — mapeados para a paleta petróleo */
+  --background: oklch(0.13 0.04 220);         /* #061923 — fundo principal */
+  --foreground: oklch(0.985 0.003 220);        /* #F8FAFC — texto principal */
+  --card: oklch(0.18 0.04 220);               /* #0B2430 — cards primários */
+  --card-foreground: oklch(0.985 0.003 220);  /* #F8FAFC */
+  --popover: oklch(0.21 0.045 218);           /* #0E2A38 — popovers */
+  --popover-foreground: oklch(0.985 0.003 220);
+  --primary: oklch(0.82 0.1 215);             /* #7DD3FC — azul pastel (botão primário) */
+  --primary-foreground: oklch(0.13 0.04 220); /* #061923 — texto sobre primário */
+  --secondary: oklch(0.21 0.045 218);         /* #0E2A38 */
+  --secondary-foreground: oklch(0.985 0.003 220);
+  --muted: oklch(0.21 0.045 218);             /* #0E2A38 */
+  --muted-foreground: oklch(0.66 0.022 228);  /* #94A3B8 */
+  --accent: oklch(0.23 0.05 218);             /* #123340 — hover */
+  --accent-foreground: oklch(0.985 0.003 220);
+  --destructive: oklch(0.72 0.19 10);         /* #FB7185 — melancia pastel */
+  --border: oklch(0.32 0.065 218);            /* #1F4D5C — bordas */
+  --input: oklch(0.32 0.065 218);             /* #1F4D5C */
+  --ring: oklch(0.82 0.1 215);               /* #7DD3FC */
+  --chart-1: oklch(0.82 0.1 215);
+  --chart-2: oklch(0.79 0.14 163);
+  --chart-3: oklch(0.86 0.175 89);
+  --chart-4: oklch(0.72 0.19 10);
+  --chart-5: oklch(0.89 0.095 200);
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: oklch(0.18 0.04 220);
+  --sidebar-foreground: oklch(0.985 0.003 220);
+  --sidebar-primary: oklch(0.82 0.1 215);
+  --sidebar-primary-foreground: oklch(0.13 0.04 220);
+  --sidebar-accent: oklch(0.23 0.05 218);
+  --sidebar-accent-foreground: oklch(0.985 0.003 220);
+  --sidebar-border: oklch(0.32 0.065 218);
+  --sidebar-ring: oklch(0.82 0.1 215);
+
+  /* Tokens customizados PsicoPlanilhas — uso direto inline */
+  --pp-bg: #061923;
+  --pp-card: #0B2430;
+  --pp-card-inner: #0E2A38;
+  --pp-hover: #123340;
+  --pp-border: #1F4D5C;
+  --pp-text: #F8FAFC;
+  --pp-text-muted: #CBD5E1;
+  --pp-text-subtle: #94A3B8;
+  --pp-blue: #7DD3FC;
+  --pp-aqua: #67E8F9;
+  --pp-melon: #FB7185;
+  --pp-gold: #FACC15;
+  --pp-green: #34D399;
 }
 
+/* .dark herda o mesmo tema petróleo — sem alternância de modo */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: oklch(0.13 0.04 220);
+  --foreground: oklch(0.985 0.003 220);
+  --card: oklch(0.18 0.04 220);
+  --card-foreground: oklch(0.985 0.003 220);
+  --popover: oklch(0.21 0.045 218);
+  --popover-foreground: oklch(0.985 0.003 220);
+  --primary: oklch(0.82 0.1 215);
+  --primary-foreground: oklch(0.13 0.04 220);
+  --secondary: oklch(0.21 0.045 218);
+  --secondary-foreground: oklch(0.985 0.003 220);
+  --muted: oklch(0.21 0.045 218);
+  --muted-foreground: oklch(0.66 0.022 228);
+  --accent: oklch(0.23 0.05 218);
+  --accent-foreground: oklch(0.985 0.003 220);
+  --destructive: oklch(0.72 0.19 10);
+  --border: oklch(0.32 0.065 218);
+  --input: oklch(0.32 0.065 218);
+  --ring: oklch(0.82 0.1 215);
+  --chart-1: oklch(0.82 0.1 215);
+  --chart-2: oklch(0.79 0.14 163);
+  --chart-3: oklch(0.86 0.175 89);
+  --chart-4: oklch(0.72 0.19 10);
+  --chart-5: oklch(0.89 0.095 200);
+  --sidebar: oklch(0.18 0.04 220);
+  --sidebar-foreground: oklch(0.985 0.003 220);
+  --sidebar-primary: oklch(0.82 0.1 215);
+  --sidebar-primary-foreground: oklch(0.13 0.04 220);
+  --sidebar-accent: oklch(0.23 0.05 218);
+  --sidebar-accent-foreground: oklch(0.985 0.003 220);
+  --sidebar-border: oklch(0.32 0.065 218);
+  --sidebar-ring: oklch(0.82 0.1 215);
 }
 
 @layer base {

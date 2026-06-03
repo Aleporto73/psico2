@@ -48,6 +48,97 @@ function formatDateTime(dateString: string) {
   });
 }
 
+// ── SVG Icons ──────────────────────────────────────────────────────────────────
+
+function IconLockLarge() {
+  return (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function IconLock() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="11" width="18" height="11" rx="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
+function IconCheck() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function IconAlert() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  );
+}
+
+function IconClose() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function IconSpark() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 2 9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" />
+    </svg>
+  );
+}
+
+function IconBolt() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
+
+function IconHistory() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 12a9 9 0 1 0 3-6.7" />
+      <polyline points="3 4 3 10 9 10" />
+      <line x1="12" y1="7" x2="12" y2="12" />
+      <line x1="12" y1="12" x2="15.5" y2="14" />
+    </svg>
+  );
+}
+
+function IconShield() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  );
+}
+
+function IconEdit() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z" />
+    </svg>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function AppAssistenteProPage() {
@@ -224,22 +315,28 @@ export default function AppAssistenteProPage() {
 
   if (loadingStatus) {
     return (
-      <div className="flex h-[60vh] items-center justify-center text-slate-400 text-sm">
-        Carregando status do assistente...
+      <div className="flex h-[60vh] items-center justify-center text-[#CBD5E1]">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
+          <p>Carregando status do assistente...</p>
+        </div>
       </div>
     );
   }
 
   const DAILY_LIMIT = 20;
 
+  const inputCls = "w-full px-4 py-3 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:ring-1 focus:ring-[#7DD3FC] focus:border-[#7DD3FC] transition";
+  const labelCls = "block text-sm font-bold text-[#CBD5E1]";
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
       {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
       <div>
-        <h1 className="text-3xl font-bold text-white tracking-tight">Assistente IA Pro</h1>
-        <p className="text-slate-400 text-sm mt-1">
-          Geração inteligente de rascunhos de apoio operacional a partir dos dados das suas planilhas profissionais.
+        <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Assistente IA Pro</h1>
+        <p className="text-[#CBD5E1] text-base mt-1">
+          Geração inteligente de rascunhos de apoio a partir dos dados das suas planilhas profissionais.
         </p>
       </div>
 
@@ -250,18 +347,18 @@ export default function AppAssistenteProPage() {
         <>
           {/* Badge de status + vencimento */}
           <div className="flex flex-wrap items-center gap-3">
-            <span className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+            <span className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] inline-block animate-pulse" />
               Assinatura Ativa
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="text-sm text-[#CBD5E1]">
               Válido até:{' '}
-              <strong className="text-amber-500">{formatDate(profile?.assistant_expires_at)}</strong>
+              <strong className="text-[#7DD3FC]">{formatDate(profile?.assistant_expires_at)}</strong>
             </span>
             {dailyCount !== null && (
-              <span className="text-xs text-slate-500">
+              <span className="text-sm text-[#CBD5E1]">
                 Gerações hoje:{' '}
-                <strong className={dailyCount >= DAILY_LIMIT ? 'text-red-400' : 'text-slate-300'}>
+                <strong className={dailyCount >= DAILY_LIMIT ? 'text-[#FB7185]' : 'text-[#F8FAFC]'}>
                   {dailyCount}/{DAILY_LIMIT}
                 </strong>
               </span>
@@ -270,31 +367,31 @@ export default function AppAssistenteProPage() {
 
           {/* ── Resultado da última geração ─────────────────────────────── */}
           {lastReport && (
-            <div id="last-report" className="p-6 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl space-y-4">
+            <div id="last-report" className="p-6 bg-[#34D399]/5 border border-[#34D399]/25 rounded-2xl space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-emerald-400 text-lg">✅</span>
-                  <h3 className="text-sm font-bold text-emerald-300">Rascunho Gerado com Sucesso</h3>
+                <div className="flex items-center gap-2 text-[#34D399]">
+                  <IconCheck />
+                  <h3 className="text-base font-bold">Rascunho gerado com sucesso</h3>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCopy(lastReport.output_text, 'last')}
-                    className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition"
                   >
-                    {copiedId === 'last' ? '✓ Copiado!' : 'Copiar'}
+                    {copiedId === 'last' ? (<><IconCheck /> Copiado</>) : 'Copiar'}
                   </button>
                   <button
                     onClick={() => setModalReport(lastReport)}
-                    className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition"
+                    className="px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition"
                   >
-                    Ver Completo
+                    Ver completo
                   </button>
                 </div>
               </div>
-              <pre className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-sans line-clamp-6 overflow-hidden">
+              <pre className="text-sm text-[#CBD5E1] leading-relaxed whitespace-pre-wrap font-sans line-clamp-6 overflow-hidden">
                 {lastReport.output_text}
               </pre>
-              <p className="text-[10px] text-slate-500">
+              <p className="text-xs text-[#94A3B8]">
                 Salvo em: {formatDateTime(lastReport.created_at)}
               </p>
             </div>
@@ -302,27 +399,28 @@ export default function AppAssistenteProPage() {
 
           {/* ── Erro de geração ─────────────────────────────────────────── */}
           {generateError && (
-            <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-sm text-red-400 leading-relaxed">
-              ⚠️ {generateError}
+            <div className="p-4 bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl text-base text-[#FB7185] leading-relaxed flex items-start gap-2">
+              <span className="shrink-0 mt-0.5"><IconAlert /></span>
+              <span>{generateError}</span>
             </div>
           )}
 
           {/* ── Formulário de Geração ───────────────────────────────────── */}
-          <section className="p-6 bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800 space-y-6">
+          <section className="p-6 md:p-8 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] space-y-6">
             <div>
-              <h2 className="text-lg font-bold text-white">Gerar Rascunho de Apoio</h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <h2 className="text-xl font-bold text-[#F8FAFC]">Gerar rascunho de apoio</h2>
+              <p className="text-sm text-[#CBD5E1] mt-1">
                 Preencha os campos com os dados da sua planilha. Quanto mais detalhado, melhor a qualidade do rascunho.
               </p>
             </div>
 
-            <form onSubmit={handleGenerate} className="space-y-4" id="generate-form">
+            <form onSubmit={handleGenerate} className="space-y-5" id="generate-form">
 
               {/* Linha 1: Nome + Idade */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label htmlFor="nome" className="block text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                    Nome / Identificação <span className="text-red-400">*</span>
+                <div className="space-y-2">
+                  <label htmlFor="nome" className={labelCls}>
+                    Nome / Identificação <span className="text-[#FB7185]">*</span>
                   </label>
                   <input
                     id="nome"
@@ -333,12 +431,12 @@ export default function AppAssistenteProPage() {
                     placeholder="Ex.: Paciente A (use identificação, não nome completo)"
                     maxLength={200}
                     required
-                    className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition"
+                    className={inputCls}
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label htmlFor="idade" className="block text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                    Idade / Faixa Etária
+                <div className="space-y-2">
+                  <label htmlFor="idade" className={labelCls}>
+                    Idade / Faixa etária
                   </label>
                   <input
                     id="idade"
@@ -348,15 +446,15 @@ export default function AppAssistenteProPage() {
                     onChange={handleFormChange}
                     placeholder="Ex.: 8 anos, Adulto 25-30 anos"
                     maxLength={50}
-                    className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition"
+                    className={inputCls}
                   />
                 </div>
               </div>
 
               {/* Área do Relatório */}
-              <div className="space-y-1.5">
-                <label htmlFor="area" className="block text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                  Área do Relatório <span className="text-red-400">*</span>
+              <div className="space-y-2">
+                <label htmlFor="area" className={labelCls}>
+                  Área do relatório <span className="text-[#FB7185]">*</span>
                 </label>
                 <select
                   id="area"
@@ -364,9 +462,9 @@ export default function AppAssistenteProPage() {
                   value={form.area}
                   onChange={handleFormChange}
                   required
-                  className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition"
+                  className={inputCls}
                 >
-                  <option value="" className="text-slate-600">Selecione a área...</option>
+                  <option value="">Selecione a área...</option>
                   <option value="Avaliação Psicológica">Avaliação Psicológica</option>
                   <option value="Avaliação Psicopedagógica">Avaliação Psicopedagógica</option>
                   <option value="Desenvolvimento Cognitivo">Desenvolvimento Cognitivo</option>
@@ -380,9 +478,9 @@ export default function AppAssistenteProPage() {
               </div>
 
               {/* Objetivo */}
-              <div className="space-y-1.5">
-                <label htmlFor="objetivo" className="block text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                  Objetivo do Relatório <span className="text-red-400">*</span>
+              <div className="space-y-2">
+                <label htmlFor="objetivo" className={labelCls}>
+                  Objetivo do relatório <span className="text-[#FB7185]">*</span>
                 </label>
                 <input
                   id="objetivo"
@@ -393,14 +491,14 @@ export default function AppAssistenteProPage() {
                   placeholder="Ex.: Sintetizar resultados para encaminhamento escolar"
                   maxLength={500}
                   required
-                  className="w-full px-4 py-2.5 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition"
+                  className={inputCls}
                 />
               </div>
 
               {/* Dados da Planilha */}
-              <div className="space-y-1.5">
-                <label htmlFor="planilhaData" className="block text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                  Dados da Planilha <span className="text-red-400">*</span>
+              <div className="space-y-2">
+                <label htmlFor="planilhaData" className={labelCls}>
+                  Dados da planilha <span className="text-[#FB7185]">*</span>
                 </label>
                 <textarea
                   id="planilhaData"
@@ -411,17 +509,17 @@ export default function AppAssistenteProPage() {
                   rows={7}
                   maxLength={4000}
                   required
-                  className="w-full px-4 py-3 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition resize-y font-mono leading-relaxed"
+                  className={inputCls + " resize-y font-mono leading-relaxed"}
                 />
-                <p className="text-[10px] text-slate-600 text-right">
+                <p className="text-xs text-[#94A3B8] text-right">
                   {form.planilhaData.length}/4000 caracteres
                 </p>
               </div>
 
               {/* Observações Opcionais */}
-              <div className="space-y-1.5">
-                <label htmlFor="observacoes" className="block text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                  Observações Adicionais <span className="text-slate-600 font-normal">(opcional)</span>
+              <div className="space-y-2">
+                <label htmlFor="observacoes" className={labelCls}>
+                  Observações adicionais <span className="text-[#94A3B8] font-normal">(opcional)</span>
                 </label>
                 <textarea
                   id="observacoes"
@@ -431,30 +529,31 @@ export default function AppAssistenteProPage() {
                   placeholder="Contexto adicional: histórico relevante, queixa principal, informações do responsável, etc."
                   rows={3}
                   maxLength={2000}
-                  className="w-full px-4 py-3 bg-slate-950/60 border border-slate-800 rounded-lg text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 transition resize-y"
+                  className={inputCls + " resize-y"}
                 />
               </div>
 
               {/* Aviso de responsabilidade no formulário */}
-              <div className="p-3 bg-amber-500/5 border border-amber-500/15 rounded-xl text-xs text-amber-500/80 leading-relaxed">
-                ⚠️ O rascunho gerado é um <strong>texto inicial de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado ou inferido automaticamente.
+              <div className="p-4 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-xl text-sm text-[#CBD5E1] leading-relaxed flex items-start gap-2">
+                <span className="shrink-0 mt-0.5 text-[#FACC15]"><IconAlert /></span>
+                <span>O rascunho gerado é um <strong>texto inicial de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado ou inferido automaticamente.</span>
               </div>
 
               {/* Botão de envio */}
               <button
                 type="submit"
                 disabled={generating || (dailyCount !== null && dailyCount >= DAILY_LIMIT)}
-                className="w-full py-3 font-bold text-sm rounded-xl transition duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/10"
+                className="w-full py-4 font-bold text-base rounded-xl transition duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] shadow-md shadow-[#7DD3FC]/15"
               >
                 {generating ? (
                   <>
-                    <span className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
+                    <span className="w-5 h-5 border-2 border-[#061923]/30 border-t-[#061923] rounded-full animate-spin" />
                     Gerando rascunho...
                   </>
                 ) : dailyCount !== null && dailyCount >= DAILY_LIMIT ? (
-                  '🔒 Limite diário atingido'
+                  <><IconLock /> Limite diário atingido</>
                 ) : (
-                  '✨ Gerar Rascunho de Apoio'
+                  <><IconSpark /> Gerar rascunho de apoio</>
                 )}
               </button>
             </form>
@@ -462,50 +561,51 @@ export default function AppAssistenteProPage() {
 
           {/* ── Histórico de Relatórios ─────────────────────────────────── */}
           <section className="space-y-4">
-            <div className="border-t border-slate-850 pt-6">
-              <h2 className="text-lg font-bold text-white">Histórico de Relatórios</h2>
-              <p className="text-xs text-slate-400 mt-1">Seus últimos 50 rascunhos gerados, mais recentes primeiro.</p>
+            <div className="border-t border-[#1F4D5C] pt-6">
+              <h2 className="text-xl font-bold text-[#F8FAFC]">Histórico de relatórios</h2>
+              <p className="text-sm text-[#CBD5E1] mt-1">Seus últimos 50 rascunhos gerados, mais recentes primeiro.</p>
             </div>
 
             {loadingReports ? (
-              <div className="text-center text-slate-500 text-sm py-6">Carregando histórico...</div>
+              <div className="text-center text-[#CBD5E1] text-sm py-6">Carregando histórico...</div>
             ) : reports.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 bg-slate-900/20 border border-dashed border-slate-850 rounded-2xl text-sm">
-                Nenhum relatório gerado ainda. Use o formulário acima para criar seu primeiro rascunho.
+              <div className="p-10 text-center bg-[#0B2430]/50 border border-dashed border-[#1F4D5C] rounded-2xl space-y-2">
+                <p className="text-[#CBD5E1] text-base">Nenhum relatório gerado ainda.</p>
+                <p className="text-[#94A3B8] text-sm">Use o formulário acima para criar seu primeiro rascunho.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {reports.map((report) => (
                   <div
                     key={report.id}
-                    className="p-4 bg-slate-900/50 border border-slate-800 rounded-xl flex flex-col md:flex-row md:items-start gap-3 hover:border-slate-750 transition duration-200"
+                    className="p-5 bg-[#0B2430] border border-[#1F4D5C] rounded-2xl flex flex-col md:flex-row md:items-start gap-3 hover:border-[#7DD3FC]/40 transition duration-200"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-slate-200 truncate">
+                      <p className="text-base font-semibold text-[#F8FAFC] truncate">
                         {report.title || 'Relatório sem título'}
                       </p>
-                      <p className="text-[10px] text-slate-500 mt-0.5">
+                      <p className="text-xs text-[#94A3B8] mt-1 flex items-center gap-2 flex-wrap">
                         {report.report_type && (
-                          <span className="mr-2 px-1.5 py-0.5 bg-slate-800 rounded text-slate-400">
+                          <span className="px-2 py-0.5 bg-[#0E2A38] rounded-md text-[#CBD5E1]">
                             {report.report_type}
                           </span>
                         )}
-                        {formatDateTime(report.created_at)}
+                        <span>{formatDateTime(report.created_at)}</span>
                       </p>
-                      <p className="text-xs text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
+                      <p className="text-sm text-[#CBD5E1] mt-2 line-clamp-2 leading-relaxed">
                         {report.output_text.slice(0, 150)}...
                       </p>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button
                         onClick={() => handleCopy(report.output_text, report.id)}
-                        className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition whitespace-nowrap"
+                        className="px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition whitespace-nowrap"
                       >
-                        {copiedId === report.id ? '✓ Copiado!' : 'Copiar'}
+                        {copiedId === report.id ? 'Copiado' : 'Copiar'}
                       </button>
                       <button
                         onClick={() => setModalReport(report)}
-                        className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition whitespace-nowrap"
+                        className="px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition whitespace-nowrap"
                       >
                         Ver
                       </button>
@@ -522,25 +622,27 @@ export default function AppAssistenteProPage() {
           STATE: EXPIRADO
       ══════════════════════════════════════════════════════════════════ */}
       {assistantState === 'expired' && (
-        <div className="p-8 bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800 text-center max-w-2xl mx-auto space-y-6">
-          <div className="text-5xl">🔒</div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-white">Sua Assinatura Expirou</h2>
-            <p className="text-slate-400 text-xs leading-normal">
+        <div className="p-10 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] text-center max-w-2xl mx-auto space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-full bg-[#FB7185]/10 border border-[#FB7185]/20 flex items-center justify-center text-[#FB7185]">
+            <IconLockLarge />
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-[#F8FAFC]">Sua assinatura expirou</h2>
+            <p className="text-[#CBD5E1] text-sm">
               Acesso encerrado em:{' '}
-              <strong className="text-amber-400/80">{formatDate(profile?.assistant_expires_at)}</strong>
+              <strong className="text-[#FB7185]">{formatDate(profile?.assistant_expires_at)}</strong>
             </p>
-            <p className="text-slate-400 text-sm leading-relaxed pt-2">
+            <p className="text-[#CBD5E1] text-base leading-relaxed pt-1">
               Renove sua assinatura anual do Assistente IA Pro por apenas{' '}
-              <strong className="text-amber-400">R$50/ano</strong> para continuar gerando rascunhos de apoio a
+              <strong className="text-[#7DD3FC]">R$50/ano</strong> para continuar gerando rascunhos de apoio a
               partir das suas planilhas profissionais.
             </p>
           </div>
           <button
             type="button"
-            className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition duration-200"
+            className="px-8 py-3.5 text-base bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] font-bold rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
           >
-            Renovar Assinatura (R$50/ano)
+            Renovar assinatura (R$50/ano)
           </button>
         </div>
       )}
@@ -549,39 +651,45 @@ export default function AppAssistenteProPage() {
           STATE: BLOQUEADO / NUNCA ASSINOU
       ══════════════════════════════════════════════════════════════════ */}
       {assistantState === 'blocked' && (
-        <div className="p-8 bg-slate-900/60 backdrop-blur-md rounded-2xl border border-slate-800 text-center max-w-2xl mx-auto space-y-6">
-          <div className="text-5xl">🔒</div>
-          <div className="space-y-2">
-            <h2 className="text-xl font-bold text-white">Assistente IA Pro Bloqueado</h2>
-            <p className="text-slate-400 text-sm leading-relaxed">
+        <div className="p-10 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] text-center max-w-2xl mx-auto space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-full bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 flex items-center justify-center text-[#7DD3FC]">
+            <IconLockLarge />
+          </div>
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-[#F8FAFC]">Assistente IA Pro bloqueado</h2>
+            <p className="text-[#CBD5E1] text-base leading-relaxed">
               O Assistente IA Pro é um recurso adicional com assinatura anual. Assine por apenas{' '}
-              <strong className="text-amber-400">R$50/ano</strong> para gerar rascunhos de apoio estruturados
+              <strong className="text-[#7DD3FC]">R$50/ano</strong> para gerar rascunhos de apoio estruturados
               diretamente integrados com seus dados de planilhas profissionais.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left pt-2 text-xs text-slate-400">
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-850">
-              ⚡ <strong>Rapidez Operacional</strong>
-              <p className="text-[11px] text-slate-500 mt-1">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left pt-2">
+            <div className="p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C] space-y-2">
+              <div className="text-[#7DD3FC]"><IconBolt /></div>
+              <strong className="text-[#F8FAFC] block text-sm">Rapidez operacional</strong>
+              <p className="text-xs text-[#94A3B8] leading-relaxed">
                 Gere rascunhos estruturados a partir dos dados da planilha em segundos.
               </p>
             </div>
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-850">
-              📝 <strong>Histórico Completo</strong>
-              <p className="text-[11px] text-slate-500 mt-1">
+            <div className="p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C] space-y-2">
+              <div className="text-[#7DD3FC]"><IconHistory /></div>
+              <strong className="text-[#F8FAFC] block text-sm">Histórico completo</strong>
+              <p className="text-xs text-[#94A3B8] leading-relaxed">
                 Todos os rascunhos gerados ficam salvos e acessíveis a qualquer momento.
               </p>
             </div>
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-850">
-              🔒 <strong>100% Seguro</strong>
-              <p className="text-[11px] text-slate-500 mt-1">
+            <div className="p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C] space-y-2">
+              <div className="text-[#7DD3FC]"><IconShield /></div>
+              <strong className="text-[#F8FAFC] block text-sm">100% seguro</strong>
+              <p className="text-xs text-[#94A3B8] leading-relaxed">
                 Dados processados com segurança. Nenhum dado é retido pela IA.
               </p>
             </div>
-            <div className="p-4 bg-slate-950/60 rounded-xl border border-slate-850">
-              📋 <strong>Totalmente Editável</strong>
-              <p className="text-[11px] text-slate-500 mt-1">
+            <div className="p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C] space-y-2">
+              <div className="text-[#7DD3FC]"><IconEdit /></div>
+              <strong className="text-[#F8FAFC] block text-sm">Totalmente editável</strong>
+              <p className="text-xs text-[#94A3B8] leading-relaxed">
                 O rascunho é um ponto de partida. Copie, edite e complemente conforme necessário.
               </p>
             </div>
@@ -589,7 +697,7 @@ export default function AppAssistenteProPage() {
 
           <button
             type="button"
-            className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg transition duration-200 shadow-md shadow-amber-500/10"
+            className="px-8 py-3.5 text-base bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] font-bold rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
           >
             Assinar por R$50/ano
           </button>
@@ -597,8 +705,8 @@ export default function AppAssistenteProPage() {
       )}
 
       {/* ── Aviso de uso responsável ──────────────────────────────────────── */}
-      <footer className="pt-4 border-t border-slate-850">
-        <div className="p-4 bg-slate-900/30 rounded-xl border border-slate-850 text-center text-xs text-slate-500 leading-relaxed max-w-3xl mx-auto">
+      <footer className="pt-4 border-t border-[#1F4D5C]">
+        <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
           <strong>Aviso de uso responsável:</strong> O Assistente IA Pro gera rascunhos iniciais de apoio operacional a
           partir dos dados inseridos pelo profissional. O texto gerado deve ser minuciosamente revisado, completado e
           interpretado pelo profissional responsável antes de qualquer uso formal, exigindo a posse e conformidade com
@@ -609,36 +717,36 @@ export default function AppAssistenteProPage() {
 
       {/* ── Modal de Visualização Completa ───────────────────────────────── */}
       {modalReport && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 bg-slate-950/85 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 relative flex flex-col space-y-4 shadow-2xl my-auto">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 bg-[#061923]/85 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#0B2430] border border-[#1F4D5C] rounded-2xl max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl my-auto">
             {/* Header do modal */}
-            <div className="flex justify-between items-start gap-4 border-b border-slate-800 pb-4">
+            <div className="flex justify-between items-start gap-4 border-b border-[#1F4D5C] pb-4">
               <div className="min-w-0">
-                <h3 className="text-sm font-bold text-slate-200 truncate">
+                <h3 className="text-base font-bold text-[#F8FAFC] truncate">
                   {modalReport.title || 'Relatório'}
                 </h3>
-                <p className="text-[10px] text-slate-500 mt-0.5">{formatDateTime(modalReport.created_at)}</p>
+                <p className="text-xs text-[#94A3B8] mt-0.5">{formatDateTime(modalReport.created_at)}</p>
               </div>
               <div className="flex gap-2 shrink-0">
                 <button
                   onClick={() => handleCopy(modalReport.output_text, `modal-${modalReport.id}`)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg border border-slate-700 transition"
+                  className="px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition"
                 >
-                  {copiedId === `modal-${modalReport.id}` ? '✓ Copiado!' : 'Copiar'}
+                  {copiedId === `modal-${modalReport.id}` ? 'Copiado' : 'Copiar'}
                 </button>
                 <button
                   onClick={() => setModalReport(null)}
-                  className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg border border-slate-700 transition"
+                  className="p-2 bg-[#0E2A38] hover:bg-[#123340] text-[#CBD5E1] rounded-xl border border-[#1F4D5C] transition"
                   aria-label="Fechar modal"
                 >
-                  ✕ Fechar
+                  <IconClose />
                 </button>
               </div>
             </div>
 
             {/* Conteúdo do relatório */}
             <div className="max-h-[60vh] overflow-y-auto">
-              <pre className="text-sm text-slate-300 leading-relaxed whitespace-pre-wrap font-sans">
+              <pre className="text-sm text-[#CBD5E1] leading-relaxed whitespace-pre-wrap font-sans">
                 {modalReport.output_text}
               </pre>
             </div>

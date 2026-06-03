@@ -281,11 +281,11 @@ export default function AdminImportacaoPage() {
         <header className="flex justify-between items-center pb-6 border-b border-[#1F4D5C]">
           <div>
             <div className="flex items-center space-x-2 text-xs text-[#94A3B8] mb-1 font-medium">
-              <Link href="/admin" className="hover:text-[#38DDF8] transition">Admin</Link>
+              <Link href="/admin" className="hover:text-[#7DD3FC] transition">Admin</Link>
               <span>/</span>
               <span className="text-[#94A3B8]">Clientes</span>
               <span>/</span>
-              <span className="text-[#38DDF8]">Adicionar</span>
+              <span className="text-[#7DD3FC]">Adicionar</span>
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight text-white">Adicionar Clientes</h1>
             <p className="text-[#CBD5E1] text-sm mt-1">
@@ -294,7 +294,7 @@ export default function AdminImportacaoPage() {
           </div>
           <Link
             href="/admin"
-            className="px-4 py-2 text-xs font-bold bg-[#0B2430] hover:bg-[#0E2A38] text-[#F8FAFC] border border-[#1F4D5C] hover:border-[#38DDF8] rounded-lg transition duration-200"
+            className="px-4 py-2 text-xs font-bold bg-[#0B2430] hover:bg-[#0E2A38] text-[#F8FAFC] border border-[#1F4D5C] hover:border-[#7DD3FC] rounded-lg transition duration-200"
           >
             Voltar ao Admin
           </Link>
@@ -310,7 +310,7 @@ export default function AdminImportacaoPage() {
             }}
             className={`flex items-center gap-2 px-6 py-3.5 text-sm font-bold border-b-2 transition duration-200 ${
               activeTab === 'csv'
-                ? 'border-[#38DDF8] text-[#38DDF8] bg-[#0B2430]/40'
+                ? 'border-[#7DD3FC] text-[#7DD3FC] bg-[#0B2430]/40'
                 : 'border-transparent text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#0B2430]/20'
             }`}
           >
@@ -327,7 +327,7 @@ export default function AdminImportacaoPage() {
             }}
             className={`flex items-center gap-2 px-6 py-3.5 text-sm font-bold border-b-2 transition duration-200 ${
               activeTab === 'manual'
-                ? 'border-[#38DDF8] text-[#38DDF8] bg-[#0B2430]/40'
+                ? 'border-[#7DD3FC] text-[#7DD3FC] bg-[#0B2430]/40'
                 : 'border-transparent text-[#CBD5E1] hover:text-[#F8FAFC] hover:bg-[#0B2430]/20'
             }`}
           >
@@ -345,7 +345,7 @@ export default function AdminImportacaoPage() {
           <div className="space-y-6">
             {/* Error Alert */}
             {errorMsg && (
-              <div className="p-4 text-sm font-semibold text-[#FF3B6B] bg-[#FF3B6B]/10 border border-[#FF3B6B]/20 rounded-xl flex items-center gap-2">
+              <div className="p-4 text-sm font-semibold text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl flex items-center gap-2">
                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -356,15 +356,15 @@ export default function AdminImportacaoPage() {
             {/* Steps Description */}
             <div className="p-5 bg-[#0B2430] rounded-xl border border-[#1F4D5C] space-y-3 text-sm leading-relaxed">
               <h3 className="font-bold text-[#F8FAFC] flex items-center gap-2">
-                <svg className="w-4 h-4 text-[#38DDF8]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-[#7DD3FC]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 Instruções para importação via CSV:
               </h3>
               <ul className="list-disc pl-5 text-[#CBD5E1] space-y-1">
-                <li>Os clientes serão importados com o status <strong className="text-[#38DDF8]">Pendente de Ativação</strong>.</li>
+                <li>Os clientes serão importados com o status <strong className="text-[#7DD3FC]">Pendente de Ativação</strong>.</li>
                 <li>A importação é <strong className="text-[#F8FAFC]">idempotente</strong>: rodar o mesmo arquivo não cria compras duplicadas.</li>
-                <li>Para cada cliente, será liberado o acesso vitalício às planilhas (<strong className="text-[#38DDF8]">psicoplanilhas-vitalicio</strong>).</li>
+                <li>Para cada cliente, será liberado o acesso vitalício às planilhas (<strong className="text-[#7DD3FC]">psicoplanilhas-vitalicio</strong>).</li>
                 <li>O Assistente IA Pro permanecerá bloqueado por padrão até que comprem a assinatura.</li>
               </ul>
             </div>
@@ -376,14 +376,14 @@ export default function AdminImportacaoPage() {
                   <label className="block text-xs font-bold text-[#94A3B8] uppercase tracking-wider mb-3 text-center">
                     Upload de arquivo CSV
                   </label>
-                  <label className="flex flex-col items-center justify-center w-full h-44 border-2 border-[#1F4D5C] border-dashed rounded-xl cursor-pointer bg-[#0E2A38] hover:bg-[#0E2A38]/80 hover:border-[#38DDF8] transition-all duration-200">
+                  <label className="flex flex-col items-center justify-center w-full h-44 border-2 border-[#1F4D5C] border-dashed rounded-xl cursor-pointer bg-[#0E2A38] hover:bg-[#0E2A38]/80 hover:border-[#7DD3FC] transition-all duration-200">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6 px-4 text-center">
-                      <svg className="w-10 h-10 mb-3 text-[#38DDF8] animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <svg className="w-10 h-10 mb-3 text-[#7DD3FC] animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                       </svg>
                       {fileName ? (
                         <div className="space-y-1">
-                          <p className="text-sm text-[#38DDF8] font-bold truncate max-w-xs sm:max-w-md">
+                          <p className="text-sm text-[#7DD3FC] font-bold truncate max-w-xs sm:max-w-md">
                             {fileName}
                           </p>
                           <p className="text-xs text-[#94A3B8]">
@@ -396,7 +396,7 @@ export default function AdminImportacaoPage() {
                             Clique para selecionar ou arraste o CSV
                           </p>
                           <p className="text-xs text-[#94A3B8]">
-                            Mínimo obrigatório: <code className="text-[#38DDF8] font-mono">name,email</code>. Recomendado: <code className="text-[#CBD5E1] font-mono">phone,purchase_code,profile_type</code>.
+                            Mínimo obrigatório: <code className="text-[#7DD3FC] font-mono">name,email</code>. Recomendado: <code className="text-[#CBD5E1] font-mono">phone,purchase_code,profile_type</code>.
                           </p>
                         </>
                       )}
@@ -416,7 +416,7 @@ export default function AdminImportacaoPage() {
                       type="button"
                       disabled={validating}
                       onClick={handleValidate}
-                      className="px-8 py-3 text-sm font-bold bg-[#38DDF8] text-[#061923] hover:bg-[#22D3EE] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] disabled:border-[#1F4D5C] disabled:border rounded-xl transition duration-200 shadow-md shadow-[#38DDF8]/15"
+                      className="px-8 py-3 text-sm font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] disabled:border-[#1F4D5C] disabled:border rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
                     >
                       {validating ? (
                         <span className="flex items-center justify-center gap-2">
@@ -436,7 +436,7 @@ export default function AdminImportacaoPage() {
             {validated && !importResult && (
               <div className="space-y-6">
                 <h3 className="text-xl font-bold text-[#F8FAFC] flex items-center gap-2">
-                  <svg className="w-5 h-5 text-[#38DDF8]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-[#7DD3FC]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   Resultados da Validação
@@ -449,16 +449,16 @@ export default function AdminImportacaoPage() {
                     <div className="text-2xl font-bold mt-1 text-[#F8FAFC]">{rawRecords.length}</div>
                   </div>
                   <div className="p-4 bg-[#0B2430] border border-[#1F4D5C] rounded-xl shadow-sm">
-                    <span className="text-[#38DDF8] text-xs uppercase tracking-wider font-bold">Válidos para Importar</span>
-                    <div className="text-2xl font-bold mt-1 text-[#38DDF8]">{validRecords.length}</div>
+                    <span className="text-[#7DD3FC] text-xs uppercase tracking-wider font-bold">Válidos para Importar</span>
+                    <div className="text-2xl font-bold mt-1 text-[#7DD3FC]">{validRecords.length}</div>
                   </div>
                   <div className="p-4 bg-[#0B2430] border border-[#1F4D5C] rounded-xl shadow-sm">
-                    <span className="text-yellow-400 text-xs uppercase tracking-wider font-bold">Duplicados no CSV</span>
-                    <div className="text-2xl font-bold mt-1 text-yellow-400">{duplicateEmails.length}</div>
+                    <span className="text-[#FACC15] text-xs uppercase tracking-wider font-bold">Duplicados no CSV</span>
+                    <div className="text-2xl font-bold mt-1 text-[#FACC15]">{duplicateEmails.length}</div>
                   </div>
                   <div className="p-4 bg-[#0B2430] border border-[#1F4D5C] rounded-xl shadow-sm">
-                    <span className="text-[#FF3B6B] text-xs uppercase tracking-wider font-bold">E-mails Inválidos</span>
-                    <div className="text-2xl font-bold mt-1 text-[#FF3B6B]">{invalidRecords.length}</div>
+                    <span className="text-[#FB7185] text-xs uppercase tracking-wider font-bold">E-mails Inválidos</span>
+                    <div className="text-2xl font-bold mt-1 text-[#FB7185]">{invalidRecords.length}</div>
                   </div>
                 </div>
 
@@ -470,7 +470,7 @@ export default function AdminImportacaoPage() {
                       <button
                         disabled={loading}
                         onClick={handleImport}
-                        className="px-5 py-2.5 text-xs font-bold bg-[#38DDF8] text-[#061923] hover:bg-[#22D3EE] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] disabled:border-[#1F4D5C] disabled:border rounded-lg transition duration-200 shadow-md shadow-[#38DDF8]/10"
+                        className="px-5 py-2.5 text-xs font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] disabled:border-[#1F4D5C] disabled:border rounded-lg transition duration-200 shadow-md shadow-[#7DD3FC]/10"
                       >
                         {loading ? (
                           <span className="flex items-center justify-center gap-2">
@@ -509,8 +509,8 @@ export default function AdminImportacaoPage() {
 
                 {/* List of invalid records if any */}
                 {invalidRecords.length > 0 && (
-                  <div className="p-5 bg-[#FF3B6B]/5 border border-[#FF3B6B]/20 rounded-xl space-y-3">
-                    <h4 className="font-bold text-[#FF3B6B] text-sm flex items-center gap-2">
+                  <div className="p-5 bg-[#FB7185]/5 border border-[#FB7185]/20 rounded-xl space-y-3">
+                    <h4 className="font-bold text-[#FB7185] text-sm flex items-center gap-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
@@ -519,7 +519,7 @@ export default function AdminImportacaoPage() {
                     <ul className="text-xs text-[#CBD5E1] space-y-1.5 list-disc pl-5">
                       {invalidRecords.map((rec, i) => (
                         <li key={i}>
-                          <strong className="text-[#F8FAFC]">{rec.name}</strong> ({rec.email}) - <span className="text-[#FF3B6B] font-medium">{rec.reason}</span>
+                          <strong className="text-[#F8FAFC]">{rec.name}</strong> ({rec.email}) - <span className="text-[#FB7185] font-medium">{rec.reason}</span>
                         </li>
                       ))}
                     </ul>
@@ -532,7 +532,7 @@ export default function AdminImportacaoPage() {
             {importResult && (
               <div className="p-8 bg-[#0B2430] border border-[#1F4D5C] rounded-xl space-y-6 shadow-lg">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#38DDF8]/10 border border-[#38DDF8]/20 rounded-full text-[#38DDF8] text-xs font-bold">
+                  <div className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-full text-[#7DD3FC] text-xs font-bold">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -547,22 +547,22 @@ export default function AdminImportacaoPage() {
                     <div className="text-2xl font-bold mt-1 text-[#F8FAFC]">{importResult.total}</div>
                   </div>
                   <div className="p-4 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-center shadow-sm">
-                    <span className="text-[#38DDF8] text-[10px] uppercase font-bold tracking-wider">Novos Criados</span>
-                    <div className="text-2xl font-bold mt-1 text-[#38DDF8]">{importResult.imported}</div>
+                    <span className="text-[#7DD3FC] text-[10px] uppercase font-bold tracking-wider">Novos Criados</span>
+                    <div className="text-2xl font-bold mt-1 text-[#7DD3FC]">{importResult.imported}</div>
                   </div>
                   <div className="p-4 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-center shadow-sm">
-                    <span className="text-yellow-400 text-[10px] uppercase font-bold tracking-wider">Atualizados</span>
-                    <div className="text-2xl font-bold mt-1 text-yellow-400">{importResult.updated + importResult.duplicates}</div>
+                    <span className="text-[#FACC15] text-[10px] uppercase font-bold tracking-wider">Atualizados</span>
+                    <div className="text-2xl font-bold mt-1 text-[#FACC15]">{importResult.updated + importResult.duplicates}</div>
                   </div>
                   <div className="p-4 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-center shadow-sm">
-                    <span className="text-[#FF3B6B] text-[10px] uppercase font-bold tracking-wider">Erros</span>
-                    <div className="text-2xl font-bold mt-1 text-[#FF3B6B]">{importResult.errors.length}</div>
+                    <span className="text-[#FB7185] text-[10px] uppercase font-bold tracking-wider">Erros</span>
+                    <div className="text-2xl font-bold mt-1 text-[#FB7185]">{importResult.errors.length}</div>
                   </div>
                 </div>
 
                 {importResult.errors.length > 0 && (
-                  <div className="p-5 bg-[#FF3B6B]/5 border border-[#FF3B6B]/20 rounded-xl space-y-3 text-xs">
-                    <h4 className="font-bold text-[#FF3B6B] text-sm flex items-center gap-2">
+                  <div className="p-5 bg-[#FB7185]/5 border border-[#FB7185]/20 rounded-xl space-y-3 text-xs">
+                    <h4 className="font-bold text-[#FB7185] text-sm flex items-center gap-2">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
@@ -571,7 +571,7 @@ export default function AdminImportacaoPage() {
                     <div className="max-h-40 overflow-y-auto space-y-2 pr-2">
                       {importResult.errors.map((err: any, i: number) => (
                         <div key={i} className="text-[#CBD5E1] border-b border-[#1F4D5C]/30 pb-1 last:border-0 last:pb-0">
-                          Email: <strong className="text-[#F8FAFC]">{err.email}</strong> - <span className="text-[#FF3B6B]">{err.reason}</span>
+                          Email: <strong className="text-[#F8FAFC]">{err.email}</strong> - <span className="text-[#FB7185]">{err.reason}</span>
                         </div>
                       ))}
                     </div>
@@ -584,7 +584,7 @@ export default function AdminImportacaoPage() {
                       setImportResult(null);
                       setFileName(null);
                     }}
-                    className="px-6 py-2.5 bg-[#0E2A38] hover:bg-[#0E2A38]/70 text-[#F8FAFC] border border-[#1F4D5C] hover:border-[#38DDF8] font-bold rounded-lg transition duration-200"
+                    className="px-6 py-2.5 bg-[#0E2A38] hover:bg-[#0E2A38]/70 text-[#F8FAFC] border border-[#1F4D5C] hover:border-[#7DD3FC] font-bold rounded-lg transition duration-200"
                   >
                     Subir Novo Arquivo CSV
                   </button>
@@ -601,7 +601,7 @@ export default function AdminImportacaoPage() {
           <div className="space-y-6">
             {/* Error Alert */}
             {manualError && (
-              <div className="p-4 text-sm font-semibold text-[#FF3B6B] bg-[#FF3B6B]/10 border border-[#FF3B6B]/20 rounded-xl flex items-center gap-2">
+              <div className="p-4 text-sm font-semibold text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl flex items-center gap-2">
                 <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -613,7 +613,7 @@ export default function AdminImportacaoPage() {
             {manualResult && (
               <div className="p-8 bg-[#0B2430] border border-[#1F4D5C] rounded-2xl space-y-8 shadow-xl">
                 <div className="text-center space-y-2">
-                  <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#38DDF8]/10 border border-[#38DDF8]/20 rounded-full text-[#38DDF8] text-xs font-bold">
+                  <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-full text-[#7DD3FC] text-xs font-bold">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -644,11 +644,11 @@ export default function AdminImportacaoPage() {
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-[#CBD5E1]">Status do perfil</span>
                         {manualResult.client.activation_status === 'active' ? (
-                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#38DDF8] bg-[#38DDF8]/10 border border-[#38DDF8]/20 uppercase">
+                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 uppercase">
                             Ativado
                           </span>
                         ) : (
-                          <span className="px-3 py-1 text-xs font-bold rounded-full text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 uppercase">
+                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#FACC15] bg-[#FACC15]/10 border border-[#FACC15]/20 uppercase">
                             Pendente de ativação
                           </span>
                         )}
@@ -665,7 +665,7 @@ export default function AdminImportacaoPage() {
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-[#CBD5E1]">Acesso vitalício às planilhas</span>
                         {manualResult.client.has_lifetime_access !== 'não liberado' ? (
-                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#38DDF8] bg-[#38DDF8]/10 border border-[#38DDF8]/20 uppercase">
+                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 uppercase">
                             Liberado
                           </span>
                         ) : (
@@ -677,7 +677,7 @@ export default function AdminImportacaoPage() {
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-[#CBD5E1]">Assistente IA Pro</span>
                         {manualResult.client.pro_status !== 'não ativado' ? (
-                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#38DDF8] bg-[#38DDF8]/10 border border-[#38DDF8]/20 uppercase">
+                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 uppercase">
                             Liberado
                           </span>
                         ) : (
@@ -701,10 +701,10 @@ export default function AdminImportacaoPage() {
                 </div>
 
                 {/* Bloco Próximo passo */}
-                <div className="max-w-2xl mx-auto p-5 bg-[#0E2A38] border-l-4 border-[#38DDF8] rounded-r-xl rounded-l-md space-y-4 shadow-sm">
+                <div className="max-w-2xl mx-auto p-5 bg-[#0E2A38] border-l-4 border-[#7DD3FC] rounded-r-xl rounded-l-md space-y-4 shadow-sm">
                   <div>
                     <h4 className="text-sm font-bold text-[#F8FAFC] flex items-center gap-1.5">
-                      <svg className="w-4 h-4 text-[#38DDF8]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 text-[#7DD3FC]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                       Próximo passo
@@ -715,12 +715,12 @@ export default function AdminImportacaoPage() {
                   </div>
                   
                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 bg-[#061923] p-3 rounded-lg border border-[#1F4D5C]/50">
-                    <code className="text-[#38DDF8] text-xs font-mono select-all break-all flex-1 py-1">
+                    <code className="text-[#7DD3FC] text-xs font-mono select-all break-all flex-1 py-1">
                       https://app.psicoplanilha.com/ativar-acesso
                     </code>
                     <button
                       onClick={handleCopyLink}
-                      className="px-4 py-2 text-xs font-bold bg-[#38DDF8] text-[#061923] hover:bg-[#22D3EE] rounded-md transition duration-200 shrink-0 flex items-center justify-center gap-1.5"
+                      className="px-4 py-2 text-xs font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] rounded-md transition duration-200 shrink-0 flex items-center justify-center gap-1.5"
                     >
                       {copied ? (
                         <>
@@ -757,19 +757,19 @@ export default function AdminImportacaoPage() {
                         pro_expires_at: '',
                       });
                     }}
-                    className="w-full sm:w-auto px-6 py-3 text-sm font-bold bg-[#38DDF8] text-[#061923] hover:bg-[#22D3EE] rounded-xl transition duration-200 shadow-md shadow-[#38DDF8]/15 text-center"
+                    className="w-full sm:w-auto px-6 py-3 text-sm font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15 text-center"
                   >
                     Cadastrar outro cliente
                   </button>
                   <Link
                     href="/admin/clientes"
-                    className="w-full sm:w-auto px-6 py-3 text-sm font-bold bg-[#0E2A38] text-[#F8FAFC] border border-[#1F4D5C] hover:border-[#38DDF8] rounded-xl transition duration-200 text-center"
+                    className="w-full sm:w-auto px-6 py-3 text-sm font-bold bg-[#0E2A38] text-[#F8FAFC] border border-[#1F4D5C] hover:border-[#7DD3FC] rounded-xl transition duration-200 text-center"
                   >
                     Ver lista de clientes
                   </Link>
                   <Link
                     href="/admin"
-                    className="w-full sm:w-auto px-6 py-3 text-sm font-bold bg-[#0E2A38] text-[#F8FAFC] border border-[#1F4D5C] hover:border-[#38DDF8] rounded-xl transition duration-200 text-center"
+                    className="w-full sm:w-auto px-6 py-3 text-sm font-bold bg-[#0E2A38] text-[#F8FAFC] border border-[#1F4D5C] hover:border-[#7DD3FC] rounded-xl transition duration-200 text-center"
                   >
                     Voltar ao Admin
                   </Link>
@@ -792,7 +792,7 @@ export default function AdminImportacaoPage() {
                   {/* Nome */}
                   <div className="space-y-2">
                     <label htmlFor="manual_name" className="block text-xs font-bold text-[#CBD5E1] uppercase tracking-wide">
-                      Nome do Cliente <span className="text-[#FF3B6B]">*</span>
+                      Nome do Cliente <span className="text-[#FB7185]">*</span>
                     </label>
                     <input
                       id="manual_name"
@@ -802,14 +802,14 @@ export default function AdminImportacaoPage() {
                       value={manualForm.name}
                       onChange={handleManualChange}
                       placeholder="Ex: Dra. Maria Silva"
-                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] placeholder-[#94A3B8]/50 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] placeholder-[#94A3B8]/50 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
                     />
                   </div>
 
                   {/* E-mail */}
                   <div className="space-y-2">
                     <label htmlFor="manual_email" className="block text-xs font-bold text-[#CBD5E1] uppercase tracking-wide">
-                      E-mail do Cliente <span className="text-[#FF3B6B]">*</span>
+                      E-mail do Cliente <span className="text-[#FB7185]">*</span>
                     </label>
                     <input
                       id="manual_email"
@@ -819,7 +819,7 @@ export default function AdminImportacaoPage() {
                       value={manualForm.email}
                       onChange={handleManualChange}
                       placeholder="Ex: maria.silva@email.com"
-                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] placeholder-[#94A3B8]/50 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] placeholder-[#94A3B8]/50 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
                     />
                   </div>
 
@@ -835,7 +835,7 @@ export default function AdminImportacaoPage() {
                       value={manualForm.phone}
                       onChange={handleManualChange}
                       placeholder="Ex: (11) 99999-9999"
-                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] placeholder-[#94A3B8]/50 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] placeholder-[#94A3B8]/50 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
                     />
                   </div>
 
@@ -849,7 +849,7 @@ export default function AdminImportacaoPage() {
                       name="profile_type"
                       value={manualForm.profile_type}
                       onChange={handleManualChange}
-                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
                     >
                       <option value="unknown">Prefiro responder depois (Desconhecido)</option>
                       <option value="psychologist">Psicólogo(a)</option>
@@ -868,7 +868,7 @@ export default function AdminImportacaoPage() {
                       name="source"
                       value={manualForm.source}
                       onChange={handleManualChange}
-                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+                      className="w-full px-4 py-2.5 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
                     >
                       <option value="manual_pix">Pagamento via PIX Direto</option>
                       <option value="manual_deposito">Depósito Bancário / Transferência</option>
@@ -889,8 +889,8 @@ export default function AdminImportacaoPage() {
                       htmlFor="manual_lifetime"
                       className={`flex items-start space-x-3 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
                         manualForm.has_lifetime_access
-                          ? 'bg-[#0E2A38] border-[#38DDF8] shadow-md shadow-[#38DDF8]/5'
-                          : 'bg-[#061923] border-[#1F4D5C] hover:border-[#38DDF8]/50'
+                          ? 'bg-[#0E2A38] border-[#7DD3FC] shadow-md shadow-[#7DD3FC]/5'
+                          : 'bg-[#061923] border-[#1F4D5C] hover:border-[#7DD3FC]/50'
                       }`}
                     >
                       <input
@@ -899,7 +899,7 @@ export default function AdminImportacaoPage() {
                         type="checkbox"
                         checked={manualForm.has_lifetime_access}
                         onChange={handleManualChange}
-                        className="mt-1 w-4 h-4 text-[#061923] bg-[#061923] border-[#1F4D5C] rounded focus:ring-[#38DDF8]/50 focus:ring-2 accent-[#38DDF8]"
+                        className="mt-1 w-4 h-4 text-[#061923] bg-[#061923] border-[#1F4D5C] rounded focus:ring-[#7DD3FC]/50 focus:ring-2 accent-[#7DD3FC]"
                       />
                       <div className="space-y-1">
                         <span className="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider block">
@@ -916,8 +916,8 @@ export default function AdminImportacaoPage() {
                       htmlFor="manual_pro"
                       className={`flex items-start space-x-3 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
                         manualForm.activate_pro
-                          ? 'bg-[#0E2A38] border-[#38DDF8] shadow-md shadow-[#38DDF8]/5'
-                          : 'bg-[#061923] border-[#1F4D5C] hover:border-[#38DDF8]/50'
+                          ? 'bg-[#0E2A38] border-[#7DD3FC] shadow-md shadow-[#7DD3FC]/5'
+                          : 'bg-[#061923] border-[#1F4D5C] hover:border-[#7DD3FC]/50'
                       }`}
                     >
                       <input
@@ -926,7 +926,7 @@ export default function AdminImportacaoPage() {
                         type="checkbox"
                         checked={manualForm.activate_pro}
                         onChange={handleManualChange}
-                        className="mt-1 w-4 h-4 text-[#061923] bg-[#061923] border-[#1F4D5C] rounded focus:ring-[#38DDF8]/50 focus:ring-2 accent-[#38DDF8]"
+                        className="mt-1 w-4 h-4 text-[#061923] bg-[#061923] border-[#1F4D5C] rounded focus:ring-[#7DD3FC]/50 focus:ring-2 accent-[#7DD3FC]"
                       />
                       <div className="space-y-1">
                         <span className="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider block">
@@ -951,7 +951,7 @@ export default function AdminImportacaoPage() {
                         type="date"
                         value={manualForm.pro_expires_at}
                         onChange={handleManualChange}
-                        className="w-full px-4 py-2 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
+                        className="w-full px-4 py-2 bg-[#061923] border border-[#1F4D5C] rounded-lg text-sm text-[#F8FAFC] focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
                       />
                       <p className="text-[10px] text-[#94A3B8] leading-normal">
                         * Opcional. Se deixado em branco, a data de expiração será definida automaticamente para **+1 ano** a partir de hoje.
@@ -964,7 +964,7 @@ export default function AdminImportacaoPage() {
                   <button
                     type="submit"
                     disabled={manualLoading}
-                    className="w-full md:max-w-xs py-3.5 bg-[#38DDF8] hover:bg-[#22D3EE] text-[#061923] font-bold rounded-xl transition duration-200 shadow-md shadow-[#38DDF8]/15 flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-[#0E2A38] disabled:text-[#94A3B8]"
+                    className="w-full md:max-w-xs py-3.5 bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] font-bold rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15 flex items-center justify-center gap-2 disabled:opacity-50 disabled:bg-[#0E2A38] disabled:text-[#94A3B8]"
                   >
                     {manualLoading ? (
                       <>

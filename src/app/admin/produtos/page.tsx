@@ -152,101 +152,104 @@ export default function AdminProdutosPage() {
     setShowForm(true);
   };
 
+  const inputCls = "w-full px-4 py-2.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition";
+  const labelCls = "block text-sm font-bold text-[#CBD5E1]";
+
   return (
-    <div className="min-h-screen p-8 bg-slate-955 text-slate-100">
+    <div className="min-h-screen p-6 md:p-8 bg-[#061923] text-[#F8FAFC]">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Header */}
-        <header className="flex flex-col md:flex-row md:justify-between md:items-center pb-6 border-b border-slate-800 space-y-4 md:space-y-0">
+        <header className="flex flex-col md:flex-row md:justify-between md:items-center pb-6 border-b border-[#1F4D5C] gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
-              <Link href="/admin" className="hover:text-amber-500 transition">Admin</Link>
+            <div className="flex items-center space-x-2 text-xs text-[#94A3B8] mb-1">
+              <Link href="/admin" className="hover:text-[#7DD3FC] transition">Admin</Link>
               <span>/</span>
-              <span className="text-slate-300">Produtos</span>
+              <span className="text-[#CBD5E1]">Produtos</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Catálogo de Produtos</h1>
-            <p className="text-slate-400 text-sm mt-1">Gerencie produtos externos, assistentes virtuais, bundles e treinamentos do sistema.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-[#F8FAFC]">Catálogo de produtos</h1>
+            <p className="text-[#CBD5E1] text-base mt-1">Gerencie produtos externos, assistentes virtuais, bundles e treinamentos do sistema.</p>
           </div>
-          
+
           <div className="flex space-x-3">
             <button
               onClick={handleNew}
-              className="px-4 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-955 rounded-lg transition duration-200"
+              className="px-5 py-2.5 text-sm font-bold bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] rounded-xl transition duration-200"
             >
-              Novo Produto Comercial
+              Novo produto
             </button>
             <Link
               href="/admin"
-              className="px-4 py-2 text-sm bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-lg transition duration-200"
+              className="px-5 py-2.5 text-sm bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] border border-[#1F4D5C] rounded-xl transition duration-200"
             >
-              Voltar ao Início
+              Voltar
             </Link>
           </div>
         </header>
 
         {/* Alerts */}
-        {errorMsg && <div className="p-4 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">{errorMsg}</div>}
-        {successMsg && <div className="p-4 text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">{successMsg}</div>}
+        {errorMsg && <div className="p-4 text-base font-medium text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl">{errorMsg}</div>}
+        {successMsg && <div className="p-4 text-base font-medium text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-xl">{successMsg}</div>}
 
         {/* Create/Edit Form */}
         {showForm && editingProd && (
-          <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-              <h2 className="text-lg font-bold text-white">{editingProd.id ? 'Editar Produto Comercial' : 'Novo Produto Comercial'}</h2>
+          <div className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] space-y-5">
+            <div className="flex justify-between items-center border-b border-[#1F4D5C] pb-3">
+              <h2 className="text-lg font-bold text-[#F8FAFC]">{editingProd.id ? 'Editar produto comercial' : 'Novo produto comercial'}</h2>
               <button
                 type="button"
                 onClick={() => { setShowForm(false); setEditingProd(null); }}
-                className="text-slate-400 hover:text-white text-xs font-semibold"
+                className="text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-semibold"
               >
                 Cancelar
               </button>
             </div>
-            
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Nome do Produto (Obrigatório)</label>
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className={labelCls}>Nome do produto (obrigatório)</label>
                 <input
                   type="text"
                   value={editingProd.name || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Slug Único (Obrigatório)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Slug único (obrigatório)</label>
                 <input
                   type="text"
                   value={editingProd.slug || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, slug: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   required
                   placeholder="ex: assistente-ia-pro"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Tipo do Produto (Obrigatório)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Tipo do produto (obrigatório)</label>
                 <select
                   value={editingProd.type || 'external_product'}
                   onChange={(e) => setEditingProd({ ...editingProd, type: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   required
                 >
-                  <option value="external_product">Produto Externo (external_product)</option>
+                  <option value="external_product">Produto externo (external_product)</option>
                   <option value="assistant">Assistente (assistant)</option>
                   <option value="bundle">Pacote (bundle)</option>
                   <option value="tutorial">Treinamento/Tutorial (tutorial)</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Público Alvo (Obrigatório)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Público-alvo (obrigatório)</label>
                 <select
                   value={editingProd.audience || 'all'}
                   onChange={(e) => setEditingProd({ ...editingProd, audience: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   required
                 >
                   <option value="all">Todos (all)</option>
@@ -256,135 +259,135 @@ export default function AdminProdutosPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Categoria</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Categoria</label>
                 <input
                   type="text"
                   value={editingProd.category || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, category: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   placeholder="ex: Recursos de IA"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Preço (R$)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Preço (R$)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={editingProd.price !== null && editingProd.price !== undefined ? editingProd.price : ''}
                   onChange={(e) => setEditingProd({ ...editingProd, price: e.target.value !== '' ? Number(e.target.value) : null })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   placeholder="97.00"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Tipo de Faturamento</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Tipo de faturamento</label>
                 <select
                   value={editingProd.billing_type || 'one_time'}
                   onChange={(e) => setEditingProd({ ...editingProd, billing_type: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 >
-                  <option value="one_time">Pagamento Único (one_time)</option>
+                  <option value="one_time">Pagamento único (one_time)</option>
                   <option value="yearly">Anual (yearly)</option>
                   <option value="monthly">Mensal (monthly)</option>
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">URL de Checkout</label>
+              <div className="space-y-2">
+                <label className={labelCls}>URL de checkout</label>
                 <input
                   type="text"
                   value={editingProd.checkout_url || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, checkout_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Link do Vídeo Informativo (YouTube embed ou URL)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Link do vídeo informativo</label>
                 <input
                   type="text"
                   value={editingProd.video_url || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, video_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Link da Imagem / Thumbnail</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Link da imagem / thumbnail</label>
                 <input
                   type="text"
                   value={editingProd.image_url || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, image_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Link de Acesso Interno (se houver)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Link de acesso interno (se houver)</label>
                 <input
                   type="text"
                   value={editingProd.access_url || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, access_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Link de Tutorial / Documentação</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Link de tutorial / documentação</label>
                 <input
                   type="text"
                   value={editingProd.tutorial_url || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, tutorial_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="md:col-span-2 space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Descrição do Produto</label>
+              <div className="md:col-span-2 space-y-2">
+                <label className={labelCls}>Descrição do produto</label>
                 <textarea
                   value={editingProd.description || ''}
                   onChange={(e) => setEditingProd({ ...editingProd, description: e.target.value })}
-                  className="w-full h-20 px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls + " h-24 resize-y"}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Ordem (sort_order)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Ordem (sort_order)</label>
                 <input
                   type="number"
                   value={editingProd.sort_order || 0}
                   onChange={(e) => setEditingProd({ ...editingProd, sort_order: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="flex items-center space-x-2 pt-6">
+              <div className="flex items-center space-x-3 pt-7">
                 <input
                   type="checkbox"
                   id="is_active_prod"
                   checked={editingProd.is_active !== undefined ? editingProd.is_active : true}
                   onChange={(e) => setEditingProd({ ...editingProd, is_active: e.target.checked })}
-                  className="rounded bg-slate-955 border-slate-800 text-amber-500 focus:ring-amber-500"
+                  className="w-5 h-5 rounded bg-[#0E2A38] border-[#1F4D5C] accent-[#7DD3FC]"
                 />
-                <label htmlFor="is_active_prod" className="text-slate-300 text-xs font-medium uppercase tracking-wider cursor-pointer">Produto Ativo / Visível</label>
+                <label htmlFor="is_active_prod" className="text-[#CBD5E1] text-sm font-semibold cursor-pointer">Produto ativo / visível</label>
               </div>
 
-              <div className="md:col-span-2 pt-4 flex justify-end space-x-2">
+              <div className="md:col-span-2 pt-4 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setEditingProd(null); }}
-                  className="px-4 py-2 border border-slate-800 text-slate-300 rounded-lg hover:bg-slate-800 transition"
+                  className="px-5 py-2.5 text-sm border border-[#1F4D5C] text-[#F8FAFC] rounded-xl hover:bg-[#0E2A38] transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg transition"
+                  className="px-7 py-2.5 text-base font-bold bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] rounded-xl transition shadow-md shadow-[#7DD3FC]/15"
                 >
-                  Salvar Produto
+                  Salvar produto
                 </button>
               </div>
             </form>
@@ -392,16 +395,22 @@ export default function AdminProdutosPage() {
         )}
 
         {/* Products List Section */}
-        <div className="bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden">
+        <div className="bg-[#0B2430] rounded-2xl border border-[#1F4D5C] overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-slate-400">Carregando catálogo de produtos...</div>
+            <div className="p-10 text-center text-[#CBD5E1]">
+              <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto mb-3" />
+              Carregando catálogo de produtos...
+            </div>
           ) : products.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">Nenhum produto cadastrado.</div>
+            <div className="p-10 text-center text-[#CBD5E1] space-y-2">
+              <p className="text-base">Nenhum produto cadastrado.</p>
+              <p className="text-sm text-[#94A3B8]">Clique em "Novo produto" para criar o primeiro.</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                  <tr className="border-b border-[#1F4D5C] bg-[#0E2A38] text-[#CBD5E1] text-xs font-bold uppercase tracking-wider">
                     <th className="p-4">Produto</th>
                     <th className="p-4">Tipo</th>
                     <th className="p-4">Público</th>
@@ -411,35 +420,35 @@ export default function AdminProdutosPage() {
                     <th className="p-4 text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/80 text-sm">
+                <tbody className="divide-y divide-[#1F4D5C]/60 text-sm">
                   {products.map((prod) => (
-                    <tr key={prod.id} className="hover:bg-slate-900/30 transition">
+                    <tr key={prod.id} className="hover:bg-[#0E2A38]/50 transition">
                       <td className="p-4">
-                        <div className="font-semibold text-white">{prod.name}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{prod.slug}</div>
+                        <div className="font-semibold text-[#F8FAFC]">{prod.name}</div>
+                        <div className="text-xs text-[#94A3B8] mt-0.5">{prod.slug}</div>
                       </td>
                       <td className="p-4">
-                        <span className={`px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider ${
-                          prod.type === 'spreadsheet' ? 'text-slate-400 bg-slate-800/40 border border-slate-800' :
-                          prod.type === 'assistant' ? 'text-amber-400 bg-amber-500/10 border border-amber-500/20' :
-                          prod.type === 'bundle' ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20' :
-                          'text-indigo-400 bg-indigo-500/10 border border-indigo-500/20'
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold uppercase tracking-wider ${
+                          prod.type === 'spreadsheet' ? 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]' :
+                          prod.type === 'assistant' ? 'text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20' :
+                          prod.type === 'bundle' ? 'text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20' :
+                          'text-[#FACC15] bg-[#FACC15]/10 border border-[#FACC15]/20'
                         }`}>
                           {prod.type === 'spreadsheet' ? 'Planilha' :
                            prod.type === 'assistant' ? 'Assistente' :
                            prod.type === 'bundle' ? 'Pacote' :
-                           prod.type === 'external_product' ? 'Produto Ext.' : prod.type}
+                           prod.type === 'external_product' ? 'Produto ext.' : prod.type}
                         </span>
                       </td>
-                      <td className="p-4 text-slate-300 uppercase tracking-wider text-xs font-semibold">
+                      <td className="p-4 text-[#CBD5E1] uppercase tracking-wider text-xs font-semibold">
                         {prod.audience === 'all' ? 'Todos' :
                          prod.audience === 'psychologist' ? 'Psicólogos' :
                          prod.audience === 'psychopedagogue' ? 'Psicopedagogos' : prod.audience}
                       </td>
-                      <td className="p-4 text-slate-200">
+                      <td className="p-4 text-[#F8FAFC]">
                         {prod.price !== null ? new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prod.price) : '-'}
                       </td>
-                      <td className="p-4 text-slate-400 text-xs">
+                      <td className="p-4 text-[#94A3B8] text-xs">
                         {prod.billing_type === 'one_time' ? 'Único' :
                          prod.billing_type === 'yearly' ? 'Anual' :
                          prod.billing_type === 'monthly' ? 'Mensal' : prod.billing_type || '-'}
@@ -448,24 +457,24 @@ export default function AdminProdutosPage() {
                         <button
                           onClick={() => handleToggleActive(prod)}
                           disabled={prod.type === 'spreadsheet'}
-                          className={`px-2.5 py-0.5 rounded text-xs font-bold uppercase ${
+                          className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
                             prod.type === 'spreadsheet'
-                              ? 'text-slate-600 bg-slate-900 border border-slate-850 cursor-not-allowed'
+                              ? 'text-[#94A3B8]/50 bg-[#0E2A38] border border-[#1F4D5C] cursor-not-allowed'
                               : prod.is_active
-                              ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
-                              : 'text-slate-500 bg-slate-900 border border-slate-800'
+                              ? 'text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20'
+                              : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'
                           }`}
                         >
                           {prod.is_active ? 'Ativo' : 'Inativo'}
                         </button>
                       </td>
-                      <td className="p-4 text-right space-x-2">
+                      <td className="p-4 text-right">
                         {prod.type === 'spreadsheet' ? (
-                          <span className="text-xs text-slate-500 italic pr-2">Planilha (Somente Leitura)</span>
+                          <span className="text-xs text-[#94A3B8] italic pr-2">Planilha (somente leitura)</span>
                         ) : (
                           <button
                             onClick={() => handleEdit(prod)}
-                            className="px-3 py-1.5 text-xs font-bold text-slate-300 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg transition"
+                            className="px-4 py-2 text-sm font-bold text-[#F8FAFC] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C] rounded-xl transition"
                           >
                             Editar
                           </button>

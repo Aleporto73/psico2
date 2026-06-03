@@ -20,6 +20,16 @@ interface Banner {
   sort_order: number;
 }
 
+// ── SVG Icon ─────────────────────────────────────────────────────────────────
+
+function IconPlay() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polygon points="5 3 19 12 5 21 5 3" />
+    </svg>
+  );
+}
+
 export default function AdminBannersPage() {
   const supabase = createClient();
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -129,84 +139,87 @@ export default function AdminBannersPage() {
     setShowForm(true);
   };
 
+  const inputCls = "w-full px-4 py-2.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition";
+  const labelCls = "block text-sm font-bold text-[#CBD5E1]";
+
   return (
-    <div className="min-h-screen p-8 bg-slate-955 text-slate-100">
+    <div className="min-h-screen p-6 md:p-8 bg-[#061923] text-[#F8FAFC]">
       <div className="max-w-7xl mx-auto space-y-6">
-        
+
         {/* Navigation / Header */}
-        <header className="flex flex-col md:flex-row md:justify-between md:items-center pb-6 border-b border-slate-800 space-y-4 md:space-y-0">
+        <header className="flex flex-col md:flex-row md:justify-between md:items-center pb-6 border-b border-[#1F4D5C] gap-4">
           <div>
-            <div className="flex items-center space-x-2 text-xs text-slate-500 mb-1">
-              <Link href="/admin" className="hover:text-amber-500 transition">Admin</Link>
+            <div className="flex items-center space-x-2 text-xs text-[#94A3B8] mb-1">
+              <Link href="/admin" className="hover:text-[#7DD3FC] transition">Admin</Link>
               <span>/</span>
-              <span className="text-slate-300">Banners Comerciais</span>
+              <span className="text-[#CBD5E1]">Banners comerciais</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Vídeo-Banners Comerciais</h1>
-            <p className="text-slate-400 text-sm mt-1">Configure os banners promocionais segmentados exibidos no painel do cliente.</p>
+            <h1 className="text-3xl font-bold tracking-tight text-[#F8FAFC]">Vídeo-banners comerciais</h1>
+            <p className="text-[#CBD5E1] text-base mt-1">Configure os banners promocionais segmentados exibidos no painel do cliente.</p>
           </div>
-          
+
           <div className="flex space-x-3">
             <button
               onClick={handleNew}
-              className="px-4 py-2 text-sm font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg transition duration-200"
+              className="px-5 py-2.5 text-sm font-bold bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] rounded-xl transition duration-200"
             >
-              Novo Banner
+              Novo banner
             </button>
             <Link
               href="/admin"
-              className="px-4 py-2 text-sm bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 rounded-lg transition duration-200"
+              className="px-5 py-2.5 text-sm bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] border border-[#1F4D5C] rounded-xl transition duration-200"
             >
-              Voltar ao Início
+              Voltar
             </Link>
           </div>
         </header>
 
         {/* Success/Error messages */}
-        {errorMsg && <div className="p-4 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">{errorMsg}</div>}
-        {successMsg && <div className="p-4 text-sm text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">{successMsg}</div>}
+        {errorMsg && <div className="p-4 text-base font-medium text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl">{errorMsg}</div>}
+        {successMsg && <div className="p-4 text-base font-medium text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-xl">{successMsg}</div>}
 
         {/* Edit/Create Form Section */}
         {showForm && editingBanner && (
-          <div className="p-6 bg-slate-900 rounded-xl border border-slate-800 space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-2">
-              <h2 className="text-lg font-bold text-white">{editingBanner.id ? 'Editar Banner' : 'Novo Banner'}</h2>
+          <div className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] space-y-5">
+            <div className="flex justify-between items-center border-b border-[#1F4D5C] pb-3">
+              <h2 className="text-lg font-bold text-[#F8FAFC]">{editingBanner.id ? 'Editar banner' : 'Novo banner'}</h2>
               <button
                 type="button"
                 onClick={() => { setShowForm(false); setEditingBanner(null); }}
-                className="text-slate-400 hover:text-white text-xs font-semibold"
+                className="text-[#94A3B8] hover:text-[#F8FAFC] text-sm font-semibold"
               >
                 Cancelar
               </button>
             </div>
-            
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Título (Obrigatório)</label>
+
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-2">
+                <label className={labelCls}>Título (obrigatório)</label>
                 <input
                   type="text"
                   value={editingBanner.title || ''}
                   onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Subtítulo</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Subtítulo</label>
                 <input
                   type="text"
                   value={editingBanner.subtitle || ''}
                   onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Público Alvo (Obrigatório)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Público-alvo (obrigatório)</label>
                 <select
                   value={editingBanner.audience || 'all'}
                   onChange={(e) => setEditingBanner({ ...editingBanner, audience: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   required
                 >
                   <option value="all">Todos (all)</option>
@@ -216,112 +229,112 @@ export default function AdminBannersPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Posição no Painel (Obrigatório)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Posição no painel (obrigatório)</label>
                 <input
                   type="text"
                   value={editingBanner.position || 'dashboard_middle'}
                   onChange={(e) => setEditingBanner({ ...editingBanner, position: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   required
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Link do Vídeo (YouTube embed ou URL de vídeo)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Link do vídeo</label>
                 <input
                   type="text"
                   value={editingBanner.video_url || ''}
                   onChange={(e) => setEditingBanner({ ...editingBanner, video_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-955 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                   placeholder="https://www.youtube.com/watch?v=..."
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Link da Imagem / Thumbnail</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Link da imagem / thumbnail</label>
                 <input
                   type="text"
                   value={editingBanner.image_url || ''}
                   onChange={(e) => setEditingBanner({ ...editingBanner, image_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Texto do Botão Principal</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Texto do botão principal</label>
                 <input
                   type="text"
                   value={editingBanner.button_text || ''}
                   onChange={(e) => setEditingBanner({ ...editingBanner, button_text: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Link do Botão Principal (CTA)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Link do botão principal (CTA)</label>
                 <input
                   type="text"
                   value={editingBanner.button_url || ''}
                   onChange={(e) => setEditingBanner({ ...editingBanner, button_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Texto do Botão Secundário</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Texto do botão secundário</label>
                 <input
                   type="text"
                   value={editingBanner.secondary_button_text || ''}
                   onChange={(e) => setEditingBanner({ ...editingBanner, secondary_button_text: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Link do Botão Secundário</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Link do botão secundário</label>
                 <input
                   type="text"
                   value={editingBanner.secondary_button_url || ''}
                   onChange={(e) => setEditingBanner({ ...editingBanner, secondary_button_url: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-400 text-xs font-medium">Ordem de Exibição (sort_order)</label>
+              <div className="space-y-2">
+                <label className={labelCls}>Ordem de exibição (sort_order)</label>
                 <input
                   type="number"
                   value={editingBanner.sort_order || 0}
                   onChange={(e) => setEditingBanner({ ...editingBanner, sort_order: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50"
+                  className={inputCls}
                 />
               </div>
 
-              <div className="flex items-center space-x-2 pt-6">
+              <div className="flex items-center space-x-3 pt-7">
                 <input
                   type="checkbox"
                   id="is_active"
                   checked={editingBanner.is_active !== undefined ? editingBanner.is_active : true}
                   onChange={(e) => setEditingBanner({ ...editingBanner, is_active: e.target.checked })}
-                  className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-amber-500"
+                  className="w-5 h-5 rounded bg-[#0E2A38] border-[#1F4D5C] accent-[#7DD3FC]"
                 />
-                <label htmlFor="is_active" className="text-slate-300 text-xs font-medium uppercase tracking-wider cursor-pointer">Banner Ativo / Visível</label>
+                <label htmlFor="is_active" className="text-[#CBD5E1] text-sm font-semibold cursor-pointer">Banner ativo / visível</label>
               </div>
 
-              <div className="md:col-span-2 pt-4 flex justify-end space-x-2">
+              <div className="md:col-span-2 pt-4 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => { setShowForm(false); setEditingBanner(null); }}
-                  className="px-4 py-2 border border-slate-800 text-slate-300 rounded-lg hover:bg-slate-800 transition"
+                  className="px-5 py-2.5 text-sm border border-[#1F4D5C] text-[#F8FAFC] rounded-xl hover:bg-[#0E2A38] transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 font-bold bg-amber-500 hover:bg-amber-400 text-slate-955 rounded-lg transition"
+                  className="px-7 py-2.5 text-base font-bold bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] rounded-xl transition shadow-md shadow-[#7DD3FC]/15"
                 >
-                  Salvar Banner
+                  Salvar banner
                 </button>
               </div>
             </form>
@@ -329,16 +342,22 @@ export default function AdminBannersPage() {
         )}
 
         {/* Banners List Section */}
-        <div className="bg-slate-900/40 rounded-xl border border-slate-800 overflow-hidden">
+        <div className="bg-[#0B2430] rounded-2xl border border-[#1F4D5C] overflow-hidden">
           {loading ? (
-            <div className="p-8 text-center text-slate-400">Carregando lista de banners...</div>
+            <div className="p-10 text-center text-[#CBD5E1]">
+              <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto mb-3" />
+              Carregando lista de banners...
+            </div>
           ) : banners.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">Nenhum banner cadastrado.</div>
+            <div className="p-10 text-center text-[#CBD5E1] space-y-2">
+              <p className="text-base">Nenhum banner cadastrado.</p>
+              <p className="text-sm text-[#94A3B8]">Clique em "Novo banner" para criar o primeiro.</p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-800 bg-slate-900/80 text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                  <tr className="border-b border-[#1F4D5C] bg-[#0E2A38] text-[#CBD5E1] text-xs font-bold uppercase tracking-wider">
                     <th className="p-4">Título / Subtítulo</th>
                     <th className="p-4">Público</th>
                     <th className="p-4">Posição</th>
@@ -348,39 +367,41 @@ export default function AdminBannersPage() {
                     <th className="p-4 text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/80 text-sm">
+                <tbody className="divide-y divide-[#1F4D5C]/60 text-sm">
                   {banners.map((banner) => (
-                    <tr key={banner.id} className="hover:bg-slate-900/30 transition">
+                    <tr key={banner.id} className="hover:bg-[#0E2A38]/50 transition">
                       <td className="p-4">
-                        <div className="font-semibold text-white">{banner.title}</div>
-                        <div className="text-xs text-slate-500 mt-0.5">{banner.subtitle || 'Sem subtítulo'}</div>
+                        <div className="font-semibold text-[#F8FAFC]">{banner.title}</div>
+                        <div className="text-xs text-[#94A3B8] mt-0.5">{banner.subtitle || 'Sem subtítulo'}</div>
                       </td>
-                      <td className="p-4 text-slate-300 uppercase tracking-wider text-xs font-semibold">
+                      <td className="p-4 text-[#CBD5E1] text-xs font-semibold uppercase tracking-wider">
                         {banner.audience === 'all' ? 'Todos' :
                          banner.audience === 'psychologist' ? 'Psicólogos' :
                          banner.audience === 'psychopedagogue' ? 'Psicopedagogos' : banner.audience}
                       </td>
-                      <td className="p-4 text-slate-400 text-xs">{banner.position}</td>
-                      <td className="p-4 text-slate-400 text-xs">
-                        {banner.video_url ? '🎬 Sim' : 'Não'}
+                      <td className="p-4 text-[#94A3B8] text-xs">{banner.position}</td>
+                      <td className="p-4 text-[#CBD5E1] text-xs">
+                        {banner.video_url ? (
+                          <span className="inline-flex items-center gap-1 text-[#7DD3FC]"><IconPlay /> Sim</span>
+                        ) : 'Não'}
                       </td>
-                      <td className="p-4 text-slate-300">{banner.sort_order}</td>
+                      <td className="p-4 text-[#F8FAFC]">{banner.sort_order}</td>
                       <td className="p-4">
                         <button
                           onClick={() => handleToggleActive(banner)}
-                          className={`px-2.5 py-0.5 rounded text-xs font-bold uppercase ${
+                          className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
                             banner.is_active
-                              ? 'text-emerald-400 bg-emerald-500/10 border border-emerald-500/20'
-                              : 'text-slate-500 bg-slate-900 border border-slate-800'
+                              ? 'text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20'
+                              : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'
                           }`}
                         >
                           {banner.is_active ? 'Ativo' : 'Inativo'}
                         </button>
                       </td>
-                      <td className="p-4 text-right space-x-2">
+                      <td className="p-4 text-right">
                         <button
                           onClick={() => handleEdit(banner)}
-                          className="px-3 py-1.5 text-xs font-bold text-slate-350 bg-slate-800 hover:bg-slate-750 border border-slate-700 rounded-lg transition"
+                          className="px-4 py-2 text-sm font-bold text-[#F8FAFC] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C] rounded-xl transition"
                         >
                           Editar
                         </button>

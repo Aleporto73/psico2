@@ -32,64 +32,76 @@ export default function EsqueciSenhaPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-800/80">
-        
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#061923] text-[#F8FAFC]">
+      <div className="w-full max-w-md p-8 space-y-6 bg-[#0B2430] backdrop-blur-md rounded-2xl shadow-2xl border border-[#1F4D5C]">
+
         {/* Title */}
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-amber-200 to-amber-400 bg-clip-text text-transparent">
-            Recuperar Senha
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#F8FAFC]">
+            Recuperar senha
           </h1>
-          <p className="text-slate-400 text-sm">
-            Digite seu e-mail cadastrado para enviarmos as instruções de recuperação.
+          <p className="text-[#CBD5E1] text-base">
+            Digite o e-mail cadastrado para receber o link de recuperação.
           </p>
         </div>
 
         {/* Feedback Message */}
         {message ? (
-          <div className="p-4 text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg text-center space-y-3">
-            <p>{message}</p>
+          <div className="p-6 text-center space-y-4 bg-[#34D399]/10 border border-[#34D399]/20 rounded-xl">
+            <div className="w-14 h-14 mx-auto rounded-full bg-[#34D399]/20 flex items-center justify-center">
+              <svg className="w-7 h-7 text-[#34D399]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <p className="text-base text-[#F8FAFC] leading-relaxed">{message}</p>
             <Link
               href="/login"
-              className="inline-block px-4 py-2 text-xs font-bold text-slate-950 bg-amber-500 hover:bg-amber-400 rounded-lg transition duration-200"
+              className="inline-block w-full py-3.5 text-base font-bold text-[#7DD3FC] bg-[#0E2A38] border border-[#1F4D5C] hover:border-[#7DD3FC] rounded-xl transition duration-200 text-center"
             >
-              Voltar ao Login
+              Voltar ao login
             </Link>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">E-mail Cadastrado</label>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-[#CBD5E1]">E-mail cadastrado</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu-email@provedor.com"
-                className="w-full px-4 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50 transition duration-200"
+                placeholder="exemplo@email.com"
+                className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold rounded-lg transition duration-200 shadow-md shadow-amber-500/10"
+              className="w-full py-4 text-base font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15 flex items-center justify-center gap-2"
             >
-              {loading ? 'Enviando...' : 'Enviar Link de Recuperação'}
+              {loading ? (
+                <>
+                  <span className="w-5 h-5 border-2 border-[#061923]/30 border-t-[#061923] rounded-full animate-spin" />
+                  Enviando...
+                </>
+              ) : (
+                'Enviar link de recuperação'
+              )}
             </button>
           </form>
         )}
 
         {!message && (
-          <div className="text-center pt-2">
-            <Link href="/login" className="text-sm text-amber-400 hover:text-amber-300 transition underline underline-offset-4">
-              Voltar para o Login
+          <div className="text-center pt-1">
+            <Link href="/login" className="text-sm text-[#7DD3FC] hover:text-[#67E8F9] transition underline underline-offset-4">
+              Voltar ao login
             </Link>
           </div>
         )}
       </div>
 
-      <div className="mt-8 text-center text-xs text-slate-600 max-w-sm">
+      <div className="mt-8 text-center text-xs text-[#94A3B8]/60 max-w-sm">
         Esta plataforma é um recurso de apoio operacional. Exige o uso do manual original e não substitui avaliação profissional.
       </div>
     </div>

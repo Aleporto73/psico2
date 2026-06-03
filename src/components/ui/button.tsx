@@ -8,16 +8,22 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // Primário — azul pastel sobre fundo escuro
+        default:
+          "bg-[#7DD3FC] text-[#061923] font-semibold hover:bg-[#67E8F9] shadow-sm shadow-[#7DD3FC]/10 focus-visible:ring-[#7DD3FC]/40",
+        // Secundário — transparente com borda petróleo
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
+          "border border-[#1F4D5C] bg-transparent text-[#F8FAFC] hover:bg-[#123340] hover:border-[#7DD3FC] aria-expanded:bg-[#123340]",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-[color-mix(in_oklch,var(--secondary),var(--foreground)_5%)] aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
+          "border border-[#1F4D5C] bg-transparent text-[#F8FAFC] hover:bg-[#123340] hover:border-[#7DD3FC] aria-expanded:bg-[#123340] aria-expanded:text-[#F8FAFC]",
+        // Fantasma — hover suave em petróleo
         ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "text-[#CBD5E1] hover:bg-[#123340] hover:text-[#F8FAFC] aria-expanded:bg-[#123340] aria-expanded:text-[#F8FAFC]",
+        // Destrutivo — melancia pastel
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+          "border border-[#FB7185]/20 bg-[#FB7185]/10 text-[#FB7185] hover:bg-[#FB7185]/20 focus-visible:border-[#FB7185]/40 focus-visible:ring-[#FB7185]/20",
+        // Link — azul pastel sublinhado
+        link: "text-[#7DD3FC] underline-offset-4 hover:underline hover:text-[#67E8F9]",
       },
       size: {
         default:
