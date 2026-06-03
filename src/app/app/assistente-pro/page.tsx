@@ -18,6 +18,8 @@ interface AiReport {
   created_at: string;
 }
 
+type ReportType = 'family' | 'school' | 'technical' | 'internal' | 'three_versions';
+
 interface FormState {
   nome: string;
   idade: string;
@@ -25,6 +27,7 @@ interface FormState {
   objetivo: string;
   planilhaData: string;
   observacoes: string;
+  reportType: ReportType;
 }
 
 interface AttachedImage {
@@ -34,11 +37,19 @@ interface AttachedImage {
   dataUrl: string;
 }
 
-// ── Constantes de imagem ──────────────────────────────────────────────────────
+// ── Constantes ────────────────────────────────────────────────────────────────
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_IMAGES = 4;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
+const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; hint: string }> = [
+  { value: 'family',         label: 'Pais / Família',  hint: 'Acolhedor, simples, sem jargão técnico.' },
+  { value: 'school',         label: 'Escola',           hint: 'Objetivo, pedagógico, com recomendações para sala de aula.' },
+  { value: 'technical',      label: 'Técnico',          hint: 'Profissional, com estrutura de relatório descritivo.' },
+  { value: 'internal',       label: 'Registro interno', hint: 'Curto e direto, estilo prontuário/registro.' },
+  { value: 'three_versions', label: 'Gerar 3 versões',  hint: 'Três blocos: Pais, Escola e Técnica.' },
+];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -206,16 +217,13 @@ function IconEdit() {
 export default function AppAssistenteProPage() {
   const supabase = createClient();
 
-  // Status de acesso
   const [profile, setProfile] = useState<AccessStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
 
-  // Histórico
   const [reports, setReports] = useState<AiReport[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
   const [dailyCount, setDailyCount] = useState<number | null>(null);
 
-  // Formulário
   const [form, setForm] = useState<FormState>({
     nome: '',
     idade: '',
@@ -223,9 +231,9 @@ export default function AppAssistenteProPage() {
     objetivo: '',
     planilhaData: '',
     observacoes: '',
+    reportType: 'technical',
   });
 
-  // Imagens anexadas (até 4)
   const [images, setImages] = useState<AttachedImage[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -234,7 +242,6 @@ export default function AppAssistenteProPage() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [lastReport, setLastReport] = useState<AiReport | null>(null);
 
-  // Modal de visualização
   const [modalReport, setModalReport] = useState<AiReport | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -303,8 +310,6 @@ export default function AppAssistenteProPage() {
     setDailyCount(count ?? 0);
   }, [supabase]);
 
-  // ── Lógica de Estado ──────────────────────────────────────────────────────
-
   let assistantState: 'loading' | 'blocked' | 'active' | 'expired' = 'loading';
   if (!loadingStatus) {
     if (profile?.has_active_assistant) {
@@ -325,14 +330,17 @@ export default function AppAssistenteProPage() {
     setGenerateError(null);
   };
 
+  const handleReportTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setForm((prev) => ({ ...prev, reportType: e.target.value as ReportType }));
+    setGenerateError(null);
+  };
+
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
     const fileList = e.target.files;
     if (!fileList || fileList.length === 0) return;
 
     const files = Array.from(fileList);
-
-    // Reseta o input para permitir reselecionar o mesmo arquivo se removido
     if (fileInputRef.current) fileInputRef.current.value = '';
 
     if (images.length + files.length > MAX_IMAGES) {
@@ -380,11 +388,13 @@ export default function AppAssistenteProPage() {
     setGenerateError(null);
     setLastReport(null);
 
-    // Validação client-side condicional:
-    // sempre obrigatórios: nome, idade, area, objetivo
-    // planilhaData só é obrigatória quando NÃO há imagens.
     if (!form.nome.trim() || !form.idade.trim() || !form.area.trim() || !form.objetivo.trim()) {
       setGenerateError('Preencha Nome, Idade, Área e Objetivo do relatório.');
+      setGenerating(false);
+      return;
+    }
+    if (!form.reportType) {
+      setGenerateError('Escolha o tipo de relatório.');
       setGenerating(false);
       return;
     }
@@ -422,8 +432,15 @@ export default function AppAssistenteProPage() {
       } = await supabase.auth.getUser();
       if (user) fetchReports(user.id);
 
-      // Limpar formulário e imagens
-      setForm({ nome: '', idade: '', area: '', objetivo: '', planilhaData: '', observacoes: '' });
+      setForm({
+        nome: '',
+        idade: '',
+        area: '',
+        objetivo: '',
+        planilhaData: '',
+        observacoes: '',
+        reportType: form.reportType, // mantém escolha do tipo entre gerações
+      });
       handleClearImages();
 
       setTimeout(() => {
@@ -446,8 +463,6 @@ export default function AppAssistenteProPage() {
     }
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   if (loadingStatus) {
     return (
       <div className="flex h-[60vh] items-center justify-center text-[#CBD5E1]">
@@ -465,11 +480,11 @@ export default function AppAssistenteProPage() {
   const labelCls = "block text-sm font-bold text-[#CBD5E1]";
 
   const canAddMoreImages = images.length < MAX_IMAGES;
+  const selectedReport = REPORT_TYPE_OPTIONS.find((o) => o.value === form.reportType);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
-      {/* ── Cabeçalho ─────────────────────────────────────────────────────── */}
       <div>
         <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Assistente IA Pro</h1>
         <p className="text-[#CBD5E1] text-base mt-1">
@@ -477,12 +492,8 @@ export default function AppAssistenteProPage() {
         </p>
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════════
-          STATE: ATIVO
-      ══════════════════════════════════════════════════════════════════ */}
       {assistantState === 'active' && (
         <>
-          {/* Badge de status + vencimento */}
           <div className="flex flex-wrap items-center gap-3">
             <span className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] inline-block animate-pulse" />
@@ -502,7 +513,6 @@ export default function AppAssistenteProPage() {
             )}
           </div>
 
-          {/* ── Resultado da última geração ─────────────────────────────── */}
           {lastReport && (
             <div id="last-report" className="p-6 bg-[#34D399]/5 border border-[#34D399]/25 rounded-2xl space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
@@ -534,7 +544,6 @@ export default function AppAssistenteProPage() {
             </div>
           )}
 
-          {/* ── Erro de geração ─────────────────────────────────────────── */}
           {generateError && (
             <div className="p-4 bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl text-base text-[#FB7185] leading-relaxed flex items-start gap-2">
               <span className="shrink-0 mt-0.5"><IconAlert /></span>
@@ -542,7 +551,6 @@ export default function AppAssistenteProPage() {
             </div>
           )}
 
-          {/* ── Formulário de Geração ───────────────────────────────────── */}
           <section className="p-6 md:p-8 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] space-y-6">
             <div>
               <h2 className="text-xl font-bold text-[#F8FAFC]">Gerar rascunho de apoio</h2>
@@ -553,7 +561,7 @@ export default function AppAssistenteProPage() {
 
             <form onSubmit={handleGenerate} className="space-y-5" id="generate-form" noValidate>
 
-              {/* Linha 1: Nome + Idade */}
+              {/* Nome + Idade */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="nome" className={labelCls}>
@@ -633,6 +641,35 @@ export default function AppAssistenteProPage() {
                 />
               </div>
 
+              {/* ── Tipo de relatório (NOVO) ───────────────────────────── */}
+              <div className="space-y-2">
+                <label htmlFor="reportType" className={labelCls}>
+                  Tipo de relatório <span className="text-[#FB7185]">*</span>
+                </label>
+                <p className="text-sm text-[#CBD5E1] leading-relaxed">
+                  Escolha para quem o texto será escrito. Isso ajusta a linguagem automaticamente.
+                </p>
+                <select
+                  id="reportType"
+                  name="reportType"
+                  value={form.reportType}
+                  onChange={handleReportTypeChange}
+                  required
+                  className={inputCls}
+                >
+                  {REPORT_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+                {selectedReport && (
+                  <div className="px-3 py-2 bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-xl text-xs text-[#CBD5E1] leading-relaxed">
+                    <strong className="text-[#7DD3FC]">{selectedReport.label}:</strong> {selectedReport.hint}
+                  </div>
+                )}
+              </div>
+
               {/* ── Anexar prints (opcional, até 4) ─────────────────────── */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
@@ -650,7 +687,6 @@ export default function AppAssistenteProPage() {
                   Você pode enviar até 4 prints da planilha, tabela ou gráfico. Se os prints estiverem legíveis, o campo de dados pode ficar em branco.
                 </p>
 
-                {/* Lista de imagens anexadas */}
                 {images.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {images.map((img, idx) => (
@@ -684,7 +720,6 @@ export default function AppAssistenteProPage() {
                   </div>
                 )}
 
-                {/* Botão Adicionar print (dropzone quando vazio) */}
                 {images.length === 0 ? (
                   <label
                     htmlFor="imagePick"
@@ -773,7 +808,7 @@ export default function AppAssistenteProPage() {
                 </p>
               </div>
 
-              {/* Observações Opcionais */}
+              {/* Observações */}
               <div className="space-y-2">
                 <label htmlFor="observacoes" className={labelCls}>
                   Observações adicionais <span className="text-[#94A3B8] font-normal">(opcional)</span>
@@ -790,13 +825,11 @@ export default function AppAssistenteProPage() {
                 />
               </div>
 
-              {/* Aviso de responsabilidade no formulário */}
               <div className="p-4 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-xl text-sm text-[#CBD5E1] leading-relaxed flex items-start gap-2">
                 <span className="shrink-0 mt-0.5 text-[#FACC15]"><IconAlert /></span>
                 <span>O rascunho gerado é um <strong>texto inicial descritivo de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado, inferido ou recalculado automaticamente.</span>
               </div>
 
-              {/* Botão de envio */}
               <button
                 type="submit"
                 disabled={generating || (dailyCount !== null && dailyCount >= DAILY_LIMIT)}
@@ -816,7 +849,6 @@ export default function AppAssistenteProPage() {
             </form>
           </section>
 
-          {/* ── Histórico de Relatórios ─────────────────────────────────── */}
           <section className="space-y-4">
             <div className="border-t border-[#1F4D5C] pt-6">
               <h2 className="text-xl font-bold text-[#F8FAFC]">Histórico de relatórios</h2>
@@ -875,9 +907,6 @@ export default function AppAssistenteProPage() {
         </>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          STATE: EXPIRADO
-      ══════════════════════════════════════════════════════════════════ */}
       {assistantState === 'expired' && (
         <div className="p-10 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] text-center max-w-2xl mx-auto space-y-6">
           <div className="w-20 h-20 mx-auto rounded-full bg-[#FB7185]/10 border border-[#FB7185]/20 flex items-center justify-center text-[#FB7185]">
@@ -904,9 +933,6 @@ export default function AppAssistenteProPage() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          STATE: BLOQUEADO / NUNCA ASSINOU
-      ══════════════════════════════════════════════════════════════════ */}
       {assistantState === 'blocked' && (
         <div className="p-10 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] text-center max-w-2xl mx-auto space-y-6">
           <div className="w-20 h-20 mx-auto rounded-full bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 flex items-center justify-center text-[#7DD3FC]">
@@ -961,7 +987,6 @@ export default function AppAssistenteProPage() {
         </div>
       )}
 
-      {/* ── Aviso de uso responsável ──────────────────────────────────────── */}
       <footer className="pt-4 border-t border-[#1F4D5C]">
         <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
           <strong>Aviso de uso responsável:</strong> O Assistente IA Pro gera rascunhos descritivos iniciais de apoio operacional a
@@ -972,7 +997,6 @@ export default function AppAssistenteProPage() {
         </div>
       </footer>
 
-      {/* ── Modal de Visualização Completa ───────────────────────────────── */}
       {modalReport && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 bg-[#061923]/85 backdrop-blur-sm overflow-y-auto">
           <div className="bg-[#0B2430] border border-[#1F4D5C] rounded-2xl max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl my-auto">
