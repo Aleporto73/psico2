@@ -38,7 +38,7 @@ export default function AppAssistenteGptPage() {
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const gptBuilderUrl = 'https://chat.openai.com/g/g-placeholder-psicoplanilhas-builder';
+  const gptBuilderUrl = 'https://chatgpt.com/g/g-6798ead70b948191a705512fe534fdb4-psicoplanilhas';
 
   useEffect(() => {
     checkAccess();
@@ -146,7 +146,7 @@ export default function AppAssistenteGptPage() {
             Abrir Assistente GPT
             <IconExternal />
           </button>
-          <p className="text-xs text-[#94A3B8] mt-2">O assistente abre em nova aba na OpenAI.</p>
+          <p className="text-xs text-[#94A3B8] mt-2">O assistente abre em uma nova aba no ChatGPT.</p>
         </div>
       </div>
 
