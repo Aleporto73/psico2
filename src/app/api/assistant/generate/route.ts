@@ -8,11 +8,13 @@
  * 3. Limite diário: 20 gerações por usuário por dia.
  * 4. Payload validado e higienizado (tamanho máximo dos campos).
  * 5. Chave OpenAI nunca exposta ao frontend.
+ * 6. Imagem opcional (PNG/JPG/JPEG/WEBP, até 5 MB) com validação de prefixo
+ *    data URL e estimativa de tamanho decodificado.
  */
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
-import { callOpenAI } from '@/lib/openai';
+import { callOpenAI, OpenAIContentPart, VISION_NOT_SUPPORTED } from '@/lib/openai';
 
 // Limites de segurança
 const DAILY_LIMIT = 20;
@@ -20,9 +22,70 @@ const MAX_PLANILHA_CHARS = 4000;
 const MAX_OBSERVACOES_CHARS = 2000;
 const MAX_OBJETIVO_CHARS = 500;
 
+// Limites de imagem
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_IMAGE_MIME = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
+// Aceita header "data:image/png;base64,..." (com/sem o sufixo ;base64 antes da vírgula)
+const DATA_URL_REGEX = /^data:(image\/(?:png|jpe?g|webp));base64,([A-Za-z0-9+/=]+)$/i;
+
 // Aviso obrigatório final (hardcoded no backend — não pode ser removido pelo frontend)
 const AVISO_FINAL =
   'Este texto é uma versão inicial de apoio e deve ser revisado pelo profissional responsável antes de qualquer uso formal.';
+
+// Mensagem padrão devolvida pelo modelo quando o print não puder ser lido
+const IMAGE_UNREADABLE_MSG =
+  'Não consegui ler todos os dados do print. Envie uma imagem mais nítida ou transcreva os resultados principais.';
+
+interface ValidatedImage {
+  dataUrl: string;
+  mime: string;
+  approxBytes: number;
+}
+
+/**
+ * Valida um data URL de imagem.
+ * Retorna ValidatedImage em caso de sucesso ou um objeto { error } amigável.
+ */
+function validateImage(
+  raw: string
+): { ok: true; image: ValidatedImage } | { ok: false; error: string } {
+  const trimmed = (raw || '').trim();
+  if (!trimmed) {
+    return { ok: false, error: 'Imagem vazia.' };
+  }
+
+  const match = trimmed.match(DATA_URL_REGEX);
+  if (!match) {
+    return {
+      ok: false,
+      error:
+        'Formato de imagem inválido. Aceitamos apenas PNG, JPG/JPEG ou WEBP enviados em data URL base64.',
+    };
+  }
+
+  const mime = match[1].toLowerCase();
+  if (!ALLOWED_IMAGE_MIME.has(mime)) {
+    return {
+      ok: false,
+      error: 'Tipo de imagem não suportado. Use PNG, JPG/JPEG ou WEBP.',
+    };
+  }
+
+  const b64 = match[2];
+  // Estimativa de bytes decodificados a partir do tamanho base64
+  const padding = (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
+  const approxBytes = Math.floor((b64.length * 3) / 4) - padding;
+
+  if (approxBytes > MAX_IMAGE_BYTES) {
+    const mb = (approxBytes / (1024 * 1024)).toFixed(1);
+    return {
+      ok: false,
+      error: `Imagem muito grande (${mb} MB). Limite: 5 MB.`,
+    };
+  }
+
+  return { ok: true, image: { dataUrl: trimmed, mime, approxBytes } };
+}
 
 export async function POST(request: Request) {
   try {
@@ -94,7 +157,7 @@ export async function POST(request: Request) {
     }
 
     // ── 4. Validar e higienizar payload ───────────────────────────────────────
-    let body: Record<string, string>;
+    let body: Record<string, any>;
     try {
       body = await request.json();
     } catch {
@@ -104,8 +167,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const { nome, idade, area, objetivo, planilhaData, observacoes } = body;
+    const { nome, idade, area, objetivo, planilhaData, observacoes, imageDataUrl } = body;
 
+    // Imagem é opcional — campos textuais continuam obrigatórios como antes
     if (!nome?.trim() || !area?.trim() || !objetivo?.trim() || !planilhaData?.trim()) {
       return NextResponse.json(
         {
@@ -124,8 +188,18 @@ export async function POST(request: Request) {
     const planilhaDataClean = planilhaData.trim().slice(0, MAX_PLANILHA_CHARS);
     const observacoesClean = (observacoes ?? '').trim().slice(0, MAX_OBSERVACOES_CHARS);
 
+    // Validação da imagem (opcional)
+    let validatedImage: ValidatedImage | null = null;
+    if (imageDataUrl) {
+      const v = validateImage(String(imageDataUrl));
+      if (!v.ok) {
+        return NextResponse.json({ message: v.error }, { status: 400 });
+      }
+      validatedImage = v.image;
+    }
+
     // ── 5. Construir prompt seguro ────────────────────────────────────────────
-    const systemPrompt = `Você é um assistente profissional de apoio operacional para psicólogos e psicopedagogos. Sua única função é gerar rascunhos estruturados de texto de apoio a partir dos dados brutos fornecidos pelo profissional.
+    const baseSystem = `Você é um assistente profissional de apoio operacional para psicólogos e psicopedagogos. Sua única função é gerar rascunhos estruturados de texto de apoio a partir dos dados brutos fornecidos pelo profissional.
 
 REGRAS OBRIGATÓRIAS — VIOLAÇÃO NÃO É PERMITIDA:
 1. NUNCA faça diagnósticos, hipóteses diagnósticas ou sugestões de diagnóstico.
@@ -137,7 +211,31 @@ REGRAS OBRIGATÓRIAS — VIOLAÇÃO NÃO É PERMITIDA:
 7. Estruture o texto em seções coerentes: contextualização, descrição dos dados, considerações operacionais e observações finais.
 8. Encerre SEMPRE com o parágrafo exato: "${AVISO_FINAL}"`;
 
-    const userMessage = `Profissional: ${nomeClean}
+    const visionBlock = `
+
+ANÁLISE DE IMAGEM (print de planilha/gráfico/resultado visual):
+Quando o usuário enviar um print de planilha, gráfico ou resultado visual, analise apenas o que estiver visível na imagem.
+Extraia:
+- nome da planilha/instrumento;
+- área avaliada;
+- resultados numéricos visíveis;
+- classificações visíveis;
+- padrões do gráfico;
+- observações relevantes;
+- campos vazios ou inconsistentes.
+
+Não invente dados ausentes. Não calcule escores. Não estime valores ilegíveis. Não interprete além do que a imagem permite.
+
+Se a imagem estiver parcialmente legível, gere uma versão parcial e marque cada item ilegível como: [dado não legível no print].
+
+Se a imagem estiver totalmente ilegível, inutilizável ou não contiver dados de planilha/instrumento, responda EXATAMENTE com este texto e nada mais:
+"${IMAGE_UNREADABLE_MSG}"
+
+Depois transforme os dados visíveis em rascunho profissional, com linguagem cautelosa e fechamento ético, combinando os dados visíveis com o texto fornecido pelo profissional (quando houver).`;
+
+    const systemPrompt = validatedImage ? baseSystem + visionBlock : baseSystem;
+
+    const userText = `Profissional: ${nomeClean}
 ${idadeClean ? `Idade/Faixa etária: ${idadeClean}` : ''}
 Área do relatório: ${areaClean}
 Objetivo do relatório: ${objetivoClean}
@@ -145,25 +243,59 @@ Objetivo do relatório: ${objetivoClean}
 Dados da planilha:
 ${planilhaDataClean}
 ${observacoesClean ? `\nObservações adicionais:\n${observacoesClean}` : ''}
+${validatedImage ? '\nO profissional anexou um print da planilha/gráfico. Analise a imagem em anexo seguindo as regras de ANÁLISE DE IMAGEM.' : ''}
 
 Gere o rascunho de apoio conforme as instruções do sistema.`;
+
+    // Mensagem do usuário: string puro quando não há imagem; array multimodal quando há.
+    const userContent: string | OpenAIContentPart[] = validatedImage
+      ? [
+          { type: 'text', text: userText },
+          { type: 'image_url', image_url: { url: validatedImage.dataUrl, detail: 'high' } },
+        ]
+      : userText;
 
     // ── 6. Chamar a API da OpenAI ─────────────────────────────────────────────
     let generatedText: string;
     try {
       const result = await callOpenAI([
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
+        { role: 'user', content: userContent },
       ]);
       generatedText = result.content;
     } catch (openaiErr: any) {
       console.error('OpenAI error:', openaiErr);
+
+      // Modelo configurado não suporta visão e o usuário enviou imagem
+      if (openaiErr?.message === VISION_NOT_SUPPORTED) {
+        return NextResponse.json(
+          {
+            message:
+              'O modelo atual não conseguiu analisar imagem. Envie os resultados em texto ou ajuste o modelo para visão.',
+          },
+          { status: 422 }
+        );
+      }
+
       return NextResponse.json(
         {
           message:
             'Erro ao conectar com o serviço de IA. Tente novamente em instantes.',
         },
         { status: 502 }
+      );
+    }
+
+    // Se o modelo respondeu apenas a mensagem de "imagem ilegível", devolve direto
+    // ao frontend como erro amigável e NÃO grava no histórico nem consome o limite.
+    if (validatedImage && generatedText.trim() === IMAGE_UNREADABLE_MSG) {
+      return NextResponse.json(
+        {
+          message: IMAGE_UNREADABLE_MSG,
+          daily_count: count ?? 0,
+          daily_limit: DAILY_LIMIT,
+        },
+        { status: 422 }
       );
     }
 
@@ -174,13 +306,18 @@ Gere o rascunho de apoio conforme as instruções do sistema.`;
 
     // ── 7. Salvar relatório em ai_reports ─────────────────────────────────────
     const reportTitle = `${areaClean} — ${nomeClean}`;
+    // Marca no input_text quando houve imagem (sem armazenar a imagem em si)
+    const savedInput = validatedImage
+      ? `${planilhaDataClean}\n\n[Print da planilha/gráfico anexado pelo profissional]`
+      : planilhaDataClean;
+
     const { data: savedReport, error: saveError } = await supabase
       .from('ai_reports')
       .insert({
         user_id: user.id,
         title: reportTitle,
         report_type: areaClean,
-        input_text: planilhaDataClean,
+        input_text: savedInput,
         output_text: generatedText,
       })
       .select()

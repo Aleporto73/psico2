@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -27,6 +27,11 @@ interface FormState {
   observacoes: string;
 }
 
+// ── Constantes de imagem ──────────────────────────────────────────────────────
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function formatDate(dateString: string | null | undefined) {
@@ -45,6 +50,15 @@ function formatDateTime(dateString: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+  });
+}
+
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
+    reader.readAsDataURL(file);
   });
 }
 
@@ -99,6 +113,27 @@ function IconSpark() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M12 2 9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" />
+    </svg>
+  );
+}
+
+function IconImage() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  );
+}
+
+function IconTrash() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
     </svg>
   );
 }
@@ -162,6 +197,13 @@ export default function AppAssistenteProPage() {
     planilhaData: '',
     observacoes: '',
   });
+
+  // Imagem opcional (print da planilha/gráfico)
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [imageMeta, setImageMeta] = useState<{ name: string; sizeKb: number } | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [generating, setGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [lastReport, setLastReport] = useState<AiReport | null>(null);
@@ -257,6 +299,40 @@ export default function AppAssistenteProPage() {
     setGenerateError(null);
   };
 
+  const handleImagePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImageError(null);
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const mime = file.type.toLowerCase();
+    if (!ALLOWED_IMAGE_MIME.includes(mime)) {
+      setImageError('Formato não suportado. Use PNG, JPG/JPEG ou WEBP.');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      setImageError(`Imagem muito grande (${mb} MB). Limite: 5 MB.`);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      setImageDataUrl(dataUrl);
+      setImageMeta({ name: file.name, sizeKb: Math.round(file.size / 1024) });
+    } catch (err: any) {
+      setImageError(err?.message || 'Não foi possível ler a imagem selecionada.');
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageDataUrl(null);
+    setImageMeta(null);
+    setImageError(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     setGenerating(true);
@@ -264,16 +340,22 @@ export default function AppAssistenteProPage() {
     setLastReport(null);
 
     try {
+      const payload: Record<string, any> = { ...form };
+      if (imageDataUrl) {
+        payload.imageDataUrl = imageDataUrl;
+      }
+
       const res = await fetch('/api/assistant/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
       const json = await res.json();
 
       if (!res.ok) {
         setGenerateError(json.message || 'Erro ao gerar relatório. Tente novamente.');
+        if (typeof json.daily_count === 'number') setDailyCount(json.daily_count);
         return;
       }
 
@@ -287,8 +369,9 @@ export default function AppAssistenteProPage() {
       } = await supabase.auth.getUser();
       if (user) fetchReports(user.id);
 
-      // Limpar formulário
+      // Limpar formulário e imagem
       setForm({ nome: '', idade: '', area: '', objetivo: '', planilhaData: '', observacoes: '' });
+      handleRemoveImage();
 
       // Rolar para o relatório gerado
       setTimeout(() => {
@@ -410,7 +493,7 @@ export default function AppAssistenteProPage() {
             <div>
               <h2 className="text-xl font-bold text-[#F8FAFC]">Gerar rascunho de apoio</h2>
               <p className="text-sm text-[#CBD5E1] mt-1">
-                Preencha os campos com os dados da sua planilha. Quanto mais detalhado, melhor a qualidade do rascunho.
+                Preencha os campos com os dados da sua planilha. Quanto mais detalhado, melhor a qualidade do rascunho. Você também pode anexar um print da planilha ou gráfico.
               </p>
             </div>
 
@@ -514,6 +597,84 @@ export default function AppAssistenteProPage() {
                 <p className="text-xs text-[#94A3B8] text-right">
                   {form.planilhaData.length}/4000 caracteres
                 </p>
+              </div>
+
+              {/* ── Anexar print (opcional) ─────────────────────────────── */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[#7DD3FC]"><IconImage /></span>
+                    <label htmlFor="imagePick" className={labelCls + " !text-base"}>
+                      Anexar print da planilha ou gráfico
+                    </label>
+                  </div>
+                  <span className="text-xs text-[#94A3B8] font-normal">Opcional</span>
+                </div>
+                <p className="text-sm text-[#CBD5E1] leading-relaxed">
+                  Envie um print com os resultados, tabela ou gráfico da PsicoPlanilha. PNG, JPG/JPEG ou WEBP até 5 MB.
+                </p>
+
+                {!imageDataUrl ? (
+                  <label
+                    htmlFor="imagePick"
+                    className="flex flex-col items-center justify-center w-full min-h-[140px] px-4 py-6 bg-[#0E2A38] border-2 border-dashed border-[#1F4D5C] rounded-xl cursor-pointer hover:border-[#7DD3FC] hover:bg-[#123340] transition text-center"
+                  >
+                    <span className="text-[#7DD3FC] mb-2"><IconImage /></span>
+                    <span className="text-base text-[#F8FAFC] font-semibold">
+                      Clique para selecionar uma imagem
+                    </span>
+                    <span className="text-xs text-[#94A3B8] mt-1">
+                      PNG, JPG/JPEG ou WEBP, até 5 MB
+                    </span>
+                    <input
+                      ref={fileInputRef}
+                      id="imagePick"
+                      type="file"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      onChange={handleImagePick}
+                      className="hidden"
+                    />
+                  </label>
+                ) : (
+                  <div className="p-4 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl space-y-3">
+                    <div className="flex justify-between items-start gap-3 flex-wrap">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-[#F8FAFC] truncate">
+                          {imageMeta?.name || 'Imagem anexada'}
+                        </p>
+                        {imageMeta && (
+                          <p className="text-xs text-[#94A3B8] mt-0.5">
+                            {imageMeta.sizeKb >= 1024
+                              ? `${(imageMeta.sizeKb / 1024).toFixed(1)} MB`
+                              : `${imageMeta.sizeKb} KB`}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleRemoveImage}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-[#FB7185] bg-[#FB7185]/10 hover:bg-[#FB7185]/20 border border-[#FB7185]/20 rounded-xl transition shrink-0"
+                      >
+                        <IconTrash /> Remover imagem
+                      </button>
+                    </div>
+                    <div className="rounded-lg overflow-hidden border border-[#1F4D5C] bg-[#061923] max-h-80">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageDataUrl}
+                        alt="Pré-visualização do print anexado"
+                        className="w-full h-auto max-h-80 object-contain"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {imageError && (
+                  <div className="p-3 text-sm text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl flex items-start gap-2">
+                    <span className="shrink-0 mt-0.5"><IconAlert /></span>
+                    <span>{imageError}</span>
+                  </div>
+                )}
               </div>
 
               {/* Observações Opcionais */}
