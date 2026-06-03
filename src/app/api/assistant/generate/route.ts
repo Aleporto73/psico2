@@ -8,8 +8,8 @@
  * 3. Limite diário: 20 gerações por usuário por dia.
  * 4. Payload validado e higienizado (tamanho máximo dos campos).
  * 5. Chave OpenAI nunca exposta ao frontend.
- * 6. Imagem opcional (PNG/JPG/JPEG/WEBP, até 5 MB) com validação de prefixo
- *    data URL e estimativa de tamanho decodificado.
+ * 6. Imagens opcionais (PNG/JPG/JPEG/WEBP, até 5 MB cada, máximo 4 prints).
+ * 7. Campo "Dados da planilha" é OBRIGATÓRIO apenas quando não há imagens.
  */
 
 import { NextResponse } from 'next/server';
@@ -24,8 +24,9 @@ const MAX_OBJETIVO_CHARS = 500;
 
 // Limites de imagem
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGES = 4;
 const ALLOWED_IMAGE_MIME = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
-// Aceita header "data:image/png;base64,..." (com/sem o sufixo ;base64 antes da vírgula)
+// Aceita header "data:image/png;base64,..."
 const DATA_URL_REGEX = /^data:(image\/(?:png|jpe?g|webp));base64,([A-Za-z0-9+/=]+)$/i;
 
 // Aviso obrigatório final (hardcoded no backend — não pode ser removido pelo frontend)
@@ -44,7 +45,6 @@ interface ValidatedImage {
 
 /**
  * Valida um data URL de imagem.
- * Retorna ValidatedImage em caso de sucesso ou um objeto { error } amigável.
  */
 function validateImage(
   raw: string
@@ -56,32 +56,20 @@ function validateImage(
 
   const match = trimmed.match(DATA_URL_REGEX);
   if (!match) {
-    return {
-      ok: false,
-      error:
-        'Formato de imagem inválido. Aceitamos apenas PNG, JPG/JPEG ou WEBP enviados em data URL base64.',
-    };
+    return { ok: false, error: 'Use imagens em PNG, JPG, JPEG ou WEBP.' };
   }
 
   const mime = match[1].toLowerCase();
   if (!ALLOWED_IMAGE_MIME.has(mime)) {
-    return {
-      ok: false,
-      error: 'Tipo de imagem não suportado. Use PNG, JPG/JPEG ou WEBP.',
-    };
+    return { ok: false, error: 'Use imagens em PNG, JPG, JPEG ou WEBP.' };
   }
 
   const b64 = match[2];
-  // Estimativa de bytes decodificados a partir do tamanho base64
-  const padding = (b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0);
+  const padding = b64.endsWith('==') ? 2 : b64.endsWith('=') ? 1 : 0;
   const approxBytes = Math.floor((b64.length * 3) / 4) - padding;
 
   if (approxBytes > MAX_IMAGE_BYTES) {
-    const mb = (approxBytes / (1024 * 1024)).toFixed(1);
-    return {
-      ok: false,
-      error: `Imagem muito grande (${mb} MB). Limite: 5 MB.`,
-    };
+    return { ok: false, error: 'Cada imagem deve ter no máximo 5 MB.' };
   }
 
   return { ok: true, image: { dataUrl: trimmed, mime, approxBytes } };
@@ -127,7 +115,6 @@ export async function POST(request: Request) {
     }
 
     // ── 3. Verificar limite diário ─────────────────────────────────────────────
-    // Conta gerações do usuário desde o início do dia corrente (UTC)
     const startOfDay = new Date();
     startOfDay.setUTCHours(0, 0, 0, 0);
 
@@ -167,91 +154,147 @@ export async function POST(request: Request) {
       );
     }
 
-    const { nome, idade, area, objetivo, planilhaData, observacoes, imageDataUrl } = body;
+    const { nome, idade, area, objetivo, planilhaData, observacoes } = body;
 
-    // Imagem é opcional — campos textuais continuam obrigatórios como antes
-    if (!nome?.trim() || !area?.trim() || !objetivo?.trim() || !planilhaData?.trim()) {
+    // Normaliza imagens: aceita imageDataUrls (array) ou fallback imageDataUrl (string)
+    let rawImages: string[] = [];
+    if (Array.isArray(body.imageDataUrls)) {
+      rawImages = body.imageDataUrls.filter((s: any) => typeof s === 'string' && s.trim() !== '');
+    } else if (typeof body.imageDataUrl === 'string' && body.imageDataUrl.trim() !== '') {
+      rawImages = [body.imageDataUrl];
+    }
+
+    if (rawImages.length > MAX_IMAGES) {
+      return NextResponse.json(
+        { message: 'Envie no máximo 4 prints por relatório.' },
+        { status: 400 }
+      );
+    }
+
+    // Campos sempre obrigatórios
+    if (!nome?.trim() || !idade?.trim() || !area?.trim() || !objetivo?.trim()) {
       return NextResponse.json(
         {
           message:
-            'Campos obrigatórios em falta: Nome/Identificação, Área do Relatório, Objetivo e Dados da Planilha.',
+            'Campos obrigatórios em falta: Nome/Identificação, Idade/Faixa etária, Área do Relatório e Objetivo.',
         },
+        { status: 400 }
+      );
+    }
+
+    // Campo condicional: planilhaData é obrigatório APENAS quando não há imagens
+    const planilhaDataTrim = (planilhaData ?? '').toString().trim();
+    if (rawImages.length === 0 && !planilhaDataTrim) {
+      return NextResponse.json(
+        { message: 'Envie um print da planilha ou cole os resultados no campo de dados.' },
         { status: 400 }
       );
     }
 
     // Higienização de tamanho
     const nomeClean = nome.trim().slice(0, 200);
-    const idadeClean = (idade ?? '').trim().slice(0, 50);
+    const idadeClean = idade.trim().slice(0, 50);
     const areaClean = area.trim().slice(0, 200);
     const objetivoClean = objetivo.trim().slice(0, MAX_OBJETIVO_CHARS);
-    const planilhaDataClean = planilhaData.trim().slice(0, MAX_PLANILHA_CHARS);
-    const observacoesClean = (observacoes ?? '').trim().slice(0, MAX_OBSERVACOES_CHARS);
+    const planilhaDataClean = planilhaDataTrim.slice(0, MAX_PLANILHA_CHARS);
+    const observacoesClean = ((observacoes ?? '') as string).trim().slice(0, MAX_OBSERVACOES_CHARS);
 
-    // Validação da imagem (opcional)
-    let validatedImage: ValidatedImage | null = null;
-    if (imageDataUrl) {
-      const v = validateImage(String(imageDataUrl));
+    // Valida cada imagem
+    const validatedImages: ValidatedImage[] = [];
+    for (let i = 0; i < rawImages.length; i++) {
+      const v = validateImage(rawImages[i]);
       if (!v.ok) {
-        return NextResponse.json({ message: v.error }, { status: 400 });
+        return NextResponse.json(
+          { message: `Imagem ${i + 1}: ${v.error}` },
+          { status: 400 }
+        );
       }
-      validatedImage = v.image;
+      validatedImages.push(v.image);
     }
+    const hasImages = validatedImages.length > 0;
 
     // ── 5. Construir prompt seguro ────────────────────────────────────────────
-    const baseSystem = `Você é um assistente profissional de apoio operacional para psicólogos e psicopedagogos. Sua única função é gerar rascunhos estruturados de texto de apoio a partir dos dados brutos fornecidos pelo profissional.
+    const baseSystem = `Você é um assistente profissional de APOIO OPERACIONAL para psicólogos e psicopedagogos. Sua única função é organizar os dados que o profissional já apresentou (em texto e/ou em prints da planilha) em um rascunho descritivo de apoio.
 
 REGRAS OBRIGATÓRIAS — VIOLAÇÃO NÃO É PERMITIDA:
-1. NUNCA faça diagnósticos, hipóteses diagnósticas ou sugestões de diagnóstico.
-2. NUNCA invente pontos de corte, normas, percentis ou classificações que não tenham sido fornecidos explicitamente nos dados.
+1. NUNCA faça diagnósticos, hipóteses diagnósticas, sugestões de diagnóstico, conclusões clínicas ou fechamentos diagnósticos.
+2. NUNCA invente pontos de corte, normas, percentis, T-escores ou classificações que não tenham sido fornecidos explicitamente no texto ou visíveis em algum print.
 3. NUNCA substitua o manual técnico original do instrumento. Sempre indique ao leitor que o manual original deve ser consultado.
 4. NUNCA gere um laudo clínico ou psicológico formal. O texto é um rascunho inicial de apoio.
-5. USE APENAS os dados fornecidos pelo profissional. Não extrapole nem assuma informações adicionais.
-6. Escreva em português brasileiro formal, claro e profissional.
-7. Estruture o texto em seções coerentes: contextualização, descrição dos dados, considerações operacionais e observações finais.
-8. Encerre SEMPRE com o parágrafo exato: "${AVISO_FINAL}"`;
+5. USE APENAS os dados fornecidos pelo profissional (texto digitado e/ou prints). Não extrapole, não recalcule escores, não converta gráfico em número se o número não estiver escrito, não substitua dado enviado pelo usuário por conhecimento externo.
+6. Escreva em português brasileiro formal, cauteloso e profissional.
+7. Estruture o texto em seções coerentes: contextualização, descrição dos dados informados, organização dos indicadores apresentados e observações finais.
+8. LINGUAGEM OBRIGATÓRIA — use SEMPRE termos descritivos como:
+   - "organização dos dados apresentados pelo profissional"
+   - "dados extraídos da planilha enviada"
+   - "indicadores apresentados no instrumento"
+   - "apoio à elaboração de rascunho profissional"
+   - "análise descritiva dos resultados informados"
+   - "os dados devem ser interpretados pelo profissional responsável"
+   EVITE TERMINANTEMENTE expressões como "avaliação psicológica realizada", "identificar a presença de TEA", "diagnóstico", "conclusão clínica", "o paciente apresenta transtorno", "confirmado", "indica transtorno", "compatível com diagnóstico".
+9. Quando mencionar instrumentos sensíveis (CARS-2, WISC, WAIS, Raven, Vineland, VB-MAPP e similares), inclua uma frase de moldura próxima a esses dados:
+   "Os dados abaixo organizam as informações apresentadas na planilha enviada e não substituem manual técnico, aplicação padronizada ou interpretação profissional."
+10. Encerre SEMPRE com o parágrafo exato: "${AVISO_FINAL}"`;
 
     const visionBlock = `
 
-ANÁLISE DE IMAGEM (print de planilha/gráfico/resultado visual):
-Quando o usuário enviar um print de planilha, gráfico ou resultado visual, analise apenas o que estiver visível na imagem.
-Extraia:
-- nome da planilha/instrumento;
-- área avaliada;
-- resultados numéricos visíveis;
-- classificações visíveis;
-- padrões do gráfico;
-- observações relevantes;
-- campos vazios ou inconsistentes.
+ANÁLISE DE IMAGEM — quando houver 1 ou mais prints anexados:
+O profissional pode enviar até 4 prints da MESMA aplicação. Trate todos os prints como partes do mesmo material:
+- um print pode conter a tabela;
+- outro pode conter o gráfico;
+- outro pode conter resultado/classificação;
+- outro pode conter continuação da planilha.
+Os prints são complementares — combine o que estiver visível em todos eles.
 
-Não invente dados ausentes. Não calcule escores. Não estime valores ilegíveis. Não interprete além do que a imagem permite.
+Extraia apenas o que estiver VISÍVEL e organize internamente nesta estrutura antes de redigir o rascunho:
+Dados extraídos dos prints:
+- Planilha/instrumento:
+- Pontuação total:
+- Classificação textual visível:
+- Percentil visível:
+- T-escore visível:
+- Outros indicadores visíveis:
+- Subescalas/domínios visíveis:
+- Dados não legíveis:
 
-Se a imagem estiver parcialmente legível, gere uma versão parcial e marque cada item ilegível como: [dado não legível no print].
+Regras de leitura dos prints:
+- Não invente valores ausentes.
+- Não recalcule escores.
+- Não estime número ilegível.
+- Não converta gráfico em número se o número não estiver escrito.
+- Não substitua dado enviado pelo usuário por conhecimento externo.
+- Se algo não estiver visível, escreva [dado não legível no print].
+- Se houver conflito entre o texto digitado pelo profissional e o que o print mostra, mencione a divergência e peça confirmação — salvo se o profissional já tiver indicado nas Observações que o texto digitado é o valor correto.
 
-Se a imagem estiver totalmente ilegível, inutilizável ou não contiver dados de planilha/instrumento, responda EXATAMENTE com este texto e nada mais:
+Se TODOS os prints estiverem ilegíveis, inutilizáveis ou não contiverem dados de planilha/instrumento, responda EXATAMENTE com este texto e nada mais:
 "${IMAGE_UNREADABLE_MSG}"
 
-Depois transforme os dados visíveis em rascunho profissional, com linguagem cautelosa e fechamento ético, combinando os dados visíveis com o texto fornecido pelo profissional (quando houver).`;
+Depois transforme os dados visíveis (combinados com o texto digitado, quando houver) em rascunho descritivo de apoio operacional, com linguagem cautelosa e fechamento ético.`;
 
-    const systemPrompt = validatedImage ? baseSystem + visionBlock : baseSystem;
+    const systemPrompt = hasImages ? baseSystem + visionBlock : baseSystem;
+
+    const printsLabel = hasImages
+      ? `\nO profissional anexou ${validatedImages.length} ${validatedImages.length === 1 ? 'print' : 'prints'} da planilha/gráfico. Analise ${validatedImages.length === 1 ? 'a imagem em anexo' : 'todas as imagens em anexo'} seguindo as regras de ANÁLISE DE IMAGEM.`
+      : '';
 
     const userText = `Profissional: ${nomeClean}
-${idadeClean ? `Idade/Faixa etária: ${idadeClean}` : ''}
+Idade/Faixa etária: ${idadeClean}
 Área do relatório: ${areaClean}
 Objetivo do relatório: ${objetivoClean}
 
-Dados da planilha:
-${planilhaDataClean}
-${observacoesClean ? `\nObservações adicionais:\n${observacoesClean}` : ''}
-${validatedImage ? '\nO profissional anexou um print da planilha/gráfico. Analise a imagem em anexo seguindo as regras de ANÁLISE DE IMAGEM.' : ''}
+${planilhaDataClean ? `Dados da planilha (digitados pelo profissional):\n${planilhaDataClean}` : 'Dados da planilha digitados: nenhum (o profissional escolheu enviar apenas os prints).'}
+${observacoesClean ? `\nObservações adicionais:\n${observacoesClean}` : ''}${printsLabel}
 
-Gere o rascunho de apoio conforme as instruções do sistema.`;
+Gere o rascunho descritivo de apoio conforme as instruções do sistema.`;
 
-    // Mensagem do usuário: string puro quando não há imagem; array multimodal quando há.
-    const userContent: string | OpenAIContentPart[] = validatedImage
+    // Mensagem do usuário: string pura sem imagem; array multimodal quando há imagens.
+    const userContent: string | OpenAIContentPart[] = hasImages
       ? [
           { type: 'text', text: userText },
-          { type: 'image_url', image_url: { url: validatedImage.dataUrl, detail: 'high' } },
+          ...validatedImages.map<OpenAIContentPart>((img) => ({
+            type: 'image_url',
+            image_url: { url: img.dataUrl, detail: 'high' },
+          })),
         ]
       : userText;
 
@@ -266,7 +309,6 @@ Gere o rascunho de apoio conforme as instruções do sistema.`;
     } catch (openaiErr: any) {
       console.error('OpenAI error:', openaiErr);
 
-      // Modelo configurado não suporta visão e o usuário enviou imagem
       if (openaiErr?.message === VISION_NOT_SUPPORTED) {
         return NextResponse.json(
           {
@@ -288,7 +330,7 @@ Gere o rascunho de apoio conforme as instruções do sistema.`;
 
     // Se o modelo respondeu apenas a mensagem de "imagem ilegível", devolve direto
     // ao frontend como erro amigável e NÃO grava no histórico nem consome o limite.
-    if (validatedImage && generatedText.trim() === IMAGE_UNREADABLE_MSG) {
+    if (hasImages && generatedText.trim() === IMAGE_UNREADABLE_MSG) {
       return NextResponse.json(
         {
           message: IMAGE_UNREADABLE_MSG,
@@ -306,10 +348,12 @@ Gere o rascunho de apoio conforme as instruções do sistema.`;
 
     // ── 7. Salvar relatório em ai_reports ─────────────────────────────────────
     const reportTitle = `${areaClean} — ${nomeClean}`;
-    // Marca no input_text quando houve imagem (sem armazenar a imagem em si)
-    const savedInput = validatedImage
-      ? `${planilhaDataClean}\n\n[Print da planilha/gráfico anexado pelo profissional]`
-      : planilhaDataClean;
+    // Marca no input_text quantos prints foram usados (sem armazenar imagens em si)
+    const printsMarker = hasImages
+      ? `\n\n[${validatedImages.length} ${validatedImages.length === 1 ? 'print anexado' : 'prints anexados'} pelo profissional]`
+      : '';
+    const savedInput =
+      (planilhaDataClean || (hasImages ? '(sem dados digitados — apenas prints)' : '')) + printsMarker;
 
     const { data: savedReport, error: saveError } = await supabase
       .from('ai_reports')
@@ -325,7 +369,6 @@ Gere o rascunho de apoio conforme as instruções do sistema.`;
 
     if (saveError || !savedReport) {
       console.error('Error saving report:', saveError);
-      // Retornar texto mesmo sem salvar (degradação graceful)
       return NextResponse.json({
         message: 'Relatório gerado, mas não foi possível salvar no histórico.',
         report: {

@@ -27,9 +27,17 @@ interface FormState {
   observacoes: string;
 }
 
+interface AttachedImage {
+  id: string;
+  name: string;
+  sizeBytes: number;
+  dataUrl: string;
+}
+
 // ── Constantes de imagem ──────────────────────────────────────────────────────
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const MAX_IMAGES = 4;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -53,6 +61,12 @@ function formatDateTime(dateString: string) {
   });
 }
 
+function formatSize(bytes: number) {
+  if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${bytes} B`;
+}
+
 function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -60,6 +74,10 @@ function readFileAsDataUrl(file: File): Promise<string> {
     reader.onerror = () => reject(new Error('Não foi possível ler o arquivo.'));
     reader.readAsDataURL(file);
   });
+}
+
+function makeId() {
+  return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
 // ── SVG Icons ──────────────────────────────────────────────────────────────────
@@ -123,6 +141,15 @@ function IconImage() {
       <rect x="3" y="3" width="18" height="18" rx="2" />
       <circle cx="8.5" cy="8.5" r="1.5" />
       <polyline points="21 15 16 10 5 21" />
+    </svg>
+  );
+}
+
+function IconPlus() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   );
 }
@@ -198,9 +225,8 @@ export default function AppAssistenteProPage() {
     observacoes: '',
   });
 
-  // Imagem opcional (print da planilha/gráfico)
-  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
-  const [imageMeta, setImageMeta] = useState<{ name: string; sizeKb: number } | null>(null);
+  // Imagens anexadas (até 4)
+  const [images, setImages] = useState<AttachedImage[]>([]);
   const [imageError, setImageError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -299,36 +325,51 @@ export default function AppAssistenteProPage() {
     setGenerateError(null);
   };
 
-  const handleImagePick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     setImageError(null);
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const fileList = e.target.files;
+    if (!fileList || fileList.length === 0) return;
 
-    const mime = file.type.toLowerCase();
-    if (!ALLOWED_IMAGE_MIME.includes(mime)) {
-      setImageError('Formato não suportado. Use PNG, JPG/JPEG ou WEBP.');
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-    if (file.size > MAX_IMAGE_BYTES) {
-      const mb = (file.size / (1024 * 1024)).toFixed(1);
-      setImageError(`Imagem muito grande (${mb} MB). Limite: 5 MB.`);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+    const files = Array.from(fileList);
+
+    // Reseta o input para permitir reselecionar o mesmo arquivo se removido
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    if (images.length + files.length > MAX_IMAGES) {
+      setImageError('Envie no máximo 4 prints por relatório.');
       return;
     }
 
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      setImageDataUrl(dataUrl);
-      setImageMeta({ name: file.name, sizeKb: Math.round(file.size / 1024) });
-    } catch (err: any) {
-      setImageError(err?.message || 'Não foi possível ler a imagem selecionada.');
+    const next: AttachedImage[] = [];
+    for (const file of files) {
+      const mime = (file.type || '').toLowerCase();
+      if (!ALLOWED_IMAGE_MIME.includes(mime)) {
+        setImageError('Use imagens em PNG, JPG, JPEG ou WEBP.');
+        return;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        setImageError('Cada imagem deve ter no máximo 5 MB.');
+        return;
+      }
+      try {
+        const dataUrl = await readFileAsDataUrl(file);
+        next.push({ id: makeId(), name: file.name, sizeBytes: file.size, dataUrl });
+      } catch (err: any) {
+        setImageError(err?.message || 'Não foi possível ler uma das imagens selecionadas.');
+        return;
+      }
     }
+
+    setImages((prev) => [...prev, ...next]);
   };
 
-  const handleRemoveImage = () => {
-    setImageDataUrl(null);
-    setImageMeta(null);
+  const handleRemoveImage = (id: string) => {
+    setImages((prev) => prev.filter((img) => img.id !== id));
+    setImageError(null);
+  };
+
+  const handleClearImages = () => {
+    setImages([]);
     setImageError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -339,10 +380,24 @@ export default function AppAssistenteProPage() {
     setGenerateError(null);
     setLastReport(null);
 
+    // Validação client-side condicional:
+    // sempre obrigatórios: nome, idade, area, objetivo
+    // planilhaData só é obrigatória quando NÃO há imagens.
+    if (!form.nome.trim() || !form.idade.trim() || !form.area.trim() || !form.objetivo.trim()) {
+      setGenerateError('Preencha Nome, Idade, Área e Objetivo do relatório.');
+      setGenerating(false);
+      return;
+    }
+    if (images.length === 0 && !form.planilhaData.trim()) {
+      setGenerateError('Envie um print da planilha ou cole os resultados no campo de dados.');
+      setGenerating(false);
+      return;
+    }
+
     try {
       const payload: Record<string, any> = { ...form };
-      if (imageDataUrl) {
-        payload.imageDataUrl = imageDataUrl;
+      if (images.length > 0) {
+        payload.imageDataUrls = images.map((img) => img.dataUrl);
       }
 
       const res = await fetch('/api/assistant/generate', {
@@ -359,21 +414,18 @@ export default function AppAssistenteProPage() {
         return;
       }
 
-      // Sucesso — mostrar relatório gerado e atualizar histórico
       setLastReport(json.report);
       if (json.daily_count !== undefined) setDailyCount(json.daily_count);
 
-      // Recarregar lista de relatórios
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) fetchReports(user.id);
 
-      // Limpar formulário e imagem
+      // Limpar formulário e imagens
       setForm({ nome: '', idade: '', area: '', objetivo: '', planilhaData: '', observacoes: '' });
-      handleRemoveImage();
+      handleClearImages();
 
-      // Rolar para o relatório gerado
       setTimeout(() => {
         document.getElementById('last-report')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -412,6 +464,8 @@ export default function AppAssistenteProPage() {
   const inputCls = "w-full px-4 py-3 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:ring-1 focus:ring-[#7DD3FC] focus:border-[#7DD3FC] transition";
   const labelCls = "block text-sm font-bold text-[#CBD5E1]";
 
+  const canAddMoreImages = images.length < MAX_IMAGES;
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
@@ -419,7 +473,7 @@ export default function AppAssistenteProPage() {
       <div>
         <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Assistente IA Pro</h1>
         <p className="text-[#CBD5E1] text-base mt-1">
-          Geração inteligente de rascunhos de apoio a partir dos dados das suas planilhas profissionais.
+          Geração inteligente de rascunhos descritivos de apoio a partir das suas planilhas profissionais — por texto, por print ou ambos.
         </p>
       </div>
 
@@ -493,11 +547,11 @@ export default function AppAssistenteProPage() {
             <div>
               <h2 className="text-xl font-bold text-[#F8FAFC]">Gerar rascunho de apoio</h2>
               <p className="text-sm text-[#CBD5E1] mt-1">
-                Preencha os campos com os dados da sua planilha. Quanto mais detalhado, melhor a qualidade do rascunho. Você também pode anexar um print da planilha ou gráfico.
+                Preencha os campos básicos. Você pode colar os dados, anexar prints da planilha, ou ambos.
               </p>
             </div>
 
-            <form onSubmit={handleGenerate} className="space-y-5" id="generate-form">
+            <form onSubmit={handleGenerate} className="space-y-5" id="generate-form" noValidate>
 
               {/* Linha 1: Nome + Idade */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -519,7 +573,7 @@ export default function AppAssistenteProPage() {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="idade" className={labelCls}>
-                    Idade / Faixa etária
+                    Idade / Faixa etária <span className="text-[#FB7185]">*</span>
                   </label>
                   <input
                     id="idade"
@@ -529,6 +583,7 @@ export default function AppAssistenteProPage() {
                     onChange={handleFormChange}
                     placeholder="Ex.: 8 anos, Adulto 25-30 anos"
                     maxLength={50}
+                    required
                     className={inputCls}
                   />
                 </div>
@@ -578,94 +633,109 @@ export default function AppAssistenteProPage() {
                 />
               </div>
 
-              {/* Dados da Planilha */}
-              <div className="space-y-2">
-                <label htmlFor="planilhaData" className={labelCls}>
-                  Dados da planilha <span className="text-[#FB7185]">*</span>
-                </label>
-                <textarea
-                  id="planilhaData"
-                  name="planilhaData"
-                  value={form.planilhaData}
-                  onChange={handleFormChange}
-                  placeholder="Cole aqui os resultados brutos da planilha: pontuações, percentis fornecidos, categorias, subtestes, etc."
-                  rows={7}
-                  maxLength={4000}
-                  required
-                  className={inputCls + " resize-y font-mono leading-relaxed"}
-                />
-                <p className="text-xs text-[#94A3B8] text-right">
-                  {form.planilhaData.length}/4000 caracteres
-                </p>
-              </div>
-
-              {/* ── Anexar print (opcional) ─────────────────────────────── */}
-              <div className="space-y-2">
+              {/* ── Anexar prints (opcional, até 4) ─────────────────────── */}
+              <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
                     <span className="text-[#7DD3FC]"><IconImage /></span>
-                    <label htmlFor="imagePick" className={labelCls + " !text-base"}>
+                    <span className={labelCls + " !text-base"}>
                       Anexar print da planilha ou gráfico
-                    </label>
+                    </span>
                   </div>
-                  <span className="text-xs text-[#94A3B8] font-normal">Opcional</span>
+                  <span className="text-xs text-[#94A3B8] font-normal">
+                    {images.length}/{MAX_IMAGES} prints
+                  </span>
                 </div>
                 <p className="text-sm text-[#CBD5E1] leading-relaxed">
-                  Envie um print com os resultados, tabela ou gráfico da PsicoPlanilha. PNG, JPG/JPEG ou WEBP até 5 MB.
+                  Você pode enviar até 4 prints da planilha, tabela ou gráfico. Se os prints estiverem legíveis, o campo de dados pode ficar em branco.
                 </p>
 
-                {!imageDataUrl ? (
+                {/* Lista de imagens anexadas */}
+                {images.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {images.map((img, idx) => (
+                      <div key={img.id} className="p-3 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl space-y-2">
+                        <div className="flex justify-between items-start gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-[#F8FAFC] truncate">
+                              {idx + 1}. {img.name}
+                            </p>
+                            <p className="text-xs text-[#94A3B8] mt-0.5">{formatSize(img.sizeBytes)}</p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(img.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#FB7185] bg-[#FB7185]/10 hover:bg-[#FB7185]/20 border border-[#FB7185]/20 rounded-lg transition shrink-0"
+                            aria-label={`Remover print ${idx + 1}`}
+                          >
+                            <IconTrash /> Remover
+                          </button>
+                        </div>
+                        <div className="rounded-lg overflow-hidden border border-[#1F4D5C] bg-[#061923] max-h-56">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={img.dataUrl}
+                            alt={`Pré-visualização do print ${idx + 1}`}
+                            className="w-full h-auto max-h-56 object-contain"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Botão Adicionar print (dropzone quando vazio) */}
+                {images.length === 0 ? (
                   <label
                     htmlFor="imagePick"
                     className="flex flex-col items-center justify-center w-full min-h-[140px] px-4 py-6 bg-[#0E2A38] border-2 border-dashed border-[#1F4D5C] rounded-xl cursor-pointer hover:border-[#7DD3FC] hover:bg-[#123340] transition text-center"
                   >
                     <span className="text-[#7DD3FC] mb-2"><IconImage /></span>
                     <span className="text-base text-[#F8FAFC] font-semibold">
-                      Clique para selecionar uma imagem
+                      Clique para adicionar prints
                     </span>
                     <span className="text-xs text-[#94A3B8] mt-1">
-                      PNG, JPG/JPEG ou WEBP, até 5 MB
+                      PNG, JPG/JPEG ou WEBP — até 5 MB por imagem
                     </span>
                     <input
                       ref={fileInputRef}
                       id="imagePick"
                       type="file"
                       accept="image/png,image/jpeg,image/jpg,image/webp"
-                      onChange={handleImagePick}
+                      multiple
+                      onChange={handleAddImages}
                       className="hidden"
                     />
                   </label>
                 ) : (
-                  <div className="p-4 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl space-y-3">
-                    <div className="flex justify-between items-start gap-3 flex-wrap">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-[#F8FAFC] truncate">
-                          {imageMeta?.name || 'Imagem anexada'}
-                        </p>
-                        {imageMeta && (
-                          <p className="text-xs text-[#94A3B8] mt-0.5">
-                            {imageMeta.sizeKb >= 1024
-                              ? `${(imageMeta.sizeKb / 1024).toFixed(1)} MB`
-                              : `${imageMeta.sizeKb} KB`}
-                          </p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-semibold text-[#FB7185] bg-[#FB7185]/10 hover:bg-[#FB7185]/20 border border-[#FB7185]/20 rounded-xl transition shrink-0"
-                      >
-                        <IconTrash /> Remover imagem
-                      </button>
-                    </div>
-                    <div className="rounded-lg overflow-hidden border border-[#1F4D5C] bg-[#061923] max-h-80">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={imageDataUrl}
-                        alt="Pré-visualização do print anexado"
-                        className="w-full h-auto max-h-80 object-contain"
+                  <div className="flex flex-wrap gap-3">
+                    <label
+                      htmlFor="imagePick"
+                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl border transition ${
+                        canAddMoreImages
+                          ? 'bg-[#0E2A38] hover:bg-[#123340] text-[#7DD3FC] border-[#7DD3FC]/40 cursor-pointer'
+                          : 'bg-[#0E2A38] text-[#94A3B8] border-[#1F4D5C] cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      <IconPlus /> Adicionar print
+                      <input
+                        ref={fileInputRef}
+                        id="imagePick"
+                        type="file"
+                        accept="image/png,image/jpeg,image/jpg,image/webp"
+                        multiple
+                        onChange={handleAddImages}
+                        disabled={!canAddMoreImages}
+                        className="hidden"
                       />
-                    </div>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleClearImages}
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-[#CBD5E1] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C] rounded-xl transition"
+                    >
+                      <IconTrash /> Remover todas
+                    </button>
                   </div>
                 )}
 
@@ -675,6 +745,32 @@ export default function AppAssistenteProPage() {
                     <span>{imageError}</span>
                   </div>
                 )}
+              </div>
+
+              {/* Dados da Planilha — condicionalmente obrigatório */}
+              <div className="space-y-2">
+                <label htmlFor="planilhaData" className={labelCls}>
+                  Dados da planilha{' '}
+                  {images.length === 0 ? (
+                    <span className="text-[#FB7185]">*</span>
+                  ) : (
+                    <span className="text-[#94A3B8] font-normal">(opcional — você anexou prints)</span>
+                  )}
+                </label>
+                <textarea
+                  id="planilhaData"
+                  name="planilhaData"
+                  value={form.planilhaData}
+                  onChange={handleFormChange}
+                  placeholder="Cole aqui os resultados da planilha ou envie um print acima. Se anexar um print legível, este campo pode ficar em branco."
+                  rows={7}
+                  maxLength={4000}
+                  required={images.length === 0}
+                  className={inputCls + " resize-y font-mono leading-relaxed"}
+                />
+                <p className="text-xs text-[#94A3B8] text-right">
+                  {form.planilhaData.length}/4000 caracteres
+                </p>
               </div>
 
               {/* Observações Opcionais */}
@@ -697,7 +793,7 @@ export default function AppAssistenteProPage() {
               {/* Aviso de responsabilidade no formulário */}
               <div className="p-4 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-xl text-sm text-[#CBD5E1] leading-relaxed flex items-start gap-2">
                 <span className="shrink-0 mt-0.5 text-[#FACC15]"><IconAlert /></span>
-                <span>O rascunho gerado é um <strong>texto inicial de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado ou inferido automaticamente.</span>
+                <span>O rascunho gerado é um <strong>texto inicial descritivo de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado, inferido ou recalculado automaticamente.</span>
               </div>
 
               {/* Botão de envio */}
@@ -868,8 +964,8 @@ export default function AppAssistenteProPage() {
       {/* ── Aviso de uso responsável ──────────────────────────────────────── */}
       <footer className="pt-4 border-t border-[#1F4D5C]">
         <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
-          <strong>Aviso de uso responsável:</strong> O Assistente IA Pro gera rascunhos iniciais de apoio operacional a
-          partir dos dados inseridos pelo profissional. O texto gerado deve ser minuciosamente revisado, completado e
+          <strong>Aviso de uso responsável:</strong> O Assistente IA Pro gera rascunhos descritivos iniciais de apoio operacional a
+          partir dos dados inseridos pelo profissional (texto e/ou prints). O texto gerado deve ser minuciosamente revisado, completado e
           interpretado pelo profissional responsável antes de qualquer uso formal, exigindo a posse e conformidade com
           o manual técnico original do instrumento utilizado. Nenhuma funcionalidade do Assistente IA Pro substitui a
           avaliação, diagnóstico ou interpretação de um profissional qualificado.
@@ -880,7 +976,6 @@ export default function AppAssistenteProPage() {
       {modalReport && (
         <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 bg-[#061923]/85 backdrop-blur-sm overflow-y-auto">
           <div className="bg-[#0B2430] border border-[#1F4D5C] rounded-2xl max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl my-auto">
-            {/* Header do modal */}
             <div className="flex justify-between items-start gap-4 border-b border-[#1F4D5C] pb-4">
               <div className="min-w-0">
                 <h3 className="text-base font-bold text-[#F8FAFC] truncate">
@@ -905,7 +1000,6 @@ export default function AppAssistenteProPage() {
               </div>
             </div>
 
-            {/* Conteúdo do relatório */}
             <div className="max-h-[60vh] overflow-y-auto">
               <pre className="text-sm text-[#CBD5E1] leading-relaxed whitespace-pre-wrap font-sans">
                 {modalReport.output_text}
