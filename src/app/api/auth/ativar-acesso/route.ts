@@ -7,8 +7,8 @@ export async function POST(request: Request) {
 
     if (!email || typeof email !== 'string') {
       return NextResponse.json(
-        { message: 'Se este e-mail estiver cadastrado, você receberá um link de ativação.' },
-        { status: 200 }
+        { message: 'Informe o e-mail usado na compra.' },
+        { status: 400 }
       );
     }
 
@@ -24,15 +24,22 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Error fetching profile during activation check:', error);
-      // Fail silently to keep response neutral
       return NextResponse.json(
-        { message: 'Se este e-mail estiver cadastrado, você receberá um link de ativação.' },
-        { status: 200 }
+        { message: 'Não foi possível verificar o e-mail. Tente novamente.' },
+        { status: 500 }
       );
     }
 
-    // 2. If profile exists and is active, trigger native Supabase resetPasswordForEmail
-    if (profile && profile.status === 'active') {
+    // 2. If profile does NOT exist, return clear error
+    if (!profile) {
+      return NextResponse.json(
+        { message: 'Não encontramos esse e-mail. Verifique se digitou o mesmo e-mail usado na compra.' },
+        { status: 404 }
+      );
+    }
+
+    // 3. If profile exists and is active, trigger native Supabase resetPasswordForEmail
+    if (profile.status === 'active') {
       const origin = new URL(request.url).origin;
       const redirectTo = `${origin}/definir-senha`;
 
@@ -47,16 +54,16 @@ export async function POST(request: Request) {
       }
     }
 
-    // Always return neutral success message
+    // 4. Return success
     return NextResponse.json(
-      { message: 'Se este e-mail estiver cadastrado, você receberá um link de ativação.' },
+      { message: 'Link enviado com sucesso.' },
       { status: 200 }
     );
   } catch (err) {
-    console.error('Fatal error in activar-acesso API:', err);
+    console.error('Fatal error in ativar-acesso API:', err);
     return NextResponse.json(
-      { message: 'Se este e-mail estiver cadastrado, você receberá um link de ativação.' },
-      { status: 200 }
+      { message: 'Não foi possível enviar o link. Tente novamente.' },
+      { status: 500 }
     );
   }
 }

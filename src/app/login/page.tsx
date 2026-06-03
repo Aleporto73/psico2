@@ -21,7 +21,7 @@ function LoginContent() {
     if (errorParam === 'blocked') {
       setErrorMsg('Acesso bloqueado. Entre em contato com o suporte.');
     } else if (errorParam === 'no_profile') {
-      setErrorMsg('Perfil de usuário não encontrado. Entre em contato com o suporte.');
+      setErrorMsg('Perfil não encontrado. Entre em contato com o suporte.');
     }
 
     const successParam = searchParams.get('success');
@@ -46,12 +46,12 @@ function LoginContent() {
       });
 
       if (authError) {
-        throw new Error('Não foi possível entrar com esses dados. Verifique seu e-mail e senha ou use a opção de recuperação.');
+        throw new Error('E-mail ou senha incorretos. Verifique os dados ou use "Esqueci minha senha".');
       }
 
       const user = data.user;
       if (!user) {
-        throw new Error('Usuário inválido.');
+        throw new Error('E-mail ou senha incorretos. Verifique os dados ou use "Esqueci minha senha".');
       }
 
       // 2. Fetch profile status and role
@@ -63,7 +63,7 @@ function LoginContent() {
 
       if (profileError || !profile) {
         await supabase.auth.signOut();
-        throw new Error('Perfil de usuário não encontrado.');
+        throw new Error('Perfil não encontrado. Entre em contato com o suporte.');
       }
 
       if (profile.status !== 'active') {
@@ -85,57 +85,57 @@ function LoginContent() {
         router.push('/app');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Erro ao realizar login.');
+      setErrorMsg(err.message || 'E-mail ou senha incorretos. Verifique os dados ou use "Esqueci minha senha".');
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-100">
-      <div className="w-full max-w-md p-8 space-y-6 bg-slate-900/60 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-800/80">
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#061923] text-[#F8FAFC]">
+      <div className="w-full max-w-md p-8 space-y-6 bg-[#0B2430] backdrop-blur-md rounded-2xl shadow-2xl border border-[#1F4D5C]">
         
-        {/* Title / Logo */}
+        {/* Title */}
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-amber-400 via-amber-200 to-amber-400 bg-clip-text text-transparent">
-            PsicoPlanilhas 2.0
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#F8FAFC]">
+            Entrar na plataforma
           </h1>
-          <p className="text-slate-400 text-sm">
-            Área de membros para planilhas profissionais e apoio operacional.
+          <p className="text-[#CBD5E1] text-base">
+            Acesse suas planilhas e materiais.
           </p>
         </div>
 
         {/* Feedback Messages */}
         {errorMsg && (
-          <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">
+          <div className="p-4 text-base font-medium text-[#FF3B6B] bg-[#FF3B6B]/10 border border-[#FF3B6B]/20 rounded-xl text-center">
             {errorMsg}
           </div>
         )}
 
         {infoMsg && (
-          <div className="p-3 text-sm text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-lg">
+          <div className="p-4 text-base font-medium text-[#38DDF8] bg-[#38DDF8]/10 border border-[#38DDF8]/20 rounded-xl text-center">
             {infoMsg}
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">E-mail</label>
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-[#CBD5E1]">E-mail</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="seu-email@provedor.com"
-              className="w-full px-4 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50 transition duration-200"
+              placeholder="exemplo@email.com"
+              className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
             />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Senha</label>
-              <Link href="/esqueci-senha" className="text-xs text-amber-400 hover:text-amber-300 transition">
-                Esqueceu a senha?
+              <label className="text-sm font-bold text-[#CBD5E1]">Senha</label>
+              <Link href="/esqueci-senha" className="text-sm text-[#38DDF8] hover:text-[#22D3EE] transition">
+                Esqueci minha senha
               </Link>
             </div>
             <input
@@ -144,33 +144,41 @@ function LoginContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2 bg-slate-950/80 border border-slate-800 rounded-lg text-slate-100 focus:outline-none focus:border-amber-500/50 transition duration-200"
+              className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#38DDF8] focus:ring-1 focus:ring-[#38DDF8] transition duration-200"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-amber-500 hover:bg-amber-400 disabled:bg-slate-800 disabled:text-slate-500 text-slate-950 font-bold rounded-lg transition duration-200 shadow-md shadow-amber-500/10"
+            className="w-full py-4 text-base font-bold bg-[#38DDF8] text-[#061923] hover:bg-[#22D3EE] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] rounded-xl transition duration-200 shadow-md shadow-[#38DDF8]/15 flex items-center justify-center gap-2"
           >
-            {loading ? 'Entrando...' : 'Entrar na Plataforma'}
+            {loading ? (
+              <>
+                <span className="w-5 h-5 border-2 border-[#061923]/30 border-t-[#061923] rounded-full animate-spin" />
+                Entrando...
+              </>
+            ) : (
+              'Entrar'
+            )}
           </button>
         </form>
 
-        <div className="border-t border-slate-800/80 pt-4 text-center">
-          <p className="text-sm text-slate-400">
-            Cliente antigo e ainda não ativou?
+        {/* Activation Block */}
+        <div className="border-t border-[#1F4D5C] pt-5 text-center space-y-3">
+          <p className="text-base text-[#CBD5E1]">
+            Ainda não criou sua senha?
           </p>
           <Link
             href="/ativar-acesso"
-            className="inline-block mt-2 text-sm font-semibold text-amber-400 hover:text-amber-300 transition underline underline-offset-4"
+            className="inline-block w-full py-3.5 text-base font-bold text-[#38DDF8] bg-[#0E2A38] border border-[#1F4D5C] hover:border-[#38DDF8] rounded-xl transition duration-200 text-center"
           >
-            Ativar meu acesso vitalício
+            Ativar meu acesso
           </Link>
         </div>
       </div>
       
-      <div className="mt-8 text-center text-xs text-slate-600 max-w-sm">
+      <div className="mt-8 text-center text-xs text-[#94A3B8]/60 max-w-sm">
         Esta plataforma é um recurso de apoio operacional. Exige o uso do manual original e não substitui avaliação profissional.
       </div>
     </div>
@@ -180,8 +188,11 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        Carregando...
+      <div className="flex min-h-screen items-center justify-center bg-[#061923] text-[#F8FAFC]">
+        <div className="text-center space-y-3">
+          <div className="w-8 h-8 border-3 border-[#1F4D5C] border-t-[#38DDF8] rounded-full animate-spin mx-auto" />
+          <p className="text-[#CBD5E1]">Carregando...</p>
+        </div>
       </div>
     }>
       <LoginContent />
