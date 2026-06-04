@@ -18,7 +18,7 @@ interface AiReport {
   created_at: string;
 }
 
-type ReportType = 'family' | 'school' | 'technical' | 'internal' | 'three_versions';
+type ReportType = 'family' | 'school' | 'technical' | 'internal';
 
 interface FormState {
   nome: string;
@@ -48,7 +48,6 @@ const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; hint: strin
   { value: 'school',         label: 'Escola',           hint: 'Objetivo, pedagógico, com recomendações para sala de aula.' },
   { value: 'technical',      label: 'Técnico',          hint: 'Profissional, com estrutura de relatório descritivo.' },
   { value: 'internal',       label: 'Registro interno', hint: 'Curto e direto, estilo prontuário/registro.' },
-  { value: 'three_versions', label: 'Gerar 3 versões',  hint: 'Três blocos: Pais, Escola e Técnica.' },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

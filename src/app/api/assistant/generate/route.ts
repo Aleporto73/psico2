@@ -36,13 +36,12 @@ const IMAGE_UNREADABLE_MSG =
   'Não consegui ler todos os dados do print. Envie uma imagem mais nítida ou transcreva os resultados principais.';
 
 // ── Tipo de relatório ────────────────────────────────────────────────────────
-type ReportType = 'family' | 'school' | 'technical' | 'internal' | 'three_versions';
+type ReportType = 'family' | 'school' | 'technical' | 'internal';
 const REPORT_TYPES: ReadonlySet<ReportType> = new Set([
   'family',
   'school',
   'technical',
   'internal',
-  'three_versions',
 ]);
 
 function normalizeReportType(raw: unknown): ReportType {
@@ -57,7 +56,6 @@ const REPORT_TYPE_LABEL: Record<ReportType, string> = {
   school: 'Escola',
   technical: 'Técnico',
   internal: 'Registro interno',
-  three_versions: 'Três versões (Pais / Família, Escola, Técnica)',
 };
 
 function reportTypeBlock(type: ReportType): string {
@@ -159,40 +157,6 @@ Escreva UM texto CURTO, direto, estilo registro de evolução interna.
 - Profundidade técnica: alta na densidade dos dados, baixa em narrativa.
 - Estrutura sugerida: dados aplicados/informados (com mini-tabela se houver 3+ resultados); indicadores principais visíveis; análise breve por domínio quando couber; conduta atual; próximos passos / hipóteses descritivas a observar.
 - NÃO produza um texto longo voltado a família ou escola. NÃO emita diagnóstico fechado.`;
-    case 'three_versions':
-      return `TIPO DE RELATÓRIO: Três versões em um único output (modo benchmark — qualidade superior ao Assistente GPT Free).
-
-PADRÃO DE QUALIDADE OBRIGATÓRIO:
-- Organize os dados com mais clareza que um rascunho genérico.
-- Separe REALMENTE os públicos: linguagem, profundidade, foco e recomendações devem mudar entre os blocos.
-- Fidelidade absoluta aos números (copie como aparecem; não recalcule).
-- Cada versão tem FINALIDADE DIFERENTE — não repita o mesmo texto nos três blocos.
-
-FORMATO OBRIGATÓRIO — gere EXATAMENTE estes blocos, na ordem, com cabeçalhos em negrito e linha em branco entre eles:
-
-**Dados extraídos dos prints / texto**
-(Use o gabarito da ANÁLISE DE IMAGEM. Se houver pelo menos 3 resultados, inclua aqui também uma TABELA MARKDOWN com Área/Processo, Resultado, Percentil/Escore, Classificação, Observação. Marque [dado não legível no print] ou [não informado] quando aplicável.)
-
-**Versão para Pais / Família**
-Deve explicar: o que foi observado; o que isso pode significar no cotidiano; como apoiar em casa (rotina organizada, reforço positivo, atividades graduais, acolhimento emocional, acompanhamento sem pressão); sem termos técnicos em excesso; sem alarmismo.
-EVITE: "não há evidências clínicas", "descarta TEA/TDAH", "diagnóstico", "a criança não tem".
-PREFIRA: "a planilha apresentou classificação de…", "os dados indicam baixa/alta intensidade de indicadores no instrumento utilizado", "algumas áreas podem ser acompanhadas no cotidiano".
-
-**Versão para Escola**
-Deve conter: impacto funcional escolar possível; estratégias pedagógicas (instruções curtas, rotina previsível, apoio visual, tempo adicional, divisão de tarefas, mediação em transições, redução de sobrecarga, acompanhamento de tarefas com tempo); observações para sala. Não transforme em diagnóstico escolar.
-
-**Versão Técnica / Profissional**
-Deve conter, na ordem:
-1. Tabela ou organização dos dados principais.
-2. Análise por domínio/processo (usando apenas o que os dados sustentam).
-3. Análise dos erros, se houver.
-4. Impacto funcional cauteloso.
-5. Recomendações profissionais de continuidade.
-6. Síntese cautelosa.
-
-REGRAS específicas para este modo:
-- Mantenha cada bloco objetivo e útil; sem inflar texto, sem repetir frases entre blocos.
-- O fechamento ético obrigatório aparece UMA ÚNICA VEZ ao final do output completo, e NÃO dentro de cada versão.`;
   }
 }
 
@@ -385,7 +349,7 @@ export async function POST(request: Request) {
 PADRÃO DE QUALIDADE — OBRIGATÓRIO:
 - Quando houver dados de instrumentos, planilhas, tabelas ou gráficos, organize: tabela de resultados, separação por áreas/domínios/processos, identificação de pontos mais elevados e mais baixos, comentário dos erros (quando houver), tradução em impacto funcional, recomendações práticas e síntese cautelosa.
 - Não entregue resposta curta demais, genérica ou apenas uma interpretação superficial. Entregue um texto profissional aplicável.
-- Sempre que houver 3 ou mais resultados, monte uma TABELA em MARKDOWN no início do bloco técnico (ou no bloco "Dados extraídos" quando o tipo for "Gerar 3 versões").
+- Sempre que houver 3 ou mais resultados, monte uma TABELA em MARKDOWN no início do bloco técnico.
 
 REGRAS OBRIGATÓRIAS — VIOLAÇÃO NÃO É PERMITIDA:
 1. NUNCA faça diagnósticos, hipóteses diagnósticas, sugestões de diagnóstico, conclusões clínicas ou fechamentos diagnósticos.
@@ -419,7 +383,7 @@ Quando os dados forem do FDT, Five Digits Test ou Teste dos Cinco Dígitos:
 - EVITE para FDT: "comprometimento", "prejuízo clínico", "controle de impulsos preservado" (a menos que o dado esteja claro).
 - PREFIRA para FDT: "indicadores de maior lentificação", "desempenho reduzido", "ponto de atenção funcional", "melhor desempenho relativo", "maior demanda executiva", "necessidade de integração com outros dados".
 
-FECHAMENTO ÉTICO OBRIGATÓRIO — encerre o output completo com EXATAMENTE este parágrafo (uma única vez, ao final, mesmo no modo de três versões):
+FECHAMENTO ÉTICO OBRIGATÓRIO — encerre o output completo com EXATAMENTE este parágrafo (uma única vez, ao final):
 "${AVISO_FINAL}"`;
 
     const visionBlock = `
