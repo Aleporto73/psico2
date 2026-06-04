@@ -25,8 +25,7 @@ interface FormState {
   idade: string;
   area: string;
   objetivo: string;
-  planilhaData: string;
-  observacoes: string;
+  additionalNotes: string;
   reportType: ReportType;
 }
 
@@ -41,6 +40,7 @@ interface AttachedImage {
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_IMAGES = 4;
+const MAX_NOTES_CHARS = 6000;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 
 const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; hint: string }> = [
@@ -229,8 +229,7 @@ export default function AppAssistenteProPage() {
     idade: '',
     area: '',
     objetivo: '',
-    planilhaData: '',
-    observacoes: '',
+    additionalNotes: '',
     reportType: 'technical',
   });
 
@@ -398,14 +397,21 @@ export default function AppAssistenteProPage() {
       setGenerating(false);
       return;
     }
-    if (images.length === 0 && !form.planilhaData.trim()) {
-      setGenerateError('Envie um print da planilha ou cole os resultados no campo de dados.');
+    if (images.length === 0 && !form.additionalNotes.trim()) {
+      setGenerateError('Envie pelo menos um print da planilha ou escreva os dados/observações no campo adicional.');
       setGenerating(false);
       return;
     }
 
     try {
-      const payload: Record<string, any> = { ...form };
+      const payload: Record<string, any> = {
+        nome: form.nome,
+        idade: form.idade,
+        area: form.area,
+        objetivo: form.objetivo,
+        reportType: form.reportType,
+        additionalNotes: form.additionalNotes,
+      };
       if (images.length > 0) {
         payload.imageDataUrls = images.map((img) => img.dataUrl);
       }
@@ -437,8 +443,7 @@ export default function AppAssistenteProPage() {
         idade: '',
         area: '',
         objetivo: '',
-        planilhaData: '',
-        observacoes: '',
+        additionalNotes: '',
         reportType: form.reportType, // mantém escolha do tipo entre gerações
       });
       handleClearImages();
@@ -488,7 +493,7 @@ export default function AppAssistenteProPage() {
       <div>
         <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Assistente IA Pro</h1>
         <p className="text-[#CBD5E1] text-base mt-1">
-          Geração inteligente de rascunhos descritivos de apoio a partir das suas planilhas profissionais — por texto, por print ou ambos.
+          Geração inteligente de rascunhos descritivos de apoio a partir das suas planilhas profissionais — por print, por texto ou ambos.
         </p>
       </div>
 
@@ -555,7 +560,7 @@ export default function AppAssistenteProPage() {
             <div>
               <h2 className="text-xl font-bold text-[#F8FAFC]">Gerar rascunho de apoio</h2>
               <p className="text-sm text-[#CBD5E1] mt-1">
-                Preencha os campos básicos. Você pode colar os dados, anexar prints da planilha, ou ambos.
+                Preencha os campos básicos. Você pode anexar prints da planilha, escrever dados/observações ou ambos.
               </p>
             </div>
 
@@ -641,7 +646,7 @@ export default function AppAssistenteProPage() {
                 />
               </div>
 
-              {/* ── Tipo de relatório (NOVO) ───────────────────────────── */}
+              {/* Tipo de relatório */}
               <div className="space-y-2">
                 <label htmlFor="reportType" className={labelCls}>
                   Tipo de relatório <span className="text-[#FB7185]">*</span>
@@ -684,7 +689,7 @@ export default function AppAssistenteProPage() {
                   </span>
                 </div>
                 <p className="text-sm text-[#CBD5E1] leading-relaxed">
-                  Você pode enviar até 4 prints da planilha, tabela ou gráfico. Se os prints estiverem legíveis, o campo de dados pode ficar em branco.
+                  Você pode enviar até 4 prints da planilha, tabela ou gráfico. Se os prints estiverem claros, o campo de texto abaixo pode ficar em branco.
                 </p>
 
                 {images.length > 0 && (
@@ -782,10 +787,10 @@ export default function AppAssistenteProPage() {
                 )}
               </div>
 
-              {/* Dados da Planilha — condicionalmente obrigatório */}
+              {/* Dados ou observações adicionais — único campo de texto */}
               <div className="space-y-2">
-                <label htmlFor="planilhaData" className={labelCls}>
-                  Dados da planilha{' '}
+                <label htmlFor="additionalNotes" className={labelCls}>
+                  Dados ou observações adicionais{' '}
                   {images.length === 0 ? (
                     <span className="text-[#FB7185]">*</span>
                   ) : (
@@ -793,36 +798,19 @@ export default function AppAssistenteProPage() {
                   )}
                 </label>
                 <textarea
-                  id="planilhaData"
-                  name="planilhaData"
-                  value={form.planilhaData}
+                  id="additionalNotes"
+                  name="additionalNotes"
+                  value={form.additionalNotes}
                   onChange={handleFormChange}
-                  placeholder="Cole aqui os resultados da planilha ou envie um print acima. Se anexar um print legível, este campo pode ficar em branco."
-                  rows={7}
-                  maxLength={4000}
+                  placeholder="Se quiser, cole aqui dados da planilha, queixa principal, histórico, observações da família ou da escola. Se os prints estiverem claros, este campo pode ficar em branco."
+                  rows={8}
+                  maxLength={MAX_NOTES_CHARS}
                   required={images.length === 0}
-                  className={inputCls + " resize-y font-mono leading-relaxed"}
+                  className={inputCls + " resize-y leading-relaxed"}
                 />
                 <p className="text-xs text-[#94A3B8] text-right">
-                  {form.planilhaData.length}/4000 caracteres
+                  {form.additionalNotes.length}/{MAX_NOTES_CHARS} caracteres
                 </p>
-              </div>
-
-              {/* Observações */}
-              <div className="space-y-2">
-                <label htmlFor="observacoes" className={labelCls}>
-                  Observações adicionais <span className="text-[#94A3B8] font-normal">(opcional)</span>
-                </label>
-                <textarea
-                  id="observacoes"
-                  name="observacoes"
-                  value={form.observacoes}
-                  onChange={handleFormChange}
-                  placeholder="Contexto adicional: histórico relevante, queixa principal, informações do responsável, etc."
-                  rows={3}
-                  maxLength={2000}
-                  className={inputCls + " resize-y"}
-                />
               </div>
 
               <div className="p-4 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-xl text-sm text-[#CBD5E1] leading-relaxed flex items-start gap-2">

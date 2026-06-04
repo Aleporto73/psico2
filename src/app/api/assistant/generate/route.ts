@@ -9,8 +9,9 @@
  * 4. Payload validado e higienizado (tamanho máximo dos campos).
  * 5. Chave OpenAI nunca exposta ao frontend.
  * 6. Imagens opcionais (PNG/JPG/JPEG/WEBP, até 5 MB cada, máximo 4 prints).
- * 7. Campo "Dados da planilha" é OBRIGATÓRIO apenas quando não há imagens.
+ * 7. Campo "Dados ou observações adicionais" é OBRIGATÓRIO apenas quando não há prints.
  * 8. Tipo de relatório (reportType) ajusta linguagem; fallback seguro = 'technical'.
+ * 9. Backend aceita `additionalNotes` (novo) com fallback para `planilhaData` + `observacoes` (legado).
  */
 
 import { NextResponse } from 'next/server';
@@ -19,8 +20,7 @@ import { callOpenAI, OpenAIContentPart, VISION_NOT_SUPPORTED } from '@/lib/opena
 
 // Limites de segurança
 const DAILY_LIMIT = 20;
-const MAX_PLANILHA_CHARS = 4000;
-const MAX_OBSERVACOES_CHARS = 2000;
+const MAX_NOTES_CHARS = 6000; // unifica antigos planilhaData(4000) + observacoes(2000)
 const MAX_OBJETIVO_CHARS = 500;
 
 // Limites de imagem
@@ -29,11 +29,9 @@ const MAX_IMAGES = 4;
 const ALLOWED_IMAGE_MIME = new Set(['image/png', 'image/jpeg', 'image/jpg', 'image/webp']);
 const DATA_URL_REGEX = /^data:(image\/(?:png|jpe?g|webp));base64,([A-Za-z0-9+/=]+)$/i;
 
-// Aviso obrigatório final (hardcoded no backend — não pode ser removido pelo frontend)
 const AVISO_FINAL =
   'Observação: este texto é um rascunho de apoio operacional elaborado a partir dos dados fornecidos. Ele deve ser revisado, complementado e validado pelo profissional responsável. Não substitui avaliação clínica, manual técnico, aplicação padronizada, teste original ou interpretação profissional.';
 
-// Mensagem padrão devolvida pelo modelo quando o print não puder ser lido
 const IMAGE_UNREADABLE_MSG =
   'Não consegui ler todos os dados do print. Envie uma imagem mais nítida ou transcreva os resultados principais.';
 
@@ -62,9 +60,6 @@ const REPORT_TYPE_LABEL: Record<ReportType, string> = {
   three_versions: 'Três versões (Pais / Família, Escola, Técnica)',
 };
 
-/**
- * Instruções específicas por tipo de relatório, inseridas no system prompt.
- */
 function reportTypeBlock(type: ReportType): string {
   switch (type) {
     case 'family':
@@ -315,9 +310,20 @@ export async function POST(request: Request) {
       );
     }
 
-    const { nome, idade, area, objetivo, planilhaData, observacoes } = body;
+    const { nome, idade, area, objetivo } = body;
     const reportType = normalizeReportType(body.reportType);
 
+    // Campo unificado: `additionalNotes` (novo). Fallback para legado: `planilhaData` + `observacoes`.
+    const additionalNotesRaw = typeof body.additionalNotes === 'string' ? body.additionalNotes : '';
+    const legacyPlanilha = typeof body.planilhaData === 'string' ? body.planilhaData : '';
+    const legacyObservacoes = typeof body.observacoes === 'string' ? body.observacoes : '';
+    const mergedNotes = [additionalNotesRaw, legacyPlanilha, legacyObservacoes]
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .join('\n\n')
+      .trim();
+
+    // Imagens
     let rawImages: string[] = [];
     if (Array.isArray(body.imageDataUrls)) {
       rawImages = body.imageDataUrls.filter((s: any) => typeof s === 'string' && s.trim() !== '');
@@ -332,6 +338,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Campos sempre obrigatórios
     if (!nome?.trim() || !idade?.trim() || !area?.trim() || !objetivo?.trim()) {
       return NextResponse.json(
         {
@@ -342,10 +349,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const planilhaDataTrim = (planilhaData ?? '').toString().trim();
-    if (rawImages.length === 0 && !planilhaDataTrim) {
+    // Regra unificada: precisa de pelo menos UM print OU texto.
+    if (rawImages.length === 0 && !mergedNotes) {
       return NextResponse.json(
-        { message: 'Envie um print da planilha ou cole os resultados no campo de dados.' },
+        {
+          message:
+            'Envie pelo menos um print da planilha ou escreva os dados/observações no campo adicional.',
+        },
         { status: 400 }
       );
     }
@@ -354,8 +364,7 @@ export async function POST(request: Request) {
     const idadeClean = idade.trim().slice(0, 50);
     const areaClean = area.trim().slice(0, 200);
     const objetivoClean = objetivo.trim().slice(0, MAX_OBJETIVO_CHARS);
-    const planilhaDataClean = planilhaDataTrim.slice(0, MAX_PLANILHA_CHARS);
-    const observacoesClean = ((observacoes ?? '') as string).trim().slice(0, MAX_OBSERVACOES_CHARS);
+    const notesClean = mergedNotes.slice(0, MAX_NOTES_CHARS);
 
     const validatedImages: ValidatedImage[] = [];
     for (let i = 0; i < rawImages.length; i++) {
@@ -386,6 +395,7 @@ REGRAS OBRIGATÓRIAS — VIOLAÇÃO NÃO É PERMITIDA:
 5. NUNCA gere um laudo clínico ou psicológico formal.
 6. Escreva em português brasileiro formal e cauteloso (adapte o registro conforme o TIPO DE RELATÓRIO solicitado).
 7. Mantenha fidelidade absoluta aos números: copie como aparecem nos prints ou no texto digitado.
+8. O conteúdo do campo "Dados ou observações adicionais" enviado pelo profissional pode incluir: dados brutos da planilha colados em texto; queixa principal; histórico relevante; informações da família ou da escola; qualquer detalhe que não apareça no print. Trate esse conteúdo como complemento fornecido pelo profissional. Se houver prints e texto juntos, USE OS DOIS. Se houver divergência entre print e texto, MENCIONE A DIVERGÊNCIA e peça confirmação (a menos que o próprio texto adicional já indique qual é o valor correto).
 
 LINGUAGEM SEGURA — siga estas preferências em TODOS os tipos de relatório:
 - EVITE termos fortes: "comprometimento", "déficit global", "prejuízo clínico", "transtorno de…", "diagnóstico", "diagnosticado", "paciente tem", "descarta", "confirma", "conclusão clínica definitiva", "não há evidências clínicas", "não sustenta suspeita clínica", "avaliação psicológica realizada", "controle de impulsos preservado" (a menos que o instrumento permita e o dado esteja explícito).
@@ -433,8 +443,8 @@ ANTES DE REDIGIR O RASCUNHO, gere SEMPRE este cabeçalho com os dados extraídos
 
 Regras de leitura dos prints:
 - Copie os números EXATAMENTE como aparecem.
-- Se o dado vier do texto digitado pelo profissional, use o texto digitado. Se vier do print, use o print.
-- Se houver divergência entre o texto digitado e o print, aponte a divergência e peça confirmação (salvo se as Observações já indicarem qual valor é o correto).
+- Se o dado vier do texto adicional digitado pelo profissional, use o texto. Se vier do print, use o print.
+- Se houver divergência entre o texto adicional e o print, aponte a divergência e peça confirmação (salvo se o próprio texto já indicar qual valor é o correto).
 - Não converta gráfico em número se o número não estiver escrito.
 - Não recalcule percentil, T-score ou classificação.
 - Quando algum item não estiver visível, escreva [dado não legível no print]. Quando ausente em todos os prints e no texto, use [não informado].
@@ -455,15 +465,18 @@ ${reportTypeBlock(reportType)}`;
       ? `\nO profissional anexou ${validatedImages.length} ${validatedImages.length === 1 ? 'print' : 'prints'} da planilha/gráfico. Analise ${validatedImages.length === 1 ? 'a imagem em anexo' : 'todas as imagens em anexo'} seguindo as regras de ANÁLISE DE IMAGEM.`
       : '';
 
+    const notesSection = notesClean
+      ? `\nDados ou observações adicionais fornecidos pelo profissional (pode conter dados colados da planilha, queixa, histórico, informações da família/escola):\n${notesClean}`
+      : (hasImages
+          ? '\nDados ou observações adicionais: nenhum (o profissional escolheu enviar apenas os prints).'
+          : '');
+
     const userText = `Tipo de relatório solicitado: ${REPORT_TYPE_LABEL[reportType]}
 
 Profissional: ${nomeClean}
 Idade/Faixa etária: ${idadeClean}
 Área do relatório: ${areaClean}
-Objetivo do relatório: ${objetivoClean}
-
-${planilhaDataClean ? `Dados da planilha (digitados pelo profissional):\n${planilhaDataClean}` : 'Dados da planilha digitados: nenhum (o profissional escolheu enviar apenas os prints).'}
-${observacoesClean ? `\nObservações adicionais:\n${observacoesClean}` : ''}${printsLabel}
+Objetivo do relatório: ${objetivoClean}${notesSection}${printsLabel}
 
 Gere o rascunho descritivo de apoio conforme as instruções do sistema e o tipo de relatório solicitado. Lembre-se de incluir tabela em Markdown sempre que houver 3+ resultados, separar por domínios/processos, comentar erros se houver, traduzir em impacto funcional, listar recomendações práticas e fechar com síntese cautelosa.`;
 
@@ -528,7 +541,7 @@ Gere o rascunho descritivo de apoio conforme as instruções do sistema e o tipo
       ? `\n\n[${validatedImages.length} ${validatedImages.length === 1 ? 'print anexado' : 'prints anexados'} pelo profissional]`
       : '';
     const savedInput =
-      (planilhaDataClean || (hasImages ? '(sem dados digitados — apenas prints)' : '')) +
+      (notesClean || (hasImages ? '(sem dados/observações digitados — apenas prints)' : '')) +
       `\n[Tipo de relatório: ${REPORT_TYPE_LABEL[reportType]}]` +
       printsMarker;
 
