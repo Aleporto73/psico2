@@ -50,9 +50,13 @@ interface PublicProduct {
   sort_order: number | null;
 }
 
+const ASSISTANT_PRO_SLUG = 'assistente-ia-pro';
+const ASSISTANT_PRO_APP_PATH = '/app/assistente-pro';
+
 export default function AppProdutosPage() {
   const supabase = createClient();
   const [profileType, setProfileType] = useState('unknown');
+  const [hasAssistantAccess, setHasAssistantAccess] = useState(false);
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
@@ -71,7 +75,7 @@ export default function AppProdutosPage() {
       // 1. Fetch user profile type from user_access_status
       const { data: status } = await supabase
         .from('user_access_status')
-        .select('profile_type')
+        .select('profile_type, has_active_assistant')
         .eq('user_id', user.id)
         .single();
 
@@ -221,31 +225,46 @@ export default function AppProdutosPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
-                {prod.checkout_url && (
-                  <a
-                    href={prod.checkout_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
-                  >
-                    Comprar
-                  </a>
-                )}
-
-                {prod.video_url && (
-                  <button
-                    onClick={() => {
-                      setActiveVideoUrl(prod.video_url);
-                      setActiveVideoCta(
-                        prod.checkout_url
-                          ? { text: 'Adquirir agora', url: prod.checkout_url }
-                          : null
-                      );
-                    }}
-                    className="flex-grow inline-flex items-center justify-center gap-1.5 py-3 text-center text-sm font-semibold text-[#F8FAFC] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C] rounded-xl transition duration-200"
-                  >
-                    <IconPlay /> Assistir vÃ­deo
-                  </button>
+                {prod.slug === ASSISTANT_PRO_SLUG ? (
+                  hasAssistantAccess ? (
+                    <Link
+                      href={ASSISTANT_PRO_APP_PATH}
+                      className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-[#FACC15] hover:bg-[#FDE047] rounded-xl transition duration-200 shadow-md shadow-[#FACC15]/20"
+                    >
+                      Acessar IA Pro
+                    </Link>
+                  ) : (
+                    prod.checkout_url && (
+                      <a
+                        href={prod.checkout_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-[#FACC15] hover:bg-[#FDE047] rounded-xl transition duration-200 shadow-md shadow-[#FACC15]/20"
+                      >
+                        Comprar agora
+                      </a>
+                    )
+                  )
+                ) : (
+                  (prod.video_url || prod.checkout_url) && (
+                    <button
+                      onClick={() => {
+                        if (prod.video_url) {
+                          setActiveVideoUrl(prod.video_url);
+                          setActiveVideoCta(
+                            prod.checkout_url
+                              ? { text: 'Saber mais', url: prod.checkout_url }
+                              : null
+                          );
+                        } else if (prod.checkout_url) {
+                          window.open(prod.checkout_url, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
+                      className="flex-grow inline-flex items-center justify-center gap-1.5 py-3 text-center text-sm font-bold text-[#061923] bg-white hover:bg-[#F1F5F9] border border-[#CBD5E1] rounded-xl transition duration-200 shadow-sm"
+                    >
+                      <IconPlay /> Entenda como funciona
+                    </button>
+                  )
                 )}
               </div>
             </div>
