@@ -83,6 +83,7 @@ export default function AppProdutosPage() {
 
       if (status) {
         setProfileType(status.profile_type || 'unknown');
+        setHasLifetimeAccess(Boolean(status.has_lifetime_access));
         setHasAssistantAccess(Boolean(status.has_active_assistant));
         setAssistantExpiresAt(status.assistant_expires_at || null);
       }
