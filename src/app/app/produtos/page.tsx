@@ -56,6 +56,7 @@ const ASSISTANT_PRO_APP_PATH = '/app/assistente-pro';
 export default function AppProdutosPage() {
   const supabase = createClient();
   const [profileType, setProfileType] = useState('unknown');
+  const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
   const [hasAssistantAccess, setHasAssistantAccess] = useState(false);
   const [assistantExpiresAt, setAssistantExpiresAt] = useState<string | null>(null);
   const [products, setProducts] = useState<PublicProduct[]>([]);
@@ -76,7 +77,7 @@ export default function AppProdutosPage() {
       // 1. Fetch user profile type from user_access_status
       const { data: status } = await supabase
         .from('user_access_status')
-        .select('profile_type, has_active_assistant, assistant_expires_at')
+        .select('profile_type, has_lifetime_access, has_active_assistant, assistant_expires_at')
         .eq('user_id', user.id)
         .single();
 
@@ -111,6 +112,16 @@ export default function AppProdutosPage() {
   const formatDateBR = (date: string | null) => {
     if (!date) return null;
     return new Date(date).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+  };
+
+  const isLifetimeProduct = (prod: PublicProduct) => {
+    const slug = prod.slug.toLowerCase();
+    const name = prod.name.toLowerCase();
+    return (
+      slug.includes('psicoplanilhas') && slug.includes('vital')
+    ) || (
+      name.includes('psicoplanilhas') && name.includes('vital')
+    );
   };
 
   const getEmbedUrl = (url: string | null) => {
@@ -218,7 +229,7 @@ export default function AppProdutosPage() {
 
                 <p className="text-sm text-[#CBD5E1] leading-relaxed line-clamp-4">{prod.description || 'Nenhuma descriÃ§Ã£o fornecida.'}</p>
 
-                {prod.price && (
+                {prod.price && !(isLifetimeProduct(prod) && hasLifetimeAccess) && (
                   <div className="pt-1">
                     <span className="text-2xl font-extrabold text-[#F8FAFC]">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prod.price)}
@@ -232,6 +243,12 @@ export default function AppProdutosPage() {
                 )}
               </div>
 
+              {isLifetimeProduct(prod) && hasLifetimeAccess && (
+                <div className="rounded-xl border border-[#22C55E]/30 bg-[#22C55E]/10 px-4 py-3 text-sm font-bold text-[#22C55E]">
+                  Acesso vitalício liberado
+                </div>
+              )}
+
               {prod.slug === ASSISTANT_PRO_SLUG && hasAssistantAccess && assistantExpiresAt && (
                 <div className="rounded-xl border border-[#FACC15]/30 bg-[#FACC15]/10 px-4 py-3 text-sm font-bold text-[#FACC15]">
                   IA Pro ativo até {formatDateBR(assistantExpiresAt)}
@@ -239,7 +256,22 @@ export default function AppProdutosPage() {
               )}
 
               <div className="flex flex-col sm:flex-row gap-2">
-                {prod.slug === ASSISTANT_PRO_SLUG ? (
+                {isLifetimeProduct(prod) && hasLifetimeAccess ? (
+                  <>
+                    <Link
+                      href="/app/planilhas"
+                      className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
+                    >
+                      Acessar planilhas
+                    </Link>
+                    <Link
+                      href="/app/assistente-gpt"
+                      className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-white hover:bg-[#F1F5F9] border border-[#CBD5E1] rounded-xl transition duration-200 shadow-sm"
+                    >
+                      Assistente GPT incluso
+                    </Link>
+                  </>
+                ) : prod.slug === ASSISTANT_PRO_SLUG ? (
                   hasAssistantAccess ? (
                     <Link
                       href={ASSISTANT_PRO_APP_PATH}
