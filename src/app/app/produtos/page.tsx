@@ -82,6 +82,8 @@ export default function AppProdutosPage() {
 
       if (status) {
         setProfileType(status.profile_type || 'unknown');
+        setHasAssistantAccess(Boolean(status.has_active_assistant));
+        setAssistantExpiresAt(status.assistant_expires_at || null);
       }
 
       // 2. Fetch products from products_public (view sanitizada â€” sem access_url).
