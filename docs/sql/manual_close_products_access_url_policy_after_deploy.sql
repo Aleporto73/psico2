@@ -1,0 +1,29 @@
+-- ============================================================
+-- Patch A2 — Manual close-out: drop policy permissiva de products
+-- ============================================================
+-- Este arquivo NÃO é uma migration. Não é rodado por
+-- `supabase db push`. Rode manualmente no SQL Editor do Supabase
+-- (ou via psql) SOMENTE depois de:
+--
+--   1. Aplicar a migration A1
+--      (20260608000000_create_public_products_and_spreadsheets_rpc.sql)
+--      em produção;
+--   2. Deployar o frontend novo
+--      (/app/produtos usando products_public; /app/planilhas usando
+--      a RPC get_my_spreadsheets);
+--   3. Testar manualmente:
+--        - /app/produtos carrega a vitrine sem erros;
+--        - /app/planilhas mostra lock screen para usuário SEM vitalício;
+--        - /app/planilhas mostra a biblioteca para usuário COM vitalício;
+--        - DevTools → Network: nenhum payload de /rest/v1/products
+--          contém access_url para um usuário comum.
+--
+-- Só então rodar o comando abaixo. Ele remove a policy permissiva
+-- que ainda deixa qualquer authenticated ler products.access_url
+-- via PostgREST com a anon key.
+--
+-- Após isso, leitura pública passa a ser EXCLUSIVAMENTE via
+-- public.products_public e public.get_my_spreadsheets().
+-- ============================================================
+
+drop policy if exists "Anyone can read active products" on public.products;

@@ -14,7 +14,7 @@ interface Spreadsheet {
   image_url: string | null;
 }
 
-// ── SVG Icons ────────────────────────────────────────────────────────────────
+// â”€â”€ SVG Icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function IconLockLarge() {
   return (
@@ -83,16 +83,14 @@ export default function AppPlanilhasPage() {
       setHasAccess(status.has_lifetime_access);
 
       if (status.has_lifetime_access) {
-        // 2. Fetch all active spreadsheets
-        const { data: prods, error: prodsErr } = await supabase
-          .from('products')
-          .select('id, name, category, description, access_url, tutorial_url, image_url')
-          .eq('type', 'spreadsheet')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true });
+        // 2. Buscar planilhas via RPC SECURITY DEFINER.
+        //    A funÃ§Ã£o get_my_spreadsheets() roda no banco e SÃ“ devolve
+        //    access_url quando has_lifetime_access(auth.uid()) for true.
+        //    Se o usuÃ¡rio perder o acesso, a resposta vem vazia.
+        const { data: prods, error: prodsErr } = await supabase.rpc('get_my_spreadsheets');
 
         if (prodsErr) throw prodsErr;
-        setSpreadsheets(prods || []);
+        setSpreadsheets((prods as Spreadsheet[]) || []);
       }
     } catch (err) {
       console.error('Error loading spreadsheets:', err);
@@ -136,7 +134,7 @@ export default function AppPlanilhasPage() {
         <div className="space-y-3">
           <h2 className="text-2xl font-bold text-[#F8FAFC]">Biblioteca de planilhas bloqueada</h2>
           <p className="text-[#CBD5E1] text-base leading-relaxed">
-            Seu perfil ainda não tem acesso vitalício às planilhas profissionais. Adquira o plano vitalício para liberar permanentemente todo o material de apoio.
+            Seu perfil ainda nÃ£o tem acesso vitalÃ­cio Ã s planilhas profissionais. Adquira o plano vitalÃ­cio para liberar permanentemente todo o material de apoio.
           </p>
         </div>
         <Link
@@ -155,7 +153,7 @@ export default function AppPlanilhasPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Biblioteca de planilhas</h1>
-        <p className="text-[#CBD5E1] text-base mt-1">Planilhas de apoio operacional para psicólogos e psicopedagogos.</p>
+        <p className="text-[#CBD5E1] text-base mt-1">Planilhas de apoio operacional para psicÃ³logos e psicopedagogos.</p>
       </div>
 
       {/* Filters and Search */}
@@ -211,7 +209,7 @@ export default function AppPlanilhasPage() {
                 </span>
                 <h3 className="text-base font-bold text-[#F8FAFC] pt-1">{sheet.name}</h3>
                 <p className="text-sm text-[#CBD5E1] leading-relaxed line-clamp-3">
-                  {sheet.description || 'Apoio para estruturação, cálculo e visualização de dados.'}
+                  {sheet.description || 'Apoio para estruturaÃ§Ã£o, cÃ¡lculo e visualizaÃ§Ã£o de dados.'}
                 </p>
               </div>
 
@@ -221,7 +219,7 @@ export default function AppPlanilhasPage() {
                   disabled={!sheet.access_url}
                   className="w-full py-3 bg-[#7DD3FC] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] text-[#061923] font-bold rounded-xl text-sm transition duration-200"
                 >
-                  Acessar planilha (cópia)
+                  Acessar planilha (cÃ³pia)
                 </button>
                 {sheet.tutorial_url && (
                   <button
@@ -240,7 +238,7 @@ export default function AppPlanilhasPage() {
       {/* Obligatory Disclaimer Notice */}
       <footer className="pt-8 border-t border-[#1F4D5C]">
         <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
-          <strong>Aviso de uso responsável:</strong> Esta planilha é um recurso de apoio operacional. Ela agiliza cálculos, organização e visualização dos dados. O uso correto exige o manual original do instrumento. Não substitui avaliação profissional, teste original, manual ou interpretação clínica.
+          <strong>Aviso de uso responsÃ¡vel:</strong> Esta planilha Ã© um recurso de apoio operacional. Ela agiliza cÃ¡lculos, organizaÃ§Ã£o e visualizaÃ§Ã£o dos dados. O uso correto exige o manual original do instrumento. NÃ£o substitui avaliaÃ§Ã£o profissional, teste original, manual ou interpretaÃ§Ã£o clÃ­nica.
         </div>
       </footer>
 
