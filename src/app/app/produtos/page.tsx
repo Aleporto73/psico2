@@ -87,10 +87,12 @@ export default function AppProdutosPage() {
         .select(
           'id, name, slug, type, audience, category, description, image_url, video_url, checkout_url, price, billing_type, sort_order'
         )
+        .neq('type', 'spreadsheet')
         .order('sort_order', { ascending: true });
 
       if (!prodsErr && prods) {
-        setProducts(prods as PublicProduct[]);
+        const commercialOnly = (prods as PublicProduct[]).filter((p) => p.type !== 'spreadsheet');
+        setProducts(commercialOnly);
       }
     } catch (err) {
       console.error('Error loading products list:', err);
