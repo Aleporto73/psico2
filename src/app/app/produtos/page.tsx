@@ -57,6 +57,7 @@ export default function AppProdutosPage() {
   const supabase = createClient();
   const [profileType, setProfileType] = useState('unknown');
   const [hasAssistantAccess, setHasAssistantAccess] = useState(false);
+  const [assistantExpiresAt, setAssistantExpiresAt] = useState<string | null>(null);
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
@@ -75,7 +76,7 @@ export default function AppProdutosPage() {
       // 1. Fetch user profile type from user_access_status
       const { data: status } = await supabase
         .from('user_access_status')
-        .select('profile_type, has_active_assistant')
+        .select('profile_type, has_active_assistant, assistant_expires_at')
         .eq('user_id', user.id)
         .single();
 
@@ -103,6 +104,11 @@ export default function AppProdutosPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatDateBR = (date: string | null) => {
+    if (!date) return null;
+    return new Date(date).toLocaleDateString('pt-BR', { timeZone: 'UTC' });
   };
 
   const getEmbedUrl = (url: string | null) => {
@@ -223,6 +229,12 @@ export default function AppProdutosPage() {
                   </div>
                 )}
               </div>
+
+              {prod.slug === ASSISTANT_PRO_SLUG && hasAssistantAccess && assistantExpiresAt && (
+                <div className="rounded-xl border border-[#FACC15]/30 bg-[#FACC15]/10 px-4 py-3 text-sm font-bold text-[#FACC15]">
+                  IA Pro ativo até {formatDateBR(assistantExpiresAt)}
+                </div>
+              )}
 
               <div className="flex flex-col sm:flex-row gap-2">
                 {prod.slug === ASSISTANT_PRO_SLUG ? (
