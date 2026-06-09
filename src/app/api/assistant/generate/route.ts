@@ -24,6 +24,22 @@ const MAX_NOTES_CHARS = 6000; // unifica antigos planilhaData(4000) + observacoe
 const MAX_OBJETIVO_CHARS = 500;
 const MAX_REQUEST_BYTES = 30 * 1024 * 1024; // ~4 imagens de 5 MB em base64 + metadados JSON
 
+function getStartOfBrazilDayUtc(now = new Date()): Date {
+  // Brasil operacional: UTC-3. Meia-noite local equivale a 03:00 UTC.
+  const brazilOffsetMs = -3 * 60 * 60 * 1000;
+  const brazilNow = new Date(now.getTime() + brazilOffsetMs);
+
+  return new Date(Date.UTC(
+    brazilNow.getUTCFullYear(),
+    brazilNow.getUTCMonth(),
+    brazilNow.getUTCDate(),
+    3,
+    0,
+    0,
+    0
+  ));
+}
+
 // Limites de imagem
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_IMAGES = 4;
@@ -244,8 +260,7 @@ export async function POST(request: Request) {
     }
 
     // ── 3. Verificar limite diário ─────────────────────────────────────────────
-    const startOfDay = new Date();
-    startOfDay.setUTCHours(0, 0, 0, 0);
+    const startOfDay = getStartOfBrazilDayUtc();
 
     const { count, error: countError } = await supabase
       .from('ai_reports')
