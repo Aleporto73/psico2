@@ -58,7 +58,7 @@ export default function AdminBannersPage() {
       setBanners(data || []);
     } catch (err: any) {
       console.error('Error fetching banners:', err);
-      setErrorMsg(err.message || 'Erro ao carregar banners.');
+      setErrorMsg('Erro ao carregar banners. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,8 @@ export default function AdminBannersPage() {
       setSuccessMsg(`Status do banner "${banner.title}" alterado com sucesso!`);
       fetchBanners();
     } catch (err: any) {
-      setErrorMsg(err.message);
+      console.error('Error toggling banner status:', err);
+      setErrorMsg('Não foi possível alterar o status do banner. Tente novamente.');
     }
   };
 
@@ -112,7 +113,8 @@ export default function AdminBannersPage() {
       setEditingBanner(null);
       fetchBanners();
     } catch (err: any) {
-      setErrorMsg(err.message);
+      console.error('Error saving banner:', err);
+      setErrorMsg('Não foi possível salvar o banner. Revise os dados e tente novamente.');
     }
   };
 
