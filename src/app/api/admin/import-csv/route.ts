@@ -106,11 +106,8 @@ export async function POST(request: Request) {
         let userId = '';
 
         if (!existingProfileByEmail) {
-          // B. Create new user in Supabase Auth with unguessable random password
-          const randomPassword = Math.random().toString(36).slice(-8) + 
-                                 Math.random().toString(36).slice(-8) + 
-                                 Math.random().toString(36).slice(-8) + 
-                                 Math.random().toString(36).slice(-8);
+          // B. Create new user in Supabase Auth with cryptographically secure random password
+          const randomPassword = randomBytes(32).toString('base64url');
 
           const { data: newUser, error: createAuthErr } = await adminSupabase.auth.admin.createUser({
             email: normalizedEmail,
