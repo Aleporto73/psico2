@@ -280,17 +280,22 @@ export default function AppProdutosPage() {
                     >
                       Acessar IA Pro
                     </Link>
+                  ) : prod.checkout_url ? (
+                    <a
+                      href={prod.checkout_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-[#FACC15] hover:bg-[#FDE047] rounded-xl transition duration-200 shadow-md shadow-[#FACC15]/20"
+                    >
+                      Assinar IA Pro
+                    </a>
                   ) : (
-                    prod.checkout_url && (
-                      <a
-                        href={prod.checkout_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-[#FACC15] hover:bg-[#FDE047] rounded-xl transition duration-200 shadow-md shadow-[#FACC15]/20"
-                      >
-                        Comprar agora
-                      </a>
-                    )
+                    <Link
+                      href={ASSISTANT_PRO_APP_PATH}
+                      className="flex-grow py-3 text-center text-sm font-bold text-[#061923] bg-[#FACC15] hover:bg-[#FDE047] rounded-xl transition duration-200 shadow-md shadow-[#FACC15]/20"
+                    >
+                      Assinar IA Pro
+                    </Link>
                   )
                 ) : (
                   (prod.video_url || prod.checkout_url) && (
