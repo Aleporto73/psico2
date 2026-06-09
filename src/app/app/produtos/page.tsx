@@ -230,7 +230,13 @@ export default function AppProdutosPage() {
 
                 <p className="text-sm text-[#CBD5E1] leading-relaxed line-clamp-4">{prod.description || 'Nenhuma descrição fornecida.'}</p>
 
-                {prod.price && !(isLifetimeProduct(prod) && hasLifetimeAccess) && (
+                {prod.slug === ASSISTANT_PRO_SLUG && hasAssistantAccess ? (
+                  <div className="pt-1">
+                    <span className="text-xl font-extrabold text-[#FACC15]">
+                      {assistantExpiresAt ? `Válido até ${formatDateBR(assistantExpiresAt)}` : 'IA Pro liberado'}
+                    </span>
+                  </div>
+                ) : prod.price && !(isLifetimeProduct(prod) && hasLifetimeAccess) && (
                   <div className="pt-1">
                     <span className="text-2xl font-extrabold text-[#F8FAFC]">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prod.price)}
@@ -250,11 +256,6 @@ export default function AppProdutosPage() {
                 </div>
               )}
 
-              {prod.slug === ASSISTANT_PRO_SLUG && hasAssistantAccess && assistantExpiresAt && (
-                <div className="rounded-xl border border-[#FACC15]/30 bg-[#FACC15]/10 px-4 py-3 text-sm font-bold text-[#FACC15]">
-                  IA Pro ativo até {formatDateBR(assistantExpiresAt)}
-                </div>
-              )}
 
               <div className="flex flex-col sm:flex-row gap-2">
                 {isLifetimeProduct(prod) && hasLifetimeAccess ? (
