@@ -50,6 +50,10 @@ const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; hint: strin
   { value: 'internal',       label: 'Registro interno', hint: 'Curto e direto, estilo prontuário/registro.' },
 ];
 
+function getReportTypeLabel(reportType: string | null | undefined) {
+  return REPORT_TYPE_OPTIONS.find((option) => option.value === reportType)?.label || reportType;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function formatDate(dateString: string | null | undefined) {
@@ -863,7 +867,7 @@ export default function AppAssistenteProPage() {
                       <p className="text-xs text-[#94A3B8] mt-1 flex items-center gap-2 flex-wrap">
                         {report.report_type && (
                           <span className="px-2 py-0.5 bg-[#0E2A38] rounded-md text-[#CBD5E1]">
-                            {report.report_type}
+                            {getReportTypeLabel(report.report_type)}
                           </span>
                         )}
                         <span>{formatDateTime(report.created_at)}</span>

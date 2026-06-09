@@ -523,7 +523,7 @@ Gere o rascunho descritivo de apoio conforme as instruções do sistema e o tipo
       .insert({
         user_id: user.id,
         title: reportTitle,
-        report_type: areaClean,
+        report_type: reportType,
         input_text: savedInput,
         output_text: generatedText,
       })
