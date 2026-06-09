@@ -417,7 +417,11 @@ export default function AdminClienteDetalhePage() {
                   ) : (
                     <button
                       disabled={actionLoading}
-                      onClick={() => handleAction('liberar-vitalicio')}
+                      onClick={() => triggerConfirmation(
+                        'liberar-vitalicio',
+                        'Liberar Acesso Vitalício',
+                        'Tem certeza que deseja liberar acesso vitalício às planilhas para este cliente?'
+                      )}
                       className="px-4 py-2.5 text-sm font-bold bg-[#34D399]/10 hover:bg-[#34D399]/20 text-[#34D399] border border-[#34D399]/20 rounded-xl transition"
                     >
                       Liberar acesso vitalício
@@ -465,7 +469,12 @@ export default function AdminClienteDetalhePage() {
                         />
                         <button
                           disabled={actionLoading}
-                          onClick={() => handleAction('alterar-vencimento-pro', { expires_at: new Date(customDate).toISOString() })}
+                          onClick={() => triggerConfirmation(
+                            'alterar-vencimento-pro',
+                            'Alterar Vencimento do Pro',
+                            'Tem certeza que deseja alterar a data de vencimento do Assistente IA Pro para este cliente?',
+                            { expires_at: new Date(customDate).toISOString() }
+                          )}
                           className="px-4 py-2 text-sm font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] rounded-xl transition"
                         >
                           Salvar data
@@ -507,7 +516,11 @@ export default function AdminClienteDetalhePage() {
                   <div className="pt-1">
                     <button
                       disabled={actionLoading}
-                      onClick={() => handleAction('ativar-pro')}
+                      onClick={() => triggerConfirmation(
+                        'ativar-pro',
+                        'Ativar Assistente Pro',
+                        'Tem certeza que deseja ativar manualmente o Assistente IA Pro para este cliente?'
+                      )}
                       className="px-4 py-2.5 text-sm font-bold bg-[#7DD3FC]/10 hover:bg-[#7DD3FC]/20 text-[#7DD3FC] border border-[#7DD3FC]/20 rounded-xl transition"
                     >
                       Ativar Assistente Pro (manual)
