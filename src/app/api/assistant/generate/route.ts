@@ -22,6 +22,7 @@ import { callOpenAI, OpenAIContentPart, VISION_NOT_SUPPORTED } from '@/lib/opena
 const DAILY_LIMIT = 20;
 const MAX_NOTES_CHARS = 6000; // unifica antigos planilhaData(4000) + observacoes(2000)
 const MAX_OBJETIVO_CHARS = 500;
+const MAX_REQUEST_BYTES = 30 * 1024 * 1024; // ~4 imagens de 5 MB em base64 + metadados JSON
 
 // Limites de imagem
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -197,6 +198,14 @@ function validateImage(
 
 export async function POST(request: Request) {
   try {
+    const contentLength = Number(request.headers.get('content-length') || 0);
+    if (contentLength > MAX_REQUEST_BYTES) {
+      return NextResponse.json(
+        { message: 'Arquivo muito grande. Envie no máximo 4 prints de até 5 MB cada.' },
+        { status: 413 }
+      );
+    }
+
     // ── 1. Autenticação ────────────────────────────────────────────────────────
     const supabase = await createClient();
     const {
