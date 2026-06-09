@@ -440,7 +440,7 @@ export default function AdminClienteDetalhePage() {
                   </span>
                 </div>
 
-                {isActivePro(subscription) && isManualManagedPro(subscription) ? (
+                {subscription && isActivePro(subscription) && isManualManagedPro(subscription) ? (
                   <div className="space-y-4 p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C]">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="space-y-1">
@@ -487,7 +487,7 @@ export default function AdminClienteDetalhePage() {
                       </button>
                     </div>
                   </div>
-                ) : isActivePro(subscription) ? (
+                ) : subscription && isActivePro(subscription) ? (
                   <div className="space-y-4 p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C]">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="space-y-1">
