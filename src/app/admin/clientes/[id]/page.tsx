@@ -120,24 +120,28 @@ export default function AdminClienteDetalhePage() {
       setProfile(prof);
 
       // 2. Fetch Lifetime Purchase
-      const { data: purch } = await supabase
+      const { data: purchRows } = await supabase
         .from('purchases')
-        .select('id, payment_status, source, purchased_at, products(slug)')
+        .select('id, payment_status, source, purchased_at, products!inner(slug)')
         .eq('user_id', clientId)
         .eq('products.slug', 'psicoplanilhas-vitalicio')
-        .maybeSingle();
+        .in('payment_status', ['paid', 'manual'])
+        .order('purchased_at', { ascending: false })
+        .limit(1);
 
-      // Filter out non-matching products because of supabase query structure if needed
-      setPurchase(purch as any);
+      setPurchase((purchRows?.[0] ?? null) as any);
 
       // 3. Fetch Subscription
-      const { data: sub } = await supabase
+      const { data: subRows } = await supabase
         .from('subscriptions')
-        .select('id, status, started_at, expires_at, cancelled_at, payment_reference, source, products(slug)')
+        .select('id, status, started_at, expires_at, cancelled_at, payment_reference, source, products!inner(slug)')
         .eq('user_id', clientId)
         .eq('products.slug', 'assistente-ia-pro')
-        .maybeSingle();
+        .in('status', ['active', 'manual'])
+        .order('expires_at', { ascending: false })
+        .limit(1);
 
+      const sub = subRows?.[0] ?? null;
       setSubscription(sub as any);
 
       if (sub?.expires_at) {
@@ -383,8 +387,8 @@ export default function AdminClienteDetalhePage() {
                     <h4 className="font-semibold text-[#F8FAFC] text-base">Acesso vitalício às planilhas</h4>
                     <p className="text-sm text-[#CBD5E1] leading-relaxed">Libera o acesso permanente à biblioteca de planilhas de apoio operacional.</p>
                   </div>
-                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${purchase && purchase.payment_status === 'manual' ? 'text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>
-                    {purchase && purchase.payment_status === 'manual' ? 'Liberado (manual)' : 'Sem acesso'}
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${purchase && ['paid', 'manual'].includes(purchase.payment_status) ? 'text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>
+                    {purchase && ['paid', 'manual'].includes(purchase.payment_status) ? `Liberado (${purchase.payment_status === 'manual' ? 'manual' : 'pago'})` : 'Sem acesso'}
                   </span>
                 </div>
                 <div className="flex space-x-3 pt-1">
@@ -400,6 +404,10 @@ export default function AdminClienteDetalhePage() {
                     >
                       Revogar acesso
                     </button>
+                  ) : purchase && purchase.payment_status === 'paid' ? (
+                    <p className="text-xs text-[#94A3B8]">
+                      Acesso pago detectado. Cancelamento deve seguir o fluxo de pagamento oficial.
+                    </p>
                   ) : (
                     <button
                       disabled={actionLoading}
@@ -421,8 +429,8 @@ export default function AdminClienteDetalhePage() {
                     <h4 className="font-semibold text-[#F8FAFC] text-base">Assinatura do Assistente IA Pro (R$50/ano)</h4>
                     <p className="text-sm text-[#CBD5E1] leading-relaxed">Libera a geração inteligente de relatórios profissionais por 1 ano.</p>
                   </div>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full ${subscription && subscription.status === 'manual' && new Date(subscription.expires_at) >= new Date() ? 'text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>
-                    {subscription && subscription.status === 'manual' && new Date(subscription.expires_at) >= new Date() ? 'Ativo (manual)' : (<><IconLock /> Bloqueado</>)}
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full ${subscription && ['active', 'manual'].includes(subscription.status) && new Date(subscription.expires_at) >= new Date() ? 'text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>
+                    {subscription && ['active', 'manual'].includes(subscription.status) && new Date(subscription.expires_at) >= new Date() ? `Ativo (${subscription.status === 'manual' ? 'manual' : 'pago'})` : (<><IconLock /> Bloqueado</>)}
                   </span>
                 </div>
 
@@ -472,6 +480,22 @@ export default function AdminClienteDetalhePage() {
                         Cancelar assinatura
                       </button>
                     </div>
+                  </div>
+                ) : subscription && subscription.status === 'active' && new Date(subscription.expires_at) >= new Date() ? (
+                  <div className="space-y-4 p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C]">
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-1">
+                        <span className="text-[#94A3B8] block text-xs">Vencimento atual</span>
+                        <span className="text-[#F8FAFC] font-semibold">{formatDate(subscription.expires_at)}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[#94A3B8] block text-xs">Iniciado em</span>
+                        <span className="text-[#F8FAFC] font-semibold">{formatDate(subscription.started_at)}</span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-[#94A3B8]">
+                      Assinatura paga detectada. Alterações e cancelamento devem seguir o fluxo de pagamento oficial.
+                    </p>
                   </div>
                 ) : (
                   <div className="pt-1">
