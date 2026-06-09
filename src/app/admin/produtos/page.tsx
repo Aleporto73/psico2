@@ -51,7 +51,7 @@ export default function AdminProdutosPage() {
       setProducts(data || []);
     } catch (err: any) {
       console.error('Error fetching products:', err);
-      setErrorMsg(err.message || 'Erro ao carregar catálogo de produtos.');
+      setErrorMsg('Erro ao carregar catálogo de produtos. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -83,7 +83,8 @@ export default function AdminProdutosPage() {
       setSuccessMsg(`Status do produto "${prod.name}" alterado com sucesso!`);
       fetchProducts();
     } catch (err: any) {
-      setErrorMsg(err.message);
+      console.error('Error toggling product status:', err);
+      setErrorMsg('Não foi possível alterar o status do produto. Tente novamente.');
     }
   };
 
@@ -118,7 +119,8 @@ export default function AdminProdutosPage() {
       setEditingProd(null);
       fetchProducts();
     } catch (err: any) {
-      setErrorMsg(err.message);
+      console.error('Error saving product:', err);
+      setErrorMsg('Não foi possível salvar o produto. Revise os dados e tente novamente.');
     }
   };
 
