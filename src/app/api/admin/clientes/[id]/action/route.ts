@@ -33,6 +33,24 @@ export async function POST(
       return NextResponse.json({ message: 'Cliente não encontrado.' }, { status: 404 });
     }
 
+    const destructiveActions = ['bloquear', 'cancelar-vitalicio', 'cancelar-pro'];
+
+    if (destructiveActions.includes(action)) {
+      if (clientProfile.id === adminUser?.id) {
+        return NextResponse.json(
+          { message: 'Ação bloqueada: um admin não pode aplicar ação destrutiva em si mesmo.' },
+          { status: 403 }
+        );
+      }
+
+      if (clientProfile.role === 'admin') {
+        return NextResponse.json(
+          { message: 'Ação bloqueada: contas admin não podem sofrer ações destrutivas por esta tela.' },
+          { status: 403 }
+        );
+      }
+    }
+
     const origin = new URL(request.url).origin;
     const redirectTo = `${origin}/definir-senha`;
 
