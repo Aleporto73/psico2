@@ -2,6 +2,27 @@ import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/utils/supabase/admin-auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 
+function normalizeOptionalHttpUrl(value: unknown, fieldLabel: string): string | null {
+  if (value === undefined || value === null || value === '') return null;
+  if (typeof value !== 'string') throw new Error(`${fieldLabel} deve ser uma URL válida.`);
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new Error(`${fieldLabel} deve ser uma URL válida.`);
+  }
+
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw new Error(`${fieldLabel} deve começar com http:// ou https://.`);
+  }
+
+  return trimmed;
+}
+
 export async function POST(request: Request) {
   try {
     const { error, status, user: adminUser } = await verifyAdmin();
@@ -17,6 +38,18 @@ export async function POST(request: Request) {
         { message: 'Título, Público e Posição são campos obrigatórios.' },
         { status: 400 }
       );
+    }
+
+    let safeUrls;
+    try {
+      safeUrls = {
+        image_url: normalizeOptionalHttpUrl(payload.image_url, 'URL da imagem'),
+        video_url: normalizeOptionalHttpUrl(payload.video_url, 'URL do vídeo'),
+        button_url: normalizeOptionalHttpUrl(payload.button_url, 'URL do botão principal'),
+        secondary_button_url: normalizeOptionalHttpUrl(payload.secondary_button_url, 'URL do botão secundário'),
+      };
+    } catch (urlErr: any) {
+      return NextResponse.json({ message: urlErr.message }, { status: 400 });
     }
 
     const adminSupabase = createAdminClient();
@@ -40,12 +73,12 @@ export async function POST(request: Request) {
           subtitle: payload.subtitle || null,
           audience: payload.audience,
           position: payload.position,
-          image_url: payload.image_url || null,
-          video_url: payload.video_url || null,
+          image_url: safeUrls.image_url,
+          video_url: safeUrls.video_url,
           button_text: payload.button_text || null,
-          button_url: payload.button_url || null,
+          button_url: safeUrls.button_url,
           secondary_button_text: payload.secondary_button_text || null,
-          secondary_button_url: payload.secondary_button_url || null,
+          secondary_button_url: safeUrls.secondary_button_url,
           is_active: payload.is_active !== undefined ? payload.is_active : true,
           sort_order: payload.sort_order !== undefined ? Number(payload.sort_order) : 0,
         })
@@ -76,12 +109,12 @@ export async function POST(request: Request) {
           subtitle: payload.subtitle || null,
           audience: payload.audience,
           position: payload.position,
-          image_url: payload.image_url || null,
-          video_url: payload.video_url || null,
+          image_url: safeUrls.image_url,
+          video_url: safeUrls.video_url,
           button_text: payload.button_text || null,
-          button_url: payload.button_url || null,
+          button_url: safeUrls.button_url,
           secondary_button_text: payload.secondary_button_text || null,
-          secondary_button_url: payload.secondary_button_url || null,
+          secondary_button_url: safeUrls.secondary_button_url,
           is_active: payload.is_active !== undefined ? payload.is_active : true,
           sort_order: payload.sort_order !== undefined ? Number(payload.sort_order) : 0,
         })
