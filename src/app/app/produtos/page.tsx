@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 
-// â”€â”€ SVG Icons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// SVG Icons
 
 function IconPlay() {
   return (
@@ -33,7 +33,7 @@ function IconEmpty() {
   );
 }
 
-// Tipagem segura â€” note que access_url NÃƒO Ã© exposto na vitrine pÃºblica.
+// Tipagem segura — note que access_url NÃO é exposto na vitrine pública.
 interface PublicProduct {
   id: string;
   name: string;
@@ -88,9 +88,9 @@ export default function AppProdutosPage() {
         setAssistantExpiresAt(status.assistant_expires_at || null);
       }
 
-      // 2. Fetch products from products_public (view sanitizada â€” sem access_url).
-      //    Seleciona colunas explÃ­citas para reforÃ§ar que nenhum campo
-      //    sensÃ­vel Ã© trafegado para o navegador.
+      // 2. Fetch products from products_public (view sanitizada — sem access_url).
+      //    Seleciona colunas explícitas para reforçar que nenhum campo
+      //    sensível é trafegado para o navegador.
       const { data: prods, error: prodsErr } = await supabase
         .from('products_public')
         .select(
@@ -148,7 +148,7 @@ export default function AppProdutosPage() {
       <div className="flex h-[60vh] items-center justify-center text-[#CBD5E1]">
         <div className="text-center space-y-3">
           <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
-          <p>Carregando catÃ¡logo de produtos...</p>
+          <p>Carregando catálogo de produtos...</p>
         </div>
       </div>
     );
@@ -178,7 +178,7 @@ export default function AppProdutosPage() {
       <div>
         <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Vitrine de produtos</h1>
         <p className="text-[#CBD5E1] text-base mt-1">
-          Explore ferramentas de apoio operacional e recursos adicionais para sua prÃ¡tica profissional.
+          Explore ferramentas de apoio operacional e recursos adicionais para sua prática profissional.
         </p>
       </div>
 
@@ -186,8 +186,8 @@ export default function AppProdutosPage() {
       {profileType === 'unknown' && (
         <div className="p-5 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="font-bold text-[#FACC15] block text-xs uppercase tracking-wider">RecomendaÃ§Ãµes limitadas</span>
-            <p className="text-[#CBD5E1] text-sm leading-relaxed">Preencha sua Ã¡rea de atuaÃ§Ã£o na sua conta para liberar a vitrine completa de produtos especializados.</p>
+            <span className="font-bold text-[#FACC15] block text-xs uppercase tracking-wider">Recomendações limitadas</span>
+            <p className="text-[#CBD5E1] text-sm leading-relaxed">Preencha sua área de atuação na sua conta para liberar a vitrine completa de produtos especializados.</p>
           </div>
           <Link href="/app/minha-conta" className="px-5 py-2.5 bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] text-sm font-bold rounded-xl transition shrink-0 self-start md:self-auto">
             Configurar perfil
@@ -201,8 +201,8 @@ export default function AppProdutosPage() {
           <div className="w-16 h-16 mx-auto rounded-full bg-[#0E2A38] flex items-center justify-center text-[#94A3B8]">
             <IconEmpty />
           </div>
-          <p className="text-[#CBD5E1] text-base">Nenhum produto disponÃ­vel para o seu perfil agora.</p>
-          <p className="text-[#94A3B8] text-sm">Atualize seu perfil profissional para ver mais opÃ§Ãµes.</p>
+          <p className="text-[#CBD5E1] text-base">Nenhum produto disponível para o seu perfil agora.</p>
+          <p className="text-[#94A3B8] text-sm">Atualize seu perfil profissional para ver mais opções.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -222,13 +222,13 @@ export default function AppProdutosPage() {
                   <span className="px-2.5 py-0.5 text-[10px] font-semibold text-[#CBD5E1] bg-[#0E2A38] rounded-full border border-[#1F4D5C]">
                     {
                       prod.audience === 'all' ? 'Todos' :
-                      prod.audience === 'psychologist' ? 'PsicÃ³logos' :
+                      prod.audience === 'psychologist' ? 'Psicólogos' :
                       prod.audience === 'psychopedagogue' ? 'Psicopedagogos' : 'Geral'
                     }
                   </span>
                 </div>
 
-                <p className="text-sm text-[#CBD5E1] leading-relaxed line-clamp-4">{prod.description || 'Nenhuma descriÃ§Ã£o fornecida.'}</p>
+                <p className="text-sm text-[#CBD5E1] leading-relaxed line-clamp-4">{prod.description || 'Nenhuma descrição fornecida.'}</p>
 
                 {prod.price && !(isLifetimeProduct(prod) && hasLifetimeAccess) && (
                   <div className="pt-1">
@@ -237,7 +237,7 @@ export default function AppProdutosPage() {
                     </span>
                     {prod.billing_type && (
                       <span className="text-[#94A3B8] text-sm ml-1.5">
-                        / {prod.billing_type === 'yearly' ? 'ano' : prod.billing_type === 'monthly' ? 'mÃªs' : 'Ãºnico'}
+                        / {prod.billing_type === 'yearly' ? 'ano' : prod.billing_type === 'monthly' ? 'mês' : 'único'}
                       </span>
                     )}
                   </div>
@@ -322,7 +322,7 @@ export default function AppProdutosPage() {
       {/* Mandatory Disclaimer */}
       <footer className="pt-8 border-t border-[#1F4D5C]">
         <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
-          <strong>Aviso de uso responsÃ¡vel:</strong> Nossos produtos e assistentes virtuais servem como recursos de apoio operacional. Eles auxiliam na organizaÃ§Ã£o de dados e agilizam cÃ¡lculos. A utilizaÃ§Ã£o adequada requer a posse do manual tÃ©cnico original de cada instrumento, e nenhuma ferramenta substitui a avaliaÃ§Ã£o profissional ou diagnÃ³stico clÃ­nico.
+          <strong>Aviso de uso responsável:</strong> Nossos produtos e assistentes virtuais servem como recursos de apoio operacional. Eles auxiliam na organização de dados e agilizam cálculos. A utilização adequada requer a posse do manual técnico original de cada instrumento, e nenhuma ferramenta substitui a avaliação profissional ou diagnóstico clínico.
         </div>
       </footer>
 
@@ -331,7 +331,7 @@ export default function AppProdutosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#061923]/85 backdrop-blur-sm">
           <div className="bg-[#0B2430] border border-[#1F4D5C] rounded-2xl max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-[#1F4D5C] pb-3">
-              <h4 className="text-base font-bold text-[#F8FAFC]">DemonstraÃ§Ã£o do produto</h4>
+              <h4 className="text-base font-bold text-[#F8FAFC]">Demonstração do produto</h4>
               <button
                 onClick={() => {
                   setActiveVideoUrl(null);
