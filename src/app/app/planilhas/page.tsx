@@ -147,13 +147,26 @@ export default function AppPlanilhasPage() {
     );
   }
 
+  // Extrai o rótulo curto (sigla / nome do instrumento) antes do travessão.
+  // Splits apenas em separadores com espaços ao redor (" – " | " — " | " - "),
+  // para preservar hifens internos como em "ABLLS-R", "APM-RAVEN", "ASRS-18".
+  // Ex.: "ABLLS-R – Avaliação de Linguagem e Aprendizagem" -> "ABLLS-R"
+  //      "ABC / ICA – Instrumento..."                     -> "ABC / ICA"
+  const getShortInstrumentName = (name: string): string => {
+    if (!name) return '';
+    const parts = name.split(/\s+[–—-]\s+/);
+    if (parts.length > 1 && parts[0]) return parts[0].trim();
+    const trimmed = name.trim();
+    return trimmed.length <= 20 ? trimmed : trimmed.slice(0, 20).trim();
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="-m-6 md:-m-8 p-6 md:p-8 min-h-full bg-[#F8FAFC] space-y-6">
 
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Biblioteca de planilhas</h1>
-        <p className="text-[#CBD5E1] text-base mt-1">Planilhas de apoio operacional para psicólogos e psicopedagogos.</p>
+        <h1 className="text-3xl font-bold text-[#0B2430] tracking-tight">Biblioteca de planilhas</h1>
+        <p className="text-[#475569] text-base mt-1">Planilhas de apoio operacional para psicólogos e psicopedagogos.</p>
       </div>
 
       {/* Filters and Search */}
@@ -205,7 +218,7 @@ export default function AppPlanilhasPage() {
             <div key={sheet.id} className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] flex flex-col justify-between gap-4 hover:border-[#7DD3FC]/40 transition duration-200">
               <div className="space-y-2">
                 <span className="inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-full">
-                  {sheet.category || 'Geral'}
+                  {getShortInstrumentName(sheet.name) || sheet.category || 'Geral'}
                 </span>
                 <h3 className="text-base font-bold text-[#F8FAFC] pt-1">{sheet.name}</h3>
                 <p className="text-sm text-[#CBD5E1] leading-relaxed line-clamp-3">
