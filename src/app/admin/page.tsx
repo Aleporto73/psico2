@@ -76,11 +76,12 @@ export default function AdminDashboardPage() {
         .select('*', { count: 'exact', head: true })
         .eq('activation_status', 'pending_activation');
 
-      // 3. Active Subscriptions
+      // 3. Active Pro Subscriptions
       const { count: subCount } = await supabase
         .from('subscriptions')
         .select('*', { count: 'exact', head: true })
-        .eq('status', 'manual');
+        .in('status', ['active', 'manual'])
+        .gte('expires_at', new Date().toISOString());
 
       // 4. Logs count
       const { count: logs } = await supabase
