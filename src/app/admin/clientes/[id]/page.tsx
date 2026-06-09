@@ -191,7 +191,7 @@ export default function AdminClienteDetalhePage() {
 
     } catch (err: any) {
       console.error('Error fetching details:', err);
-      setErrorMsg(err.message || 'Erro ao carregar detalhes do cliente.');
+      setErrorMsg('Não foi possível carregar os detalhes do cliente. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -214,14 +214,14 @@ export default function AdminClienteDetalhePage() {
 
       const resData = await response.json();
       if (!response.ok) {
-        throw new Error(resData.message || 'Erro ao executar ação.');
+        throw new Error(resData.message || 'Não foi possível executar a ação administrativa.');
       }
 
       setSuccessMsg(resData.message);
       await fetchClientDetails(); // Reload data
     } catch (err: any) {
       console.error('Error running action:', err);
-      setErrorMsg(err.message || 'Erro ao executar ação administrativa.');
+      setErrorMsg(err.message || 'Não foi possível executar a ação administrativa. Tente novamente.');
     } finally {
       setActionLoading(false);
     }
