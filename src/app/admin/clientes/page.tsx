@@ -59,13 +59,13 @@ export default function AdminClientesPage() {
         .order('name', { ascending: true });
 
       if (error) {
-        throw new Error(error.message || 'Erro ao carregar lista de clientes.');
+        throw new Error('Erro ao carregar lista de clientes.');
       }
 
       setClients(data || []);
     } catch (err: any) {
       console.error('Error fetching clients:', err);
-      setErrorMsg(err.message || 'Ocorreu um erro ao carregar os clientes.');
+      setErrorMsg('Não foi possível carregar os clientes. Tente novamente.');
     } finally {
       setLoading(false);
     }
