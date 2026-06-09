@@ -233,9 +233,10 @@ export async function POST(
           await adminSupabase
             .from('subscriptions')
             .update({
-              status: 'manual',
+              status: 'active',
               expires_at: expiresAt,
               renewed_at: new Date().toISOString(),
+              source: 'admin',
             })
             .eq('id', existingSub.id);
         } else {
@@ -243,7 +244,7 @@ export async function POST(
             user_id: clientId,
             product_id: proProduct.id,
             plan_slug: 'assistente-ia-pro',
-            status: 'manual',
+            status: 'active',
             started_at: new Date().toISOString(),
             expires_at: expiresAt,
             source: 'admin',

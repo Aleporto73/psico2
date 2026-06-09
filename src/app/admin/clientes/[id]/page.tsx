@@ -103,6 +103,12 @@ export default function AdminClienteDetalhePage() {
     }
   }, [clientId]);
 
+  const isManualManagedPro = (sub: Subscription | null) =>
+    !!sub && (sub.status === 'manual' || !['asaas', 'paymentbeta'].includes(sub.source || ''));
+
+  const isActivePro = (sub: Subscription | null) =>
+    !!sub && ['active', 'manual'].includes(sub.status) && new Date(sub.expires_at) >= new Date();
+
   const fetchClientDetails = async () => {
     setLoading(true);
     setErrorMsg(null);
@@ -429,12 +435,12 @@ export default function AdminClienteDetalhePage() {
                     <h4 className="font-semibold text-[#F8FAFC] text-base">Assinatura do Assistente IA Pro (R$50/ano)</h4>
                     <p className="text-sm text-[#CBD5E1] leading-relaxed">Libera a geração inteligente de relatórios profissionais por 1 ano.</p>
                   </div>
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full ${subscription && ['active', 'manual'].includes(subscription.status) && new Date(subscription.expires_at) >= new Date() ? 'text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>
-                    {subscription && ['active', 'manual'].includes(subscription.status) && new Date(subscription.expires_at) >= new Date() ? `Ativo (${subscription.status === 'manual' ? 'manual' : 'pago'})` : (<><IconLock /> Bloqueado</>)}
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full ${isActivePro(subscription) ? 'text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>
+                    {isActivePro(subscription) ? `Ativo (${isManualManagedPro(subscription) ? 'manual' : 'pago'})` : (<><IconLock /> Bloqueado</>)}
                   </span>
                 </div>
 
-                {subscription && subscription.status === 'manual' ? (
+                {isActivePro(subscription) && isManualManagedPro(subscription) ? (
                   <div className="space-y-4 p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C]">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="space-y-1">
@@ -481,7 +487,7 @@ export default function AdminClienteDetalhePage() {
                       </button>
                     </div>
                   </div>
-                ) : subscription && subscription.status === 'active' && new Date(subscription.expires_at) >= new Date() ? (
+                ) : isActivePro(subscription) ? (
                   <div className="space-y-4 p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C]">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div className="space-y-1">
