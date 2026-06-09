@@ -175,7 +175,7 @@ export default function AppDashboardPage() {
       {/* Welcome Block */}
       <div className="space-y-2">
         <h2 className="text-3xl font-extrabold text-[#F8FAFC] tracking-tight">
-          Olá, {profile?.name || profile?.email.split('@')[0]}.
+          Olá, {profile?.name || profile?.email?.split('@')[0] || 'cliente'}.
         </h2>
         <p className="text-[#CBD5E1] text-base max-w-2xl leading-relaxed">
           Acesse suas planilhas de apoio operacional, use o assistente incluso e conheça ferramentas para acelerar sua rotina profissional.
