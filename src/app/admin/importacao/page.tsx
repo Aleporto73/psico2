@@ -76,30 +76,72 @@ export default function AdminImportacaoPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Simple, robust client-side CSV Parser
+  // RFC4180-style client-side CSV parser: supports quoted commas, escaped quotes and multiline fields.
   const parseCSV = (text: string): any[] => {
-    const lines = text.split(/\r?\n/).filter((line) => line.trim() !== '');
-    if (lines.length === 0) return [];
+    const rows: string[][] = [];
+    let row: string[] = [];
+    let field = '';
+    let inQuotes = false;
 
-    const headers = lines[0]
-      .split(',')
-      .map((h) => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const nextChar = text[i + 1];
 
-    const results = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const currentline = lines[i].split(',').map((val) => val.trim().replace(/^["']|["']$/g, ''));
-      if (currentline.length > 0) {
-        const obj: Record<string, string> = {};
-        for (let j = 0; j < headers.length; j++) {
-          if (currentline[j] !== undefined) {
-            obj[headers[j]] = currentline[j];
-          }
-        }
-        results.push(obj);
+      if (char === '"' && inQuotes && nextChar === '"') {
+        field += '"';
+        i++;
+        continue;
       }
+
+      if (char === '"') {
+        inQuotes = !inQuotes;
+        continue;
+      }
+
+      if (char === ',' && !inQuotes) {
+        row.push(field.trim());
+        field = '';
+        continue;
+      }
+
+      if ((char === '\n' || char === '\r') && !inQuotes) {
+        if (char === '\r' && nextChar === '\n') i++;
+
+        row.push(field.trim());
+        if (row.some((cell) => cell.trim() !== '')) {
+          rows.push(row);
+        }
+
+        row = [];
+        field = '';
+        continue;
+      }
+
+      field += char;
     }
-    return results;
+
+    row.push(field.trim());
+    if (row.some((cell) => cell.trim() !== '')) {
+      rows.push(row);
+    }
+
+    if (rows.length === 0) return [];
+
+    const headers = rows[0].map((header) =>
+      header.replace(/^\uFEFF/, '').trim().replace(/^["']|["']$/g, '').toLowerCase()
+    );
+
+    return rows.slice(1).map((cells) => {
+      const obj: Record<string, string> = {};
+
+      headers.forEach((header, index) => {
+        if (header && cells[index] !== undefined) {
+          obj[header] = cells[index].trim().replace(/^["']|["']$/g, '');
+        }
+      });
+
+      return obj;
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
