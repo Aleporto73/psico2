@@ -691,7 +691,7 @@ export default function AdminImportacaoPage() {
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-[#CBD5E1]">Vencimento do Pro</span>
                           <span className="text-[#F8FAFC] font-semibold">
-                            {formatDate(manualForm.pro_expires_at)}
+                            {formatDate(manualResult.client.pro_expires_at)}
                           </span>
                         </div>
                       )}

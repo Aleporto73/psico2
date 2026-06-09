@@ -240,6 +240,7 @@ export async function POST(request: Request) {
 
     // 6. Provision Assistente IA Pro (subscriptions) if checked
     let proStatus = 'não ativado';
+    let proExpiresAt: string | null = null;
     if (activate_pro) {
       const { data: proProduct, error: prodErr } = await adminSupabase
         .from('products')
@@ -258,6 +259,8 @@ export async function POST(request: Request) {
         ? new Date(pro_expires_at)
         : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
 
+      proExpiresAt = expiresAtDate.toISOString();
+
       const { data: existingSub } = await adminSupabase
         .from('subscriptions')
         .select('id, status')
@@ -272,7 +275,7 @@ export async function POST(request: Request) {
           plan_slug: 'assistente-ia-pro',
           status: 'active',
           started_at: new Date().toISOString(),
-          expires_at: expiresAtDate.toISOString(),
+          expires_at: proExpiresAt,
           source: cleanSource,
         });
 
@@ -290,7 +293,7 @@ export async function POST(request: Request) {
           .from('subscriptions')
           .update({
             status: 'active',
-            expires_at: expiresAtDate.toISOString(),
+            expires_at: proExpiresAt,
             updated_at: new Date().toISOString(),
           })
           .eq('id', existingSub.id);
@@ -317,7 +320,7 @@ export async function POST(request: Request) {
         source: cleanSource,
         has_lifetime_access: !!has_lifetime_access,
         activate_pro: !!activate_pro,
-        pro_expires_at: pro_expires_at || null,
+        pro_expires_at: proExpiresAt,
       },
     });
 
@@ -337,6 +340,7 @@ export async function POST(request: Request) {
         activation_status: finalProfile?.activation_status || 'pending_activation',
         has_lifetime_access: lifetimeStatus,
         pro_status: proStatus,
+        pro_expires_at: proExpiresAt,
       },
     });
   } catch (err: any) {
