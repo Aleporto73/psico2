@@ -140,7 +140,7 @@ export async function POST(request: Request) {
   } catch (err: any) {
     console.error('Error in admin banners API:', err);
     return NextResponse.json(
-      { message: err.message || 'Erro interno do servidor.' },
+      { message: 'Erro interno ao processar a solicitação. Tente novamente.' },
       { status: 500 }
     );
   }
