@@ -346,7 +346,7 @@ export async function POST(request: Request) {
   } catch (err: any) {
     console.error('Fatal error in manual client API:', err);
     return NextResponse.json(
-      { message: err.message || 'Ocorreu um erro interno.' },
+      { message: 'Ocorreu um erro interno ao processar o cadastro manual. Tente novamente.' },
       { status: 500 }
     );
   }
