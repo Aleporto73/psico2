@@ -28,9 +28,5 @@ create index if not exists idx_paymentbeta_webhook_events_status
 
 alter table public.paymentbeta_webhook_events enable row level security;
 
-drop policy if exists "Admins can read paymentbeta webhook events" on public.paymentbeta_webhook_events;
-
-create policy "Admins can read paymentbeta webhook events"
-  on public.paymentbeta_webhook_events
-  for select
-  using (public.is_admin());
+drop policy if exists "Admins can read paymentbeta webhook events"
+  on public.paymentbeta_webhook_events;
