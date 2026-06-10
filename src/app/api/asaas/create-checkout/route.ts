@@ -9,32 +9,39 @@ import { createAdminClient } from '@/utils/supabase/admin';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { product_slug, email, name } = body;
+
+    const productSlug = typeof body?.product_slug === 'string' ? body.product_slug.trim() : '';
+    const emailTrim = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const nameTrim = typeof body?.name === 'string' ? body.name.trim() : '';
 
     // 1. Validações básicas
-    if (!product_slug || !email || !name) {
+    if (!productSlug || !emailTrim || !nameTrim) {
       return NextResponse.json(
-        { message: 'Campos obrigatórios ausentes: product_slug, email, name.' },
+        { message: 'Campos obrigatórios ausentes ou inválidos.' },
         { status: 400 }
       );
     }
 
-    if (product_slug !== 'psicoplanilhas-vitalicio' && product_slug !== 'assistente-ia-pro') {
+    if (nameTrim.length > 120 || emailTrim.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
       return NextResponse.json(
-        { message: 'Slug de produto inválido ou não suportado nesta integração.' },
+        { message: 'Dados de cliente inválidos.' },
         { status: 400 }
       );
     }
 
-    const emailTrim = email.trim().toLowerCase();
-    const nameTrim = name.trim();
+    if (productSlug !== 'psicoplanilhas-vitalicio' && productSlug !== 'assistente-ia-pro') {
+      return NextResponse.json(
+        { message: 'Produto inválido ou não suportado nesta integração.' },
+        { status: 400 }
+      );
+    }
 
     // 2. Buscar informações do produto no banco de dados para garantir preço e existência
     const supabase = createAdminClient();
     const { data: product, error: productError } = await supabase
       .from('products')
       .select('id, name, price, is_active')
-      .eq('slug', product_slug)
+      .eq('slug', productSlug)
       .eq('is_active', true)
       .maybeSingle();
 
@@ -42,6 +49,14 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { message: 'Produto não encontrado ou inativo.' },
         { status: 404 }
+      );
+    }
+
+    if (typeof product.price !== 'number' || product.price <= 0) {
+      console.error('Produto sem preço válido para checkout:', productSlug);
+      return NextResponse.json(
+        { message: 'Produto indisponível para pagamento.' },
+        { status: 400 }
       );
     }
 
@@ -110,7 +125,7 @@ export async function POST(request: Request) {
       .toISOString()
       .split('T')[0];
 
-    const externalReference = `${product_slug}|${emailTrim}`;
+    const externalReference = `${productSlug}|${emailTrim}`;
 
     const paymentPayload = {
       customer: customerId,
