@@ -180,7 +180,7 @@ export async function POST(request: Request) {
 
       } catch (err: any) {
         console.error(`Error processing record for ${normalizedEmail}:`, err);
-        stats.errors.push({ email: normalizedEmail, reason: err.message || 'Falha no processamento interno.' });
+        stats.errors.push({ email: normalizedEmail, reason: 'Falha ao processar este registro. Revise os dados e tente novamente.' });
       }
     }
 
@@ -199,7 +199,7 @@ export async function POST(request: Request) {
   } catch (err: any) {
     console.error('Fatal error during CSV import API:', err);
     return NextResponse.json(
-      { message: err.message || 'Ocorreu um erro fatal durante a importação.' },
+      { message: 'Ocorreu um erro durante a importação. Revise o arquivo e tente novamente.' },
       { status: 500 }
     );
   }
