@@ -22,8 +22,8 @@ export default function EsqueciSenhaPage() {
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-      setMessage(data.message || 'Se este e-mail estiver cadastrado, você receberá um link para redefinir sua senha.');
+      await response.json();
+      setMessage('Se este e-mail estiver cadastrado, você receberá um link para redefinir sua senha.');
     } catch (err) {
       setMessage('Se este e-mail estiver cadastrado, você receberá um link para redefinir sua senha.');
     } finally {
