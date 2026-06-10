@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'Evento registrado (sem referência de produto/usuário).' }, { status: 200 });
     }
 
+
     // 3. Idempotência: Verificar se o evento já foi processado
     const { data: existingEvent, error: findEventErr } = await supabase
       .from('payment_events')
@@ -120,6 +121,33 @@ export async function POST(request: Request) {
       }
     } else {
       eventDbId = existingEvent.id;
+    }
+
+    if (
+      productSlug !== 'psicoplanilhas-vitalicio' &&
+      productSlug !== 'assistente-ia-pro'
+    ) {
+      await supabase
+        .from('payment_events')
+        .update({
+          processed: true,
+          error_message: 'Produto não suportado pelo webhook.',
+        })
+        .eq('id', eventDbId);
+
+      return NextResponse.json({ message: 'Evento registrado sem processamento de produto.' }, { status: 200 });
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
+      await supabase
+        .from('payment_events')
+        .update({
+          processed: true,
+          error_message: 'E-mail inválido no externalReference.',
+        })
+        .eq('id', eventDbId);
+
+      return NextResponse.json({ message: 'Evento registrado sem processamento de usuário.' }, { status: 200 });
     }
 
     // 4. Executar a lógica com base no tipo de evento
@@ -339,8 +367,8 @@ export async function POST(request: Request) {
       // e a tabela payment_events já provê log completo com payload, evento e status.
 
     } catch (bErr: any) {
-      businessError = bErr.message || 'Erro durante processamento da regra de negócio';
-      console.error('Erro de negócio ao processar webhook Asaas:', businessError);
+      businessError = 'Erro durante processamento da regra de negócio do webhook Asaas.';
+      console.error('Erro de negócio ao processar webhook Asaas:', bErr);
     }
 
     // 5. Atualizar payment_events com status de processamento
@@ -356,7 +384,7 @@ export async function POST(request: Request) {
 
     if (businessError) {
       // Retorna 500 para o Asaas tentar reenviar se for um erro de processo do nosso lado
-      return NextResponse.json({ message: businessError }, { status: 500 });
+      return NextResponse.json({ message: 'Erro ao processar webhook. O evento será tentado novamente.' }, { status: 500 });
     }
 
     return NextResponse.json({ message: 'Webhook processado com sucesso.' }, { status: 200 });
