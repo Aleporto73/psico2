@@ -77,8 +77,8 @@ export default function AdminBannersPage() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Erro ao alternar status do banner.');
+      await res.json();
+      if (!res.ok) throw new Error('Erro ao alternar status do banner.');
 
       setSuccessMsg(`Status do banner "${banner.title}" alterado com sucesso!`);
       fetchBanners();
@@ -105,8 +105,8 @@ export default function AdminBannersPage() {
         body: JSON.stringify(editingBanner),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Erro ao salvar banner.');
+      await res.json();
+      if (!res.ok) throw new Error('Erro ao salvar banner.');
 
       setSuccessMsg(editingBanner.id ? 'Banner atualizado!' : 'Banner criado com sucesso!');
       setShowForm(false);

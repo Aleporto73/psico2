@@ -77,8 +77,8 @@ export default function AdminProdutosPage() {
         }),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Erro ao alternar status do produto.');
+      await res.json();
+      if (!res.ok) throw new Error('Erro ao alternar status do produto.');
 
       setSuccessMsg(`Status do produto "${prod.name}" alterado com sucesso!`);
       fetchProducts();
@@ -111,8 +111,8 @@ export default function AdminProdutosPage() {
         body: JSON.stringify(editingProd),
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Erro ao salvar produto.');
+      await res.json();
+      if (!res.ok) throw new Error('Erro ao salvar produto.');
 
       setSuccessMsg(editingProd.id ? 'Produto atualizado com sucesso!' : 'Produto cadastrado com sucesso!');
       setShowForm(false);
