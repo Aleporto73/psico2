@@ -327,12 +327,12 @@ export async function POST(
       }
 
       default:
-        return NextResponse.json({ message: `Ação '${action}' desconhecida.` }, { status: 400 });
+        return NextResponse.json({ message: 'Ação administrativa desconhecida.' }, { status: 400 });
     }
   } catch (err: any) {
     console.error('Fatal error executing admin action:', err);
     return NextResponse.json(
-      { message: err.message || 'Erro ao executar a ação administrativa.' },
+      { message: 'Erro ao executar a ação administrativa. Tente novamente.' },
       { status: 500 }
     );
   }
