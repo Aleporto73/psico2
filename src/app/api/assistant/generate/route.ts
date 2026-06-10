@@ -569,7 +569,7 @@ Gere o rascunho descritivo de apoio conforme as instruções do sistema e o tipo
   } catch (err: any) {
     console.error('Unexpected error in /api/assistant/generate:', err);
     return NextResponse.json(
-      { message: err.message || 'Erro interno do servidor.' },
+      { message: 'Erro interno ao gerar o relatório. Tente novamente.' },
       { status: 500 }
     );
   }
