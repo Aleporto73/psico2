@@ -250,7 +250,7 @@ export default function AdminImportacaoPage() {
 
       const resData = await response.json();
       if (!response.ok) {
-        throw new Error(resData.message || 'Erro ao importar clientes.');
+        throw new Error('Erro ao importar clientes.');
       }
 
       setImportResult(resData.stats);
@@ -292,7 +292,7 @@ export default function AdminImportacaoPage() {
 
       const resData = await response.json();
       if (!response.ok) {
-        throw new Error(resData.message || 'Erro ao cadastrar cliente manualmente.');
+        throw new Error('Erro ao cadastrar cliente manualmente.');
       }
 
       setManualResult(resData);

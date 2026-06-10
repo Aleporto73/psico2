@@ -214,14 +214,15 @@ export default function AdminClienteDetalhePage() {
 
       const resData = await response.json();
       if (!response.ok) {
-        throw new Error(resData.message || 'Não foi possível executar a ação administrativa.');
+        setErrorMsg(resData.message || 'Não foi possível executar a ação administrativa.');
+        return;
       }
 
       setSuccessMsg(resData.message);
       await fetchClientDetails(); // Reload data
     } catch (err: any) {
       console.error('Error running action:', err);
-      setErrorMsg(err.message || 'Não foi possível executar a ação administrativa. Tente novamente.');
+      setErrorMsg('Não foi possível executar a ação administrativa. Tente novamente.');
     } finally {
       setActionLoading(false);
     }
