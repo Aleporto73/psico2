@@ -73,7 +73,7 @@ export default function AppMinhaContaPage() {
       setStats(accessStats);
     } catch (err: any) {
       console.error('Error fetching account data:', err);
-      setErrorMsg(err.message || 'Erro ao carregar dados da conta.');
+      setErrorMsg('Não foi possível carregar os dados da conta. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -100,7 +100,7 @@ export default function AppMinhaContaPage() {
       await fetchAccountData();
     } catch (err: any) {
       console.error('Error updating profile type:', err);
-      setErrorMsg(err.message || 'Erro ao atualizar perfil profissional.');
+      setErrorMsg('Não foi possível atualizar o perfil profissional. Revise os dados e tente novamente.');
     } finally {
       setSaving(false);
     }
