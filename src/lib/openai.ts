@@ -1,3 +1,4 @@
+import 'server-only';
 /**
  * openai.ts — Helper server-side para integração com a API da OpenAI.
  * NUNCA exposto ao cliente. Usado apenas em Route Handlers (server-side).
