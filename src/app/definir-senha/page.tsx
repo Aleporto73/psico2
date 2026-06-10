@@ -137,7 +137,7 @@ export default function DefinirSenhaPage() {
       }, 1500);
 
     } catch (err: any) {
-      setErrorMsg(err.message || 'Não foi possível salvar sua senha. Tente novamente.');
+      setErrorMsg('Não foi possível salvar sua senha. Tente novamente.');
       setLoading(false);
     }
   };

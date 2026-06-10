@@ -85,7 +85,12 @@ function LoginContent() {
         router.push('/app');
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'E-mail ou senha incorretos. Verifique os dados ou use "Esqueci minha senha".');
+      const message = String(err?.message || '');
+      setErrorMsg(
+        message === 'Acesso bloqueado. Entre em contato com o suporte.'
+          ? 'Acesso bloqueado. Entre em contato com o suporte.'
+          : 'E-mail ou senha incorretos. Verifique os dados ou use "Esqueci minha senha".'
+      );
       setLoading(false);
     }
   };

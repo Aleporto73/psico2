@@ -27,7 +27,7 @@ export default function AtivarAcessoPage() {
 
       if (!response.ok) {
         // API returned an error (e.g. email not found)
-        setErrorMsg(data.message || 'Não foi possível enviar o link. Tente novamente.');
+        setErrorMsg('Não foi possível enviar o link. Tente novamente.');
         return;
       }
 
