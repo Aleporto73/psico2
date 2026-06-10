@@ -259,7 +259,7 @@ export default function AdminImportacaoPage() {
       setFileName(null);
     } catch (err: any) {
       console.error('Import error:', err);
-      setErrorMsg(err.message || 'Ocorreu um erro fatal durante a importação.');
+      setErrorMsg('Não foi possível concluir a importação. Revise o arquivo e tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -309,7 +309,7 @@ export default function AdminImportacaoPage() {
       });
     } catch (err: any) {
       console.error('Manual submission error:', err);
-      setManualError(err.message || 'Erro ao processar o cadastro manual.');
+      setManualError('Não foi possível concluir o cadastro manual. Revise os dados e tente novamente.');
     } finally {
       setManualLoading(false);
     }
