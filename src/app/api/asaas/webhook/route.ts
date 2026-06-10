@@ -52,14 +52,14 @@ export async function POST(request: Request) {
       console.info(`Webhook recebido sem referência válida: externalReference="${externalReference}". Gravando evento.`);
       
       // Inserir em payment_events como processado para evitar retentativas infrutíferas
-      await supabase.from('payment_events').insert({
+      await supabase.from('payment_events').upsert({
         event_id: eventId,
         payment_id: paymentId,
         event_type: eventType,
         payload: body,
         processed: true,
         error_message: 'Referência externa inválida ou ausente.',
-      });
+      }, { onConflict: 'payment_id,event_type' });
 
       return NextResponse.json({ message: 'Evento registrado (sem referência de produto/usuário).' }, { status: 200 });
     }
