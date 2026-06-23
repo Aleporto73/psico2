@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { sendActivationLink } from '@/utils/auth/activation';
 
 export async function POST(request: Request) {
   try {
@@ -38,18 +39,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. If profile exists and is active, trigger native Supabase resetPasswordForEmail
+    // 3. If profile exists and is active, trigger the shared activation email flow
     if (profile.status === 'active') {
       const origin = new URL(request.url).origin;
-      const redirectTo = `${origin}/definir-senha`;
 
-      // Trigger native password reset email
-      const { error: resetError } = await adminSupabase.auth.resetPasswordForEmail(
-        normalizedEmail,
-        { redirectTo }
-      );
-
-      if (resetError) {
+      // Reusa o helper compartilhado; aqui logamos e seguimos (mantém o 200 da rota).
+      try {
+        await sendActivationLink(adminSupabase, normalizedEmail, origin);
+      } catch (resetError) {
         console.error('Error triggering native reset password for activation:', resetError);
       }
     }

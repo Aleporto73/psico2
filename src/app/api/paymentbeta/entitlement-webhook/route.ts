@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { sendActivationLink } from '@/utils/auth/activation';
 
 export const runtime = 'nodejs';
 
@@ -8,10 +9,12 @@ const CONTRACT_VERSION = '2026-06-10';
 const SUPPORTED_EVENT = 'sale.confirmed';
 const TIMESTAMP_TOLERANCE_SECONDS = 300;
 const SUPPORTED_ENTITLEMENTS = new Set(['psicoplanilhas-vitalicio', 'assistente-ia-pro']);
+// Status terminais de sucesso: um reenvio que colida com um destes é ignorado
+// como duplicado. 'user_not_found' foi REMOVIDO de propósito — comprador novo
+// deixou de ser um fim de linha e passou a ser onboarded (ver POST/ensureBuyer).
 const DUPLICATE_SUCCESS_STATUSES = new Set([
   'processed',
   'duplicate_ignored',
-  'user_not_found',
   'unsupported_entitlement',
   'unsupported_event_version',
   'out_of_scope_event',
@@ -191,11 +194,19 @@ async function findExistingEvent(
   return byTransaction ? (byTransaction as EventRecord) : null;
 }
 
+type EventAudit = {
+  user_id?: string;
+  user_created?: boolean;
+  onboarding_email_status?: string | null;
+  onboarding_email_sent_at?: string | null;
+};
+
 async function markEventStatus(
   supabase: AdminClient,
   eventId: string,
   status: WebhookEventStatus,
   errorMessage?: string | null,
+  audit?: EventAudit,
 ) {
   const { error } = await supabase
     .from('paymentbeta_webhook_events')
@@ -203,6 +214,7 @@ async function markEventStatus(
       status,
       error_message: errorMessage ?? null,
       processed_at: new Date().toISOString(),
+      ...(audit ?? {}),
     })
     .eq('id', eventId);
 
@@ -250,7 +262,14 @@ async function registerEvent(
     return { kind: 'duplicate', record: existing };
   }
 
-  if (existing.status === 'failed' || existing.status === 'received') {
+  // 'user_not_found' é reprocessável: eventos gravados pelo comportamento antigo
+  // (comprador novo tratado como fim de linha) voltam ao onboarding num reenvio.
+  // A idempotência do entitlement é garantida pelo upsert + constraints únicas (B1).
+  if (
+    existing.status === 'failed' ||
+    existing.status === 'received' ||
+    existing.status === 'user_not_found'
+  ) {
     const { error: updateError } = await supabase
       .from('paymentbeta_webhook_events')
       .update({
@@ -293,10 +312,18 @@ async function getProductId(supabase: AdminClient, slug: string): Promise<string
   return data.id as string;
 }
 
-async function findUserIdByEmail(supabase: AdminClient, normalizedEmail: string): Promise<string | null> {
+type BuyerProfile = {
+  id: string;
+  activation_status: string;
+};
+
+async function findProfileByEmail(
+  supabase: AdminClient,
+  normalizedEmail: string,
+): Promise<BuyerProfile | null> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('id')
+    .select('id, activation_status')
     .ilike('email', normalizedEmail)
     .maybeSingle();
 
@@ -304,7 +331,85 @@ async function findUserIdByEmail(supabase: AdminClient, normalizedEmail: string)
     throw new Error(`Erro ao buscar profile por e-mail: ${error.message}`);
   }
 
-  return data?.id ?? null;
+  return data
+    ? { id: data.id as string, activation_status: data.activation_status as string }
+    : null;
+}
+
+async function findActivationStatusById(
+  supabase: AdminClient,
+  userId: string,
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('activation_status')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Erro ao confirmar profile do comprador: ${error.message}`);
+  }
+
+  return data ? (data.activation_status as string) : null;
+}
+
+type ResolvedBuyer = {
+  userId: string;
+  userCreated: boolean;
+  activationStatus: string;
+};
+
+/**
+ * Garante um usuário para o comprador. Existente é reaproveitado; novo é criado
+ * via auth.admin.createUser (sem senha, e-mail já validado pela compra paga).
+ * A trigger on_auth_user_created cria o profile com activation_status
+ * 'pending_activation'. Nunca duplica: se o auth user já existir, localiza o
+ * profile; falhas transitórias são lançadas (status 'failed' + HTTP 500).
+ */
+async function ensureBuyer(
+  supabase: AdminClient,
+  normalizedEmail: string,
+): Promise<ResolvedBuyer> {
+  const existing = await findProfileByEmail(supabase, normalizedEmail);
+  if (existing) {
+    return {
+      userId: existing.id,
+      userCreated: false,
+      activationStatus: existing.activation_status,
+    };
+  }
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email: normalizedEmail,
+    email_confirm: true,
+  });
+
+  if (error) {
+    // Pode ser auth user já existente (sem profile no 1º lookup): localizar,
+    // nunca criar um segundo usuário nem inserir profile manualmente.
+    const afterConflict = await findProfileByEmail(supabase, normalizedEmail);
+    if (afterConflict) {
+      return {
+        userId: afterConflict.id,
+        userCreated: false,
+        activationStatus: afterConflict.activation_status,
+      };
+    }
+
+    throw new Error(`Erro ao criar usuário do comprador: ${error.message}`);
+  }
+
+  const createdId = data.user?.id;
+  if (!createdId) {
+    throw new Error('Criação de usuário não retornou id do comprador.');
+  }
+
+  const activationStatus = await findActivationStatusById(supabase, createdId);
+  if (!activationStatus) {
+    throw new Error('Profile não confirmado após criação do comprador.');
+  }
+
+  return { userId: createdId, userCreated: true, activationStatus };
 }
 
 async function upsertLifetimePurchase(
@@ -621,38 +726,58 @@ export async function POST(request: Request) {
       });
     }
 
-    const userId = await findUserIdByEmail(supabase, customerEmail);
-    if (!userId) {
-      await markEventStatus(
-        supabase,
-        eventRecord.id,
-        'user_not_found',
-        'Usuário não localizado no Psico2. Nenhum cadastro automático foi executado.',
-      );
-
-      return jsonMessage('Usuário não encontrado no Psico2.', 200, {
-        status: 'user_not_found',
-      });
-    }
-
-    if (entitlementCode === 'psicoplanilhas-vitalicio') {
-      const productId = await getProductId(supabase, entitlementCode);
-      await upsertLifetimePurchase(supabase, userId, transactionId, productId);
-    } else {
-      const expiresAt = parseIsoDate(payload.entitlement?.expires_at);
-      if (!expiresAt) {
+    // Valida o payload específico do entitlement ANTES de qualquer efeito
+    // colateral (não cria usuário se o payload do assistente for inválido).
+    let assistantExpiresAt: Date | null = null;
+    if (entitlementCode === 'assistente-ia-pro') {
+      assistantExpiresAt = parseIsoDate(payload.entitlement?.expires_at);
+      if (!assistantExpiresAt) {
         return await finalizeInvalidPayload(
           supabase,
           eventRecord.id,
           'assistente-ia-pro exige entitlement.expires_at válido.',
         );
       }
-
-      const productId = await getProductId(supabase, entitlementCode);
-      await upsertAssistantSubscription(supabase, userId, transactionId, productId, expiresAt);
     }
 
-    await markEventStatus(supabase, eventRecord.id, 'processed', null);
+    // Comprador novo é onboarded (criado + ativação); existente é reaproveitado.
+    // Falhas aqui propagam para o catch -> status 'failed' (HTTP 500, retryável).
+    const buyer = await ensureBuyer(supabase, customerEmail);
+
+    if (entitlementCode === 'psicoplanilhas-vitalicio') {
+      const productId = await getProductId(supabase, entitlementCode);
+      await upsertLifetimePurchase(supabase, buyer.userId, transactionId, productId);
+    } else if (assistantExpiresAt) {
+      const productId = await getProductId(supabase, entitlementCode);
+      await upsertAssistantSubscription(
+        supabase,
+        buyer.userId,
+        transactionId,
+        productId,
+        assistantExpiresAt,
+      );
+    }
+
+    // Gating de e-mail: só dispara para usuário recém-criado OU ainda pendente
+    // de ativação. Não reenvia para quem já ativou (activation_status != pending).
+    const shouldSendActivation =
+      buyer.userCreated || buyer.activationStatus === 'pending_activation';
+    let onboardingEmailStatus = 'skipped_already_active';
+    let onboardingEmailSentAt: string | null = null;
+
+    if (shouldSendActivation) {
+      const origin = new URL(request.url).origin;
+      await sendActivationLink(supabase, customerEmail, origin);
+      onboardingEmailStatus = 'sent';
+      onboardingEmailSentAt = new Date().toISOString();
+    }
+
+    await markEventStatus(supabase, eventRecord.id, 'processed', null, {
+      user_id: buyer.userId,
+      user_created: buyer.userCreated,
+      onboarding_email_status: onboardingEmailStatus,
+      onboarding_email_sent_at: onboardingEmailSentAt,
+    });
 
     return jsonMessage('Webhook PaymentBeta processado com sucesso.', 200, {
       status: 'processed',
