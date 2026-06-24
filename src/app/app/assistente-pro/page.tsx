@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { Lock, Check, TriangleAlert, X, Sparkles, ImagePlus, Plus, Trash2, Zap, History, Shield, SquarePen } from 'lucide-react';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -92,127 +93,6 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 function makeId() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
-}
-
-// ── SVG Icons ──────────────────────────────────────────────────────────────────
-
-function IconLockLarge() {
-  return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
-function IconLock() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
-function IconCheck() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
-
-function IconAlert() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  );
-}
-
-function IconClose() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
-}
-
-function IconSpark() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 2 9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" />
-    </svg>
-  );
-}
-
-function IconImage() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21 15 16 10 5 21" />
-    </svg>
-  );
-}
-
-function IconPlus() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  );
-}
-
-function IconTrash() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-    </svg>
-  );
-}
-
-function IconBolt() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-    </svg>
-  );
-}
-
-function IconHistory() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M3 12a9 9 0 1 0 3-6.7" />
-      <polyline points="3 4 3 10 9 10" />
-      <line x1="12" y1="7" x2="12" y2="12" />
-      <line x1="12" y1="12" x2="15.5" y2="14" />
-    </svg>
-  );
-}
-
-function IconShield() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  );
-}
-
-function IconEdit() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z" />
-    </svg>
-  );
 }
 
 // ── Component ──────────────────────────────────────────────────────────────────
@@ -473,9 +353,9 @@ export default function AppAssistenteProPage() {
 
   if (loadingStatus) {
     return (
-      <div className="flex h-[60vh] items-center justify-center text-[#CBD5E1]">
+      <div className="flex h-[60vh] items-center justify-center text-pp-ink-soft">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
+          <div className="w-8 h-8 border-2 border-pp-hairline border-t-pp-ink rounded-full animate-spin mx-auto" />
           <p>Carregando status do assistente...</p>
         </div>
       </div>
@@ -484,8 +364,8 @@ export default function AppAssistenteProPage() {
 
   const DAILY_LIMIT = 20;
 
-  const inputCls = "w-full px-4 py-3 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:ring-1 focus:ring-[#7DD3FC] focus:border-[#7DD3FC] transition";
-  const labelCls = "block text-sm font-bold text-[#CBD5E1]";
+  const inputCls = "w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink placeholder:text-pp-ink-soft focus:outline-none focus:ring-1 focus:ring-pp-ink/20 focus:border-pp-ink transition";
+  const labelCls = "block text-sm font-medium text-pp-ink";
 
   const canAddMoreImages = images.length < MAX_IMAGES;
   const selectedReport = REPORT_TYPE_OPTIONS.find((o) => o.value === form.reportType);
@@ -493,28 +373,26 @@ export default function AppAssistenteProPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
-      <div>
-        <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Assistente IA Pro</h1>
-        <p className="text-[#CBD5E1] text-base mt-1">
+      {/* Header editorial */}
+      <header className="space-y-2 pt-4">
+        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Assistente IA Pro</h1>
+        <p className="text-pp-ink-soft text-base md:text-lg">
           Geração inteligente de rascunhos descritivos de apoio a partir das suas planilhas profissionais — por print, por texto ou ambos.
         </p>
-      </div>
+      </header>
 
       {assistantState === 'active' && (
         <>
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="flex items-center gap-1.5 px-3 py-1 text-xs font-bold uppercase text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] inline-block animate-pulse" />
-              Assinatura Ativa
-            </span>
-            <span className="text-sm text-[#CBD5E1]">
-              Válido até:{' '}
-              <strong className="text-[#7DD3FC]">{formatDate(profile?.assistant_expires_at)}</strong>
+          {/* Status line */}
+          <div className="flex w-fit max-w-full flex-wrap items-center gap-x-4 gap-y-1.5 bg-pp-block-mint/50 rounded-2xl px-5 py-3">
+            <span className="font-serif italic text-pp-ink text-sm">Assinatura ativa</span>
+            <span className="text-sm text-pp-ink-soft">
+              Válido até <strong className="font-medium text-pp-ink">{formatDate(profile?.assistant_expires_at)}</strong>
             </span>
             {dailyCount !== null && (
-              <span className="text-sm text-[#CBD5E1]">
+              <span className="text-sm text-pp-ink-soft">
                 Gerações hoje:{' '}
-                <strong className={dailyCount >= DAILY_LIMIT ? 'text-[#FB7185]' : 'text-[#F8FAFC]'}>
+                <strong className={`font-medium ${dailyCount >= DAILY_LIMIT ? 'text-pp-danger' : 'text-pp-ink'}`}>
                   {dailyCount}/{DAILY_LIMIT}
                 </strong>
               </span>
@@ -522,47 +400,47 @@ export default function AppAssistenteProPage() {
           </div>
 
           {lastReport && (
-            <div id="last-report" className="p-6 bg-[#34D399]/5 border border-[#34D399]/25 rounded-2xl space-y-4">
+            <div id="last-report" className="bg-pp-block-mint/40 rounded-2xl p-6 space-y-4">
               <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-center gap-2 text-[#34D399]">
-                  <IconCheck />
-                  <h3 className="text-base font-bold">Rascunho gerado com sucesso</h3>
+                <div className="flex items-center gap-2 text-pp-ink">
+                  <Check className="w-5 h-5" aria-hidden="true" />
+                  <h3 className="font-serif italic text-base text-pp-ink">Rascunho gerado</h3>
                 </div>
                 <div className="flex gap-2">
                   <button
                     onClick={() => handleCopy(lastReport.output_text, 'last')}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-pp-ink border border-pp-ink/15 hover:bg-pp-ink/5 rounded-lg transition"
                   >
-                    {copiedId === 'last' ? (<><IconCheck /> Copiado</>) : 'Copiar'}
+                    {copiedId === 'last' ? (<><Check className="w-4 h-4" /> Copiado</>) : 'Copiar'}
                   </button>
                   <button
                     onClick={() => setModalReport(lastReport)}
-                    className="px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition"
+                    className="px-4 py-2 text-sm font-medium text-pp-ink border border-pp-ink/15 hover:bg-pp-ink/5 rounded-lg transition"
                   >
                     Ver completo
                   </button>
                 </div>
               </div>
-              <pre className="text-sm text-[#CBD5E1] leading-relaxed whitespace-pre-wrap font-sans line-clamp-6 overflow-hidden">
+              <pre className="text-sm text-pp-ink-soft leading-relaxed whitespace-pre-wrap font-sans line-clamp-6 overflow-hidden">
                 {lastReport.output_text}
               </pre>
-              <p className="text-xs text-[#94A3B8]">
+              <p className="text-xs text-pp-ink-soft">
                 Salvo em: {formatDateTime(lastReport.created_at)}
               </p>
             </div>
           )}
 
           {generateError && (
-            <div className="p-4 bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl text-base text-[#FB7185] leading-relaxed flex items-start gap-2">
-              <span className="shrink-0 mt-0.5"><IconAlert /></span>
+            <div className="p-4 bg-pp-danger/10 rounded-xl text-base text-pp-danger leading-relaxed flex items-start gap-2">
+              <span className="shrink-0 mt-0.5"><TriangleAlert className="w-[18px] h-[18px]" aria-hidden="true" /></span>
               <span>{generateError}</span>
             </div>
           )}
 
-          <section className="p-6 md:p-8 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] space-y-6">
+          <section className="bg-white border border-pp-hairline rounded-2xl p-6 md:p-8 space-y-6">
             <div>
-              <h2 className="text-xl font-bold text-[#F8FAFC]">Gerar rascunho de apoio</h2>
-              <p className="text-sm text-[#CBD5E1] mt-1">
+              <h2 className="text-xl font-medium text-pp-ink">Gerar rascunho de apoio</h2>
+              <p className="text-sm text-pp-ink-soft mt-1">
                 Preencha os campos básicos. Você pode anexar prints da planilha, escrever dados/observações ou ambos.
               </p>
             </div>
@@ -573,7 +451,7 @@ export default function AppAssistenteProPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="nome" className={labelCls}>
-                    Nome / Identificação <span className="text-[#FB7185]">*</span>
+                    Nome / Identificação <span className="text-pp-danger">*</span>
                   </label>
                   <input
                     id="nome"
@@ -589,7 +467,7 @@ export default function AppAssistenteProPage() {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="idade" className={labelCls}>
-                    Idade / Faixa etária <span className="text-[#FB7185]">*</span>
+                    Idade / Faixa etária <span className="text-pp-danger">*</span>
                   </label>
                   <input
                     id="idade"
@@ -608,7 +486,7 @@ export default function AppAssistenteProPage() {
               {/* Área do Relatório */}
               <div className="space-y-2">
                 <label htmlFor="area" className={labelCls}>
-                  Área do relatório <span className="text-[#FB7185]">*</span>
+                  Área do relatório <span className="text-pp-danger">*</span>
                 </label>
                 <select
                   id="area"
@@ -634,7 +512,7 @@ export default function AppAssistenteProPage() {
               {/* Objetivo */}
               <div className="space-y-2">
                 <label htmlFor="objetivo" className={labelCls}>
-                  Objetivo do relatório <span className="text-[#FB7185]">*</span>
+                  Objetivo do relatório <span className="text-pp-danger">*</span>
                 </label>
                 <input
                   id="objetivo"
@@ -652,9 +530,9 @@ export default function AppAssistenteProPage() {
               {/* Tipo de relatório */}
               <div className="space-y-2">
                 <label htmlFor="reportType" className={labelCls}>
-                  Tipo de relatório <span className="text-[#FB7185]">*</span>
+                  Tipo de relatório <span className="text-pp-danger">*</span>
                 </label>
-                <p className="text-sm text-[#CBD5E1] leading-relaxed">
+                <p className="text-sm text-pp-ink-soft leading-relaxed">
                   Escolha para quem o texto será escrito. Isso ajusta a linguagem automaticamente.
                 </p>
                 <select
@@ -672,8 +550,8 @@ export default function AppAssistenteProPage() {
                   ))}
                 </select>
                 {selectedReport && (
-                  <div className="px-3 py-2 bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-xl text-xs text-[#CBD5E1] leading-relaxed">
-                    <strong className="text-[#7DD3FC]">{selectedReport.label}:</strong> {selectedReport.hint}
+                  <div className="px-4 py-2.5 bg-pp-block-mint/30 rounded-xl text-xs text-pp-ink-soft leading-relaxed">
+                    <strong className="font-medium text-pp-ink">{selectedReport.label}:</strong> {selectedReport.hint}
                   </div>
                 )}
               </div>
@@ -682,40 +560,40 @@ export default function AppAssistenteProPage() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between flex-wrap gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="text-[#7DD3FC]"><IconImage /></span>
+                    <span className="text-pp-ink"><ImagePlus className="w-[22px] h-[22px]" aria-hidden="true" /></span>
                     <span className={labelCls + " !text-base"}>
                       Anexar print da planilha ou gráfico
                     </span>
                   </div>
-                  <span className="text-xs text-[#94A3B8] font-normal">
+                  <span className="text-xs text-pp-ink-soft font-normal">
                     {images.length}/{MAX_IMAGES} prints
                   </span>
                 </div>
-                <p className="text-sm text-[#CBD5E1] leading-relaxed">
+                <p className="text-sm text-pp-ink-soft leading-relaxed">
                   Você pode enviar até 4 prints da planilha, tabela ou gráfico. Se os prints estiverem claros, o campo de texto abaixo pode ficar em branco.
                 </p>
 
                 {images.length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {images.map((img, idx) => (
-                      <div key={img.id} className="p-3 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl space-y-2">
+                      <div key={img.id} className="p-3 bg-pp-canvas border border-pp-hairline rounded-xl space-y-2">
                         <div className="flex justify-between items-start gap-2">
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-[#F8FAFC] truncate">
+                            <p className="text-sm font-medium text-pp-ink truncate">
                               {idx + 1}. {img.name}
                             </p>
-                            <p className="text-xs text-[#94A3B8] mt-0.5">{formatSize(img.sizeBytes)}</p>
+                            <p className="text-xs text-pp-ink-soft mt-0.5">{formatSize(img.sizeBytes)}</p>
                           </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveImage(img.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-[#FB7185] bg-[#FB7185]/10 hover:bg-[#FB7185]/20 border border-[#FB7185]/20 rounded-lg transition shrink-0"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-pp-danger bg-pp-danger/10 hover:bg-pp-danger/20 rounded-lg transition shrink-0"
                             aria-label={`Remover print ${idx + 1}`}
                           >
-                            <IconTrash /> Remover
+                            <Trash2 className="w-3.5 h-3.5" /> Remover
                           </button>
                         </div>
-                        <div className="rounded-lg overflow-hidden border border-[#1F4D5C] bg-[#061923] max-h-56">
+                        <div className="rounded-lg overflow-hidden border border-pp-hairline bg-white max-h-56">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={img.dataUrl}
@@ -731,13 +609,13 @@ export default function AppAssistenteProPage() {
                 {images.length === 0 ? (
                   <label
                     htmlFor="imagePick"
-                    className="flex flex-col items-center justify-center w-full min-h-[140px] px-4 py-6 bg-[#0E2A38] border-2 border-dashed border-[#1F4D5C] rounded-xl cursor-pointer hover:border-[#7DD3FC] hover:bg-[#123340] transition text-center"
+                    className="flex flex-col items-center justify-center w-full min-h-[140px] px-4 py-6 bg-pp-canvas border-2 border-dashed border-pp-hairline rounded-xl cursor-pointer hover:border-pp-ink hover:bg-pp-hairline-soft transition text-center"
                   >
-                    <span className="text-[#7DD3FC] mb-2"><IconImage /></span>
-                    <span className="text-base text-[#F8FAFC] font-semibold">
+                    <span className="text-pp-ink mb-2"><ImagePlus className="w-[22px] h-[22px]" aria-hidden="true" /></span>
+                    <span className="text-base text-pp-ink font-medium">
                       Clique para adicionar prints
                     </span>
-                    <span className="text-xs text-[#94A3B8] mt-1">
+                    <span className="text-xs text-pp-ink-soft mt-1">
                       PNG, JPG/JPEG ou WEBP — até 5 MB por imagem
                     </span>
                     <input
@@ -754,13 +632,13 @@ export default function AppAssistenteProPage() {
                   <div className="flex flex-wrap gap-3">
                     <label
                       htmlFor="imagePick"
-                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold rounded-xl border transition ${
+                      className={`inline-flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl border transition ${
                         canAddMoreImages
-                          ? 'bg-[#0E2A38] hover:bg-[#123340] text-[#7DD3FC] border-[#7DD3FC]/40 cursor-pointer'
-                          : 'bg-[#0E2A38] text-[#94A3B8] border-[#1F4D5C] cursor-not-allowed opacity-60'
+                          ? 'bg-white text-pp-ink border-pp-ink/15 hover:bg-pp-ink/5 hover:border-pp-ink cursor-pointer'
+                          : 'bg-pp-hairline-soft text-pp-ink-soft border-pp-hairline cursor-not-allowed opacity-60'
                       }`}
                     >
-                      <IconPlus /> Adicionar print
+                      <Plus className="w-4 h-4" /> Adicionar print
                       <input
                         ref={fileInputRef}
                         id="imagePick"
@@ -775,16 +653,16 @@ export default function AppAssistenteProPage() {
                     <button
                       type="button"
                       onClick={handleClearImages}
-                      className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-[#CBD5E1] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C] rounded-xl transition"
+                      className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-pp-ink-soft border border-pp-hairline hover:bg-pp-hairline-soft rounded-xl transition"
                     >
-                      <IconTrash /> Remover todas
+                      <Trash2 className="w-4 h-4" /> Remover todas
                     </button>
                   </div>
                 )}
 
                 {imageError && (
-                  <div className="p-3 text-sm text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl flex items-start gap-2">
-                    <span className="shrink-0 mt-0.5"><IconAlert /></span>
+                  <div className="p-3 text-sm text-pp-danger bg-pp-danger/10 rounded-xl flex items-start gap-2">
+                    <span className="shrink-0 mt-0.5"><TriangleAlert className="w-[18px] h-[18px]" aria-hidden="true" /></span>
                     <span>{imageError}</span>
                   </div>
                 )}
@@ -795,9 +673,9 @@ export default function AppAssistenteProPage() {
                 <label htmlFor="additionalNotes" className={labelCls}>
                   Dados ou observações adicionais{' '}
                   {images.length === 0 ? (
-                    <span className="text-[#FB7185]">*</span>
+                    <span className="text-pp-danger">*</span>
                   ) : (
-                    <span className="text-[#94A3B8] font-normal">(opcional — você anexou prints)</span>
+                    <span className="text-pp-ink-soft font-normal">(opcional — você anexou prints)</span>
                   )}
                 </label>
                 <textarea
@@ -811,81 +689,81 @@ export default function AppAssistenteProPage() {
                   required={images.length === 0}
                   className={inputCls + " resize-y leading-relaxed"}
                 />
-                <p className="text-xs text-[#94A3B8] text-right">
+                <p className="text-xs text-pp-ink-soft text-right">
                   {form.additionalNotes.length}/{MAX_NOTES_CHARS} caracteres
                 </p>
               </div>
 
-              <div className="p-4 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-xl text-sm text-[#CBD5E1] leading-relaxed flex items-start gap-2">
-                <span className="shrink-0 mt-0.5 text-[#FACC15]"><IconAlert /></span>
-                <span>O rascunho gerado é um <strong>texto inicial descritivo de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado, inferido ou recalculado automaticamente.</span>
+              <div className="p-4 bg-pp-block-cream rounded-xl text-sm text-pp-ink-soft leading-relaxed flex items-start gap-2">
+                <span className="shrink-0 mt-0.5 text-pp-ink-soft"><TriangleAlert className="w-[18px] h-[18px]" aria-hidden="true" /></span>
+                <span>O rascunho gerado é um <strong className="font-medium text-pp-ink">texto inicial descritivo de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado, inferido ou recalculado automaticamente.</span>
               </div>
 
               <button
                 type="submit"
                 disabled={generating || (dailyCount !== null && dailyCount >= DAILY_LIMIT)}
-                className="w-full py-4 font-bold text-base rounded-xl transition duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] shadow-md shadow-[#7DD3FC]/15"
+                className="w-full py-4 font-medium text-base rounded-pill transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-pp-ink hover:bg-pp-ink-soft text-pp-canvas"
               >
                 {generating ? (
                   <>
-                    <span className="w-5 h-5 border-2 border-[#061923]/30 border-t-[#061923] rounded-full animate-spin" />
+                    <span className="w-5 h-5 border-2 border-pp-canvas/40 border-t-pp-canvas rounded-full animate-spin" />
                     Gerando rascunho...
                   </>
                 ) : dailyCount !== null && dailyCount >= DAILY_LIMIT ? (
-                  <><IconLock /> Limite diário atingido</>
+                  <><Lock className="w-4 h-4" /> Limite diário atingido</>
                 ) : (
-                  <><IconSpark /> Gerar rascunho de apoio</>
+                  <><Sparkles className="w-4 h-4" /> Gerar rascunho de apoio</>
                 )}
               </button>
             </form>
           </section>
 
           <section className="space-y-4">
-            <div className="border-t border-[#1F4D5C] pt-6">
-              <h2 className="text-xl font-bold text-[#F8FAFC]">Histórico de relatórios</h2>
-              <p className="text-sm text-[#CBD5E1] mt-1">Seus últimos 50 rascunhos gerados, mais recentes primeiro.</p>
+            <div className="border-t border-pp-hairline-soft pt-6">
+              <p className="font-serif italic text-pp-ink-soft text-sm">Histórico de relatórios</p>
+              <p className="text-sm text-pp-ink-soft mt-1">Seus últimos 50 rascunhos gerados, mais recentes primeiro.</p>
             </div>
 
             {loadingReports ? (
-              <div className="text-center text-[#CBD5E1] text-sm py-6">Carregando histórico...</div>
+              <div className="text-center text-pp-ink-soft text-sm py-6">Carregando histórico...</div>
             ) : reports.length === 0 ? (
-              <div className="p-10 text-center bg-[#0B2430]/50 border border-dashed border-[#1F4D5C] rounded-2xl space-y-2">
-                <p className="text-[#CBD5E1] text-base">Nenhum relatório gerado ainda.</p>
-                <p className="text-[#94A3B8] text-sm">Use o formulário acima para criar seu primeiro rascunho.</p>
+              <div className="bg-pp-block-cream/50 rounded-2xl p-10 text-center space-y-2">
+                <p className="text-pp-ink text-base">Nenhum relatório gerado ainda.</p>
+                <p className="text-pp-ink-soft text-sm">Use o formulário acima para criar seu primeiro rascunho.</p>
               </div>
             ) : (
               <div className="space-y-3">
                 {reports.map((report) => (
                   <div
                     key={report.id}
-                    className="p-5 bg-[#0B2430] border border-[#1F4D5C] rounded-2xl flex flex-col md:flex-row md:items-start gap-3 hover:border-[#7DD3FC]/40 transition duration-200"
+                    className="bg-white border border-pp-hairline rounded-2xl p-5 flex flex-col md:flex-row md:items-start gap-3 hover:border-pp-ink/20 transition"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-semibold text-[#F8FAFC] truncate">
+                      <p className="text-base font-medium text-pp-ink truncate">
                         {report.title || 'Relatório sem título'}
                       </p>
-                      <p className="text-xs text-[#94A3B8] mt-1 flex items-center gap-2 flex-wrap">
+                      <p className="text-xs text-pp-ink-soft mt-1 flex items-center gap-2 flex-wrap">
                         {report.report_type && (
-                          <span className="px-2 py-0.5 bg-[#0E2A38] rounded-md text-[#CBD5E1]">
+                          <span className="px-2 py-0.5 bg-pp-hairline-soft rounded-md text-pp-ink-soft">
                             {getReportTypeLabel(report.report_type)}
                           </span>
                         )}
                         <span>{formatDateTime(report.created_at)}</span>
                       </p>
-                      <p className="text-sm text-[#CBD5E1] mt-2 line-clamp-2 leading-relaxed">
+                      <p className="text-sm text-pp-ink-soft mt-2 line-clamp-2 leading-relaxed">
                         {report.output_text.slice(0, 150)}...
                       </p>
                     </div>
                     <div className="flex gap-2 shrink-0">
                       <button
                         onClick={() => handleCopy(report.output_text, report.id)}
-                        className="px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition whitespace-nowrap"
+                        className="px-4 py-2 text-sm font-medium text-pp-ink border border-pp-ink/15 hover:bg-pp-ink/5 rounded-lg transition whitespace-nowrap"
                       >
                         {copiedId === report.id ? 'Copiado' : 'Copiar'}
                       </button>
                       <button
                         onClick={() => setModalReport(report)}
-                        className="px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition whitespace-nowrap"
+                        className="px-4 py-2 text-sm font-medium text-pp-ink border border-pp-ink/15 hover:bg-pp-ink/5 rounded-lg transition whitespace-nowrap"
                       >
                         Ver
                       </button>
@@ -899,25 +777,25 @@ export default function AppAssistenteProPage() {
       )}
 
       {assistantState === 'expired' && (
-        <div className="p-10 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] text-center max-w-2xl mx-auto space-y-6">
-          <div className="w-20 h-20 mx-auto rounded-full bg-[#FB7185]/10 border border-[#FB7185]/20 flex items-center justify-center text-[#FB7185]">
-            <IconLockLarge />
+        <div className="bg-pp-block-coral rounded-block p-10 text-center max-w-2xl mx-auto space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-full bg-pp-ink/5 flex items-center justify-center text-pp-ink">
+            <Lock className="w-10 h-10" aria-hidden="true" />
           </div>
           <div className="space-y-3">
-            <h2 className="text-2xl font-bold text-[#F8FAFC]">Sua assinatura expirou</h2>
-            <p className="text-[#CBD5E1] text-sm">
+            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Sua assinatura expirou</h2>
+            <p className="text-pp-ink-soft text-sm">
               Acesso encerrado em:{' '}
-              <strong className="text-[#FB7185]">{formatDate(profile?.assistant_expires_at)}</strong>
+              <strong className="font-medium text-pp-ink">{formatDate(profile?.assistant_expires_at)}</strong>
             </p>
-            <p className="text-[#CBD5E1] text-base leading-relaxed pt-1">
+            <p className="text-pp-ink-soft text-base leading-relaxed pt-1">
               Renove sua assinatura anual do Assistente IA Pro por apenas{' '}
-              <strong className="text-[#7DD3FC]">R$50/ano</strong> para continuar gerando rascunhos de apoio a
+              <strong className="font-medium text-pp-ink">R$50/ano</strong> para continuar gerando rascunhos de apoio a
               partir das suas planilhas profissionais.
             </p>
           </div>
           <button
             type="button"
-            className="px-8 py-3.5 text-base bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] font-bold rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
+            className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
           >
             Renovar assinatura (R$50/ano)
           </button>
@@ -925,45 +803,45 @@ export default function AppAssistenteProPage() {
       )}
 
       {assistantState === 'blocked' && (
-        <div className="p-10 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] text-center max-w-2xl mx-auto space-y-6">
-          <div className="w-20 h-20 mx-auto rounded-full bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 flex items-center justify-center text-[#7DD3FC]">
-            <IconLockLarge />
+        <div className="bg-pp-block-coral rounded-block p-10 text-center max-w-2xl mx-auto space-y-6">
+          <div className="w-20 h-20 mx-auto rounded-full bg-pp-ink/5 flex items-center justify-center text-pp-ink">
+            <Lock className="w-10 h-10" aria-hidden="true" />
           </div>
           <div className="space-y-3">
-            <h2 className="text-2xl font-bold text-[#F8FAFC]">Assistente IA Pro bloqueado</h2>
-            <p className="text-[#CBD5E1] text-base leading-relaxed">
+            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Assistente IA Pro bloqueado</h2>
+            <p className="text-pp-ink-soft text-base leading-relaxed">
               O Assistente IA Pro é um recurso adicional com assinatura anual. Assine por apenas{' '}
-              <strong className="text-[#7DD3FC]">R$50/ano</strong> para gerar rascunhos de apoio estruturados
+              <strong className="font-medium text-pp-ink">R$50/ano</strong> para gerar rascunhos de apoio estruturados
               diretamente integrados com seus dados de planilhas profissionais.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left pt-2">
-            <div className="p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C] space-y-2">
-              <div className="text-[#7DD3FC]"><IconBolt /></div>
-              <strong className="text-[#F8FAFC] block text-sm">Rapidez operacional</strong>
-              <p className="text-xs text-[#94A3B8] leading-relaxed">
+            <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
+              <div className="text-pp-ink"><Zap className="w-[22px] h-[22px]" aria-hidden="true" /></div>
+              <strong className="text-pp-ink block text-sm font-medium">Rapidez operacional</strong>
+              <p className="text-xs text-pp-ink-soft leading-relaxed">
                 Gere rascunhos estruturados a partir dos dados da planilha em segundos.
               </p>
             </div>
-            <div className="p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C] space-y-2">
-              <div className="text-[#7DD3FC]"><IconHistory /></div>
-              <strong className="text-[#F8FAFC] block text-sm">Histórico completo</strong>
-              <p className="text-xs text-[#94A3B8] leading-relaxed">
+            <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
+              <div className="text-pp-ink"><History className="w-[22px] h-[22px]" aria-hidden="true" /></div>
+              <strong className="text-pp-ink block text-sm font-medium">Histórico completo</strong>
+              <p className="text-xs text-pp-ink-soft leading-relaxed">
                 Todos os rascunhos gerados ficam salvos e acessíveis a qualquer momento.
               </p>
             </div>
-            <div className="p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C] space-y-2">
-              <div className="text-[#7DD3FC]"><IconShield /></div>
-              <strong className="text-[#F8FAFC] block text-sm">100% seguro</strong>
-              <p className="text-xs text-[#94A3B8] leading-relaxed">
+            <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
+              <div className="text-pp-ink"><Shield className="w-[22px] h-[22px]" aria-hidden="true" /></div>
+              <strong className="text-pp-ink block text-sm font-medium">100% seguro</strong>
+              <p className="text-xs text-pp-ink-soft leading-relaxed">
                 Dados processados com segurança. Nenhum dado é retido pela IA.
               </p>
             </div>
-            <div className="p-4 bg-[#0E2A38] rounded-xl border border-[#1F4D5C] space-y-2">
-              <div className="text-[#7DD3FC]"><IconEdit /></div>
-              <strong className="text-[#F8FAFC] block text-sm">Totalmente editável</strong>
-              <p className="text-xs text-[#94A3B8] leading-relaxed">
+            <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
+              <div className="text-pp-ink"><SquarePen className="w-[22px] h-[22px]" aria-hidden="true" /></div>
+              <strong className="text-pp-ink block text-sm font-medium">Totalmente editável</strong>
+              <p className="text-xs text-pp-ink-soft leading-relaxed">
                 O rascunho é um ponto de partida. Copie, edite e complemente conforme necessário.
               </p>
             </div>
@@ -971,52 +849,52 @@ export default function AppAssistenteProPage() {
 
           <button
             type="button"
-            className="px-8 py-3.5 text-base bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] font-bold rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15"
+            className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
           >
             Assinar por R$50/ano
           </button>
         </div>
       )}
 
-      <footer className="pt-4 border-t border-[#1F4D5C]">
-        <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
-          <strong>Aviso de uso responsável:</strong> O Assistente IA Pro gera rascunhos descritivos iniciais de apoio operacional a
+      <footer className="pt-4 border-t border-pp-hairline-soft">
+        <p className="text-center text-xs text-pp-ink-soft max-w-3xl mx-auto leading-relaxed">
+          <strong className="font-medium">Aviso de uso responsável:</strong> O Assistente IA Pro gera rascunhos descritivos iniciais de apoio operacional a
           partir dos dados inseridos pelo profissional (texto e/ou prints). O texto gerado deve ser minuciosamente revisado, completado e
           interpretado pelo profissional responsável antes de qualquer uso formal, exigindo a posse e conformidade com
           o manual técnico original do instrumento utilizado. Nenhuma funcionalidade do Assistente IA Pro substitui a
           avaliação, diagnóstico ou interpretação de um profissional qualificado.
-        </div>
+        </p>
       </footer>
 
       {modalReport && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 bg-[#061923]/85 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-[#0B2430] border border-[#1F4D5C] rounded-2xl max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl my-auto">
-            <div className="flex justify-between items-start gap-4 border-b border-[#1F4D5C] pb-4">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-16 bg-pp-ink/70 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-white border border-pp-hairline rounded-block max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl my-auto">
+            <div className="flex justify-between items-start gap-4 border-b border-pp-hairline pb-4">
               <div className="min-w-0">
-                <h3 className="text-base font-bold text-[#F8FAFC] truncate">
+                <h3 className="font-serif italic text-base text-pp-ink truncate">
                   {modalReport.title || 'Relatório'}
                 </h3>
-                <p className="text-xs text-[#94A3B8] mt-0.5">{formatDateTime(modalReport.created_at)}</p>
+                <p className="text-xs text-pp-ink-soft mt-0.5">{formatDateTime(modalReport.created_at)}</p>
               </div>
               <div className="flex gap-2 shrink-0">
                 <button
                   onClick={() => handleCopy(modalReport.output_text, `modal-${modalReport.id}`)}
-                  className="px-4 py-2 text-sm font-semibold bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] rounded-xl border border-[#1F4D5C] transition"
+                  className="inline-flex items-center gap-1.5 bg-pp-ink text-pp-canvas px-4 py-2 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
                 >
-                  {copiedId === `modal-${modalReport.id}` ? 'Copiado' : 'Copiar'}
+                  {copiedId === `modal-${modalReport.id}` ? (<><Check className="w-4 h-4" /> Copiado</>) : 'Copiar'}
                 </button>
                 <button
                   onClick={() => setModalReport(null)}
-                  className="p-2 bg-[#0E2A38] hover:bg-[#123340] text-[#CBD5E1] rounded-xl border border-[#1F4D5C] transition"
+                  className="p-2 text-pp-ink-soft hover:text-pp-ink border border-pp-hairline hover:bg-pp-hairline-soft rounded-lg transition"
                   aria-label="Fechar modal"
                 >
-                  <IconClose />
+                  <X className="w-5 h-5" aria-hidden="true" />
                 </button>
               </div>
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto">
-              <pre className="text-sm text-[#CBD5E1] leading-relaxed whitespace-pre-wrap font-sans">
+              <pre className="text-sm text-pp-ink-soft leading-relaxed whitespace-pre-wrap font-sans">
                 {modalReport.output_text}
               </pre>
             </div>
