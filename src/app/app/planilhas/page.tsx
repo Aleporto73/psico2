@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import { HeroBanner } from '@/components/ui/hero-banner';
+import { Lock, Search, FileText, ExternalLink, BookOpen } from 'lucide-react';
 
 interface Spreadsheet {
   id: string;
@@ -12,36 +14,6 @@ interface Spreadsheet {
   access_url: string | null;
   tutorial_url: string | null;
   image_url: string | null;
-}
-
-// SVG Icons
-
-function IconLockLarge() {
-  return (
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
-function IconSearch() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="11" cy="11" r="8" />
-      <line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  );
-}
-
-function IconEmpty() {
-  return (
-    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="9" y1="15" x2="15" y2="15" />
-    </svg>
-  );
 }
 
 export default function AppPlanilhasPage() {
@@ -115,9 +87,9 @@ export default function AppPlanilhasPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center text-[#CBD5E1]">
+      <div className="flex h-[60vh] items-center justify-center text-pp-ink-soft">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
+          <div className="w-8 h-8 border-2 border-pp-hairline border-t-pp-ink rounded-full animate-spin mx-auto" />
           <p>Carregando biblioteca de planilhas...</p>
         </div>
       </div>
@@ -127,19 +99,19 @@ export default function AppPlanilhasPage() {
   // 1. Lock Screen if user doesn't have lifetime access
   if (hasAccess === false) {
     return (
-      <div className="flex flex-col items-center justify-center p-10 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] text-center max-w-2xl mx-auto space-y-6 my-12">
-        <div className="w-20 h-20 rounded-full bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 flex items-center justify-center text-[#7DD3FC]">
-          <IconLockLarge />
+      <div className="bg-pp-block-coral rounded-block p-10 max-w-2xl mx-auto my-12 text-center flex flex-col items-center gap-6">
+        <div className="w-20 h-20 rounded-full bg-pp-ink/5 flex items-center justify-center text-pp-ink">
+          <Lock className="w-10 h-10" aria-hidden="true" />
         </div>
         <div className="space-y-3">
-          <h2 className="text-2xl font-bold text-[#F8FAFC]">Biblioteca de planilhas bloqueada</h2>
-          <p className="text-[#CBD5E1] text-base leading-relaxed">
+          <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Biblioteca bloqueada</h2>
+          <p className="text-pp-ink-soft text-base leading-relaxed">
             Seu perfil ainda não tem acesso vitalício às planilhas profissionais. Adquira o plano vitalício para liberar permanentemente todo o material de apoio.
           </p>
         </div>
         <Link
           href="/app/produtos"
-          className="px-8 py-3.5 text-base font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] rounded-xl transition shadow-md shadow-[#7DD3FC]/15"
+          className="inline-flex items-center bg-pp-ink text-pp-canvas rounded-pill px-8 py-3.5 text-base font-medium hover:bg-pp-ink-soft transition"
         >
           Conhecer planos
         </Link>
@@ -161,26 +133,39 @@ export default function AppPlanilhasPage() {
   };
 
   return (
-    <div className="-m-6 md:-m-8 p-6 md:p-8 min-h-full bg-[#F8FAFC] space-y-6">
+    <div className="max-w-6xl mx-auto space-y-8">
 
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-[#0B2430] tracking-tight">Biblioteca de planilhas</h1>
-        <p className="text-[#475569] text-base mt-1">Planilhas de apoio operacional para psicólogos e psicopedagogos.</p>
-      </div>
+      {/* Header editorial — rola junto com a página */}
+      <header className="space-y-2 pt-4">
+        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">
+          Biblioteca de planilhas
+        </h1>
+        <p className="text-pp-ink-soft text-base md:text-lg">
+          Planilhas de apoio operacional para psicólogos e psicopedagogos.
+        </p>
+      </header>
 
-      {/* Filters and Search */}
-      <div className="flex flex-col md:flex-row gap-4 p-4 bg-[#0B2430] rounded-2xl border border-[#1F4D5C]">
+      {/* Banner sticky — fica fixo no topo durante o scroll da biblioteca */}
+      <HeroBanner
+        src="/banners/planilhas-sticky.placeholder.svg"
+        alt="Banner promocional PsicoPlanilhas"
+        href="/app/produtos"
+        sticky
+        aspectRatio="7/1"
+      />
+
+      {/* Filtros — busca + chips de categoria */}
+      <div className="bg-white rounded-2xl border border-pp-hairline p-4 flex flex-col md:flex-row gap-4">
         <div className="relative flex-1">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none">
-            <IconSearch />
+          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-pp-ink-soft pointer-events-none">
+            <Search className="w-[18px] h-[18px]" aria-hidden="true" />
           </span>
           <input
             type="text"
             placeholder="Buscar planilha por nome..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
+            className="w-full pl-11 pr-4 py-2.5 bg-pp-canvas border border-pp-hairline rounded-pill text-base text-pp-ink placeholder:text-pp-ink-soft focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
           />
         </div>
 
@@ -190,10 +175,10 @@ export default function AppPlanilhasPage() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat!)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition ${
+                className={`px-4 py-2 rounded-pill text-sm font-medium whitespace-nowrap transition ${
                   selectedCategory === cat
-                    ? 'bg-[#7DD3FC] text-[#061923]'
-                    : 'bg-[#0E2A38] hover:bg-[#123340] text-[#CBD5E1] border border-[#1F4D5C]'
+                    ? 'bg-pp-ink text-pp-canvas'
+                    : 'bg-white border border-pp-hairline text-pp-ink-soft hover:border-pp-ink/30 hover:text-pp-ink'
                 }`}
               >
                 {cat === 'all' ? 'Ver todas' : cat}
@@ -203,25 +188,26 @@ export default function AppPlanilhasPage() {
         )}
       </div>
 
-      {/* Grid of Spreadsheets */}
+      {/* Grid de planilhas */}
       {filteredSpreadsheets.length === 0 ? (
-        <div className="p-12 text-center bg-[#0B2430]/50 border border-dashed border-[#1F4D5C] rounded-2xl space-y-3">
-          <div className="w-16 h-16 mx-auto rounded-full bg-[#0E2A38] flex items-center justify-center text-[#94A3B8]">
-            <IconEmpty />
-          </div>
-          <p className="text-[#CBD5E1] text-base">Nenhuma planilha encontrada.</p>
-          <p className="text-[#94A3B8] text-sm">Tente ajustar a busca ou trocar a categoria.</p>
+        <div className="bg-pp-block-cream/50 rounded-2xl p-12 text-center space-y-3">
+          <FileText className="w-10 h-10 text-pp-ink-soft mx-auto" aria-hidden="true" />
+          <p className="text-pp-ink text-base">Nenhuma planilha encontrada.</p>
+          <p className="text-pp-ink-soft text-sm">Tente ajustar a busca ou trocar a categoria.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredSpreadsheets.map((sheet) => (
-            <div key={sheet.id} className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] flex flex-col justify-between gap-4 hover:border-[#7DD3FC]/40 transition duration-200">
+            <article
+              key={sheet.id}
+              className="bg-white border border-pp-hairline rounded-2xl p-6 flex flex-col justify-between gap-4 hover:border-pp-ink/20 transition"
+            >
               <div className="space-y-2">
-                <span className="inline-block px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-full">
+                <p className="font-serif italic text-pp-ink-soft text-sm">
                   {getShortInstrumentName(sheet.name) || sheet.category || 'Geral'}
-                </span>
-                <h3 className="text-base font-bold text-[#F8FAFC] pt-1">{sheet.name}</h3>
-                <p className="text-sm text-[#CBD5E1] leading-relaxed line-clamp-3">
+                </p>
+                <h3 className="text-base md:text-lg text-pp-ink font-medium leading-snug">{sheet.name}</h3>
+                <p className="text-sm text-pp-ink-soft leading-relaxed line-clamp-3">
                   {sheet.description || 'Apoio para estruturação, cálculo e visualização de dados.'}
                 </p>
               </div>
@@ -230,29 +216,31 @@ export default function AppPlanilhasPage() {
                 <button
                   onClick={() => handleAccess(sheet.access_url)}
                   disabled={!sheet.access_url}
-                  className="w-full py-3 bg-[#7DD3FC] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] text-[#061923] font-bold rounded-xl text-sm transition duration-200"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-xl py-3 text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-pp-ink"
                 >
+                  <ExternalLink className="w-4 h-4" aria-hidden="true" />
                   Acessar planilha (cópia)
                 </button>
                 {sheet.tutorial_url && (
                   <button
                     onClick={() => handleAccess(sheet.tutorial_url)}
-                    className="w-full py-3 bg-[#0E2A38] hover:bg-[#123340] text-[#F8FAFC] border border-[#1F4D5C] font-semibold rounded-xl text-sm transition duration-200"
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium text-pp-ink border border-pp-ink/15 hover:bg-pp-ink/5 transition"
                   >
+                    <BookOpen className="w-4 h-4" aria-hidden="true" />
                     Ver tutorial de uso
                   </button>
                 )}
               </div>
-            </div>
+            </article>
           ))}
         </div>
       )}
 
-      {/* Obligatory Disclaimer Notice */}
-      <footer className="pt-8 border-t border-[#1F4D5C]">
-        <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
+      {/* Disclaimer obrigatório */}
+      <footer className="pt-8 border-t border-pp-hairline-soft">
+        <p className="text-center text-xs text-pp-ink-soft max-w-3xl mx-auto leading-relaxed">
           <strong>Aviso de uso responsável:</strong> Esta planilha é um recurso de apoio operacional. Ela agiliza cálculos, organização e visualização dos dados. O uso correto exige o manual original do instrumento. Não substitui avaliação profissional, teste original, manual ou interpretação clínica.
-        </div>
+        </p>
       </footer>
 
     </div>

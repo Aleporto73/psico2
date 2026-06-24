@@ -9,6 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif: var(--font-serif);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -46,93 +47,206 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Tokens PsicoPlanilhas — expostos ao Tailwind */
+  --color-pp-canvas: var(--pp-canvas);
+  --color-pp-ink: var(--pp-ink);
+  --color-pp-ink-soft: var(--pp-ink-soft);
+  --color-pp-hairline: var(--pp-hairline);
+  --color-pp-block-lime: var(--pp-block-lime);
+  --color-pp-block-lilac: var(--pp-block-lilac);
+  --color-pp-block-cream: var(--pp-block-cream);
+  --color-pp-block-mint: var(--pp-block-mint);
+  --color-pp-block-coral: var(--pp-block-coral);
+  --color-pp-block-pink: var(--pp-block-pink);
+  --color-pp-block-petroleum: var(--pp-block-petroleum);
+  --color-pp-hairline-soft: var(--pp-hairline-soft);
+  --color-pp-on-petroleum: var(--pp-on-petroleum);
+  --color-pp-success: var(--pp-success);
+  --color-pp-warning: var(--pp-warning);
+  --color-pp-danger: var(--pp-danger);
+  --radius-pill: var(--radius-pill);
+  --radius-block: var(--radius-block);
 }
 
-/* ── Paleta Oficial PsicoPlanilhas — Azul Petróleo ────────────────────────── */
+/* ── Paleta Editorial PsicoPlanilhas 2.0 — petróleo como tinta ────────────── */
 :root {
-  /* Shadcn tokens — mapeados para a paleta petróleo */
-  --background: oklch(0.13 0.04 220);         /* #061923 — fundo principal */
-  --foreground: oklch(0.985 0.003 220);        /* #F8FAFC — texto principal */
-  --card: oklch(0.18 0.04 220);               /* #0B2430 — cards primários */
-  --card-foreground: oklch(0.985 0.003 220);  /* #F8FAFC */
-  --popover: oklch(0.21 0.045 218);           /* #0E2A38 — popovers */
-  --popover-foreground: oklch(0.985 0.003 220);
-  --primary: oklch(0.82 0.1 215);             /* #7DD3FC — azul pastel (botão primário) */
-  --primary-foreground: oklch(0.13 0.04 220); /* #061923 — texto sobre primário */
-  --secondary: oklch(0.21 0.045 218);         /* #0E2A38 */
-  --secondary-foreground: oklch(0.985 0.003 220);
-  --muted: oklch(0.21 0.045 218);             /* #0E2A38 */
-  --muted-foreground: oklch(0.66 0.022 228);  /* #94A3B8 */
-  --accent: oklch(0.23 0.05 218);             /* #123340 — hover */
-  --accent-foreground: oklch(0.985 0.003 220);
-  --destructive: oklch(0.72 0.19 10);         /* #FB7185 — melancia pastel */
-  --border: oklch(0.32 0.065 218);            /* #1F4D5C — bordas */
-  --input: oklch(0.32 0.065 218);             /* #1F4D5C */
-  --ring: oklch(0.82 0.1 215);               /* #7DD3FC */
-  --chart-1: oklch(0.82 0.1 215);
-  --chart-2: oklch(0.79 0.14 163);
-  --chart-3: oklch(0.86 0.175 89);
-  --chart-4: oklch(0.72 0.19 10);
-  --chart-5: oklch(0.89 0.095 200);
+  /* — Shadcn tokens — sistema editorial claro com petróleo como tinta — */
+  --background: oklch(0.985 0.005 80);       /* #FBFAF7 — canvas branco quente */
+  --foreground: oklch(0.25 0.04 220);        /* #0E2A38 — petróleo profundo (tinta) */
+  --card: oklch(1 0 0);                       /* branco puro para cards */
+  --card-foreground: oklch(0.25 0.04 220);   /* petróleo */
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.04 220);
+  --primary: oklch(0.25 0.04 220);           /* petróleo profundo — CTA assinatura */
+  --primary-foreground: oklch(0.985 0.005 80); /* branco quente */
+  --secondary: oklch(0.97 0.005 80);          /* off-white secundário */
+  --secondary-foreground: oklch(0.25 0.04 220);
+  --muted: oklch(0.97 0.005 80);
+  --muted-foreground: oklch(0.48 0.03 218);  /* #4A6470 — petróleo médio */
+  --accent: oklch(0.97 0.005 80);
+  --accent-foreground: oklch(0.25 0.04 220);
+  --destructive: oklch(0.6 0.2 25);           /* coral profundo */
+  --border: oklch(0.92 0.005 220);            /* #E4E7EA — hairline petróleo lavado */
+  --input: oklch(0.92 0.005 220);
+  --ring: oklch(0.25 0.04 220);               /* petróleo (focus ring) */
+  --chart-1: oklch(0.25 0.04 220);
+  --chart-2: oklch(0.78 0.08 165);            /* mint */
+  --chart-3: oklch(0.88 0.08 30);             /* coral */
+  --chart-4: oklch(0.92 0.06 300);            /* lilac */
+  --chart-5: oklch(0.94 0.08 130);            /* lime */
   --radius: 0.625rem;
-  --sidebar: oklch(0.18 0.04 220);
-  --sidebar-foreground: oklch(0.985 0.003 220);
-  --sidebar-primary: oklch(0.82 0.1 215);
-  --sidebar-primary-foreground: oklch(0.13 0.04 220);
-  --sidebar-accent: oklch(0.23 0.05 218);
-  --sidebar-accent-foreground: oklch(0.985 0.003 220);
-  --sidebar-border: oklch(0.32 0.065 218);
-  --sidebar-ring: oklch(0.82 0.1 215);
 
-  /* Tokens customizados PsicoPlanilhas — uso direto inline */
-  --pp-bg: #061923;
-  --pp-card: #0B2430;
-  --pp-card-inner: #0E2A38;
-  --pp-hover: #123340;
-  --pp-border: #1F4D5C;
-  --pp-text: #F8FAFC;
-  --pp-text-muted: #CBD5E1;
-  --pp-text-subtle: #94A3B8;
-  --pp-blue: #7DD3FC;
-  --pp-aqua: #67E8F9;
-  --pp-melon: #FB7185;
-  --pp-gold: #FACC15;
-  --pp-green: #34D399;
+  /* — Sidebar (branca) — */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.25 0.04 220);
+  --sidebar-primary: oklch(0.25 0.04 220);
+  --sidebar-primary-foreground: oklch(0.985 0.005 80);
+  --sidebar-accent: oklch(0.97 0.005 80);
+  --sidebar-accent-foreground: oklch(0.25 0.04 220);
+  --sidebar-border: oklch(0.92 0.005 220);
+  --sidebar-ring: oklch(0.25 0.04 220);
+
+  /* — Tokens PsicoPlanilhas 2.0 — sistema editorial — */
+  --pp-canvas: #FBFAF7;          /* branco quente — fundo principal */
+  --pp-ink: #0E2A38;             /* petróleo profundo — TINTA editorial (substitui preto) */
+  --pp-ink-soft: #4A6470;        /* petróleo médio — texto secundário */
+  --pp-hairline: #E4E7EA;        /* petróleo muito lavado — bordas */
+  --pp-hairline-soft: #F0F2F4;   /* divisor ainda mais sutil */
+
+  /* — Blocos pastel narrativos (cada categoria de produto tem seu pastel) — */
+  --pp-block-lime: #E8F0D9;      /* TCC */
+  --pp-block-lilac: #E7E1F0;     /* ABA */
+  --pp-block-cream: #F5EBD8;     /* PEI */
+  --pp-block-mint: #D9EDE0;      /* NeuroRastreio */
+  --pp-block-coral: #F4D9CE;     /* destaque comercial */
+  --pp-block-pink: #F0D9E3;      /* psicopedagogia */
+  --pp-block-petroleum: #0E2A38; /* bloco escuro raro (storytelling) */
+
+  /* — Texto sobre blocos escuros — */
+  --pp-on-petroleum: #FBFAF7;    /* canvas sobre petróleo */
+
+  /* — Semânticos — */
+  --pp-success: #4A8B5C;         /* verde editorial sóbrio */
+  --pp-warning: #B8860B;         /* âmbar profissional */
+  --pp-danger: #B85450;          /* coral profundo */
+
+  /* — Raios — */
+  --radius-pill: 9999px;         /* pílulas (CTAs) */
+  --radius-block: 1.5rem;        /* blocos pastel narrativos (24px) */
+
+  /* — Tipografia (preparação — fontes serão registradas no layout.tsx na Fase 2) — */
+  --font-display: var(--font-sans);     /* Inter (variable) */
+  --font-body: var(--font-sans);        /* Inter (variable) */
+  --font-editorial: var(--font-serif);  /* Instrument Serif itálico para eyebrows */
+
+  /* — DEPRECATED — manter até refatoração das páginas (Fases 2-5) — */
+  /* Os tokens abaixo são referenciados como hex inline nas páginas atuais. */
+  /* NÃO REMOVER nesta fase — remoção quebra o build. */
+  /* Removeremos progressivamente conforme cada página for refatorada. */
+  --pp-bg: #FBFAF7;
+  --pp-card: #FFFFFF;
+  --pp-card-inner: #FBFAF7;
+  --pp-hover: #F0F2F4;
+  --pp-border: #E4E7EA;
+  --pp-text: #0E2A38;
+  --pp-text-muted: #4A6470;
+  --pp-text-subtle: #6B7F89;
+  --pp-blue: #0E2A38;
+  --pp-aqua: #0E2A38;
+  --pp-melon: #B85450;
+  --pp-gold: #B8860B;
+  --pp-green: #4A8B5C;
 }
 
-/* .dark herda o mesmo tema petróleo — sem alternância de modo */
+/* .dark herda a mesma paleta editorial — sem alternância de modo */
 .dark {
-  --background: oklch(0.13 0.04 220);
-  --foreground: oklch(0.985 0.003 220);
-  --card: oklch(0.18 0.04 220);
-  --card-foreground: oklch(0.985 0.003 220);
-  --popover: oklch(0.21 0.045 218);
-  --popover-foreground: oklch(0.985 0.003 220);
-  --primary: oklch(0.82 0.1 215);
-  --primary-foreground: oklch(0.13 0.04 220);
-  --secondary: oklch(0.21 0.045 218);
-  --secondary-foreground: oklch(0.985 0.003 220);
-  --muted: oklch(0.21 0.045 218);
-  --muted-foreground: oklch(0.66 0.022 228);
-  --accent: oklch(0.23 0.05 218);
-  --accent-foreground: oklch(0.985 0.003 220);
-  --destructive: oklch(0.72 0.19 10);
-  --border: oklch(0.32 0.065 218);
-  --input: oklch(0.32 0.065 218);
-  --ring: oklch(0.82 0.1 215);
-  --chart-1: oklch(0.82 0.1 215);
-  --chart-2: oklch(0.79 0.14 163);
-  --chart-3: oklch(0.86 0.175 89);
-  --chart-4: oklch(0.72 0.19 10);
-  --chart-5: oklch(0.89 0.095 200);
-  --sidebar: oklch(0.18 0.04 220);
-  --sidebar-foreground: oklch(0.985 0.003 220);
-  --sidebar-primary: oklch(0.82 0.1 215);
-  --sidebar-primary-foreground: oklch(0.13 0.04 220);
-  --sidebar-accent: oklch(0.23 0.05 218);
-  --sidebar-accent-foreground: oklch(0.985 0.003 220);
-  --sidebar-border: oklch(0.32 0.065 218);
-  --sidebar-ring: oklch(0.82 0.1 215);
+  /* — Shadcn tokens — sistema editorial claro com petróleo como tinta — */
+  --background: oklch(0.985 0.005 80);       /* #FBFAF7 — canvas branco quente */
+  --foreground: oklch(0.25 0.04 220);        /* #0E2A38 — petróleo profundo (tinta) */
+  --card: oklch(1 0 0);                       /* branco puro para cards */
+  --card-foreground: oklch(0.25 0.04 220);   /* petróleo */
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.04 220);
+  --primary: oklch(0.25 0.04 220);           /* petróleo profundo — CTA assinatura */
+  --primary-foreground: oklch(0.985 0.005 80); /* branco quente */
+  --secondary: oklch(0.97 0.005 80);          /* off-white secundário */
+  --secondary-foreground: oklch(0.25 0.04 220);
+  --muted: oklch(0.97 0.005 80);
+  --muted-foreground: oklch(0.48 0.03 218);  /* #4A6470 — petróleo médio */
+  --accent: oklch(0.97 0.005 80);
+  --accent-foreground: oklch(0.25 0.04 220);
+  --destructive: oklch(0.6 0.2 25);           /* coral profundo */
+  --border: oklch(0.92 0.005 220);            /* #E4E7EA — hairline petróleo lavado */
+  --input: oklch(0.92 0.005 220);
+  --ring: oklch(0.25 0.04 220);               /* petróleo (focus ring) */
+  --chart-1: oklch(0.25 0.04 220);
+  --chart-2: oklch(0.78 0.08 165);            /* mint */
+  --chart-3: oklch(0.88 0.08 30);             /* coral */
+  --chart-4: oklch(0.92 0.06 300);            /* lilac */
+  --chart-5: oklch(0.94 0.08 130);            /* lime */
+  --radius: 0.625rem;
+
+  /* — Sidebar (branca) — */
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.25 0.04 220);
+  --sidebar-primary: oklch(0.25 0.04 220);
+  --sidebar-primary-foreground: oklch(0.985 0.005 80);
+  --sidebar-accent: oklch(0.97 0.005 80);
+  --sidebar-accent-foreground: oklch(0.25 0.04 220);
+  --sidebar-border: oklch(0.92 0.005 220);
+  --sidebar-ring: oklch(0.25 0.04 220);
+
+  /* — Tokens PsicoPlanilhas 2.0 — sistema editorial — */
+  --pp-canvas: #FBFAF7;          /* branco quente — fundo principal */
+  --pp-ink: #0E2A38;             /* petróleo profundo — TINTA editorial (substitui preto) */
+  --pp-ink-soft: #4A6470;        /* petróleo médio — texto secundário */
+  --pp-hairline: #E4E7EA;        /* petróleo muito lavado — bordas */
+  --pp-hairline-soft: #F0F2F4;   /* divisor ainda mais sutil */
+
+  /* — Blocos pastel narrativos (cada categoria de produto tem seu pastel) — */
+  --pp-block-lime: #E8F0D9;      /* TCC */
+  --pp-block-lilac: #E7E1F0;     /* ABA */
+  --pp-block-cream: #F5EBD8;     /* PEI */
+  --pp-block-mint: #D9EDE0;      /* NeuroRastreio */
+  --pp-block-coral: #F4D9CE;     /* destaque comercial */
+  --pp-block-pink: #F0D9E3;      /* psicopedagogia */
+  --pp-block-petroleum: #0E2A38; /* bloco escuro raro (storytelling) */
+
+  /* — Texto sobre blocos escuros — */
+  --pp-on-petroleum: #FBFAF7;    /* canvas sobre petróleo */
+
+  /* — Semânticos — */
+  --pp-success: #4A8B5C;         /* verde editorial sóbrio */
+  --pp-warning: #B8860B;         /* âmbar profissional */
+  --pp-danger: #B85450;          /* coral profundo */
+
+  /* — Raios — */
+  --radius-pill: 9999px;         /* pílulas (CTAs) */
+  --radius-block: 1.5rem;        /* blocos pastel narrativos (24px) */
+
+  /* — Tipografia (preparação — fontes serão registradas no layout.tsx na Fase 2) — */
+  --font-display: var(--font-sans);     /* Inter (variable) */
+  --font-body: var(--font-sans);        /* Inter (variable) */
+  --font-editorial: var(--font-serif);  /* Instrument Serif itálico para eyebrows */
+
+  /* — DEPRECATED — manter até refatoração das páginas (Fases 2-5) — */
+  /* Os tokens abaixo são referenciados como hex inline nas páginas atuais. */
+  /* NÃO REMOVER nesta fase — remoção quebra o build. */
+  /* Removeremos progressivamente conforme cada página for refatorada. */
+  --pp-bg: #FBFAF7;
+  --pp-card: #FFFFFF;
+  --pp-card-inner: #FBFAF7;
+  --pp-hover: #F0F2F4;
+  --pp-border: #E4E7EA;
+  --pp-text: #0E2A38;
+  --pp-text-muted: #4A6470;
+  --pp-text-subtle: #6B7F89;
+  --pp-blue: #0E2A38;
+  --pp-aqua: #0E2A38;
+  --pp-melon: #B85450;
+  --pp-gold: #B8860B;
+  --pp-green: #4A8B5C;
 }
 
 @layer base {
