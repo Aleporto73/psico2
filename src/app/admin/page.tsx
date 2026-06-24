@@ -111,6 +111,7 @@ export default function AdminDashboardPage() {
     { href: '/admin/clientes',   icon: <IconClients />, title: 'Gerenciar clientes',         desc: 'Busque usuários, libere/cancele acessos vitalícios e ative a assinatura do Assistente IA Pro.' },
     { href: '/admin/importacao', icon: <IconUpload />,  title: 'Importação CSV / Cadastro',  desc: 'Suba listas de e-mails de clientes antigos ou cadastre clientes manualmente.' },
     { href: '/admin/banners',    icon: <IconBanner />,  title: 'Vídeo-banners comerciais',   desc: 'Cadastre e configure os banners comerciais segmentados por perfil de atuação.' },
+    { href: '/admin/banners-canva', icon: <IconBanner />, title: 'Banners Canva',            desc: 'Suba imagens prontas do Canva para o HeroBanner do dashboard, planilhas e produtos.' },
     { href: '/admin/produtos',   icon: <IconCatalog />, title: 'Catálogo de produtos',       desc: 'Adicione ou edite produtos complementares, assistentes, bundles e links de checkout.' },
   ];
 
