@@ -49,7 +49,27 @@ export async function GET() {
 
     if (queryErr) throw queryErr;
 
-    return NextResponse.json({ data });
+    // Anexa a contagem de cliques dos últimos 7 dias por banner. HEAD count
+    // (head: true) não transfere linhas e usa o índice (banner_id, clicked_at).
+    // Tolerante a falha: se a contagem falhar (ex.: tabela ainda não migrada),
+    // cai em 0 sem quebrar a listagem.
+    const sevenDaysAgo = new Date(Date.now() - 7 * 864e5).toISOString();
+    const withClicks = await Promise.all(
+      (data ?? []).map(async (banner) => {
+        try {
+          const { count } = await adminSupabase
+            .from('hero_banner_clicks')
+            .select('id', { count: 'exact', head: true })
+            .eq('banner_id', banner.id)
+            .gte('clicked_at', sevenDaysAgo);
+          return { ...banner, clicks_7d: count ?? 0 };
+        } catch {
+          return { ...banner, clicks_7d: 0 };
+        }
+      })
+    );
+
+    return NextResponse.json({ data: withClicks });
   } catch (err: any) {
     console.error('Error in GET admin hero-banners API:', err);
     return NextResponse.json(

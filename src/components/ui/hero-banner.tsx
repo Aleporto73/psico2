@@ -72,6 +72,15 @@ function matchesAudience(audience: string, profileType: string): boolean {
   return false;
 }
 
+// Fire-and-forget: registra o clique sem bloquear a navegação. keepalive garante
+// que o POST sobrevive ao unload/navegação. Falhas são silenciadas — tracking
+// nunca pode quebrar a navegação do usuário.
+function trackClick(bannerId: string) {
+  fetch(`/api/hero-banners/${bannerId}/click`, { method: 'POST', keepalive: true }).catch((err) =>
+    console.warn('Click tracking failed:', err),
+  );
+}
+
 /**
  * Banner editorial (arte do Canva) que busca a imagem real do BD via
  * /api/hero-banners?position=X, segmenta por perfil do usuário e, se houver
@@ -174,17 +183,21 @@ export function HeroBanner({ position, sticky = false, aspectRatio, className }:
     </div>
   );
 
+  // Tracking só dispara para banner real do BD (tem id). Fallback (banner null) não rastreia.
+  const onBannerClick = banner ? () => trackClick(banner.id) : undefined;
+
   const inner = external ? (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={onBannerClick}
       className="block transition-opacity hover:opacity-95"
     >
       {figure}
     </a>
   ) : (
-    <Link href={href} className="block transition-opacity hover:opacity-95">
+    <Link href={href} onClick={onBannerClick} className="block transition-opacity hover:opacity-95">
       {figure}
     </Link>
   );
