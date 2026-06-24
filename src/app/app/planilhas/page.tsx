@@ -146,13 +146,7 @@ export default function AppPlanilhasPage() {
       </header>
 
       {/* Banner sticky — fica fixo no topo durante o scroll da biblioteca */}
-      <HeroBanner
-        src="/banners/planilhas-sticky.placeholder.svg"
-        alt="Banner promocional PsicoPlanilhas"
-        href="/app/produtos"
-        sticky
-        aspectRatio="7/1"
-      />
+      <HeroBanner position="planilhas" sticky />
 
       {/* Filtros — busca + chips de categoria */}
       <div className="bg-white rounded-2xl border border-pp-hairline p-4 flex flex-col md:flex-row gap-4">

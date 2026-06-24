@@ -155,12 +155,7 @@ export default function AppDashboardPage() {
       </section>
 
       {/* 2. HERO BANNER CANVA */}
-      <HeroBanner
-        src="/banners/dashboard-hero.placeholder.svg"
-        alt="Conheça nossos produtos profissionais"
-        href="/app/produtos"
-        aspectRatio="5/1"
-      />
+      <HeroBanner position="dashboard" />
 
       {/* 3. TRÊS CARDS DE PRODUTO EM BLOCOS PASTEL */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">

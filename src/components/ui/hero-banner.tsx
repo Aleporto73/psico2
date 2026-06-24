@@ -1,90 +1,193 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { createClient } from '@/utils/supabase/client';
 import { cn } from '@/lib/utils';
 
+type Position = 'dashboard' | 'planilhas' | 'produtos';
+
 interface HeroBannerProps {
-  /** Caminho da imagem (ex: '/banners/dashboard-hero.png'). */
-  src: string;
-  /** Texto alternativo para acessibilidade. */
-  alt: string;
-  /** Link de destino. Sem href = banner não clicável. */
-  href?: string;
-  /** Se true, fixa no topo (sticky top-0 z-30) — usado na Fase 4 (planilhas). */
+  /** Onde o banner aparece. Define o fetch (/api/hero-banners?position=X) e os defaults. */
+  position: Position;
+  /** Se true, fixa no topo (sticky top-0 z-30) — usado na página de planilhas. */
   sticky?: boolean;
-  /** Proporção do banner (default '5/1'). */
+  /** Override opcional da proporção. Sem isso, usa o default por position. */
   aspectRatio?: string;
-  /** Se href é externo, abre em nova aba. */
-  external?: boolean;
   /** Classes extras opcionais no wrapper. */
   className?: string;
 }
 
-/**
- * Banner editorial reutilizável (arte do Canva).
- * Usado no dashboard (Fase 3) e na página de planilhas com sticky (Fase 4).
- */
-export function HeroBanner({
-  src,
-  alt,
-  href,
-  sticky = false,
-  aspectRatio = '5/1',
-  external = false,
-  className,
-}: HeroBannerProps) {
-  // next/image não otimiza SVG sem `dangerouslyAllowSVG` no next.config (fora de
-  // escopo). O placeholder é SVG, então o servimos direto (unoptimized) — e a
-  // otimização volta automaticamente quando o Alê subir um PNG/JPG real.
-  const isSvg = src.toLowerCase().endsWith('.svg');
+interface HeroBannerRow {
+  id: string;
+  image_url: string;
+  link_url: string | null;
+  position: Position;
+  audience: 'all' | 'psychologist' | 'psychopedagogue' | 'both';
+  alt_text: string | null;
+  sort_order: number;
+}
 
-  // O container precisa de `position: relative` para o <Image fill> se posicionar.
+// ── Defaults por posição (fallback + aspect ratio) ───────────────────────────
+
+const POSITION_DEFAULTS: Record<
+  Position,
+  { fallbackSrc: string; fallbackAlt: string; aspectRatio: string; href: string }
+> = {
+  dashboard: {
+    fallbackSrc: '/banners/dashboard-hero.placeholder.svg',
+    fallbackAlt: 'Conheça nossos produtos profissionais',
+    aspectRatio: '5/1',
+    href: '/app/produtos',
+  },
+  planilhas: {
+    fallbackSrc: '/banners/planilhas-sticky.placeholder.svg',
+    fallbackAlt: 'Banner promocional PsicoPlanilhas',
+    aspectRatio: '7/1',
+    href: '/app/produtos',
+  },
+  produtos: {
+    // Não há placeholder próprio de produtos; reusa o do dashboard.
+    fallbackSrc: '/banners/dashboard-hero.placeholder.svg',
+    fallbackAlt: 'Conheça nossos produtos profissionais',
+    aspectRatio: '5/1',
+    href: '/app/produtos',
+  },
+};
+
+// Mesma regra de segmentação usada no dashboard (Sistema A) para promo_banners.
+function matchesAudience(audience: string, profileType: string): boolean {
+  if (audience === 'all') return true;
+  if (profileType === 'both') {
+    return audience === 'psychologist' || audience === 'psychopedagogue' || audience === 'both';
+  }
+  if (profileType === 'psychologist') {
+    return audience === 'psychologist' || audience === 'both';
+  }
+  if (profileType === 'psychopedagogue') {
+    return audience === 'psychopedagogue' || audience === 'both';
+  }
+  // profileType === 'unknown' só vê 'all'
+  return false;
+}
+
+/**
+ * Banner editorial (arte do Canva) que busca a imagem real do BD via
+ * /api/hero-banners?position=X, segmenta por perfil do usuário e, se houver
+ * mais de um banner elegível, sorteia um por load. Cai no placeholder SVG
+ * quando o BD está vazio (graceful degradation).
+ */
+export function HeroBanner({ position, sticky = false, aspectRatio, className }: HeroBannerProps) {
+  const defaults = POSITION_DEFAULTS[position];
+  const [banner, setBanner] = useState<HeroBannerRow | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const supabase = createClient();
+
+        // profile_type do usuário logado (para segmentação por audience)
+        let profileType = 'unknown';
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('profile_type')
+            .eq('id', user.id)
+            .single();
+          if (profile?.profile_type) profileType = profile.profile_type;
+        }
+
+        // Banners ativos da posição (endpoint público — RLS só devolve ativos)
+        const res = await fetch(`/api/hero-banners?position=${encodeURIComponent(position)}`);
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.message || 'Erro ao buscar banners.');
+
+        const rows: HeroBannerRow[] = json.data || [];
+        const eligible = rows.filter((b) => matchesAudience(b.audience, profileType));
+
+        // Sorteio puro por load quando há mais de um elegível
+        const chosen =
+          eligible.length > 0 ? eligible[Math.floor(Math.random() * eligible.length)] : null;
+
+        if (!cancelled) setBanner(chosen);
+      } catch (err) {
+        console.error('Error loading hero banner:', err);
+        if (!cancelled) setBanner(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [position]);
+
+  const ratio = aspectRatio ?? defaults.aspectRatio;
+
+  const wrapperCls = cn(
+    'w-full',
+    sticky && 'sticky top-0 z-30 bg-pp-canvas py-2',
+    className,
+  );
+
+  // Skeleton enquanto carrega — reserva o espaço no aspect-ratio para evitar layout shift.
+  if (loading) {
+    return (
+      <div className={wrapperCls}>
+        <div
+          className="w-full overflow-hidden rounded-block bg-pp-block-cream animate-pulse"
+          style={{ aspectRatio: ratio }}
+        />
+      </div>
+    );
+  }
+
+  // Resolve imagem/alt/href: do BD quando há banner, senão o placeholder por position.
+  const src = banner?.image_url ?? defaults.fallbackSrc;
+  const alt = banner?.alt_text ?? defaults.fallbackAlt;
+  const href = banner?.link_url ?? defaults.href;
+  const external = /^https?:\/\//i.test(href);
+
+  // next/image: SVG e URLs remotas são servidas sem o optimizer (sem precisar de
+  // remotePatterns no next.config). PNG/JPG local volta a ser otimizado.
+  const isOptimizable = src.startsWith('/') && !src.toLowerCase().endsWith('.svg');
+
   const figure = (
-    <div
-      className="relative w-full overflow-hidden rounded-block"
-      style={{ aspectRatio }}
-    >
+    <div className="relative w-full overflow-hidden rounded-block" style={{ aspectRatio: ratio }}>
       <Image
         src={src}
         alt={alt}
         fill
-        preload
-        unoptimized={isSvg}
+        unoptimized={!isOptimizable}
         sizes="(max-width: 1152px) 100vw, 1152px"
         style={{ objectFit: 'cover' }}
       />
     </div>
   );
 
-  const inner = href ? (
-    external ? (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block transition-opacity hover:opacity-95"
-      >
-        {figure}
-      </a>
-    ) : (
-      <Link href={href} className="block transition-opacity hover:opacity-95">
-        {figure}
-      </Link>
-    )
+  const inner = external ? (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block transition-opacity hover:opacity-95"
+    >
+      {figure}
+    </a>
   ) : (
-    figure
+    <Link href={href} className="block transition-opacity hover:opacity-95">
+      {figure}
+    </Link>
   );
 
-  return (
-    <div
-      className={cn(
-        'w-full',
-        sticky && 'sticky top-0 z-30 bg-pp-canvas py-2',
-        className,
-      )}
-    >
-      {inner}
-    </div>
-  );
+  return <div className={wrapperCls}>{inner}</div>;
 }
