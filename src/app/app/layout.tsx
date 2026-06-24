@@ -99,22 +99,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#061923] text-[#F8FAFC] font-sans">
+    <div className="flex min-h-screen bg-pp-canvas text-pp-ink font-sans">
 
       {/* ── Sidebar — visível apenas em md+ ──────────────────────────────── */}
-      <aside className="hidden md:flex w-64 bg-[#0B2430] border-r border-[#1F4D5C] flex-col justify-between shrink-0">
+      <aside className="hidden md:flex w-64 bg-white border-r border-pp-hairline flex-col justify-between shrink-0">
         <div className="p-6 space-y-8">
 
           {/* Logo */}
           <div>
             <Link
               href="/app"
-              className="text-xl font-black text-[#F8FAFC] tracking-tight hover:text-[#7DD3FC] transition duration-200"
+              className="font-serif italic text-[22px] leading-tight text-pp-ink hover:text-pp-ink-soft transition duration-200 block"
             >
               PsicoPlanilhas 2.0
             </Link>
-            <p className="text-[10px] text-[#94A3B8] uppercase tracking-widest mt-1">
-              Área do Cliente
+            <p className="font-serif italic text-xs text-pp-ink-soft mt-0.5">
+              Área do cliente
             </p>
           </div>
 
@@ -126,10 +126,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.path}
                   href={item.path}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition duration-200 ${
+                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${
                     isActive
-                      ? 'bg-[#123340] text-[#7DD3FC] border-l-2 border-[#7DD3FC] pl-[10px]'
-                      : 'text-[#94A3B8] hover:bg-[#123340] hover:text-[#CBD5E1]'
+                      ? 'bg-pp-ink text-pp-canvas rounded-pill'
+                      : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'
                   }`}
                   aria-current={isActive ? 'page' : undefined}
                 >
@@ -142,10 +142,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Área de saída */}
-        <div className="p-4 border-t border-[#1F4D5C]">
+        <div className="p-4 border-t border-pp-hairline">
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-[#FB7185] hover:bg-[#FB7185]/10 rounded-lg transition duration-200"
+            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-pp-danger hover:bg-pp-danger/10 rounded-lg transition duration-200"
           >
             <IconLogout />
             <span>Sair da Conta</span>
@@ -157,17 +157,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Topo mobile */}
-        <header className="md:hidden bg-[#0B2430] border-b border-[#1F4D5C] px-4 py-3 flex justify-between items-center">
-          <Link href="/app" className="text-base font-black text-[#7DD3FC] tracking-tight">
+        <header className="md:hidden bg-white border-b border-pp-hairline px-4 py-3 flex justify-between items-center">
+          <Link href="/app" className="font-serif italic text-lg leading-tight text-pp-ink">
             PsicoPlanilhas
           </Link>
           <div className="flex items-center gap-4">
-            <Link href="/app/minha-conta" className="text-[#94A3B8] text-sm hover:text-[#CBD5E1] transition">
+            <Link href="/app/minha-conta" className="text-pp-ink-soft text-sm hover:text-pp-ink transition">
               Conta
             </Link>
             <button
               onClick={handleSignOut}
-              className="text-[#FB7185] text-sm hover:text-[#FB7185]/80 transition"
+              className="text-pp-danger text-sm hover:text-pp-danger/80 transition"
             >
               Sair
             </button>
@@ -176,7 +176,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Nav mobile em linha */}
         <nav
-          className="md:hidden bg-[#0B2430] border-b border-[#1F4D5C] px-2 py-1.5 flex gap-0.5 overflow-x-auto"
+          className="md:hidden bg-white border-b border-pp-hairline px-2 py-1.5 flex gap-0.5 overflow-x-auto"
           aria-label="Navegação mobile"
         >
           {navItems.map((item) => {
@@ -185,10 +185,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-[10px] font-semibold shrink-0 transition duration-200 ${
+                className={`flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-semibold shrink-0 transition duration-200 ${
                   isActive
-                    ? 'text-[#7DD3FC] bg-[#123340]'
-                    : 'text-[#94A3B8] hover:text-[#CBD5E1] hover:bg-[#123340]'
+                    ? 'bg-pp-ink text-pp-canvas rounded-pill'
+                    : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'
                 }`}
                 aria-current={isActive ? 'page' : undefined}
               >
