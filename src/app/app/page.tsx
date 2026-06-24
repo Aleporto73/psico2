@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import { HeroBanner } from '@/components/ui/hero-banner';
+import { FileText, MessageSquare, Sparkles, Lock, Play, X, ArrowRight } from 'lucide-react';
 
 interface ClientStats {
   name: string | null;
@@ -13,59 +15,28 @@ interface ClientStats {
   assistant_expires_at: string | null;
 }
 
-// ── SVG Icons ────────────────────────────────────────────────────────────────
+// ── Helpers de apresentação ──────────────────────────────────────────────────
 
-function IconSheet() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="8" y1="13" x2="16" y2="13" />
-      <line x1="8" y1="17" x2="16" y2="17" />
-    </svg>
-  );
+function audienceToBlockClass(audience: string): string {
+  switch (audience) {
+    case 'psychologist': return 'bg-pp-block-mint';
+    case 'psychopedagogue': return 'bg-pp-block-pink';
+    case 'both': return 'bg-pp-block-cream';
+    case 'all':
+    default: return 'bg-pp-block-lilac';
+  }
 }
 
-function IconChat() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-    </svg>
-  );
-}
-
-function IconSpark() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="M12 2 9.5 9.5 2 12l7.5 2.5L12 22l2.5-7.5L22 12l-7.5-2.5z" />
-    </svg>
-  );
-}
-
-function IconLock() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
-function IconPlay() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <polygon points="5 3 19 12 5 21 5 3" />
-    </svg>
-  );
-}
-
-function IconClose() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  );
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  } catch {
+    return iso;
+  }
 }
 
 export default function AppDashboardPage() {
@@ -132,9 +103,9 @@ export default function AppDashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center text-[#CBD5E1]">
+      <div className="flex h-[60vh] items-center justify-center text-pp-ink-soft">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
+          <div className="w-8 h-8 border-2 border-pp-hairline border-t-pp-ink rounded-full animate-spin mx-auto" />
           <p>Carregando painel principal...</p>
         </div>
       </div>
@@ -171,163 +142,174 @@ export default function AppDashboardPage() {
   });
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Block */}
-      <div className="space-y-2">
-        <h2 className="text-3xl font-extrabold text-[#F8FAFC] tracking-tight">
-          Olá, {profile?.name || profile?.email?.split('@')[0] || 'cliente'}.
-        </h2>
-        <p className="text-[#CBD5E1] text-base max-w-2xl leading-relaxed">
-          Acesse suas planilhas de apoio operacional, use o assistente incluso e conheça ferramentas para acelerar sua rotina profissional.
-        </p>
-      </div>
+    <div className="max-w-6xl mx-auto space-y-12">
 
-      {/* Grid of Main Products / Cards */}
+      {/* 1. WELCOME EDITORIAL */}
+      <section className="space-y-2 pt-4">
+        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">
+          Olá, {profile?.name || profile?.email?.split('@')[0] || 'cliente'}.
+        </h1>
+        <p className="text-pp-ink-soft text-base md:text-lg max-w-2xl leading-relaxed">
+          Acesse suas planilhas, use o assistente incluso e conheça ferramentas para acelerar sua rotina profissional.
+        </p>
+      </section>
+
+      {/* 2. HERO BANNER CANVA */}
+      <HeroBanner
+        src="/banners/dashboard-hero.placeholder.svg"
+        alt="Conheça nossos produtos profissionais"
+        href="/app/produtos"
+        aspectRatio="5/1"
+      />
+
+      {/* 3. TRÊS CARDS DE PRODUTO EM BLOCOS PASTEL */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        {/* Card 1: Spreadsheets */}
-        <div className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] flex flex-col justify-between gap-6">
+        {/* Card 1: Minhas Planilhas — block-cream */}
+        <article className="bg-pp-block-cream rounded-block p-8 md:p-10 flex flex-col gap-6 min-h-[280px]">
           <div className="space-y-3">
-            <div className="flex justify-between items-start gap-2">
-              <span className="text-[#7DD3FC] shrink-0"><IconSheet /></span>
-              <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full ${profile?.has_lifetime_access ? 'text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>
-                {profile?.has_lifetime_access ? 'Acesso Vitalício' : 'Sem Acesso'}
-              </span>
+            <div className="flex items-center gap-2 text-pp-ink-soft">
+              <FileText className="w-5 h-5" aria-hidden="true" />
+              <p className="font-serif italic text-sm">Sua biblioteca</p>
             </div>
-            <h3 className="text-lg font-bold text-[#F8FAFC]">Minhas Planilhas</h3>
-            <p className="text-sm text-[#CBD5E1] leading-relaxed">
-              Biblioteca de planilhas profissionais de apoio operacional qualificadas para agilizar cálculos e organização.
+            <h2 className="text-2xl md:text-[28px] text-pp-ink font-medium leading-tight">
+              Minhas Planilhas
+            </h2>
+            <p className="text-pp-ink-soft text-base leading-relaxed">
+              Biblioteca de planilhas profissionais para agilizar cálculos e organizar seu trabalho.
             </p>
           </div>
-          <Link
-            href="/app/planilhas"
-            className="w-full py-3 text-center text-sm font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] rounded-xl transition duration-200"
-          >
-            Acessar planilhas
-          </Link>
-        </div>
+          <div className="mt-auto">
+            <Link
+              href="/app/planilhas"
+              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+            >
+              Acessar planilhas
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </article>
 
-        {/* Card 2: GPT Assistant */}
-        <div className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] flex flex-col justify-between gap-6">
+        {/* Card 2: Assistente GPT (bônus) — block-mint */}
+        <article className="bg-pp-block-mint rounded-block p-8 md:p-10 flex flex-col gap-6 min-h-[280px]">
           <div className="space-y-3">
-            <div className="flex justify-between items-start gap-2">
-              <span className="text-[#7DD3FC] shrink-0"><IconChat /></span>
-              <span className="px-2.5 py-1 text-[10px] font-bold uppercase text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-full">
-                Bônus Incluso
-              </span>
+            <div className="flex items-center gap-2 text-pp-ink-soft">
+              <MessageSquare className="w-5 h-5" aria-hidden="true" />
+              <p className="font-serif italic text-sm">Bônus incluso</p>
             </div>
-            <h3 className="text-lg font-bold text-[#F8FAFC]">Assistente GPT Incluso</h3>
-            <p className="text-sm text-[#CBD5E1] leading-relaxed">
-              Apoio textual para estruturação de relatórios a partir de dados em formato de GPT Builder externo.
+            <h2 className="text-2xl md:text-[28px] text-pp-ink font-medium leading-tight">
+              Assistente GPT
+            </h2>
+            <p className="text-pp-ink-soft text-base leading-relaxed">
+              Apoio textual para estruturar relatórios a partir dos seus dados.
             </p>
           </div>
-          <Link
-            href="/app/assistente-gpt"
-            className="w-full py-3 text-center text-sm font-bold text-[#F8FAFC] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C] rounded-xl transition duration-200"
-          >
-            Abrir Assistente GPT
-          </Link>
-        </div>
+          <div className="mt-auto">
+            <Link
+              href="/app/assistente-gpt"
+              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+            >
+              Abrir assistente
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </article>
 
-        {/* Card 3: IA Pro Assistant */}
-        <div className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] flex flex-col justify-between gap-6">
+        {/* Card 3: Assistente IA Pro — block-coral (commercial highlight, sempre) */}
+        <article className="bg-pp-block-coral rounded-block p-8 md:p-10 flex flex-col gap-6 min-h-[280px]">
           <div className="space-y-3">
-            <div className="flex justify-between items-start gap-2">
-              <span className="text-[#7DD3FC] shrink-0"><IconSpark /></span>
-
-              {assistantState === 'active' && (
-                <span className="px-2.5 py-1 text-[10px] font-bold uppercase text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-full">
-                  Assinatura Ativa
-                </span>
-              )}
-              {assistantState === 'expired' && (
-                <span className="px-2.5 py-1 text-[10px] font-bold uppercase text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-full">
-                  Expirado
-                </span>
-              )}
-              {assistantState === 'blocked' && (
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C] rounded-full">
-                  <IconLock /> Bloqueado
-                </span>
-              )}
+            <div className="flex items-center gap-2 text-pp-ink-soft">
+              <Sparkles className="w-5 h-5" aria-hidden="true" />
+              <p className="font-serif italic text-sm">
+                {assistantState === 'active'
+                  ? 'Sua assinatura'
+                  : assistantState === 'expired'
+                    ? 'Renove'
+                    : 'Recomendado'}
+              </p>
             </div>
-            <h3 className="text-lg font-bold text-[#F8FAFC]">Assistente IA Pro</h3>
-            <p className="text-sm text-[#CBD5E1] leading-relaxed">
-              Gere relatórios profissionais estruturados baseando-se estritamente nos dados das suas planilhas.
+            <h2 className="text-2xl md:text-[28px] text-pp-ink font-medium leading-tight">
+              Assistente IA Pro
+            </h2>
+            <p className="text-pp-ink-soft text-base leading-relaxed">
+              {assistantState === 'active'
+                ? `Acesso ativo${profile?.assistant_expires_at ? ` até ${formatDate(profile.assistant_expires_at)}` : ''}.`
+                : assistantState === 'expired'
+                  ? 'Sua assinatura expirou. Renove para voltar a gerar relatórios.'
+                  : 'Gere relatórios estruturados com IA a partir das suas planilhas.'}
             </p>
           </div>
-          <Link
-            href="/app/assistente-pro"
-            className={`w-full py-3 text-center text-sm font-bold rounded-xl transition duration-200 ${
-              assistantState === 'active'
-                ? 'text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9]'
-                : 'text-[#7DD3FC] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C]'
-            }`}
-          >
-            {assistantState === 'active' ? 'Acessar Assistente Pro' : 'Ver oferta anual'}
-          </Link>
-        </div>
+          <div className="mt-auto">
+            <Link
+              href="/app/assistente-pro"
+              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+            >
+              {assistantState === 'blocked' && <Lock className="w-4 h-4" aria-hidden="true" />}
+              {assistantState === 'active'
+                ? 'Abrir assistente'
+                : assistantState === 'expired'
+                  ? 'Renovar por R$50/ano'
+                  : 'Assinar por R$50/ano'}
+              {assistantState !== 'blocked' && <ArrowRight className="w-4 h-4" aria-hidden="true" />}
+            </Link>
+          </div>
+        </article>
 
       </section>
 
-      {/* Promo Banners Section */}
-      <section className="space-y-6 pt-4">
-        <div className="border-t border-[#1F4D5C] pt-8">
-          <h3 className="text-xl font-bold text-[#F8FAFC] tracking-tight">Recomendações e Destaques</h3>
-          <p className="text-sm text-[#CBD5E1] mt-1">Conheça recursos complementares e treinamentos selecionados para você.</p>
+      {/* 4. WARNING SE PERFIL DESCONHECIDO (lógica mantida) */}
+      {profileType === 'unknown' && (
+        <div className="p-8 bg-pp-block-cream rounded-block flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <p className="font-serif italic text-pp-ink-soft text-sm">Perfil incompleto</p>
+            <p className="text-pp-ink text-base leading-relaxed max-w-xl">
+              Configure sua área de atuação na sua conta para receber recomendações para Psicólogos ou Psicopedagogos.
+            </p>
+          </div>
+          <Link
+            href="/app/minha-conta"
+            className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition shrink-0 self-start md:self-auto"
+          >
+            Configurar perfil
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </Link>
         </div>
+      )}
 
-        {/* Warning if profile is unknown */}
-        {profileType === 'unknown' && (
-          <div className="p-5 bg-[#FACC15]/10 border border-[#FACC15]/25 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="font-bold text-[#FACC15] block text-xs uppercase tracking-wider">Perfil profissional incompleto</span>
-              <p className="text-[#CBD5E1] text-sm leading-relaxed">Configure sua área de atuação na sua conta para receber recomendações exclusivas para Psicólogos ou Psicopedagogos.</p>
-            </div>
-            <Link href="/app/minha-conta" className="px-5 py-2.5 bg-[#7DD3FC] hover:bg-[#67E8F9] text-[#061923] text-sm font-bold rounded-xl transition self-start md:self-auto shrink-0">
-              Configurar perfil
-            </Link>
-          </div>
-        )}
-
-        {filteredBanners.length === 0 ? (
-          <div className="p-10 text-center bg-[#0B2430]/50 border border-dashed border-[#1F4D5C] rounded-2xl space-y-2">
-            <p className="text-[#CBD5E1] text-base">Nenhuma recomendação disponível no momento.</p>
-            <p className="text-[#94A3B8] text-sm">Volte em breve — novidades aparecem aqui regularmente.</p>
-          </div>
-        ) : (
+      {/* 5. RECOMENDADOS — eyebrow editorial + banners segmentados em pastéis */}
+      {filteredBanners.length > 0 && (
+        <section className="space-y-6">
+          <p className="font-serif italic text-pp-ink-soft text-base">Recomendado para você</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredBanners.map((banner) => (
-              <div
+              <article
                 key={banner.id}
-                className="bg-[#0B2430] border border-[#1F4D5C] rounded-2xl p-6 flex flex-col justify-between gap-4 hover:border-[#7DD3FC]/40 transition duration-200"
+                className={`${audienceToBlockClass(banner.audience)} rounded-block p-8 flex flex-col gap-6 min-h-[240px]`}
               >
                 <div className="space-y-3">
-                  <div className="flex justify-between items-start">
-                    <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-full">
-                      Público: {
-                        banner.audience === 'all' ? 'Todos' :
-                        banner.audience === 'psychologist' ? 'Psicologia' :
-                        banner.audience === 'psychopedagogue' ? 'Psicopedagogia' : 'Geral'
-                      }
-                    </span>
-                  </div>
-                  <div>
-                    <h4 className="text-base font-bold text-[#F8FAFC] leading-snug">{banner.title}</h4>
-                    {banner.subtitle && <p className="text-sm text-[#CBD5E1] mt-1.5 leading-relaxed">{banner.subtitle}</p>}
-                  </div>
+                  <p className="font-serif italic text-pp-ink-soft text-sm">
+                    {banner.audience === 'all' ? 'Para você' :
+                     banner.audience === 'psychologist' ? 'Para psicólogos' :
+                     banner.audience === 'psychopedagogue' ? 'Para psicopedagogos' : 'Selecionado'}
+                  </p>
+                  <h3 className="text-xl md:text-2xl text-pp-ink font-medium leading-tight">
+                    {banner.title}
+                  </h3>
+                  {banner.subtitle && (
+                    <p className="text-pp-ink-soft text-base leading-relaxed">{banner.subtitle}</p>
+                  )}
                 </div>
 
-                {/* Banner Buttons */}
-                <div className="flex flex-wrap gap-2 pt-1">
+                <div className="mt-auto flex flex-wrap gap-3">
                   {banner.button_url && banner.button_text && (
                     <a
                       href={banner.button_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2.5 text-center text-sm font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] rounded-xl transition"
+                      className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-5 py-2.5 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
                     >
                       {banner.button_text}
+                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
                     </a>
                   )}
 
@@ -341,9 +323,9 @@ export default function AppDashboardPage() {
                             : null
                         );
                       }}
-                      className="inline-flex items-center gap-1.5 px-4 py-2.5 text-center text-sm font-semibold text-[#F8FAFC] bg-[#0E2A38] hover:bg-[#123340] border border-[#1F4D5C] rounded-xl transition"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill text-sm font-medium text-pp-ink border border-pp-ink/15 hover:bg-pp-ink/5 transition"
                     >
-                      <IconPlay /> Assistir vídeo
+                      <Play className="w-4 h-4" aria-hidden="true" /> Assistir vídeo
                     </button>
                   )}
 
@@ -352,42 +334,44 @@ export default function AppDashboardPage() {
                       href={banner.secondary_button_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2.5 text-center text-sm font-semibold text-[#CBD5E1] hover:text-[#F8FAFC] border border-[#1F4D5C] hover:bg-[#123340] rounded-xl transition"
+                      className="inline-flex items-center px-5 py-2.5 rounded-pill text-sm font-medium text-pp-ink-soft hover:text-pp-ink transition"
                     >
                       {banner.secondary_button_text}
                     </a>
                   )}
                 </div>
-              </div>
+              </article>
             ))}
           </div>
-        )}
-      </section>
+        </section>
+      )}
 
-      {/* Disclaimer Responsible Use */}
-      <div className="p-4 bg-[#0B2430]/60 rounded-2xl border border-[#1F4D5C] text-center text-xs text-[#94A3B8] leading-relaxed max-w-3xl mx-auto">
-        <strong>Aviso de uso responsável:</strong> As planilhas profissionais e assistentes virtuais servem como recursos de apoio operacional para organização de dados e auxílio nos cálculos automatizados. O uso correto exige o manual original de cada instrumento técnico e nenhuma funcionalidade substitui a análise, interpretação ou diagnóstico de um profissional qualificado.
-      </div>
+      {/* 6. DISCLAIMER MINIMALISTA */}
+      <footer className="pt-8 border-t border-pp-hairline-soft">
+        <p className="text-center text-xs text-pp-ink-soft max-w-3xl mx-auto leading-relaxed">
+          As planilhas e assistentes são recursos de apoio operacional. Não substituem manual técnico, avaliação profissional ou diagnóstico clínico.
+        </p>
+      </footer>
 
-      {/* Video Modal Overlay */}
+      {/* 7. MODAL DE VÍDEO — lógica mantida, paleta atualizada */}
       {activeVideoUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#061923]/85 backdrop-blur-sm">
-          <div className="bg-[#0B2430] border border-[#1F4D5C] rounded-2xl max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl">
-            <div className="flex justify-between items-center border-b border-[#1F4D5C] pb-3">
-              <h4 className="text-base font-bold text-[#F8FAFC]">Demonstração / vídeo informativo</h4>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-pp-ink/70 backdrop-blur-sm">
+          <div className="bg-white border border-pp-hairline rounded-block max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-pp-hairline pb-3">
+              <h4 className="text-base font-medium text-pp-ink">Demonstração / vídeo informativo</h4>
               <button
                 onClick={() => {
                   setActiveVideoUrl(null);
                   setActiveVideoCta(null);
                 }}
-                className="text-[#CBD5E1] hover:text-[#F8FAFC] p-1 rounded-lg hover:bg-[#123340] transition"
+                className="text-pp-ink-soft hover:text-pp-ink p-1 rounded-lg hover:bg-pp-hairline-soft transition"
                 aria-label="Fechar"
               >
-                <IconClose />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-black border border-[#1F4D5C]">
+            <div className="relative aspect-video w-full rounded-xl overflow-hidden bg-pp-ink border border-pp-hairline">
               {activeVideoUrl.includes('youtube.com') || activeVideoUrl.includes('youtu.be') ? (
                 <iframe
                   src={getEmbedUrl(activeVideoUrl)}
@@ -411,9 +395,10 @@ export default function AppDashboardPage() {
                   href={activeVideoCta.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-6 py-2.5 text-sm font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] rounded-xl transition"
+                  className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-2.5 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
                 >
                   {activeVideoCta.text}
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </a>
               </div>
             )}

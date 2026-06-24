@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1800 280" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <rect width="1800" height="280" fill="#D9EDE0"/>
+  <text x="900" y="128" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="40" fill="#0E2A38">
+    Banner sticky — substitua quando quiser
+  </text>
+  <text x="900" y="172" text-anchor="middle" font-family="Inter, sans-serif" font-size="17" fill="#4A6470">
+    Suba sua arte em /public/banners/planilhas-sticky.png
+  </text>
+</svg>
