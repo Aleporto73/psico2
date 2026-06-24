@@ -14,6 +14,7 @@ interface HeroBanner {
   alt_text: string | null;
   is_active: boolean;
   sort_order: number;
+  clicks_7d?: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -465,6 +466,7 @@ export default function AdminBannersCanvaPage() {
                     <th className="p-4">Público</th>
                     <th className="p-4">Ordem</th>
                     <th className="p-4">Status</th>
+                    <th className="p-4">Cliques (7d)</th>
                     <th className="p-4 text-right">Ações</th>
                   </tr>
                 </thead>
@@ -491,6 +493,9 @@ export default function AdminBannersCanvaPage() {
                         >
                           {banner.is_active ? 'Ativo' : 'Inativo'}
                         </button>
+                      </td>
+                      <td className={`p-4 font-semibold ${(banner.clicks_7d ?? 0) > 0 ? 'text-[#F8FAFC]' : 'text-[#94A3B8]'}`}>
+                        {banner.clicks_7d ?? 0}
                       </td>
                       <td className="p-4 text-right">
                         <div className="inline-flex gap-2">
