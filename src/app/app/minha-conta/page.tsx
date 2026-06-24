@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
+import { Lock } from 'lucide-react';
 
 interface ProfileDetails {
   id: string;
@@ -17,17 +18,6 @@ interface ClientStats {
   has_lifetime_access: boolean;
   has_active_assistant: boolean;
   assistant_expires_at: string | null;
-}
-
-// ── SVG Icons ────────────────────────────────────────────────────────────────
-
-function IconLock() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <rect x="3" y="11" width="18" height="11" rx="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
 }
 
 export default function AppMinhaContaPage() {
@@ -118,9 +108,9 @@ export default function AppMinhaContaPage() {
 
   if (loading) {
     return (
-      <div className="flex h-[60vh] items-center justify-center text-[#CBD5E1]">
+      <div className="flex h-[60vh] items-center justify-center text-pp-ink-soft">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
+          <div className="w-8 h-8 border-2 border-pp-hairline border-t-pp-ink rounded-full animate-spin mx-auto" />
           <p>Carregando dados cadastrais...</p>
         </div>
       </div>
@@ -128,134 +118,138 @@ export default function AppMinhaContaPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-6xl mx-auto space-y-8">
 
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-[#F8FAFC] tracking-tight">Minha conta</h1>
-        <p className="text-[#CBD5E1] text-base mt-1">Gerencie seus dados cadastrais e perfil profissional.</p>
-      </div>
+      {/* Header editorial */}
+      <header className="space-y-2 pt-4">
+        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Minha conta</h1>
+        <p className="text-pp-ink-soft text-base md:text-lg">Gerencie seus dados cadastrais e perfil profissional.</p>
+      </header>
 
-      {/* Messages */}
+      {/* Mensagens */}
       {errorMsg && (
-        <div className="p-4 text-base font-medium text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl">
+        <div className="p-4 text-base font-medium text-pp-danger bg-pp-danger/10 rounded-xl">
           {errorMsg}
         </div>
       )}
       {successMsg && (
-        <div className="p-4 text-base font-medium text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-xl">
+        <div className="p-4 text-base font-medium text-pp-success bg-pp-success/10 rounded-xl">
           {successMsg}
         </div>
       )}
 
-      {/* Content grid */}
+      {/* Grid: Dados cadastrais (2/3) + Seus acessos (1/3) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        {/* Left Col: Info details */}
-        <div className="md:col-span-2 space-y-6">
-          <div className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] space-y-5">
-            <h3 className="text-lg font-bold text-[#F8FAFC] border-b border-[#1F4D5C] pb-3">Dados cadastrais</h3>
+        {/* Dados cadastrais */}
+        <div className="md:col-span-2 bg-white border border-pp-hairline rounded-2xl p-6 space-y-5">
+          <div className="space-y-1 border-b border-pp-hairline pb-3">
+            <p className="font-serif italic text-pp-ink-soft text-sm">Seus dados</p>
+            <h2 className="text-lg text-pp-ink font-medium">Dados cadastrais</h2>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
-              <div className="space-y-1">
-                <span className="text-[#94A3B8] block text-xs uppercase tracking-wider font-semibold">Nome completo</span>
-                <span className="text-[#F8FAFC] font-medium text-base">{profile?.name || 'Não informado'}</span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[#94A3B8] block text-xs uppercase tracking-wider font-semibold">E-mail</span>
-                <span className="text-[#F8FAFC] font-medium text-base break-all">{profile?.email}</span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[#94A3B8] block text-xs uppercase tracking-wider font-semibold">Telefone</span>
-                <span className="text-[#F8FAFC] font-medium text-base">{profile?.phone || 'Não cadastrado'}</span>
-              </div>
-              <div className="space-y-1">
-                <span className="text-[#94A3B8] block text-xs uppercase tracking-wider font-semibold">Status da conta</span>
-                <span className="inline-block px-2.5 py-0.5 text-xs font-bold text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-full">
-                  Ativa
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-sm">
+            <div className="space-y-1">
+              <span className="text-pp-ink-soft block text-xs font-medium">Nome completo</span>
+              <span className="text-pp-ink font-medium text-base">{profile?.name || 'Não informado'}</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-pp-ink-soft block text-xs font-medium">E-mail</span>
+              <span className="text-pp-ink font-medium text-base break-all">{profile?.email}</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-pp-ink-soft block text-xs font-medium">Telefone</span>
+              <span className="text-pp-ink font-medium text-base">{profile?.phone || 'Não cadastrado'}</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-pp-ink-soft block text-xs font-medium">Status da conta</span>
+              <span className="inline-block px-3 py-1 text-xs font-medium text-pp-success bg-pp-success/10 rounded-pill">
+                Ativa
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Seus acessos */}
+        <div className="bg-white border border-pp-hairline rounded-2xl p-6 space-y-5">
+          <div className="space-y-1 border-b border-pp-hairline pb-3">
+            <p className="font-serif italic text-pp-ink-soft text-sm">O que você tem</p>
+            <h2 className="text-lg text-pp-ink font-medium">Seus acessos</h2>
+          </div>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <span className="text-pp-ink-soft block text-xs font-medium">Biblioteca de planilhas</span>
+              {stats?.has_lifetime_access ? (
+                <span className="inline-block px-3 py-1 text-xs font-medium text-pp-success bg-pp-success/10 rounded-pill">
+                  Acesso vitalício liberado
                 </span>
-              </div>
+              ) : (
+                <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink-soft bg-pp-hairline-soft rounded-pill">
+                  Sem acesso
+                </span>
+              )}
             </div>
-          </div>
 
-          {/* Form to change profile type */}
-          <div className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] space-y-5">
-            <h3 className="text-lg font-bold text-[#F8FAFC] border-b border-[#1F4D5C] pb-3">Perfil profissional</h3>
-
-            <form onSubmit={handleUpdateProfileType} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-[#CBD5E1] block">Qual sua área principal de atuação?</label>
-                <select
-                  value={profileType}
-                  onChange={(e) => setProfileType(e.target.value)}
-                  className="w-full md:max-w-md px-4 py-3 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition"
-                >
-                  <option value="psychologist">Psicólogo(a)</option>
-                  <option value="psychopedagogue">Psicopedagogo(a) / Neuropsicopedagogo(a)</option>
-                  <option value="both">Atuo nas duas áreas</option>
-                  <option value="unknown">Prefiro responder depois</option>
-                </select>
-                <p className="text-xs text-[#94A3B8] max-w-md leading-relaxed">
-                  Usamos esta informação para sugerir os banners comerciais e produtos complementares mais adequados ao seu dia a dia profissional.
-                </p>
-              </div>
-
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-7 py-3 text-base font-bold text-[#061923] bg-[#7DD3FC] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] rounded-xl transition shadow-md shadow-[#7DD3FC]/15"
-              >
-                {saving ? 'Salvando...' : 'Salvar alteração'}
-              </button>
-            </form>
-          </div>
-        </div>
-
-        {/* Right Col: Access Stats */}
-        <div className="space-y-6">
-          <div className="p-6 bg-[#0B2430] rounded-2xl border border-[#1F4D5C] space-y-5">
-            <h3 className="text-lg font-bold text-[#F8FAFC] border-b border-[#1F4D5C] pb-3">Seus acessos</h3>
-
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <span className="text-[#94A3B8] block text-xs uppercase tracking-wider font-semibold">Biblioteca de planilhas</span>
-                {stats?.has_lifetime_access ? (
-                  <span className="inline-block px-3 py-1 text-xs font-bold text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-full">
-                    Acesso vitalício liberado
+            <div className="space-y-2">
+              <span className="text-pp-ink-soft block text-xs font-medium">Assistente IA Pro</span>
+              {stats?.has_active_assistant ? (
+                <div className="space-y-1.5">
+                  <span className="inline-block px-3 py-1 text-xs font-medium text-pp-success bg-pp-success/10 rounded-pill">
+                    Ativo
                   </span>
-                ) : (
-                  <span className="inline-block px-3 py-1 text-xs font-medium text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C] rounded-full">
-                    Sem acesso
+                  <div className="text-xs text-pp-ink-soft">Expira em: {formatDate(stats?.assistant_expires_at)}</div>
+                </div>
+              ) : stats?.assistant_expires_at ? (
+                <div className="space-y-1.5">
+                  <span className="inline-block px-3 py-1 text-xs font-medium text-pp-danger bg-pp-danger/10 rounded-pill">
+                    Assinatura expirada
                   </span>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <span className="text-[#94A3B8] block text-xs uppercase tracking-wider font-semibold">Assistente IA Pro</span>
-                {stats?.has_active_assistant ? (
-                  <div className="space-y-1.5">
-                    <span className="inline-block px-3 py-1 text-xs font-bold text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 rounded-full">
-                      Ativo
-                    </span>
-                    <div className="text-xs text-[#94A3B8]">Expira em: {formatDate(stats?.assistant_expires_at)}</div>
-                  </div>
-                ) : stats?.assistant_expires_at ? (
-                  <div className="space-y-1.5">
-                    <span className="inline-block px-3 py-1 text-xs font-bold text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-full">
-                      Assinatura expirada
-                    </span>
-                    <div className="text-xs text-[#94A3B8]">Expirou em: {formatDate(stats?.assistant_expires_at)}</div>
-                  </div>
-                ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C] rounded-full">
-                    <IconLock /> Bloqueado
-                  </span>
-                )}
-              </div>
+                  <div className="text-xs text-pp-ink-soft">Expirou em: {formatDate(stats?.assistant_expires_at)}</div>
+                </div>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium text-pp-ink-soft bg-pp-hairline-soft rounded-pill">
+                  <Lock className="w-3.5 h-3.5" aria-hidden="true" /> Bloqueado
+                </span>
+              )}
             </div>
           </div>
         </div>
 
+      </div>
+
+      {/* Perfil profissional — full-width */}
+      <div className="bg-white border border-pp-hairline rounded-2xl p-6 space-y-5">
+        <div className="space-y-1 border-b border-pp-hairline pb-3">
+          <p className="font-serif italic text-pp-ink-soft text-sm">Perfil profissional</p>
+          <h2 className="text-lg text-pp-ink font-medium">Qual sua área principal de atuação?</h2>
+        </div>
+
+        <form onSubmit={handleUpdateProfileType} className="space-y-4">
+          <div className="space-y-2">
+            <select
+              value={profileType}
+              onChange={(e) => setProfileType(e.target.value)}
+              className="w-full md:max-w-md px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+            >
+              <option value="psychologist">Psicólogo(a)</option>
+              <option value="psychopedagogue">Psicopedagogo(a) / Neuropsicopedagogo(a)</option>
+              <option value="both">Atuo nas duas áreas</option>
+              <option value="unknown">Prefiro responder depois</option>
+            </select>
+            <p className="text-xs text-pp-ink-soft max-w-md leading-relaxed">
+              Usamos esta informação para sugerir os banners comerciais e produtos complementares mais adequados ao seu dia a dia profissional.
+            </p>
+          </div>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="inline-flex items-center bg-pp-ink text-pp-canvas px-7 py-3 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-pp-ink"
+          >
+            {saving ? 'Salvando...' : 'Salvar alteração'}
+          </button>
+        </form>
       </div>
 
     </div>
