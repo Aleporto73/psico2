@@ -43,6 +43,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_IMAGES = 4;
 const MAX_NOTES_CHARS = 6000;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+const CHECKOUT_URL_IA_PRO = 'https://payment.abaminds.com/checkout?product=MCGNKAAY&price=74F2T5WL';
 
 const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; hint: string }> = [
   { value: 'family',         label: 'Pais / Família',  hint: 'Acolhedor, simples, sem jargão técnico.' },
@@ -795,6 +796,7 @@ export default function AppAssistenteProPage() {
           </div>
           <button
             type="button"
+            onClick={() => window.open(CHECKOUT_URL_IA_PRO, '_blank', 'noopener,noreferrer')}
             className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
           >
             Renovar assinatura (R$50/ano)
@@ -849,6 +851,7 @@ export default function AppAssistenteProPage() {
 
           <button
             type="button"
+            onClick={() => window.open(CHECKOUT_URL_IA_PRO, '_blank', 'noopener,noreferrer')}
             className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
           >
             Assinar por R$50/ano
