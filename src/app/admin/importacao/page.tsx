@@ -279,7 +279,7 @@ export default function AdminImportacaoPage() {
     }
   };
 
-  const CHUNK_SIZE = 50;
+  const CHUNK_SIZE = 275;
 
   const handleImport = async () => {
     if (validRecords.length === 0) {
@@ -290,7 +290,7 @@ export default function AdminImportacaoPage() {
     setLoading(true);
     setErrorMsg(null);
 
-    // Quebra os clientes válidos em lotes de 50 e envia sequencialmente.
+    // Quebra os clientes válidos em lotes de 275 e envia sequencialmente.
     // Sequencial (não paralelo) para não sobrecarregar o BD nem o rate limit do Auth.
     const batches: ParsedRecord[][] = [];
     for (let i = 0; i < validRecords.length; i += CHUNK_SIZE) {
@@ -614,7 +614,7 @@ export default function AdminImportacaoPage() {
                     {progress && (
                       <div className="px-4 py-3 bg-[#0E2A38]/60 border-b border-[#1F4D5C]">
                         <div className="flex justify-between text-xs text-[#CBD5E1] mb-1.5 font-medium">
-                          <span>Processando lotes (50 por vez)…</span>
+                          <span>Processando lotes (275 por vez)…</span>
                           <span className="text-[#7DD3FC] font-bold">
                             {progress.current}/{progress.total} lotes
                           </span>
@@ -642,7 +642,7 @@ export default function AdminImportacaoPage() {
                             <tr key={i} className="hover:bg-[#0E2A38]/30 transition duration-150">
                               <td className="p-3.5 text-[#F8FAFC] font-semibold">{rec.name}</td>
                               <td className="p-3.5 text-[#CBD5E1]">{rec.email}</td>
-                              <td className="p-3.5 text-[#CBD5E1]">{rec.profile_type || 'psychologist'}</td>
+                              <td className="p-3.5 text-[#CBD5E1]">{rec.profile_type || 'A definir'}</td>
                               <td className="p-3.5 text-[#94A3B8]">{rec.phone || '-'}</td>
                             </tr>
                           ))}
