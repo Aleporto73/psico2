@@ -44,7 +44,7 @@ const POSITION_DEFAULTS: Record<
   planilhas: {
     fallbackSrc: '/banners/planilhas-sticky.placeholder.svg',
     fallbackAlt: 'Banner promocional PsicoPlanilhas',
-    aspectRatio: '7/1',
+    aspectRatio: '5/1',
     href: '/app/produtos',
   },
   produtos: {
