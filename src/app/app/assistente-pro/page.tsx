@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Lock, Check, TriangleAlert, X, Sparkles, ImagePlus, Plus, Trash2, Zap, History, Shield, SquarePen } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -22,6 +24,7 @@ interface AiReport {
 type ReportType = 'family' | 'school' | 'technical' | 'internal';
 
 interface FormState {
+  subjectIdentification: string;
   profession: string;
   worksheetName: string;
   reportType: ReportType | '';
@@ -43,7 +46,7 @@ const MAX_NOTES_CHARS = 6000;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const CHECKOUT_URL_IA_PRO = 'https://payment.abaminds.com/checkout?product=MCGNKAAY&price=74F2T5WL';
 
-const MONTHLY_LIMIT = 100;
+const MONTHLY_LIMIT = 50;
 
 const PROFESSION_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'psicopedagogo', label: 'Psicopedagogo(a)' },
@@ -105,6 +108,80 @@ function makeId() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
+// Renderiza output_text (Markdown) com o estilo visual do PsicoPlanilhas.
+// HTML bruto é ignorado (padrão do react-markdown). Tabelas e divisórias via remark-gfm.
+function ReportMarkdown({ content }: { content: string }) {
+  return (
+    <div className="text-sm text-pp-ink-soft leading-relaxed break-words">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children }) => (
+            <h1 className="font-serif italic text-lg text-pp-ink mt-4 mb-2 first:mt-0">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="font-medium text-base text-pp-ink mt-4 mb-2 first:mt-0">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="font-medium text-sm text-pp-ink mt-3 mb-1.5">{children}</h3>
+          ),
+          h4: ({ children }) => (
+            <h4 className="font-medium text-sm text-pp-ink mt-3 mb-1.5">{children}</h4>
+          ),
+          p: ({ children }) => <p className="my-2 leading-relaxed">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>,
+          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+          strong: ({ children }) => <strong className="font-semibold text-pp-ink">{children}</strong>,
+          em: ({ children }) => <em className="italic">{children}</em>,
+          a: ({ href, children }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-pp-ink underline underline-offset-2"
+            >
+              {children}
+            </a>
+          ),
+          hr: () => <hr className="my-4 border-pp-hairline" />,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-pp-hairline pl-3 my-2 italic">{children}</blockquote>
+          ),
+          code: ({ className, children }) =>
+            /language-/.test(className || '') ? (
+              <code className="font-mono text-xs">{children}</code>
+            ) : (
+              <code className="rounded bg-pp-hairline-soft px-1 py-0.5 text-[0.85em] font-mono text-pp-ink">
+                {children}
+              </code>
+            ),
+          pre: ({ children }) => (
+            <pre className="my-2 overflow-x-auto rounded-lg border border-pp-hairline bg-pp-canvas p-3 text-xs text-pp-ink">
+              {children}
+            </pre>
+          ),
+          table: ({ children }) => (
+            <div className="my-3 overflow-x-auto">
+              <table className="w-full border-collapse text-sm">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => (
+            <th className="border border-pp-hairline bg-pp-block-mint/40 px-3 py-2 text-left font-medium text-pp-ink">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="border border-pp-hairline-soft px-3 py-2 align-top text-pp-ink-soft">{children}</td>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function AppAssistenteProPage() {
@@ -118,6 +195,7 @@ export default function AppAssistenteProPage() {
   const [monthlyCount, setMonthlyCount] = useState<number | null>(null);
 
   const [form, setForm] = useState<FormState>({
+    subjectIdentification: '',
     profession: '',
     worksheetName: '',
     reportType: '',
@@ -305,13 +383,12 @@ export default function AppAssistenteProPage() {
 
       const payload: Record<string, any> = {
         // Campos visíveis na UI simplificada
+        subjectIdentification: form.subjectIdentification.trim(),
         profession: form.profession,
         worksheetName,
         reportType: form.reportType,
         additionalNotes: form.additionalNotes,
-        // Campos ocultos enviados com defaults (compatibilidade com o backend)
-        nome: 'Paciente/Aprendiz não identificado',
-        idade: 'Não informada',
+        // Compat: o backend deriva nome/idade a partir da identificação do avaliado.
         area: worksheetName || 'PsicoPlanilhas',
         objetivo: `Gerar rascunho de relatório para ${destinoLabel} a partir da planilha ${worksheetName}`,
       };
@@ -342,6 +419,7 @@ export default function AppAssistenteProPage() {
       if (user) fetchReports(user.id);
 
       setForm({
+        subjectIdentification: '',     // identificação é por avaliado: limpa a cada geração
         profession: form.profession,   // mantém a profissão entre gerações
         worksheetName: '',
         reportType: form.reportType,   // mantém o destino entre gerações
@@ -437,9 +515,9 @@ export default function AppAssistenteProPage() {
                   </button>
                 </div>
               </div>
-              <pre className="text-sm text-pp-ink-soft leading-relaxed whitespace-pre-wrap font-sans line-clamp-6 overflow-hidden">
-                {lastReport.output_text}
-              </pre>
+              <div className="max-h-72 overflow-hidden">
+                <ReportMarkdown content={lastReport.output_text} />
+              </div>
               <p className="text-xs text-pp-ink-soft">
                 Salvo em: {formatDateTime(lastReport.created_at)}
               </p>
@@ -463,7 +541,25 @@ export default function AppAssistenteProPage() {
 
             <form onSubmit={handleGenerate} className="space-y-5" id="generate-form" noValidate>
 
-              {/* 1. Sua profissão */}
+              {/* 1. Identificação do avaliado (opcional) */}
+              <div className="space-y-2">
+                <label htmlFor="subjectIdentification" className={labelCls}>
+                  Identificação do avaliado{' '}
+                  <span className="text-pp-ink-soft font-normal">(opcional)</span>
+                </label>
+                <input
+                  id="subjectIdentification"
+                  name="subjectIdentification"
+                  type="text"
+                  value={form.subjectIdentification}
+                  onChange={handleFormChange}
+                  placeholder="Ex.: Pedro Henrique, 17 anos"
+                  maxLength={200}
+                  className={inputCls}
+                />
+              </div>
+
+              {/* 2. Sua profissão */}
               <div className="space-y-2">
                 <label htmlFor="profession" className={labelCls}>
                   Sua profissão <span className="text-pp-danger">*</span>
@@ -485,7 +581,7 @@ export default function AppAssistenteProPage() {
                 </select>
               </div>
 
-              {/* 2. Para quem é o relatório? */}
+              {/* 3. Para quem é o relatório? */}
               <div className="space-y-2">
                 <label htmlFor="reportType" className={labelCls}>
                   Para quem é o relatório? <span className="text-pp-danger">*</span>
@@ -512,7 +608,7 @@ export default function AppAssistenteProPage() {
                 )}
               </div>
 
-              {/* 3. Qual planilha você usou? */}
+              {/* 4. Qual planilha você usou? */}
               <div className="space-y-2">
                 <label htmlFor="worksheetName" className={labelCls}>
                   Qual planilha você usou? <span className="text-pp-danger">*</span>
@@ -642,7 +738,7 @@ export default function AppAssistenteProPage() {
                 )}
               </div>
 
-              {/* 5. Observações adicionais (opcional quando há print) */}
+              {/* 6. Observações adicionais (opcional quando há print) */}
               <div className="space-y-2">
                 <label htmlFor="additionalNotes" className={labelCls}>
                   Observações adicionais{' '}
@@ -870,9 +966,7 @@ export default function AppAssistenteProPage() {
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto">
-              <pre className="text-sm text-pp-ink-soft leading-relaxed whitespace-pre-wrap font-sans">
-                {modalReport.output_text}
-              </pre>
+              <ReportMarkdown content={modalReport.output_text} />
             </div>
           </div>
         </div>
