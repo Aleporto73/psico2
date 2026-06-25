@@ -3,7 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { AlertCircle } from 'lucide-react';
+import { X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 function LoginContent() {
@@ -16,6 +16,20 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
+  // Inicia oculto: só revela após confirmar no localStorage que não foi fechado
+  // (evita flash do toast para quem já dispensou e mismatch de SSR).
+  const [splashDismissed, setSplashDismissed] = useState(true);
+
+  useEffect(() => {
+    if (localStorage.getItem('migration-splash-dismissed') !== '1') {
+      setSplashDismissed(false);
+    }
+  }, []);
+
+  const handleDismissSplash = () => {
+    localStorage.setItem('migration-splash-dismissed', '1');
+    setSplashDismissed(true);
+  };
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -99,26 +113,30 @@ function LoginContent() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#061923] text-[#F8FAFC]">
 
-      {/* Splash de migração v1 → v2 — rede de segurança não dismissível para
-          clientes legacy (psicoplanilhas.store). Some sozinha ao logar, pois o
-          login redireciona para fora de /login. */}
-      <div
-        role="alert"
-        className="w-full max-w-md mb-6 flex gap-3 rounded-xl border-l-4 border-amber-400 bg-amber-50 p-4 text-left shadow-lg"
-      >
-        <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0 text-amber-500" aria-hidden="true" />
-        <div className="space-y-1">
-          <p className="text-sm font-bold text-amber-900">
-            O site da PsicoPlanilhas mudou.
-          </p>
-          <p className="text-sm text-amber-800">
-            Você é cliente da PsicoPlanilhas antiga (psicoplanilhas.store)? Agora
-            você precisa criar uma senha nova. Enviamos o link no seu e-mail —
-            confira sua caixa de entrada e também o spam. Se não achar, clique em
-            “Esqueci minha senha” aqui embaixo.
-          </p>
+      {/* Toast de boas-vindas para clientes legacy (migração v1 → v2). Mobile:
+          faixa fina no topo; desktop: toast no canto superior direito. Dispensável
+          (X → localStorage), some sozinho ao logar (sai da rota /login). */}
+      {!splashDismissed && (
+        <div
+          role="status"
+          className="fixed top-0 left-0 right-0 z-50 flex items-start gap-2 border-l-4 border-amber-400 bg-amber-50 p-3 text-amber-900 shadow-lg sm:left-auto sm:top-4 sm:right-4 sm:max-w-[340px] sm:rounded-lg"
+        >
+          <div className="flex-1 space-y-0.5">
+            <p className="text-sm font-bold">Bem-vindo à PsicoPlanilhas 2.0 ✨</p>
+            <p className="text-sm">
+              Refaça sua senha clicando em “Esqueci minha senha” abaixo.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDismissSplash}
+            aria-label="Fechar aviso"
+            className="flex-shrink-0 rounded p-0.5 text-amber-700 transition hover:bg-amber-100 hover:text-amber-900"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
         </div>
-      </div>
+      )}
 
       <div className="w-full max-w-md p-8 space-y-6 bg-[#0B2430] backdrop-blur-md rounded-2xl shadow-2xl border border-[#1F4D5C]">
         
