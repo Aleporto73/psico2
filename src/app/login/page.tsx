@@ -124,7 +124,7 @@ function LoginContent() {
           <div className="flex-1 space-y-0.5">
             <p className="text-sm font-bold">Bem-vindo à PsicoPlanilhas 2.0 ✨</p>
             <p className="text-sm">
-              Refaça sua senha clicando em “Esqueci minha senha” abaixo.
+              Já é cliente? Clique em “Ativar meu acesso” abaixo para criar sua senha.
             </p>
           </div>
           <button
