@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { redirect, unstable_rethrow } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 
 /**
@@ -31,6 +31,10 @@ export default async function Home() {
       }
     }
   } catch (err) {
+    // Re-lança sinais internos do Next (DYNAMIC_SERVER_USAGE de cookies no prerender,
+    // NEXT_REDIRECT, etc) para não engolir o controle de fluxo. Só erros reais
+    // (Supabase/network) seguem para o fallback abaixo.
+    unstable_rethrow(err);
     console.error('Error resolving root redirect:', err);
     target = '/login';
   }
