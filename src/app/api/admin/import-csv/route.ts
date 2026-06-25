@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { randomBytes } from 'node:crypto';
 import { verifyAdmin } from '@/utils/supabase/admin-auth';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { sendActivationLink } from '@/utils/auth/activation';
 
 interface ImportRecord {
   name: string;
@@ -28,6 +29,9 @@ export async function POST(request: Request) {
     }
 
     const adminSupabase = createAdminClient();
+
+    // Origin usado para o redirect do email de ativação (/definir-senha)
+    const origin = new URL(request.url).origin;
 
     // Fetch vitalicio product reference
     const { data: vitalicioProduct } = await adminSupabase
@@ -104,6 +108,7 @@ export async function POST(request: Request) {
         if (searchErr) throw searchErr;
 
         let userId = '';
+        let isNewUser = false;
 
         if (!existingProfileByEmail) {
           // B. Create new user in Supabase Auth with cryptographically secure random password
@@ -121,6 +126,7 @@ export async function POST(request: Request) {
           }
 
           userId = newUser.user.id;
+          isNewUser = true;
           stats.imported++;
         } else {
           userId = existingProfileByEmail.id;
@@ -157,6 +163,22 @@ export async function POST(request: Request) {
               profile_type: cleanProfileType,
             })
             .eq('id', userId);
+        }
+
+        // C.1 Dispara email de "criar senha" apenas para clientes recém-criados.
+        // Falha de email (ex: rate limit do Supabase Auth) NÃO derruba o cliente:
+        // o acesso vitalício já será provisionado abaixo. A falha é registrada em
+        // stats.errors[] para reenvio escalonado posterior.
+        if (isNewUser) {
+          try {
+            await sendActivationLink(adminSupabase, normalizedEmail, origin);
+          } catch (mailErr: any) {
+            console.error(`Falha ao enviar email de ativação para ${normalizedEmail}:`, mailErr);
+            stats.errors.push({
+              email: normalizedEmail,
+              reason: 'Cliente criado, mas falha ao enviar email de ativação.',
+            });
+          }
         }
 
         // D. Create purchase manual for psicoplanilhas-vitalicio (idempotent)

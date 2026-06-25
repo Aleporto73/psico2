@@ -31,6 +31,7 @@ export default function AdminImportacaoPage() {
   const [duplicateEmails, setDuplicateEmails] = useState<string[]>([]);
   const [validated, setValidated] = useState(false);
   const [importResult, setImportResult] = useState<any | null>(null);
+  const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Manual Creation States
@@ -76,8 +77,32 @@ export default function AdminImportacaoPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Mapeia headers PT-BR (e variantes em inglês) para as chaves canônicas do backend.
+  const HEADER_ALIASES: Record<string, string> = {
+    nome: 'name',
+    name: 'name',
+    email: 'email',
+    'e-mail': 'email',
+    telefone: 'phone',
+    phone: 'phone',
+    'data da compra': 'purchase_date',
+    data: 'purchase_date',
+    purchase_date: 'purchase_date',
+    purchased_at: 'purchase_date',
+    tipo: 'profile_type',
+    profile_type: 'profile_type',
+    origem: 'source',
+    source: 'source',
+    purchase_code: 'purchase_code',
+  };
+
   // RFC4180-style client-side CSV parser: supports quoted commas, escaped quotes and multiline fields.
+  // Auto-detecta o separador (`;` ou `,`) e normaliza headers PT-BR via HEADER_ALIASES.
   const parseCSV = (text: string): any[] => {
+    // Detecção de separador: se a primeira linha tiver ';', usa ';'; senão ','.
+    const firstLine = text.split(/\r?\n/, 1)[0] || '';
+    const delimiter = firstLine.includes(';') ? ';' : ',';
+
     const rows: string[][] = [];
     let row: string[] = [];
     let field = '';
@@ -98,7 +123,7 @@ export default function AdminImportacaoPage() {
         continue;
       }
 
-      if (char === ',' && !inQuotes) {
+      if (char === delimiter && !inQuotes) {
         row.push(field.trim());
         field = '';
         continue;
@@ -135,13 +160,37 @@ export default function AdminImportacaoPage() {
       const obj: Record<string, string> = {};
 
       headers.forEach((header, index) => {
-        if (header && cells[index] !== undefined) {
-          obj[header] = cells[index].trim().replace(/^["']|["']$/g, '');
+        const key = HEADER_ALIASES[header] || header;
+        if (key && cells[index] !== undefined) {
+          obj[key] = cells[index].trim().replace(/^["']|["']$/g, '');
         }
       });
 
       return obj;
     });
+  };
+
+  // Converte data BR "DD/MM/AAAA HH:MM" (hora opcional) para ISO "YYYY-MM-DDTHH:mm:ss".
+  // Se já vier em formato ISO válido, mantém. Se inválido, retorna undefined
+  // (o backend usa o default now() nesse caso).
+  const parseBrDate = (raw?: string): string | undefined => {
+    const value = raw?.trim();
+    if (!value) return undefined;
+
+    const br = value.match(
+      /^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+    );
+    if (br) {
+      const [, dd, mm, yyyy, hh = '00', min = '00', ss = '00'] = br;
+      return `${yyyy}-${mm}-${dd}T${hh}:${min}:${ss}`;
+    }
+
+    const parsed = new Date(value);
+    if (!isNaN(parsed.getTime())) {
+      return value;
+    }
+
+    return undefined;
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -212,7 +261,7 @@ export default function AdminImportacaoPage() {
           email: normalizedEmail,
           phone: record.phone || undefined,
           purchase_code: record.purchase_code || undefined,
-          purchase_date: record.purchase_date || record.purchased_at || undefined,
+          purchase_date: parseBrDate(record.purchase_date || record.purchased_at),
           profile_type: record.profile_type || undefined,
           source: record.source || undefined,
         });
@@ -230,6 +279,8 @@ export default function AdminImportacaoPage() {
     }
   };
 
+  const CHUNK_SIZE = 50;
+
   const handleImport = async () => {
     if (validRecords.length === 0) {
       setErrorMsg('Não há clientes válidos para importar.');
@@ -239,29 +290,65 @@ export default function AdminImportacaoPage() {
     setLoading(true);
     setErrorMsg(null);
 
-    try {
-      const response = await fetch('/api/admin/import-csv', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ clients: validRecords }),
-      });
+    // Quebra os clientes válidos em lotes de 50 e envia sequencialmente.
+    // Sequencial (não paralelo) para não sobrecarregar o BD nem o rate limit do Auth.
+    const batches: ParsedRecord[][] = [];
+    for (let i = 0; i < validRecords.length; i += CHUNK_SIZE) {
+      batches.push(validRecords.slice(i, i + CHUNK_SIZE));
+    }
 
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error('Erro ao importar clientes.');
+    // Acumula os stats de todos os lotes para o relatório final.
+    const aggregated = {
+      total: 0,
+      imported: 0,
+      updated: 0,
+      invalid: 0,
+      duplicates: 0,
+      errors: [] as Array<{ email: string; reason: string }>,
+    };
+
+    setProgress({ current: 0, total: batches.length });
+
+    try {
+      for (let i = 0; i < batches.length; i++) {
+        const response = await fetch('/api/admin/import-csv', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ clients: batches[i] }),
+        });
+
+        const resData = await response.json();
+        if (!response.ok) {
+          throw new Error(resData?.message || 'Erro ao importar clientes.');
+        }
+
+        const s = resData.stats;
+        if (s) {
+          aggregated.total += s.total || 0;
+          aggregated.imported += s.imported || 0;
+          aggregated.updated += s.updated || 0;
+          aggregated.invalid += s.invalid || 0;
+          aggregated.duplicates += s.duplicates || 0;
+          if (Array.isArray(s.errors)) aggregated.errors.push(...s.errors);
+        }
+
+        setProgress({ current: i + 1, total: batches.length });
       }
 
-      setImportResult(resData.stats);
+      setImportResult(aggregated);
       setValidated(false);
       setCsvText('');
       setFileName(null);
     } catch (err: any) {
       console.error('Import error:', err);
-      setErrorMsg('Não foi possível concluir a importação. Revise o arquivo e tente novamente.');
+      setErrorMsg(
+        `Importação interrompida após processar parte dos lotes (${aggregated.imported} criado(s), ${aggregated.updated} atualizado(s)). O processo é idempotente: corrija o problema e reenvie o mesmo arquivo sem duplicar.`
+      );
     } finally {
       setLoading(false);
+      setProgress(null);
     }
   };
 
@@ -517,13 +604,29 @@ export default function AdminImportacaoPage() {
                         {loading ? (
                           <span className="flex items-center justify-center gap-2">
                             <span className="w-3.5 h-3.5 border-2 border-[#061923]/30 border-t-[#061923] rounded-full animate-spin" />
-                            Importando...
+                            {progress ? `Importando... ${progress.current}/${progress.total} lotes` : 'Importando...'}
                           </span>
                         ) : (
                           'Confirmar e Importar Clientes'
                         )}
                       </button>
                     </div>
+                    {progress && (
+                      <div className="px-4 py-3 bg-[#0E2A38]/60 border-b border-[#1F4D5C]">
+                        <div className="flex justify-between text-xs text-[#CBD5E1] mb-1.5 font-medium">
+                          <span>Processando lotes (50 por vez)…</span>
+                          <span className="text-[#7DD3FC] font-bold">
+                            {progress.current}/{progress.total} lotes
+                          </span>
+                        </div>
+                        <div className="w-full h-2 bg-[#061923] rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-[#7DD3FC] transition-all duration-300"
+                            style={{ width: `${progress.total ? (progress.current / progress.total) * 100 : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-sm">
                         <thead>
