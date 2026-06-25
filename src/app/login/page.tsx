@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { X } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 function LoginContent() {
@@ -15,6 +16,20 @@ function LoginContent() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
+  // Inicia oculto: só revela após confirmar no localStorage que não foi fechado
+  // (evita flash do toast para quem já dispensou e mismatch de SSR).
+  const [splashDismissed, setSplashDismissed] = useState(true);
+
+  useEffect(() => {
+    if (localStorage.getItem('migration-splash-dismissed') !== '1') {
+      setSplashDismissed(false);
+    }
+  }, []);
+
+  const handleDismissSplash = () => {
+    localStorage.setItem('migration-splash-dismissed', '1');
+    setSplashDismissed(true);
+  };
 
   useEffect(() => {
     const errorParam = searchParams.get('error');
@@ -97,6 +112,32 @@ function LoginContent() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#061923] text-[#F8FAFC]">
+
+      {/* Toast de boas-vindas para clientes legacy (migração v1 → v2). Mobile:
+          faixa fina no topo; desktop: toast no canto superior direito. Dispensável
+          (X → localStorage), some sozinho ao logar (sai da rota /login). */}
+      {!splashDismissed && (
+        <div
+          role="status"
+          className="fixed top-0 left-0 right-0 z-50 flex items-start gap-2 border-l-4 border-amber-400 bg-amber-50 p-3 text-amber-900 shadow-lg sm:left-auto sm:top-4 sm:right-4 sm:max-w-[340px] sm:rounded-lg"
+        >
+          <div className="flex-1 space-y-0.5">
+            <p className="text-sm font-bold">Bem-vindo à PsicoPlanilhas 2.0 ✨</p>
+            <p className="text-sm">
+              Já é cliente? Clique em “Ativar meu acesso” abaixo para criar sua senha.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleDismissSplash}
+            aria-label="Fechar aviso"
+            className="flex-shrink-0 rounded p-0.5 text-amber-700 transition hover:bg-amber-100 hover:text-amber-900"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
       <div className="w-full max-w-md p-8 space-y-6 bg-[#0B2430] backdrop-blur-md rounded-2xl shadow-2xl border border-[#1F4D5C]">
         
         {/* Title */}
