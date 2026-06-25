@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { randomBytes } from 'node:crypto';
 import { verifyAdmin } from '@/utils/supabase/admin-auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 
@@ -28,6 +27,9 @@ export async function POST(request: Request) {
     }
 
     const adminSupabase = createAdminClient();
+
+    // Origin usado para o redirect do email de ativação (/definir-senha)
+    const origin = new URL(request.url).origin;
 
     // Fetch vitalicio product reference
     const { data: vitalicioProduct } = await adminSupabase
@@ -106,21 +108,24 @@ export async function POST(request: Request) {
         let userId = '';
 
         if (!existingProfileByEmail) {
-          // B. Create new user in Supabase Auth with cryptographically secure random password
-          const randomPassword = randomBytes(32).toString('base64url');
+          // B. Convida o novo cliente: inviteUserByEmail cria o usuário no Auth E
+          // dispara o e-mail de migração (template "Invite user") numa só chamada.
+          // Se o convite falhar (ex: rate limit do Supabase Auth), o erro propaga
+          // para o catch da linha — a falha entra em stats.errors[] e o admin
+          // reprocessa o registro depois.
+          const { data: invited, error: inviteErr } = await adminSupabase.auth.admin.inviteUserByEmail(
+            normalizedEmail,
+            {
+              redirectTo: `${origin}/definir-senha`,
+              data: { name: cleanName },
+            },
+          );
 
-          const { data: newUser, error: createAuthErr } = await adminSupabase.auth.admin.createUser({
-            email: normalizedEmail,
-            password: randomPassword,
-            email_confirm: true,
-            user_metadata: { name: cleanName },
-          });
-
-          if (createAuthErr || !newUser.user) {
-            throw new Error(createAuthErr?.message || 'Falha ao criar usuário na autenticação do Supabase.');
+          if (inviteErr || !invited.user) {
+            throw new Error(inviteErr?.message || 'Falha ao convidar usuário na autenticação do Supabase.');
           }
 
-          userId = newUser.user.id;
+          userId = invited.user.id;
           stats.imported++;
         } else {
           userId = existingProfileByEmail.id;
