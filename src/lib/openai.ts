@@ -28,6 +28,7 @@ export interface OpenAIMessage {
 
 export interface OpenAIResponse {
   content: string;
+  model: string;
   usage?: {
     prompt_tokens: number;
     completion_tokens: number;
@@ -39,15 +40,35 @@ export interface OpenAIResponse {
 export const VISION_NOT_SUPPORTED = 'VISION_NOT_SUPPORTED';
 
 /**
+ * Detecta modelos da família GPT-5 (gpt-5, gpt-5.4-nano, etc.) pelo prefixo do id.
+ * A família GPT-5 aceita `image_url` normalmente, mas muda as regras de parâmetros
+ * no Chat Completions (ver comentário em callOpenAI).
+ */
+function isGPT5Family(model: string): boolean {
+  return model.startsWith('gpt-5');
+}
+
+/**
  * Chama a API da OpenAI com os messages fornecidos.
  * Lança erro em caso de falha de autenticação, erro de rede ou modelo incompatível.
  */
 export async function callOpenAI(messages: OpenAIMessage[]): Promise<OpenAIResponse> {
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+  // Modelo precisa aceitar entrada de imagem/image_url. gpt-5.4-nano é vision-compatible.
+  const model = process.env.OPENAI_MODEL || 'gpt-5.4-nano';
 
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY não está configurada nas variáveis de ambiente do servidor.');
+  }
+
+  // GPT-5 family rejects legacy max_tokens and non-default temperature in Chat Completions.
+  // Legacy models such as gpt-4o-mini keep max_tokens + temperature for rollback compatibility.
+  const requestBody: Record<string, unknown> = { model, messages };
+  if (isGPT5Family(model)) {
+    requestBody.max_completion_tokens = 2000;
+  } else {
+    requestBody.temperature = 0.3;
+    requestBody.max_tokens = 2000;
   }
 
   const response = await fetch(OPENAI_API_URL, {
@@ -56,12 +77,7 @@ export async function callOpenAI(messages: OpenAIMessage[]): Promise<OpenAIRespo
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature: 0.3,
-      max_tokens: 2000,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
@@ -92,6 +108,7 @@ export async function callOpenAI(messages: OpenAIMessage[]): Promise<OpenAIRespo
 
   return {
     content,
+    model,
     usage: data.usage,
   };
 }

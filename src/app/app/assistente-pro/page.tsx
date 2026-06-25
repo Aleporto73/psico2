@@ -22,12 +22,10 @@ interface AiReport {
 type ReportType = 'family' | 'school' | 'technical' | 'internal';
 
 interface FormState {
-  nome: string;
-  idade: string;
-  area: string;
-  objetivo: string;
+  profession: string;
+  worksheetName: string;
+  reportType: ReportType | '';
   additionalNotes: string;
-  reportType: ReportType;
 }
 
 interface AttachedImage {
@@ -45,11 +43,22 @@ const MAX_NOTES_CHARS = 6000;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const CHECKOUT_URL_IA_PRO = 'https://payment.abaminds.com/checkout?product=MCGNKAAY&price=74F2T5WL';
 
+const MONTHLY_LIMIT = 100;
+
+const PROFESSION_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'psicopedagogo', label: 'Psicopedagogo(a)' },
+  { value: 'psicologo',     label: 'Psicólogo(a)' },
+  { value: 'to',            label: 'Terapeuta Ocupacional' },
+  { value: 'fono',          label: 'Fonoaudiólogo(a)' },
+  { value: 'pediatra',      label: 'Pediatra' },
+  { value: 'outro',         label: 'Outro profissional' },
+];
+
 const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; hint: string }> = [
-  { value: 'family',         label: 'Pais / Família',  hint: 'Acolhedor, simples, sem jargão técnico.' },
-  { value: 'school',         label: 'Escola',           hint: 'Objetivo, pedagógico, com recomendações para sala de aula.' },
-  { value: 'technical',      label: 'Técnico',          hint: 'Profissional, com estrutura de relatório descritivo.' },
-  { value: 'internal',       label: 'Registro interno', hint: 'Curto e direto, estilo prontuário/registro.' },
+  { value: 'family',    label: 'Pais / Família',           hint: 'Acolhedor, simples, sem jargão técnico.' },
+  { value: 'school',    label: 'Escola',                   hint: 'Objetivo, pedagógico, com orientações para a escola.' },
+  { value: 'technical', label: 'Equipe multiprofissional', hint: 'Estrutura técnica de relatório descritivo de apoio.' },
+  { value: 'internal',  label: 'Registro interno',         hint: 'Curto e direto, estilo prontuário/registro.' },
 ];
 
 function getReportTypeLabel(reportType: string | null | undefined) {
@@ -106,15 +115,13 @@ export default function AppAssistenteProPage() {
 
   const [reports, setReports] = useState<AiReport[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
-  const [dailyCount, setDailyCount] = useState<number | null>(null);
+  const [monthlyCount, setMonthlyCount] = useState<number | null>(null);
 
   const [form, setForm] = useState<FormState>({
-    nome: '',
-    idade: '',
-    area: '',
-    objetivo: '',
+    profession: '',
+    worksheetName: '',
+    reportType: '',
     additionalNotes: '',
-    reportType: 'technical',
   });
 
   const [images, setImages] = useState<AttachedImage[]>([]);
@@ -152,7 +159,7 @@ export default function AppAssistenteProPage() {
 
       if (data?.has_active_assistant) {
         fetchReports(user.id);
-        fetchDailyCount(user.id);
+        fetchMonthlyCount();
       }
     } catch (err) {
       console.error('Error loading assistant status:', err);
@@ -180,18 +187,17 @@ export default function AppAssistenteProPage() {
     }
   }, [supabase]);
 
-  const fetchDailyCount = useCallback(async (userId: string) => {
-    const startOfDay = new Date();
-    startOfDay.setUTCHours(0, 0, 0, 0);
-
-    const { count } = await supabase
-      .from('ai_reports')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .gte('created_at', startOfDay.toISOString());
-
-    setDailyCount(count ?? 0);
-  }, [supabase]);
+  const fetchMonthlyCount = useCallback(async () => {
+    // Cliente confia no monthly_count do backend (não recalcula o início do mês localmente).
+    try {
+      const res = await fetch('/api/assistant/generate', { method: 'GET' });
+      if (!res.ok) return;
+      const json = await res.json();
+      if (typeof json.monthly_count === 'number') setMonthlyCount(json.monthly_count);
+    } catch {
+      // status mensal é best-effort; falha silenciosa
+    }
+  }, []);
 
   let assistantState: 'loading' | 'blocked' | 'active' | 'expired' = 'loading';
   if (!loadingStatus) {
@@ -214,7 +220,7 @@ export default function AppAssistenteProPage() {
   };
 
   const handleReportTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setForm((prev) => ({ ...prev, reportType: e.target.value as ReportType }));
+    setForm((prev) => ({ ...prev, reportType: e.target.value as ReportType | '' }));
     setGenerateError(null);
   };
 
@@ -271,30 +277,43 @@ export default function AppAssistenteProPage() {
     setGenerateError(null);
     setLastReport(null);
 
-    if (!form.nome.trim() || !form.idade.trim() || !form.area.trim() || !form.objetivo.trim()) {
-      setGenerateError('Preencha Nome, Idade, Área e Objetivo do relatório.');
+    if (!form.profession) {
+      setGenerateError('Selecione a sua profissão.');
       setGenerating(false);
       return;
     }
     if (!form.reportType) {
-      setGenerateError('Escolha o tipo de relatório.');
+      setGenerateError('Selecione para quem é o relatório.');
+      setGenerating(false);
+      return;
+    }
+    if (!form.worksheetName.trim()) {
+      setGenerateError('Informe qual planilha você usou.');
       setGenerating(false);
       return;
     }
     if (images.length === 0 && !form.additionalNotes.trim()) {
-      setGenerateError('Envie pelo menos um print da planilha ou escreva os dados/observações no campo adicional.');
+      setGenerateError('Envie pelo menos um print da planilha ou escreva as observações no campo adicional.');
       setGenerating(false);
       return;
     }
 
     try {
+      const worksheetName = form.worksheetName.trim();
+      const destinoLabel =
+        REPORT_TYPE_OPTIONS.find((o) => o.value === form.reportType)?.label || 'Equipe multiprofissional';
+
       const payload: Record<string, any> = {
-        nome: form.nome,
-        idade: form.idade,
-        area: form.area,
-        objetivo: form.objetivo,
+        // Campos visíveis na UI simplificada
+        profession: form.profession,
+        worksheetName,
         reportType: form.reportType,
         additionalNotes: form.additionalNotes,
+        // Campos ocultos enviados com defaults (compatibilidade com o backend)
+        nome: 'Paciente/Aprendiz não identificado',
+        idade: 'Não informada',
+        area: worksheetName || 'PsicoPlanilhas',
+        objetivo: `Gerar rascunho de relatório para ${destinoLabel} a partir da planilha ${worksheetName}`,
       };
       if (images.length > 0) {
         payload.imageDataUrls = images.map((img) => img.dataUrl);
@@ -310,12 +329,12 @@ export default function AppAssistenteProPage() {
 
       if (!res.ok) {
         setGenerateError(json.message || 'Erro ao gerar relatório. Tente novamente.');
-        if (typeof json.daily_count === 'number') setDailyCount(json.daily_count);
+        if (typeof json.monthly_count === 'number') setMonthlyCount(json.monthly_count);
         return;
       }
 
       setLastReport(json.report);
-      if (json.daily_count !== undefined) setDailyCount(json.daily_count);
+      if (typeof json.monthly_count === 'number') setMonthlyCount(json.monthly_count);
 
       const {
         data: { user },
@@ -323,12 +342,10 @@ export default function AppAssistenteProPage() {
       if (user) fetchReports(user.id);
 
       setForm({
-        nome: '',
-        idade: '',
-        area: '',
-        objetivo: '',
+        profession: form.profession,   // mantém a profissão entre gerações
+        worksheetName: '',
+        reportType: form.reportType,   // mantém o destino entre gerações
         additionalNotes: '',
-        reportType: form.reportType, // mantém escolha do tipo entre gerações
       });
       handleClearImages();
 
@@ -363,8 +380,6 @@ export default function AppAssistenteProPage() {
     );
   }
 
-  const DAILY_LIMIT = 20;
-
   const inputCls = "w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink placeholder:text-pp-ink-soft focus:outline-none focus:ring-1 focus:ring-pp-ink/20 focus:border-pp-ink transition";
   const labelCls = "block text-sm font-medium text-pp-ink";
 
@@ -378,7 +393,7 @@ export default function AppAssistenteProPage() {
       <header className="space-y-2 pt-4">
         <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Assistente IA Pro</h1>
         <p className="text-pp-ink-soft text-base md:text-lg">
-          Geração inteligente de rascunhos descritivos de apoio a partir das suas planilhas profissionais — por print, por texto ou ambos.
+          Envie o print da planilha preenchida e gere um rascunho de relatório em poucos minutos.
         </p>
       </header>
 
@@ -390,11 +405,11 @@ export default function AppAssistenteProPage() {
             <span className="text-sm text-pp-ink-soft">
               Válido até <strong className="font-medium text-pp-ink">{formatDate(profile?.assistant_expires_at)}</strong>
             </span>
-            {dailyCount !== null && (
+            {monthlyCount !== null && (
               <span className="text-sm text-pp-ink-soft">
-                Gerações hoje:{' '}
-                <strong className={`font-medium ${dailyCount >= DAILY_LIMIT ? 'text-pp-danger' : 'text-pp-ink'}`}>
-                  {dailyCount}/{DAILY_LIMIT}
+                Gerações do mês:{' '}
+                <strong className={`font-medium ${monthlyCount >= MONTHLY_LIMIT ? 'text-pp-danger' : 'text-pp-ink'}`}>
+                  {monthlyCount}/{MONTHLY_LIMIT}
                 </strong>
               </span>
             )}
@@ -440,102 +455,41 @@ export default function AppAssistenteProPage() {
 
           <section className="bg-white border border-pp-hairline rounded-2xl p-6 md:p-8 space-y-6">
             <div>
-              <h2 className="text-xl font-medium text-pp-ink">Gerar rascunho de apoio</h2>
+              <h2 className="text-xl font-medium text-pp-ink">Gerar relatório</h2>
               <p className="text-sm text-pp-ink-soft mt-1">
-                Preencha os campos básicos. Você pode anexar prints da planilha, escrever dados/observações ou ambos.
+                Selecione a profissão e o destino, informe a planilha e anexe o print. As observações são opcionais quando há print.
               </p>
             </div>
 
             <form onSubmit={handleGenerate} className="space-y-5" id="generate-form" noValidate>
 
-              {/* Nome + Idade */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="nome" className={labelCls}>
-                    Nome / Identificação <span className="text-pp-danger">*</span>
-                  </label>
-                  <input
-                    id="nome"
-                    name="nome"
-                    type="text"
-                    value={form.nome}
-                    onChange={handleFormChange}
-                    placeholder="Ex.: Paciente A (use identificação, não nome completo)"
-                    maxLength={200}
-                    required
-                    className={inputCls}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="idade" className={labelCls}>
-                    Idade / Faixa etária <span className="text-pp-danger">*</span>
-                  </label>
-                  <input
-                    id="idade"
-                    name="idade"
-                    type="text"
-                    value={form.idade}
-                    onChange={handleFormChange}
-                    placeholder="Ex.: 8 anos, Adulto 25-30 anos"
-                    maxLength={50}
-                    required
-                    className={inputCls}
-                  />
-                </div>
-              </div>
-
-              {/* Área do Relatório */}
+              {/* 1. Sua profissão */}
               <div className="space-y-2">
-                <label htmlFor="area" className={labelCls}>
-                  Área do relatório <span className="text-pp-danger">*</span>
+                <label htmlFor="profession" className={labelCls}>
+                  Sua profissão <span className="text-pp-danger">*</span>
                 </label>
                 <select
-                  id="area"
-                  name="area"
-                  value={form.area}
+                  id="profession"
+                  name="profession"
+                  value={form.profession}
                   onChange={handleFormChange}
                   required
                   className={inputCls}
                 >
-                  <option value="">Selecione a área...</option>
-                  <option value="Avaliação Psicológica">Avaliação Psicológica</option>
-                  <option value="Avaliação Psicopedagógica">Avaliação Psicopedagógica</option>
-                  <option value="Desenvolvimento Cognitivo">Desenvolvimento Cognitivo</option>
-                  <option value="Habilidades Socioemocionais">Habilidades Socioemocionais</option>
-                  <option value="Memória e Atenção">Memória e Atenção</option>
-                  <option value="Linguagem e Comunicação">Linguagem e Comunicação</option>
-                  <option value="Aprendizagem Escolar">Aprendizagem Escolar</option>
-                  <option value="Comportamento Adaptativo">Comportamento Adaptativo</option>
-                  <option value="Outro">Outro</option>
+                  <option value="">Selecione a sua profissão...</option>
+                  {PROFESSION_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
               </div>
 
-              {/* Objetivo */}
-              <div className="space-y-2">
-                <label htmlFor="objetivo" className={labelCls}>
-                  Objetivo do relatório <span className="text-pp-danger">*</span>
-                </label>
-                <input
-                  id="objetivo"
-                  name="objetivo"
-                  type="text"
-                  value={form.objetivo}
-                  onChange={handleFormChange}
-                  placeholder="Ex.: Sintetizar resultados para encaminhamento escolar"
-                  maxLength={500}
-                  required
-                  className={inputCls}
-                />
-              </div>
-
-              {/* Tipo de relatório */}
+              {/* 2. Para quem é o relatório? */}
               <div className="space-y-2">
                 <label htmlFor="reportType" className={labelCls}>
-                  Tipo de relatório <span className="text-pp-danger">*</span>
+                  Para quem é o relatório? <span className="text-pp-danger">*</span>
                 </label>
-                <p className="text-sm text-pp-ink-soft leading-relaxed">
-                  Escolha para quem o texto será escrito. Isso ajusta a linguagem automaticamente.
-                </p>
                 <select
                   id="reportType"
                   name="reportType"
@@ -544,6 +498,7 @@ export default function AppAssistenteProPage() {
                   required
                   className={inputCls}
                 >
+                  <option value="">Selecione o destino...</option>
                   {REPORT_TYPE_OPTIONS.map((opt) => (
                     <option key={opt.value} value={opt.value}>
                       {opt.label}
@@ -555,6 +510,24 @@ export default function AppAssistenteProPage() {
                     <strong className="font-medium text-pp-ink">{selectedReport.label}:</strong> {selectedReport.hint}
                   </div>
                 )}
+              </div>
+
+              {/* 3. Qual planilha você usou? */}
+              <div className="space-y-2">
+                <label htmlFor="worksheetName" className={labelCls}>
+                  Qual planilha você usou? <span className="text-pp-danger">*</span>
+                </label>
+                <input
+                  id="worksheetName"
+                  name="worksheetName"
+                  type="text"
+                  value={form.worksheetName}
+                  onChange={handleFormChange}
+                  placeholder="Ex.: SNAP-IV, WISC-IV, VB-MAPP, CARS-2, TDE-2..."
+                  maxLength={200}
+                  required
+                  className={inputCls}
+                />
               </div>
 
               {/* ── Anexar prints (opcional, até 4) ─────────────────────── */}
@@ -669,10 +642,10 @@ export default function AppAssistenteProPage() {
                 )}
               </div>
 
-              {/* Dados ou observações adicionais — único campo de texto */}
+              {/* 5. Observações adicionais (opcional quando há print) */}
               <div className="space-y-2">
                 <label htmlFor="additionalNotes" className={labelCls}>
-                  Dados ou observações adicionais{' '}
+                  Observações adicionais{' '}
                   {images.length === 0 ? (
                     <span className="text-pp-danger">*</span>
                   ) : (
@@ -684,7 +657,7 @@ export default function AppAssistenteProPage() {
                   name="additionalNotes"
                   value={form.additionalNotes}
                   onChange={handleFormChange}
-                  placeholder="Se quiser, cole aqui dados da planilha, queixa principal, histórico, observações da família ou da escola. Se os prints estiverem claros, este campo pode ficar em branco."
+                  placeholder="Opcional: escreva queixa principal, contexto, dados que não aparecem no print ou objetivo específico do relatório."
                   rows={8}
                   maxLength={MAX_NOTES_CHARS}
                   required={images.length === 0}
@@ -702,18 +675,18 @@ export default function AppAssistenteProPage() {
 
               <button
                 type="submit"
-                disabled={generating || (dailyCount !== null && dailyCount >= DAILY_LIMIT)}
+                disabled={generating || (monthlyCount !== null && monthlyCount >= MONTHLY_LIMIT)}
                 className="w-full py-4 font-medium text-base rounded-pill transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-pp-ink hover:bg-pp-ink-soft text-pp-canvas"
               >
                 {generating ? (
                   <>
                     <span className="w-5 h-5 border-2 border-pp-canvas/40 border-t-pp-canvas rounded-full animate-spin" />
-                    Gerando rascunho...
+                    Gerando relatório...
                   </>
-                ) : dailyCount !== null && dailyCount >= DAILY_LIMIT ? (
-                  <><Lock className="w-4 h-4" /> Limite diário atingido</>
+                ) : monthlyCount !== null && monthlyCount >= MONTHLY_LIMIT ? (
+                  <><Lock className="w-4 h-4" /> Limite mensal atingido</>
                 ) : (
-                  <><Sparkles className="w-4 h-4" /> Gerar rascunho de apoio</>
+                  <><Sparkles className="w-4 h-4" /> Gerar relatório</>
                 )}
               </button>
             </form>
