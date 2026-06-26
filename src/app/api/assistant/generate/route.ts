@@ -135,33 +135,6 @@ const REPORT_TYPE_LABEL: Record<ReportType, string> = {
   internal: 'Registro interno',
 };
 
-// ── Profissão ──────────────────────────────────────────────────────────────────
-type Profession = 'psicopedagogo' | 'psicologo' | 'to' | 'fono' | 'pediatra' | 'outro';
-const PROFESSIONS: ReadonlySet<Profession> = new Set([
-  'psicopedagogo',
-  'psicologo',
-  'to',
-  'fono',
-  'pediatra',
-  'outro',
-]);
-
-function normalizeProfession(raw: unknown): Profession {
-  if (typeof raw === 'string' && PROFESSIONS.has(raw as Profession)) {
-    return raw as Profession;
-  }
-  return 'outro';
-}
-
-const PROFESSION_LABEL: Record<Profession, string> = {
-  psicopedagogo: 'Psicopedagogo(a)',
-  psicologo: 'Psicólogo(a)',
-  to: 'Terapeuta Ocupacional',
-  fono: 'Fonoaudiólogo(a)',
-  pediatra: 'Pediatra',
-  outro: 'Outro profissional',
-};
-
 interface ValidatedImage {
   dataUrl: string;
   mime: string;
@@ -295,8 +268,7 @@ export async function POST(request: Request) {
     const nome = subjectIdentification || legacyNome || 'Paciente/Aprendiz não identificado';
     const idade = 'Informada junto à identificação, quando fornecida';
     const reportType = normalizeReportType(body.reportType);
-    // Campos novos da UI simplificada (com fallback seguro p/ compat com payload antigo).
-    const professionClean = normalizeProfession(body.profession);
+    // Campo novo da UI simplificada (com fallback seguro p/ compat com payload antigo).
     const worksheetNameRaw = typeof body.worksheetName === 'string' ? body.worksheetName : '';
 
     // Campo unificado: `additionalNotes` (novo). Fallback para legado: `planilhaData` + `observacoes`.
@@ -381,7 +353,6 @@ export async function POST(request: Request) {
           : '');
 
     const userText = `Tipo de relatório solicitado: ${REPORT_TYPE_LABEL[reportType]}
-Profissão do profissional: ${PROFESSION_LABEL[professionClean]}
 Planilha informada: ${worksheetNameClean}
 
 Identificação do avaliado: ${nomeClean}
@@ -389,7 +360,7 @@ Idade/Faixa etária: ${idadeClean}
 Área do relatório: ${areaClean}
 Objetivo do relatório: ${objetivoClean}${notesSection}${printsLabel}
 
-Gere o rascunho descritivo de apoio conforme as instruções do sistema, adaptando a linguagem ao destino e o foco à profissão informados. Use apenas os dados realmente presentes (texto e/ou prints): não force tabelas, seções vazias nem cabeçalho de extração.`;
+Gere o rascunho descritivo de apoio conforme as instruções do sistema, adaptando a linguagem ao destino informado. Use apenas os dados realmente presentes (texto e/ou prints): não force tabelas, seções vazias nem cabeçalho de extração.`;
 
     const userContent: string | OpenAIContentPart[] = hasImages
       ? [
@@ -420,7 +391,6 @@ Gere o rascunho descritivo de apoio conforme as instruções do sistema, adaptan
         image_count: validatedImages.length,
         worksheet_name: worksheetNameClean,
         report_type: reportType,
-        profession: professionClean,
       });
     } catch (openaiErr: any) {
       console.error('OpenAI error:', openaiErr);

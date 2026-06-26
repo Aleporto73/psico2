@@ -12,6 +12,11 @@ interface ProfileDetails {
   profile_type: string;
   status: string;
   activation_status: string;
+  display_name: string | null;
+  gender: string | null;
+  profession_category: string | null;
+  credential_type: string | null;
+  credential_number: string | null;
 }
 
 interface ClientStats {
@@ -27,8 +32,16 @@ export default function AppMinhaContaPage() {
   const [stats, setStats] = useState<ClientStats | null>(null);
   const [profileType, setProfileType] = useState('unknown');
 
+  // Perfil para relatórios (cabeçalho dos documentos)
+  const [displayName, setDisplayName] = useState('');
+  const [gender, setGender] = useState('');
+  const [professionCategory, setProfessionCategory] = useState('');
+  const [credentialType, setCredentialType] = useState('');
+  const [credentialNumber, setCredentialNumber] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingReport, setSavingReport] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -52,6 +65,11 @@ export default function AppMinhaContaPage() {
       if (profErr) throw profErr;
       setProfile(prof);
       setProfileType(prof.profile_type || 'unknown');
+      setDisplayName(prof.display_name || '');
+      setGender(prof.gender || '');
+      setProfessionCategory(prof.profession_category || '');
+      setCredentialType(prof.credential_type || '');
+      setCredentialNumber(prof.credential_number || '');
 
       // 2. Fetch Access stats from view
       const { data: accessStats } = await supabase
@@ -93,6 +111,38 @@ export default function AppMinhaContaPage() {
       setErrorMsg('Não foi possível atualizar o perfil profissional. Revise os dados e tente novamente.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpdateReportProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingReport(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado.');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          display_name: displayName.trim() || null,
+          gender: gender || null,
+          profession_category: professionCategory || null,
+          credential_type: credentialType || null,
+          credential_number: credentialNumber.trim() || null,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      setSuccessMsg('Perfil para relatórios atualizado com sucesso!');
+      await fetchAccountData();
+    } catch (err: any) {
+      console.error('Error updating report profile:', err);
+      setErrorMsg('Não foi possível atualizar o perfil para relatórios. Revise os dados e tente novamente.');
+    } finally {
+      setSavingReport(false);
     }
   };
 
@@ -156,10 +206,6 @@ export default function AppMinhaContaPage() {
             <div className="space-y-1">
               <span className="text-pp-ink-soft block text-xs font-medium">E-mail</span>
               <span className="text-pp-ink font-medium text-base break-all">{profile?.email}</span>
-            </div>
-            <div className="space-y-1">
-              <span className="text-pp-ink-soft block text-xs font-medium">Telefone</span>
-              <span className="text-pp-ink font-medium text-base">{profile?.phone || 'Não cadastrado'}</span>
             </div>
             <div className="space-y-1">
               <span className="text-pp-ink-soft block text-xs font-medium">Status da conta</span>
@@ -248,6 +294,137 @@ export default function AppMinhaContaPage() {
             className="inline-flex items-center bg-pp-ink text-pp-canvas px-7 py-3 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-pp-ink"
           >
             {saving ? 'Salvando...' : 'Salvar alteração'}
+          </button>
+        </form>
+      </div>
+
+      {/* Perfil para relatórios — full-width */}
+      <div className="bg-white border border-pp-hairline rounded-2xl p-6 space-y-5">
+        <div className="space-y-1 border-b border-pp-hairline pb-3">
+          <p className="font-serif italic text-pp-ink-soft text-sm">Perfil para relatórios</p>
+          <h2 className="text-lg text-pp-ink font-medium">Cabeçalho dos seus documentos</h2>
+        </div>
+
+        <p className="text-sm text-pp-ink-soft max-w-2xl leading-relaxed">
+          Esses dados aparecem no cabeçalho dos relatórios gerados pelo Assistente de Relatórios IA. Você pode alterar a qualquer momento.
+        </p>
+
+        <form onSubmit={handleUpdateReportProfile} className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            {/* 1. Nome de exibição */}
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="display_name" className="text-pp-ink-soft block text-xs font-medium">
+                Nome de exibição
+              </label>
+              <input
+                id="display_name"
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+              />
+              <p className="text-xs text-pp-ink-soft leading-relaxed">
+                Como você quer aparecer no cabeçalho dos relatórios. Pode ser seu nome ou o nome fantasia da clínica.
+              </p>
+            </div>
+
+            {/* 2. Gênero */}
+            <div className="space-y-2">
+              <label htmlFor="gender" className="text-pp-ink-soft block text-xs font-medium">
+                Gênero (para flexionar a profissão no cabeçalho)
+              </label>
+              <select
+                id="gender"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+              >
+                <option value="">Selecione...</option>
+                <option value="F">Feminino</option>
+                <option value="M">Masculino</option>
+                <option value="N">Prefiro não informar</option>
+              </select>
+            </div>
+
+            {/* 3. Categoria profissional */}
+            <div className="space-y-2">
+              <label htmlFor="profession_category" className="text-pp-ink-soft block text-xs font-medium">
+                Categoria profissional
+              </label>
+              <select
+                id="profession_category"
+                value={professionCategory}
+                onChange={(e) => setProfessionCategory(e.target.value)}
+                className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+              >
+                <option value="">Selecione...</option>
+                <option value="psicologo">Psicólogo(a)</option>
+                <option value="psicopedagogo">Psicopedagogo(a)</option>
+                <option value="neuropsicopedagogo">Neuropsicopedagogo(a)</option>
+                <option value="fonoaudiologo">Fonoaudiólogo(a)</option>
+                <option value="terapeuta_ocupacional">Terapeuta Ocupacional</option>
+                <option value="medico">Médico(a)</option>
+                <option value="pediatra">Pediatra</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+
+            {/* 4. Registro, conselho ou credencial profissional */}
+            <div className="space-y-2">
+              <label htmlFor="credential_type" className="text-pp-ink-soft block text-xs font-medium">
+                Registro, conselho ou credencial profissional
+              </label>
+              <select
+                id="credential_type"
+                value={credentialType}
+                onChange={(e) => setCredentialType(e.target.value)}
+                className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+              >
+                <option value="">Selecione...</option>
+                <option value="crp">CRP — Conselho Regional de Psicologia</option>
+                <option value="crfa">CRFa — Conselho Regional de Fonoaudiologia</option>
+                <option value="crefito">CREFITO — Conselho Regional de Fisioterapia e Terapia Ocupacional</option>
+                <option value="crm">CRM — Conselho Regional de Medicina</option>
+                <option value="rqe">RQE — Registro de Qualificação de Especialista</option>
+                <option value="cbo_2394_25">CBO 2394-25 — Psicopedagogo</option>
+                <option value="cbo_2394_40">CBO 2394-40 — Neuropsicopedagogo Clínico</option>
+                <option value="cbo_2394_45">CBO 2394-45 — Neuropsicopedagogo Institucional</option>
+                <option value="abpp">ABPp — Associação Brasileira de Psicopedagogia</option>
+                <option value="sbnpp">SBNPp — Sociedade Brasileira de Neuropsicopedagogia</option>
+                <option value="sindpsicopp">SINDPSICOPP / CRPp Sindical — Filiação sindical</option>
+                <option value="outro">Outro</option>
+                <option value="nao_informado">Não informado</option>
+              </select>
+            </div>
+
+            {/* 5. Número do registro */}
+            <div className="space-y-2">
+              <label htmlFor="credential_number" className="text-pp-ink-soft block text-xs font-medium">
+                Número do registro
+              </label>
+              <input
+                id="credential_number"
+                type="text"
+                value={credentialNumber}
+                onChange={(e) => setCredentialNumber(e.target.value)}
+                placeholder="Ex: 06/12345"
+                className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+              />
+            </div>
+
+          </div>
+
+          <p className="text-xs text-pp-ink-soft max-w-2xl leading-relaxed">
+            Psicopedagogia ainda não possui conselho profissional próprio. CBO, ABPp e filiação sindical são formas de identificação/credencial, não equivalem a conselho de classe.
+          </p>
+
+          <button
+            type="submit"
+            disabled={savingReport}
+            className="inline-flex items-center bg-pp-ink text-pp-canvas px-7 py-3 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-pp-ink"
+          >
+            {savingReport ? 'Salvando...' : 'Salvar perfil para relatórios'}
           </button>
         </form>
       </div>
