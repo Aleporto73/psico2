@@ -5,12 +5,21 @@ import { createClient } from '@/utils/supabase/client';
 import { Lock, Check, TriangleAlert, X, Sparkles, ImagePlus, Plus, Trash2, Zap, History, Shield, SquarePen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Link from 'next/link';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
 interface AccessStatus {
   has_active_assistant: boolean;
   assistant_expires_at: string | null;
+}
+
+interface ReportProfile {
+  display_name: string | null;
+  gender: string | null;
+  profession_category: string | null;
+  credential_type: string | null;
+  credential_number: string | null;
 }
 
 interface AiReport {
@@ -25,7 +34,6 @@ type ReportType = 'family' | 'school' | 'technical' | 'internal';
 
 interface FormState {
   subjectIdentification: string;
-  profession: string;
   worksheetName: string;
   reportType: ReportType | '';
   additionalNotes: string;
@@ -48,14 +56,33 @@ const CHECKOUT_URL_IA_PRO = 'https://payment.abaminds.com/checkout?product=MCGNK
 
 const MONTHLY_LIMIT = 50;
 
-const PROFESSION_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'psicopedagogo', label: 'Psicopedagogo(a)' },
-  { value: 'psicologo',     label: 'Psicólogo(a)' },
-  { value: 'to',            label: 'Terapeuta Ocupacional' },
-  { value: 'fono',          label: 'Fonoaudiólogo(a)' },
-  { value: 'pediatra',      label: 'Pediatra' },
-  { value: 'outro',         label: 'Outro profissional' },
-];
+// Flexão da profissão por gênero (F | M | N). Categoria "outro"/desconhecida → sem rótulo.
+const PROFESSION_LABEL_BY_GENDER: Record<string, { F: string; M: string; N: string }> = {
+  psicologo:             { F: 'Psicóloga',            M: 'Psicólogo',            N: 'Psicólogo(a)' },
+  psicopedagogo:         { F: 'Psicopedagoga',        M: 'Psicopedagogo',        N: 'Psicopedagogo(a)' },
+  neuropsicopedagogo:    { F: 'Neuropsicopedagoga',   M: 'Neuropsicopedagogo',   N: 'Neuropsicopedagogo(a)' },
+  fonoaudiologo:         { F: 'Fonoaudióloga',        M: 'Fonoaudiólogo',        N: 'Fonoaudiólogo(a)' },
+  terapeuta_ocupacional: { F: 'Terapeuta Ocupacional', M: 'Terapeuta Ocupacional', N: 'Terapeuta Ocupacional' },
+  medico:                { F: 'Médica',               M: 'Médico',               N: 'Médico(a)' },
+  pediatra:              { F: 'Pediatra',             M: 'Pediatra',             N: 'Pediatra' },
+};
+
+// Sigla exibida no cabeçalho (só a sigla, antes do hífen). "outro"/"nao_informado" → omitida.
+const CREDENTIAL_SIGLA: Record<string, string> = {
+  crp: 'CRP',
+  crfa: 'CRFa',
+  crefito: 'CREFITO',
+  crm: 'CRM',
+  rqe: 'RQE',
+  cbo_2394_25: 'CBO',
+  cbo_2394_40: 'CBO',
+  cbo_2394_45: 'CBO',
+  abpp: 'ABPp',
+  sbnpp: 'SBNPp',
+  sindpsicopp: 'SINDPSICOPP',
+  outro: '',
+  nao_informado: '',
+};
 
 const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; hint: string }> = [
   { value: 'family',    label: 'Pais / Família',           hint: 'Acolhedor, simples, sem jargão técnico.' },
@@ -66,6 +93,48 @@ const REPORT_TYPE_OPTIONS: Array<{ value: ReportType; label: string; hint: strin
 
 function getReportTypeLabel(reportType: string | null | undefined) {
   return REPORT_TYPE_OPTIONS.find((option) => option.value === reportType)?.label || reportType;
+}
+
+function getProfessionLabel(category: string | null | undefined, gender: string | null | undefined): string {
+  if (!category) return '';
+  const entry = PROFESSION_LABEL_BY_GENDER[category];
+  if (!entry) return '';
+  const g = gender === 'F' || gender === 'M' ? gender : 'N';
+  return entry[g];
+}
+
+function getCredentialSigla(credentialType: string | null | undefined): string {
+  if (!credentialType) return '';
+  return CREDENTIAL_SIGLA[credentialType] ?? '';
+}
+
+function isReportProfileComplete(p: ReportProfile | null): boolean {
+  return Boolean(
+    p?.display_name?.trim() &&
+    p?.gender?.trim() &&
+    p?.profession_category?.trim() &&
+    p?.credential_type?.trim() &&
+    p?.credential_number?.trim()
+  );
+}
+
+// Partes do cabeçalho fixo (nome + linha "profissão · sigla número"), compartilhadas
+// pela renderização (ReportHeader) e pela cópia (composeCopyText). null se incompleto.
+function getReportHeaderParts(profile: ReportProfile | null): { displayName: string; subtitle: string } | null {
+  if (!profile || !isReportProfileComplete(profile)) return null;
+  const professionLabel = getProfessionLabel(profile.profession_category, profile.gender);
+  const sigla = getCredentialSigla(profile.credential_type);
+  const credential = [sigla, (profile.credential_number || '').trim()].filter(Boolean).join(' ');
+  const subtitle = [professionLabel, credential].filter(Boolean).join(' · ');
+  return { displayName: (profile.display_name || '').trim(), subtitle };
+}
+
+// Texto copiado = cabeçalho + linha em branco + relatório. Sem cabeçalho se incompleto.
+function composeCopyText(profile: ReportProfile | null, outputText: string): string {
+  const parts = getReportHeaderParts(profile);
+  if (!parts) return outputText;
+  const header = [parts.displayName, parts.subtitle].filter(Boolean).join('\n');
+  return `${header}\n\n${outputText}`;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -106,6 +175,22 @@ function readFileAsDataUrl(file: File): Promise<string> {
 
 function makeId() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+}
+
+// Cabeçalho fixo do profissional, renderizado em React (fora do conteúdo da IA).
+// O cliente copia cabeçalho + relatório e cola no Word como documento próprio.
+function ReportHeader({ profile }: { profile: ReportProfile | null }) {
+  const parts = getReportHeaderParts(profile);
+  if (!parts) return null;
+
+  return (
+    <div className="pb-3 mb-4 border-b border-[#D6DEF0]">
+      <p className="font-serif text-[24px] leading-tight text-pp-ink">{parts.displayName}</p>
+      {parts.subtitle && (
+        <p className="font-sans text-sm text-pp-ink mt-1 tracking-[0.01em]">{parts.subtitle}</p>
+      )}
+    </div>
+  );
 }
 
 // Renderiza output_text (Markdown) com o estilo visual do PsicoPlanilhas.
@@ -188,6 +273,7 @@ export default function AppAssistenteProPage() {
   const supabase = createClient();
 
   const [profile, setProfile] = useState<AccessStatus | null>(null);
+  const [reportProfile, setReportProfile] = useState<ReportProfile | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
 
   const [reports, setReports] = useState<AiReport[]>([]);
@@ -196,7 +282,6 @@ export default function AppAssistenteProPage() {
 
   const [form, setForm] = useState<FormState>({
     subjectIdentification: '',
-    profession: '',
     worksheetName: '',
     reportType: '',
     additionalNotes: '',
@@ -234,6 +319,14 @@ export default function AppAssistenteProPage() {
 
       if (error) throw error;
       setProfile(data);
+
+      // Cabeçalho profissional (cabeçalho fixo dos relatórios)
+      const { data: reportProf } = await supabase
+        .from('profiles')
+        .select('display_name, gender, profession_category, credential_type, credential_number')
+        .eq('id', user.id)
+        .single();
+      setReportProfile(reportProf ?? null);
 
       if (data?.has_active_assistant) {
         fetchReports(user.id);
@@ -355,8 +448,8 @@ export default function AppAssistenteProPage() {
     setGenerateError(null);
     setLastReport(null);
 
-    if (!form.profession) {
-      setGenerateError('Selecione a sua profissão.');
+    if (!isReportProfileComplete(reportProfile)) {
+      setGenerateError('Complete seu cabeçalho profissional em Minha conta antes de gerar relatórios.');
       setGenerating(false);
       return;
     }
@@ -384,7 +477,6 @@ export default function AppAssistenteProPage() {
       const payload: Record<string, any> = {
         // Campos visíveis na UI simplificada
         subjectIdentification: form.subjectIdentification.trim(),
-        profession: form.profession,
         worksheetName,
         reportType: form.reportType,
         additionalNotes: form.additionalNotes,
@@ -420,7 +512,6 @@ export default function AppAssistenteProPage() {
 
       setForm({
         subjectIdentification: '',     // identificação é por avaliado: limpa a cada geração
-        profession: form.profession,   // mantém a profissão entre gerações
         worksheetName: '',
         reportType: form.reportType,   // mantém o destino entre gerações
         additionalNotes: '',
@@ -502,7 +593,7 @@ export default function AppAssistenteProPage() {
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => handleCopy(lastReport.output_text, 'last')}
+                    onClick={() => handleCopy(composeCopyText(reportProfile, lastReport.output_text), 'last')}
                     className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-pp-ink border border-pp-ink/15 hover:bg-pp-ink/5 rounded-lg transition"
                   >
                     {copiedId === 'last' ? (<><Check className="w-4 h-4" /> Copiado</>) : 'Copiar'}
@@ -516,6 +607,7 @@ export default function AppAssistenteProPage() {
                 </div>
               </div>
               <div className="max-h-72 overflow-hidden">
+                <ReportHeader profile={reportProfile} />
                 <ReportMarkdown content={lastReport.output_text} />
               </div>
               <p className="text-xs text-pp-ink-soft">
@@ -531,11 +623,30 @@ export default function AppAssistenteProPage() {
             </div>
           )}
 
+          {!isReportProfileComplete(reportProfile) ? (
+            <section className="bg-pp-block-cream rounded-2xl p-8 md:p-10 text-center max-w-2xl mx-auto space-y-5">
+              <div className="w-16 h-16 mx-auto rounded-full bg-pp-ink/5 flex items-center justify-center text-pp-ink">
+                <SquarePen className="w-8 h-8" aria-hidden="true" />
+              </div>
+              <div className="space-y-3">
+                <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Configure seu cabeçalho profissional</h2>
+                <p className="text-pp-ink-soft text-base leading-relaxed">
+                  Antes de gerar relatórios, complete os dados que aparecerão no cabeçalho dos seus documentos. Isso garante que cada relatório saia com sua identidade profissional pronta para uso.
+                </p>
+              </div>
+              <Link
+                href="/app/minha-conta"
+                className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
+              >
+                Completar perfil agora
+              </Link>
+            </section>
+          ) : (
           <section className="bg-white border border-pp-hairline rounded-2xl p-6 md:p-8 space-y-6">
             <div>
               <h2 className="text-xl font-medium text-pp-ink">Gerar relatório</h2>
               <p className="text-sm text-pp-ink-soft mt-1">
-                Selecione a profissão e o destino, informe a planilha e anexe o print. As observações são opcionais quando há print.
+                Selecione o destino, informe a planilha e anexe o print. As observações são opcionais quando há print.
               </p>
             </div>
 
@@ -559,29 +670,7 @@ export default function AppAssistenteProPage() {
                 />
               </div>
 
-              {/* 2. Sua profissão */}
-              <div className="space-y-2">
-                <label htmlFor="profession" className={labelCls}>
-                  Sua profissão <span className="text-pp-danger">*</span>
-                </label>
-                <select
-                  id="profession"
-                  name="profession"
-                  value={form.profession}
-                  onChange={handleFormChange}
-                  required
-                  className={inputCls}
-                >
-                  <option value="">Selecione a sua profissão...</option>
-                  {PROFESSION_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* 3. Para quem é o relatório? */}
+              {/* 2. Para quem é o relatório? */}
               <div className="space-y-2">
                 <label htmlFor="reportType" className={labelCls}>
                   Para quem é o relatório? <span className="text-pp-danger">*</span>
@@ -608,7 +697,7 @@ export default function AppAssistenteProPage() {
                 )}
               </div>
 
-              {/* 4. Qual planilha você usou? */}
+              {/* 3. Qual planilha você usou? */}
               <div className="space-y-2">
                 <label htmlFor="worksheetName" className={labelCls}>
                   Qual planilha você usou? <span className="text-pp-danger">*</span>
@@ -787,6 +876,7 @@ export default function AppAssistenteProPage() {
               </button>
             </form>
           </section>
+          )}
 
           <section className="space-y-4">
             <div className="border-t border-pp-hairline-soft pt-6">
@@ -951,7 +1041,7 @@ export default function AppAssistenteProPage() {
               </div>
               <div className="flex gap-2 shrink-0">
                 <button
-                  onClick={() => handleCopy(modalReport.output_text, `modal-${modalReport.id}`)}
+                  onClick={() => handleCopy(composeCopyText(reportProfile, modalReport.output_text), `modal-${modalReport.id}`)}
                   className="inline-flex items-center gap-1.5 bg-pp-ink text-pp-canvas px-4 py-2 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
                 >
                   {copiedId === `modal-${modalReport.id}` ? (<><Check className="w-4 h-4" /> Copiado</>) : 'Copiar'}
@@ -967,6 +1057,7 @@ export default function AppAssistenteProPage() {
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto">
+              <ReportHeader profile={reportProfile} />
               <ReportMarkdown content={modalReport.output_text} />
             </div>
           </div>
