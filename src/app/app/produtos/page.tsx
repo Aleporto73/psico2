@@ -250,7 +250,7 @@ export default function AppProdutosPage() {
               {/* Status contextual — estrutura condicional preservada, re-estilizada */}
               {prod.slug === ASSISTANT_PRO_SLUG && hasAssistantAccess ? (
                 <p className="font-serif italic text-pp-ink text-base">
-                  {assistantExpiresAt ? `Válido até ${formatDateBR(assistantExpiresAt)}` : 'IA Pro liberado'}
+                  {assistantExpiresAt ? `Válido até ${formatDateBR(assistantExpiresAt)}` : 'Relatórios IA liberado'}
                 </p>
               ) : prod.price && !(isLifetimeProduct(prod) && hasLifetimeAccess) ? (
                 <p className="text-pp-ink text-2xl font-medium">
@@ -292,7 +292,7 @@ export default function AppProdutosPage() {
                       href={ASSISTANT_PRO_APP_PATH}
                       className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
                     >
-                      Acessar IA Pro
+                      Acessar Relatórios IA
                       <ArrowRight className="w-4 h-4" aria-hidden="true" />
                     </Link>
                   ) : prod.checkout_url ? (
@@ -302,7 +302,7 @@ export default function AppProdutosPage() {
                       rel="noopener noreferrer"
                       className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
                     >
-                      Assinar IA Pro
+                      Assinar Relatórios IA
                       <ExternalLink className="w-4 h-4" aria-hidden="true" />
                     </a>
                   ) : (
@@ -310,7 +310,7 @@ export default function AppProdutosPage() {
                       href={ASSISTANT_PRO_APP_PATH}
                       className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
                     >
-                      Assinar IA Pro
+                      Assinar Relatórios IA
                       <ArrowRight className="w-4 h-4" aria-hidden="true" />
                     </Link>
                   )

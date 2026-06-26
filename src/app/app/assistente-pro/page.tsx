@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { Lock, Check, TriangleAlert, X, Sparkles, ImagePlus, Plus, Trash2, Zap, History, Shield, SquarePen } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -22,6 +24,7 @@ interface AiReport {
 type ReportType = 'family' | 'school' | 'technical' | 'internal';
 
 interface FormState {
+  subjectIdentification: string;
   profession: string;
   worksheetName: string;
   reportType: ReportType | '';
@@ -43,7 +46,7 @@ const MAX_NOTES_CHARS = 6000;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const CHECKOUT_URL_IA_PRO = 'https://payment.abaminds.com/checkout?product=MCGNKAAY&price=74F2T5WL';
 
-const MONTHLY_LIMIT = 100;
+const MONTHLY_LIMIT = 50;
 
 const PROFESSION_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'psicopedagogo', label: 'Psicopedagogo(a)' },
@@ -105,6 +108,80 @@ function makeId() {
   return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
 }
 
+// Renderiza output_text (Markdown) com o estilo visual do PsicoPlanilhas.
+// HTML bruto é ignorado (padrão do react-markdown). Tabelas e divisórias via remark-gfm.
+function ReportMarkdown({ content }: { content: string }) {
+  return (
+    <div className="text-sm text-pp-ink-soft leading-relaxed break-words">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        components={{
+          h1: ({ children }) => (
+            <h1 className="font-serif italic text-lg text-pp-ink mt-4 mb-2 first:mt-0">{children}</h1>
+          ),
+          h2: ({ children }) => (
+            <h2 className="font-medium text-base text-pp-ink mt-4 mb-2 first:mt-0">{children}</h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="font-medium text-sm text-pp-ink mt-3 mb-1.5">{children}</h3>
+          ),
+          h4: ({ children }) => (
+            <h4 className="font-medium text-sm text-pp-ink mt-3 mb-1.5">{children}</h4>
+          ),
+          p: ({ children }) => <p className="my-2 leading-relaxed">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>,
+          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+          strong: ({ children }) => <strong className="font-semibold text-pp-ink">{children}</strong>,
+          em: ({ children }) => <em className="italic">{children}</em>,
+          a: ({ href, children }) => (
+            <a
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-pp-ink underline underline-offset-2"
+            >
+              {children}
+            </a>
+          ),
+          hr: () => <hr className="my-4 border-pp-hairline" />,
+          blockquote: ({ children }) => (
+            <blockquote className="border-l-2 border-pp-hairline pl-3 my-2 italic">{children}</blockquote>
+          ),
+          code: ({ className, children }) =>
+            /language-/.test(className || '') ? (
+              <code className="font-mono text-xs">{children}</code>
+            ) : (
+              <code className="rounded bg-pp-hairline-soft px-1 py-0.5 text-[0.85em] font-mono text-pp-ink">
+                {children}
+              </code>
+            ),
+          pre: ({ children }) => (
+            <pre className="my-2 overflow-x-auto rounded-lg border border-pp-hairline bg-pp-canvas p-3 text-xs text-pp-ink">
+              {children}
+            </pre>
+          ),
+          table: ({ children }) => (
+            <div className="my-3 overflow-x-auto">
+              <table className="w-full border-collapse text-sm">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => (
+            <th className="border border-pp-hairline bg-pp-block-mint/40 px-3 py-2 text-left font-medium text-pp-ink">
+              {children}
+            </th>
+          ),
+          td: ({ children }) => (
+            <td className="border border-pp-hairline-soft px-3 py-2 align-top text-pp-ink-soft">{children}</td>
+          ),
+        }}
+      >
+        {content}
+      </ReactMarkdown>
+    </div>
+  );
+}
+
 // ── Component ──────────────────────────────────────────────────────────────────
 
 export default function AppAssistenteProPage() {
@@ -118,6 +195,7 @@ export default function AppAssistenteProPage() {
   const [monthlyCount, setMonthlyCount] = useState<number | null>(null);
 
   const [form, setForm] = useState<FormState>({
+    subjectIdentification: '',
     profession: '',
     worksheetName: '',
     reportType: '',
@@ -305,13 +383,12 @@ export default function AppAssistenteProPage() {
 
       const payload: Record<string, any> = {
         // Campos visíveis na UI simplificada
+        subjectIdentification: form.subjectIdentification.trim(),
         profession: form.profession,
         worksheetName,
         reportType: form.reportType,
         additionalNotes: form.additionalNotes,
-        // Campos ocultos enviados com defaults (compatibilidade com o backend)
-        nome: 'Paciente/Aprendiz não identificado',
-        idade: 'Não informada',
+        // Compat: o backend deriva nome/idade a partir da identificação do avaliado.
         area: worksheetName || 'PsicoPlanilhas',
         objetivo: `Gerar rascunho de relatório para ${destinoLabel} a partir da planilha ${worksheetName}`,
       };
@@ -342,6 +419,7 @@ export default function AppAssistenteProPage() {
       if (user) fetchReports(user.id);
 
       setForm({
+        subjectIdentification: '',     // identificação é por avaliado: limpa a cada geração
         profession: form.profession,   // mantém a profissão entre gerações
         worksheetName: '',
         reportType: form.reportType,   // mantém o destino entre gerações
@@ -391,9 +469,9 @@ export default function AppAssistenteProPage() {
 
       {/* Header editorial */}
       <header className="space-y-2 pt-4">
-        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Assistente IA Pro</h1>
+        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Assistente de Relatórios IA</h1>
         <p className="text-pp-ink-soft text-base md:text-lg">
-          Envie o print da planilha preenchida e gere um rascunho de relatório em poucos minutos.
+          Envie o print da planilha preenchida e gere um relatório editável em poucos minutos.
         </p>
       </header>
 
@@ -407,7 +485,7 @@ export default function AppAssistenteProPage() {
             </span>
             {monthlyCount !== null && (
               <span className="text-sm text-pp-ink-soft">
-                Gerações do mês:{' '}
+                Relatórios disponíveis este mês:{' '}
                 <strong className={`font-medium ${monthlyCount >= MONTHLY_LIMIT ? 'text-pp-danger' : 'text-pp-ink'}`}>
                   {monthlyCount}/{MONTHLY_LIMIT}
                 </strong>
@@ -420,7 +498,7 @@ export default function AppAssistenteProPage() {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2 text-pp-ink">
                   <Check className="w-5 h-5" aria-hidden="true" />
-                  <h3 className="font-serif italic text-base text-pp-ink">Rascunho gerado</h3>
+                  <h3 className="font-serif italic text-base text-pp-ink">Relatório gerado</h3>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -437,9 +515,9 @@ export default function AppAssistenteProPage() {
                   </button>
                 </div>
               </div>
-              <pre className="text-sm text-pp-ink-soft leading-relaxed whitespace-pre-wrap font-sans line-clamp-6 overflow-hidden">
-                {lastReport.output_text}
-              </pre>
+              <div className="max-h-72 overflow-hidden">
+                <ReportMarkdown content={lastReport.output_text} />
+              </div>
               <p className="text-xs text-pp-ink-soft">
                 Salvo em: {formatDateTime(lastReport.created_at)}
               </p>
@@ -463,7 +541,25 @@ export default function AppAssistenteProPage() {
 
             <form onSubmit={handleGenerate} className="space-y-5" id="generate-form" noValidate>
 
-              {/* 1. Sua profissão */}
+              {/* 1. Identificação do avaliado (opcional) */}
+              <div className="space-y-2">
+                <label htmlFor="subjectIdentification" className={labelCls}>
+                  Identificação do avaliado{' '}
+                  <span className="text-pp-ink-soft font-normal">(opcional)</span>
+                </label>
+                <input
+                  id="subjectIdentification"
+                  name="subjectIdentification"
+                  type="text"
+                  value={form.subjectIdentification}
+                  onChange={handleFormChange}
+                  placeholder="Ex.: Pedro Henrique, 17 anos"
+                  maxLength={200}
+                  className={inputCls}
+                />
+              </div>
+
+              {/* 2. Sua profissão */}
               <div className="space-y-2">
                 <label htmlFor="profession" className={labelCls}>
                   Sua profissão <span className="text-pp-danger">*</span>
@@ -485,7 +581,7 @@ export default function AppAssistenteProPage() {
                 </select>
               </div>
 
-              {/* 2. Para quem é o relatório? */}
+              {/* 3. Para quem é o relatório? */}
               <div className="space-y-2">
                 <label htmlFor="reportType" className={labelCls}>
                   Para quem é o relatório? <span className="text-pp-danger">*</span>
@@ -512,7 +608,7 @@ export default function AppAssistenteProPage() {
                 )}
               </div>
 
-              {/* 3. Qual planilha você usou? */}
+              {/* 4. Qual planilha você usou? */}
               <div className="space-y-2">
                 <label htmlFor="worksheetName" className={labelCls}>
                   Qual planilha você usou? <span className="text-pp-danger">*</span>
@@ -642,7 +738,7 @@ export default function AppAssistenteProPage() {
                 )}
               </div>
 
-              {/* 5. Observações adicionais (opcional quando há print) */}
+              {/* 6. Observações adicionais (opcional quando há print) */}
               <div className="space-y-2">
                 <label htmlFor="additionalNotes" className={labelCls}>
                   Observações adicionais{' '}
@@ -670,7 +766,7 @@ export default function AppAssistenteProPage() {
 
               <div className="p-4 bg-pp-block-cream rounded-xl text-sm text-pp-ink-soft leading-relaxed flex items-start gap-2">
                 <span className="shrink-0 mt-0.5 text-pp-ink-soft"><TriangleAlert className="w-[18px] h-[18px]" aria-hidden="true" /></span>
-                <span>O rascunho gerado é um <strong className="font-medium text-pp-ink">texto inicial descritivo de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado, inferido ou recalculado automaticamente.</span>
+                <span>O relatório gerado é um <strong className="font-medium text-pp-ink">texto inicial descritivo de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado, inferido ou recalculado automaticamente.</span>
               </div>
 
               <button
@@ -695,7 +791,7 @@ export default function AppAssistenteProPage() {
           <section className="space-y-4">
             <div className="border-t border-pp-hairline-soft pt-6">
               <p className="font-serif italic text-pp-ink-soft text-sm">Histórico de relatórios</p>
-              <p className="text-sm text-pp-ink-soft mt-1">Seus últimos 50 rascunhos gerados, mais recentes primeiro.</p>
+              <p className="text-sm text-pp-ink-soft mt-1">Seus últimos 50 relatórios gerados, mais recentes primeiro.</p>
             </div>
 
             {loadingReports ? (
@@ -703,7 +799,7 @@ export default function AppAssistenteProPage() {
             ) : reports.length === 0 ? (
               <div className="bg-pp-block-cream/50 rounded-2xl p-10 text-center space-y-2">
                 <p className="text-pp-ink text-base">Nenhum relatório gerado ainda.</p>
-                <p className="text-pp-ink-soft text-sm">Use o formulário acima para criar seu primeiro rascunho.</p>
+                <p className="text-pp-ink-soft text-sm">Use o formulário acima para criar seu primeiro relatório.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -762,8 +858,8 @@ export default function AppAssistenteProPage() {
               <strong className="font-medium text-pp-ink">{formatDate(profile?.assistant_expires_at)}</strong>
             </p>
             <p className="text-pp-ink-soft text-base leading-relaxed pt-1">
-              Renove sua assinatura anual do Assistente IA Pro por apenas{' '}
-              <strong className="font-medium text-pp-ink">R$50/ano</strong> para continuar gerando rascunhos de apoio a
+              Renove sua assinatura anual do Assistente de Relatórios IA por apenas{' '}
+              <strong className="font-medium text-pp-ink">R$50/ano</strong> para continuar gerando relatórios de apoio a
               partir das suas planilhas profissionais.
             </p>
           </div>
@@ -783,10 +879,10 @@ export default function AppAssistenteProPage() {
             <Lock className="w-10 h-10" aria-hidden="true" />
           </div>
           <div className="space-y-3">
-            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Assistente IA Pro bloqueado</h2>
+            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Assistente de Relatórios IA bloqueado</h2>
             <p className="text-pp-ink-soft text-base leading-relaxed">
-              O Assistente IA Pro é um recurso adicional com assinatura anual. Assine por apenas{' '}
-              <strong className="font-medium text-pp-ink">R$50/ano</strong> para gerar rascunhos de apoio estruturados
+              O Assistente de Relatórios IA é um recurso adicional com assinatura anual. Assine por apenas{' '}
+              <strong className="font-medium text-pp-ink">R$50/ano</strong> para gerar relatórios de apoio estruturados
               diretamente integrados com seus dados de planilhas profissionais.
             </p>
           </div>
@@ -796,14 +892,14 @@ export default function AppAssistenteProPage() {
               <div className="text-pp-ink"><Zap className="w-[22px] h-[22px]" aria-hidden="true" /></div>
               <strong className="text-pp-ink block text-sm font-medium">Rapidez operacional</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Gere rascunhos estruturados a partir dos dados da planilha em segundos.
+                Gere relatórios estruturados a partir dos dados da planilha em segundos.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
               <div className="text-pp-ink"><History className="w-[22px] h-[22px]" aria-hidden="true" /></div>
               <strong className="text-pp-ink block text-sm font-medium">Histórico completo</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Todos os rascunhos gerados ficam salvos e acessíveis a qualquer momento.
+                Todos os relatórios gerados ficam salvos e acessíveis a qualquer momento.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
@@ -817,7 +913,7 @@ export default function AppAssistenteProPage() {
               <div className="text-pp-ink"><SquarePen className="w-[22px] h-[22px]" aria-hidden="true" /></div>
               <strong className="text-pp-ink block text-sm font-medium">Totalmente editável</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                O rascunho é um ponto de partida. Copie, edite e complemente conforme necessário.
+                O relatório é um ponto de partida. Copie, edite e complemente conforme necessário.
               </p>
             </div>
           </div>
@@ -834,10 +930,10 @@ export default function AppAssistenteProPage() {
 
       <footer className="pt-4 border-t border-pp-hairline-soft">
         <p className="text-center text-xs text-pp-ink-soft max-w-3xl mx-auto leading-relaxed">
-          <strong className="font-medium">Aviso de uso responsável:</strong> O Assistente IA Pro gera rascunhos descritivos iniciais de apoio operacional a
+          <strong className="font-medium">Aviso de uso responsável:</strong> O Assistente de Relatórios IA gera relatórios descritivos iniciais de apoio operacional a
           partir dos dados inseridos pelo profissional (texto e/ou prints). O texto gerado deve ser minuciosamente revisado, completado e
           interpretado pelo profissional responsável antes de qualquer uso formal, exigindo a posse e conformidade com
-          o manual técnico original do instrumento utilizado. Nenhuma funcionalidade do Assistente IA Pro substitui a
+          o manual técnico original do instrumento utilizado. Nenhuma funcionalidade do Assistente de Relatórios IA substitui a
           avaliação, diagnóstico ou interpretação de um profissional qualificado.
         </p>
       </footer>
@@ -847,6 +943,7 @@ export default function AppAssistenteProPage() {
           <div className="bg-white border border-pp-hairline rounded-block max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl my-auto">
             <div className="flex justify-between items-start gap-4 border-b border-pp-hairline pb-4">
               <div className="min-w-0">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-pp-ink-soft mb-0.5">Relatório editável</p>
                 <h3 className="font-serif italic text-base text-pp-ink truncate">
                   {modalReport.title || 'Relatório'}
                 </h3>
@@ -870,9 +967,7 @@ export default function AppAssistenteProPage() {
             </div>
 
             <div className="max-h-[60vh] overflow-y-auto">
-              <pre className="text-sm text-pp-ink-soft leading-relaxed whitespace-pre-wrap font-sans">
-                {modalReport.output_text}
-              </pre>
+              <ReportMarkdown content={modalReport.output_text} />
             </div>
           </div>
         </div>
