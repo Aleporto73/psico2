@@ -238,7 +238,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           message:
-            'Acesso negado. O Assistente IA Pro requer uma assinatura ativa. Consulte a página do Assistente IA Pro para mais informações.',
+            'Acesso negado. O Assistente de Relatórios IA requer uma assinatura ativa. Consulte a página do Assistente de Relatórios IA para mais informações.',
         },
         { status: 403 }
       );
@@ -264,7 +264,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           message:
-            'Você atingiu o limite mensal de gerações do Assistente IA Pro. O limite renova no início do próximo mês.',
+            'Você atingiu o limite mensal de relatórios do Assistente de Relatórios IA. O limite renova no início do próximo mês.',
           monthly_count: count,
           monthly_limit: MONTHLY_LIMIT,
           // compat temporária: daily_* espelham os valores mensais
@@ -551,7 +551,7 @@ export async function GET() {
       return NextResponse.json(
         {
           message:
-            'Acesso negado. O Assistente IA Pro requer uma assinatura ativa.',
+            'Acesso negado. O Assistente de Relatórios IA requer uma assinatura ativa.',
         },
         { status: 403 }
       );

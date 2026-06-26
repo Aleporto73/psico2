@@ -469,9 +469,9 @@ export default function AppAssistenteProPage() {
 
       {/* Header editorial */}
       <header className="space-y-2 pt-4">
-        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Assistente IA Pro</h1>
+        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Assistente de Relatórios IA</h1>
         <p className="text-pp-ink-soft text-base md:text-lg">
-          Envie o print da planilha preenchida e gere um rascunho de relatório em poucos minutos.
+          Envie o print da planilha preenchida e gere um relatório editável em poucos minutos.
         </p>
       </header>
 
@@ -485,7 +485,7 @@ export default function AppAssistenteProPage() {
             </span>
             {monthlyCount !== null && (
               <span className="text-sm text-pp-ink-soft">
-                Gerações do mês:{' '}
+                Relatórios disponíveis este mês:{' '}
                 <strong className={`font-medium ${monthlyCount >= MONTHLY_LIMIT ? 'text-pp-danger' : 'text-pp-ink'}`}>
                   {monthlyCount}/{MONTHLY_LIMIT}
                 </strong>
@@ -498,7 +498,7 @@ export default function AppAssistenteProPage() {
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center gap-2 text-pp-ink">
                   <Check className="w-5 h-5" aria-hidden="true" />
-                  <h3 className="font-serif italic text-base text-pp-ink">Rascunho gerado</h3>
+                  <h3 className="font-serif italic text-base text-pp-ink">Relatório gerado</h3>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -766,7 +766,7 @@ export default function AppAssistenteProPage() {
 
               <div className="p-4 bg-pp-block-cream rounded-xl text-sm text-pp-ink-soft leading-relaxed flex items-start gap-2">
                 <span className="shrink-0 mt-0.5 text-pp-ink-soft"><TriangleAlert className="w-[18px] h-[18px]" aria-hidden="true" /></span>
-                <span>O rascunho gerado é um <strong className="font-medium text-pp-ink">texto inicial descritivo de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado, inferido ou recalculado automaticamente.</span>
+                <span>O relatório gerado é um <strong className="font-medium text-pp-ink">texto inicial descritivo de apoio operacional</strong> e deve ser revisado, completado e validado pelo profissional responsável antes de qualquer uso formal. Nenhum dado é diagnosticado, inferido ou recalculado automaticamente.</span>
               </div>
 
               <button
@@ -791,7 +791,7 @@ export default function AppAssistenteProPage() {
           <section className="space-y-4">
             <div className="border-t border-pp-hairline-soft pt-6">
               <p className="font-serif italic text-pp-ink-soft text-sm">Histórico de relatórios</p>
-              <p className="text-sm text-pp-ink-soft mt-1">Seus últimos 50 rascunhos gerados, mais recentes primeiro.</p>
+              <p className="text-sm text-pp-ink-soft mt-1">Seus últimos 50 relatórios gerados, mais recentes primeiro.</p>
             </div>
 
             {loadingReports ? (
@@ -799,7 +799,7 @@ export default function AppAssistenteProPage() {
             ) : reports.length === 0 ? (
               <div className="bg-pp-block-cream/50 rounded-2xl p-10 text-center space-y-2">
                 <p className="text-pp-ink text-base">Nenhum relatório gerado ainda.</p>
-                <p className="text-pp-ink-soft text-sm">Use o formulário acima para criar seu primeiro rascunho.</p>
+                <p className="text-pp-ink-soft text-sm">Use o formulário acima para criar seu primeiro relatório.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -858,8 +858,8 @@ export default function AppAssistenteProPage() {
               <strong className="font-medium text-pp-ink">{formatDate(profile?.assistant_expires_at)}</strong>
             </p>
             <p className="text-pp-ink-soft text-base leading-relaxed pt-1">
-              Renove sua assinatura anual do Assistente IA Pro por apenas{' '}
-              <strong className="font-medium text-pp-ink">R$50/ano</strong> para continuar gerando rascunhos de apoio a
+              Renove sua assinatura anual do Assistente de Relatórios IA por apenas{' '}
+              <strong className="font-medium text-pp-ink">R$50/ano</strong> para continuar gerando relatórios de apoio a
               partir das suas planilhas profissionais.
             </p>
           </div>
@@ -879,10 +879,10 @@ export default function AppAssistenteProPage() {
             <Lock className="w-10 h-10" aria-hidden="true" />
           </div>
           <div className="space-y-3">
-            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Assistente IA Pro bloqueado</h2>
+            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Assistente de Relatórios IA bloqueado</h2>
             <p className="text-pp-ink-soft text-base leading-relaxed">
-              O Assistente IA Pro é um recurso adicional com assinatura anual. Assine por apenas{' '}
-              <strong className="font-medium text-pp-ink">R$50/ano</strong> para gerar rascunhos de apoio estruturados
+              O Assistente de Relatórios IA é um recurso adicional com assinatura anual. Assine por apenas{' '}
+              <strong className="font-medium text-pp-ink">R$50/ano</strong> para gerar relatórios de apoio estruturados
               diretamente integrados com seus dados de planilhas profissionais.
             </p>
           </div>
@@ -892,14 +892,14 @@ export default function AppAssistenteProPage() {
               <div className="text-pp-ink"><Zap className="w-[22px] h-[22px]" aria-hidden="true" /></div>
               <strong className="text-pp-ink block text-sm font-medium">Rapidez operacional</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Gere rascunhos estruturados a partir dos dados da planilha em segundos.
+                Gere relatórios estruturados a partir dos dados da planilha em segundos.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
               <div className="text-pp-ink"><History className="w-[22px] h-[22px]" aria-hidden="true" /></div>
               <strong className="text-pp-ink block text-sm font-medium">Histórico completo</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Todos os rascunhos gerados ficam salvos e acessíveis a qualquer momento.
+                Todos os relatórios gerados ficam salvos e acessíveis a qualquer momento.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
@@ -913,7 +913,7 @@ export default function AppAssistenteProPage() {
               <div className="text-pp-ink"><SquarePen className="w-[22px] h-[22px]" aria-hidden="true" /></div>
               <strong className="text-pp-ink block text-sm font-medium">Totalmente editável</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                O rascunho é um ponto de partida. Copie, edite e complemente conforme necessário.
+                O relatório é um ponto de partida. Copie, edite e complemente conforme necessário.
               </p>
             </div>
           </div>
@@ -930,10 +930,10 @@ export default function AppAssistenteProPage() {
 
       <footer className="pt-4 border-t border-pp-hairline-soft">
         <p className="text-center text-xs text-pp-ink-soft max-w-3xl mx-auto leading-relaxed">
-          <strong className="font-medium">Aviso de uso responsável:</strong> O Assistente IA Pro gera rascunhos descritivos iniciais de apoio operacional a
+          <strong className="font-medium">Aviso de uso responsável:</strong> O Assistente de Relatórios IA gera relatórios descritivos iniciais de apoio operacional a
           partir dos dados inseridos pelo profissional (texto e/ou prints). O texto gerado deve ser minuciosamente revisado, completado e
           interpretado pelo profissional responsável antes de qualquer uso formal, exigindo a posse e conformidade com
-          o manual técnico original do instrumento utilizado. Nenhuma funcionalidade do Assistente IA Pro substitui a
+          o manual técnico original do instrumento utilizado. Nenhuma funcionalidade do Assistente de Relatórios IA substitui a
           avaliação, diagnóstico ou interpretação de um profissional qualificado.
         </p>
       </footer>
@@ -943,6 +943,7 @@ export default function AppAssistenteProPage() {
           <div className="bg-white border border-pp-hairline rounded-block max-w-2xl w-full p-6 relative flex flex-col gap-4 shadow-2xl my-auto">
             <div className="flex justify-between items-start gap-4 border-b border-pp-hairline pb-4">
               <div className="min-w-0">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-pp-ink-soft mb-0.5">Relatório editável</p>
                 <h3 className="font-serif italic text-base text-pp-ink truncate">
                   {modalReport.title || 'Relatório'}
                 </h3>

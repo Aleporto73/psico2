@@ -224,7 +224,7 @@ export default function AppDashboardPage() {
               </p>
             </div>
             <h2 className="text-2xl md:text-[28px] text-pp-ink font-medium leading-tight">
-              Assistente IA Pro
+              Assistente de Relatórios IA
             </h2>
             <p className="text-pp-ink-soft text-base leading-relaxed">
               {assistantState === 'active'

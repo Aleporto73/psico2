@@ -93,7 +93,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { name: 'Dashboard',        path: '/app',                  icon: <IconDashboard /> },
     { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
     { name: 'Assistente GPT',   path: '/app/assistente-gpt',   icon: <IconChat /> },
-    { name: 'Assistente IA Pro',path: '/app/assistente-pro',   icon: <IconSpark /> },
+    { name: 'Assistente de Relatórios IA',path: '/app/assistente-pro',   icon: <IconSpark /> },
     { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
   ];

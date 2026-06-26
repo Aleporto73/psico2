@@ -192,7 +192,7 @@ export default function AppMinhaContaPage() {
             </div>
 
             <div className="space-y-2">
-              <span className="text-pp-ink-soft block text-xs font-medium">Assistente IA Pro</span>
+              <span className="text-pp-ink-soft block text-xs font-medium">Assistente de Relatórios IA</span>
               {stats?.has_active_assistant ? (
                 <div className="space-y-1.5">
                   <span className="inline-block px-3 py-1 text-xs font-medium text-pp-success bg-pp-success/10 rounded-pill">
