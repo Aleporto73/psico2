@@ -112,26 +112,26 @@ function makeId() {
 // HTML bruto é ignorado (padrão do react-markdown). Tabelas e divisórias via remark-gfm.
 function ReportMarkdown({ content }: { content: string }) {
   return (
-    <div className="text-sm text-pp-ink-soft leading-relaxed break-words">
+    <div className="text-[15px] leading-[1.7] text-pp-ink break-words">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
           h1: ({ children }) => (
-            <h1 className="font-serif italic text-lg text-pp-ink mt-4 mb-2 first:mt-0">{children}</h1>
+            <h1 className="font-serif italic text-[32px] text-pp-ink mt-6 mb-1 pb-2 border-b border-pp-hairline first:mt-0">{children}</h1>
           ),
           h2: ({ children }) => (
-            <h2 className="font-medium text-base text-pp-ink mt-4 mb-2 first:mt-0">{children}</h2>
+            <h2 className="font-serif italic text-[24px] text-pp-ink mt-8 mb-3 first:mt-0">{children}</h2>
           ),
           h3: ({ children }) => (
-            <h3 className="font-medium text-sm text-pp-ink mt-3 mb-1.5">{children}</h3>
+            <h3 className="font-serif italic text-[18px] text-pp-ink mt-6 mb-2">{children}</h3>
           ),
           h4: ({ children }) => (
-            <h4 className="font-medium text-sm text-pp-ink mt-3 mb-1.5">{children}</h4>
+            <h4 className="font-medium text-[15px] text-pp-ink mt-4 mb-1.5">{children}</h4>
           ),
-          p: ({ children }) => <p className="my-2 leading-relaxed">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc pl-5 my-2 space-y-1">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal pl-5 my-2 space-y-1">{children}</ol>,
-          li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+          p: ({ children }) => <p className="my-3 leading-[1.7]">{children}</p>,
+          ul: ({ children }) => <ul className="list-disc pl-5 my-3 space-y-2">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-5 my-3 space-y-2">{children}</ol>,
+          li: ({ children }) => <li className="leading-[1.7]">{children}</li>,
           strong: ({ children }) => <strong className="font-semibold text-pp-ink">{children}</strong>,
           em: ({ children }) => <em className="italic">{children}</em>,
           a: ({ href, children }) => (
@@ -144,9 +144,11 @@ function ReportMarkdown({ content }: { content: string }) {
               {children}
             </a>
           ),
-          hr: () => <hr className="my-4 border-pp-hairline" />,
+          hr: () => <hr className="my-6 border-pp-hairline" />,
           blockquote: ({ children }) => (
-            <blockquote className="border-l-2 border-pp-hairline pl-3 my-2 italic">{children}</blockquote>
+            <blockquote className="bg-pp-block-cream border-l-[3px] border-pp-warning pl-4 py-3 my-4 italic rounded-r-lg">
+              {children}
+            </blockquote>
           ),
           code: ({ className, children }) =>
             /language-/.test(className || '') ? (
@@ -162,17 +164,20 @@ function ReportMarkdown({ content }: { content: string }) {
             </pre>
           ),
           table: ({ children }) => (
-            <div className="my-3 overflow-x-auto">
-              <table className="w-full border-collapse text-sm">{children}</table>
+            <div className="my-4 overflow-x-auto">
+              <table className="w-full border-collapse text-[15px]">{children}</table>
             </div>
           ),
+          tr: ({ children }) => (
+            <tr className="even:bg-pp-hairline-soft/60">{children}</tr>
+          ),
           th: ({ children }) => (
-            <th className="border border-pp-hairline bg-pp-block-mint/40 px-3 py-2 text-left font-medium text-pp-ink">
+            <th className="border border-pp-ink/20 bg-pp-block-cream px-3 py-2 text-left font-semibold text-pp-ink">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="border border-pp-hairline-soft px-3 py-2 align-top text-pp-ink-soft">{children}</td>
+            <td className="border border-pp-ink/20 px-3 py-2 align-top text-pp-ink">{children}</td>
           ),
         }}
       >
