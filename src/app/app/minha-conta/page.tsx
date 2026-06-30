@@ -62,13 +62,7 @@ export default function AppMinhaContaPage() {
         .single();
       if (accessErr) console.error('[minha-conta] user_access_status:', accessErr);
 
-      // RPC como fonte autoritativa — não depende do cache do schema da view
-      const { data: flowAccess } = await supabase.rpc('has_flow_access', { user_uuid: user.id });
-
-      setStats(accessStats
-        ? { ...(accessStats as unknown as ClientStats), has_flow_access: Boolean(flowAccess) }
-        : null
-      );
+      setStats(accessStats ? (accessStats as unknown as ClientStats) : null);
     } catch (err: any) {
       console.error('Error fetching account data:', err);
       setErrorMsg('Não foi possível carregar os dados da conta. Tente novamente.');

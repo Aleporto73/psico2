@@ -98,12 +98,8 @@ export default function AppProdutosPage() {
         setHasLifetimeAccess(Boolean(s.has_lifetime_access));
         setHasAssistantAccess(Boolean(s.has_active_assistant));
         setAssistantExpiresAt((s.assistant_expires_at as string | null) || null);
+        setHasFlowAccess(Boolean(s.has_flow_access));
       }
-
-      // RPC como fonte autoritativa — não depende do cache do schema da view
-      const { data: flowAccess, error: flowErr } = await supabase.rpc('has_flow_access', { user_uuid: user.id });
-      if (flowErr) console.error('[produtos] has_flow_access:', flowErr);
-      setHasFlowAccess(Boolean(flowAccess));
 
       // 2. Fetch products from products_public (view sanitizada — sem access_url).
       //    Seleciona colunas explícitas para reforçar que nenhum campo
