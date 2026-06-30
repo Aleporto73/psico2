@@ -66,13 +66,11 @@ export default function AppProdutosPage() {
   const [profileType, setProfileType] = useState('unknown');
   const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
   const [hasAssistantAccess, setHasAssistantAccess] = useState(false);
-  const [hasFlowAccess, setHasFlowAccess] = useState(false);
   const [assistantExpiresAt, setAssistantExpiresAt] = useState<string | null>(null);
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [activeVideoCta, setActiveVideoCta] = useState<{ text: string; url: string } | null>(null);
-  const [flowBuyMessage, setFlowBuyMessage] = useState(false);
 
   useEffect(() => {
     fetchProfileAndProducts();
@@ -98,7 +96,6 @@ export default function AppProdutosPage() {
         setHasLifetimeAccess(Boolean(s.has_lifetime_access));
         setHasAssistantAccess(Boolean(s.has_active_assistant));
         setAssistantExpiresAt((s.assistant_expires_at as string | null) || null);
-        setHasFlowAccess(Boolean(s.has_flow_access));
       }
 
       // 2. Fetch products from products_public (view sanitizada — sem access_url).
@@ -139,16 +136,6 @@ export default function AppProdutosPage() {
   };
 
   const isFlowProduct = (prod: PublicProduct) => prod.slug === 'psicoplanilhas-flow';
-
-  const handleActivateFlow = async () => {
-    try {
-      const res = await fetch('/api/flow/generate-token', { method: 'POST' });
-      const json = await res.json() as { activationUrl?: string };
-      if (json.activationUrl) window.open(json.activationUrl, '_blank', 'noopener,noreferrer');
-    } catch {
-      alert('Erro ao gerar token. Tente novamente.');
-    }
-  };
 
   const getEmbedUrl = (url: string | null) => {
     if (!url) return '';
@@ -337,27 +324,15 @@ export default function AppProdutosPage() {
                     </Link>
                   )
                 ) : isFlowProduct(prod) ? (
-                  hasFlowAccess ? (
-                    <button
-                      onClick={handleActivateFlow}
-                      className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
-                    >
-                      Ativar Flow neste computador
-                      <ExternalLink className="w-4 h-4" aria-hidden="true" />
-                    </button>
-                  ) : (
-                    <div className="flex flex-col gap-2 flex-1">
-                      <button
-                        onClick={() => setFlowBuyMessage(true)}
-                        className="inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
-                      >
-                        Comprar por R$39
-                      </button>
-                      {flowBuyMessage && (
-                        <p className="text-pp-ink-soft text-xs text-center">Compra em breve pelo painel.</p>
-                      )}
-                    </div>
-                  )
+                  <a
+                    href="https://flow.psicoplanilha.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
+                  >
+                    Acessar PsicoPlanilhas Flow
+                    <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                  </a>
                 ) : (
                   (prod.video_url || prod.checkout_url) && (
                     <button

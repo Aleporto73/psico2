@@ -97,12 +97,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string }[] = [
+  const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string; external?: boolean }[] = [
     { name: 'Dashboard',        path: '/app',                  icon: <IconDashboard /> },
     { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
     { name: 'Assistente GPT',   path: '/app/assistente-gpt',   icon: <IconChat /> },
     { name: 'Assistente de Relatórios IA',path: '/app/assistente-pro',   icon: <IconSpark /> },
-    { name: 'PsicoPlanilhas Flow', path: '/app/produtos#psicoplanilhas-flow', icon: <IconFlow />, badge: 'Novo' },
+    { name: 'PsicoPlanilhas Flow', path: 'https://flow.psicoplanilha.com', icon: <IconFlow />, badge: 'Novo', external: true },
     { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
   ];
@@ -130,11 +130,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Navegação */}
           <nav className="space-y-0.5" aria-label="Navegação principal">
             {navItems.map((item) => {
-              const isActive = !item.path.includes('#') && pathname === item.path;
+              const isActive = !item.external && pathname === item.path;
               return (
                 <Link
                   key={item.path}
                   href={item.path}
+                  {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${
                     isActive
                       ? 'bg-pp-ink text-pp-canvas rounded-pill'
@@ -196,11 +197,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           aria-label="Navegação mobile"
         >
           {navItems.map((item) => {
-            const isActive = !item.path.includes('#') && pathname === item.path;
+            const isActive = !item.external && pathname === item.path;
             return (
               <Link
                 key={item.path}
                 href={item.path}
+                {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 className={`flex flex-col items-center gap-1 px-3 py-2 text-[10px] font-semibold shrink-0 transition duration-200 ${
                   isActive
                     ? 'bg-pp-ink text-pp-canvas rounded-pill'
