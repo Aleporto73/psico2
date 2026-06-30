@@ -66,11 +66,13 @@ export default function AppProdutosPage() {
   const [profileType, setProfileType] = useState('unknown');
   const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
   const [hasAssistantAccess, setHasAssistantAccess] = useState(false);
+  const [hasFlowAccess, setHasFlowAccess] = useState(false);
   const [assistantExpiresAt, setAssistantExpiresAt] = useState<string | null>(null);
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [activeVideoCta, setActiveVideoCta] = useState<{ text: string; url: string } | null>(null);
+  const [flowBuyMessage, setFlowBuyMessage] = useState(false);
 
   useEffect(() => {
     fetchProfileAndProducts();
@@ -85,7 +87,7 @@ export default function AppProdutosPage() {
       // 1. Fetch user profile type from user_access_status
       const { data: status } = await supabase
         .from('user_access_status')
-        .select('profile_type, has_lifetime_access, has_active_assistant, assistant_expires_at')
+        .select('profile_type, has_lifetime_access, has_active_assistant, assistant_expires_at, has_flow_access')
         .eq('user_id', user.id)
         .single();
 
@@ -94,6 +96,7 @@ export default function AppProdutosPage() {
         setHasLifetimeAccess(Boolean(status.has_lifetime_access));
         setHasAssistantAccess(Boolean(status.has_active_assistant));
         setAssistantExpiresAt(status.assistant_expires_at || null);
+        setHasFlowAccess(Boolean((status as Record<string, unknown>).has_flow_access));
       }
 
       // 2. Fetch products from products_public (view sanitizada — sem access_url).
@@ -131,6 +134,18 @@ export default function AppProdutosPage() {
     ) || (
       name.includes('psicoplanilhas') && name.includes('vital')
     );
+  };
+
+  const isFlowProduct = (prod: PublicProduct) => prod.slug === 'psicoplanilhas-flow';
+
+  const handleActivateFlow = async () => {
+    try {
+      const res = await fetch('/api/flow/generate-token', { method: 'POST' });
+      const json = await res.json() as { activationUrl?: string };
+      if (json.activationUrl) window.open(json.activationUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      alert('Erro ao gerar token. Tente novamente.');
+    }
   };
 
   const getEmbedUrl = (url: string | null) => {
@@ -180,6 +195,10 @@ export default function AppProdutosPage() {
     return false;
   });
 
+  const displayedProducts = filteredProducts
+    .filter((prod) => !(isLifetimeProduct(prod) && hasLifetimeAccess))
+    .sort((a, b) => (isFlowProduct(b) ? 1 : 0) - (isFlowProduct(a) ? 1 : 0));
+
   return (
     <div className="max-w-6xl mx-auto space-y-10">
 
@@ -213,7 +232,7 @@ export default function AppProdutosPage() {
       )}
 
       {/* 3. GRID DE PRODUTOS EM BLOCOS PASTEL POR CATEGORIA */}
-      {filteredProducts.length === 0 ? (
+      {displayedProducts.length === 0 ? (
         <div className="bg-pp-block-cream/50 rounded-2xl p-12 text-center space-y-3">
           <Package className="w-10 h-10 text-pp-ink-soft mx-auto" aria-hidden="true" />
           <p className="text-pp-ink text-base">Nenhum produto disponível para o seu perfil agora</p>
@@ -221,9 +240,10 @@ export default function AppProdutosPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filteredProducts.map((prod) => (
+          {displayedProducts.map((prod) => (
             <article
               key={prod.id}
+              id={isFlowProduct(prod) ? 'psicoplanilhas-flow' : undefined}
               className={cn(
                 categoryToBlockClass(prod.category, prod.slug),
                 'rounded-block p-8 md:p-10 flex flex-col gap-6 min-h-[320px]'
@@ -313,6 +333,28 @@ export default function AppProdutosPage() {
                       Assinar Relatórios IA
                       <ArrowRight className="w-4 h-4" aria-hidden="true" />
                     </Link>
+                  )
+                ) : isFlowProduct(prod) ? (
+                  hasFlowAccess ? (
+                    <button
+                      onClick={handleActivateFlow}
+                      className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
+                    >
+                      Ativar Flow neste computador
+                      <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                    </button>
+                  ) : (
+                    <div className="flex flex-col gap-2 flex-1">
+                      <button
+                        onClick={() => setFlowBuyMessage(true)}
+                        className="inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
+                      >
+                        Comprar por R$39
+                      </button>
+                      {flowBuyMessage && (
+                        <p className="text-pp-ink-soft text-xs text-center">Compra em breve pelo painel.</p>
+                      )}
+                    </div>
                   )
                 ) : (
                   (prod.video_url || prod.checkout_url) && (

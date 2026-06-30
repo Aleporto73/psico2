@@ -65,6 +65,14 @@ function IconUser() {
   );
 }
 
+function IconFlow() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  );
+}
+
 function IconLogout() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -89,11 +97,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  const navItems = [
+  const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string }[] = [
     { name: 'Dashboard',        path: '/app',                  icon: <IconDashboard /> },
     { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
     { name: 'Assistente GPT',   path: '/app/assistente-gpt',   icon: <IconChat /> },
     { name: 'Assistente de Relatórios IA',path: '/app/assistente-pro',   icon: <IconSpark /> },
+    { name: 'PsicoPlanilhas Flow', path: '/app/produtos#psicoplanilhas-flow', icon: <IconFlow />, badge: 'Novo' },
     { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
   ];
@@ -121,7 +130,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {/* Navegação */}
           <nav className="space-y-0.5" aria-label="Navegação principal">
             {navItems.map((item) => {
-              const isActive = pathname === item.path;
+              const isActive = !item.path.includes('#') && pathname === item.path;
               return (
                 <Link
                   key={item.path}
@@ -134,7 +143,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   aria-current={isActive ? 'page' : undefined}
                 >
                   <span className="shrink-0 opacity-90">{item.icon}</span>
-                  <span>{item.name}</span>
+                  <span className="flex items-center gap-2">
+                    {item.name}
+                    {item.badge && (
+                      <span className="text-[9px] font-semibold bg-green-500 text-white px-1.5 py-0.5 rounded-full leading-none">
+                        {item.badge}
+                      </span>
+                    )}
+                  </span>
                 </Link>
               );
             })}
@@ -180,7 +196,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           aria-label="Navegação mobile"
         >
           {navItems.map((item) => {
-            const isActive = pathname === item.path;
+            const isActive = !item.path.includes('#') && pathname === item.path;
             return (
               <Link
                 key={item.path}
@@ -193,7 +209,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 aria-current={isActive ? 'page' : undefined}
               >
                 <span className="opacity-90">{item.icon}</span>
-                <span className="hidden sm:block leading-none">{item.name}</span>
+                <span className="hidden sm:flex items-center gap-1 leading-none">
+                  {item.name}
+                  {item.badge && (
+                    <span className="text-[8px] font-semibold bg-green-500 text-white px-1 py-0.5 rounded-full leading-none">
+                      {item.badge}
+                    </span>
+                  )}
+                </span>
               </Link>
             );
           })}
