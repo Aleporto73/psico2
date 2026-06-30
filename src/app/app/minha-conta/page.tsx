@@ -55,13 +55,20 @@ export default function AppMinhaContaPage() {
       setProfileType(prof.profile_type || 'unknown');
 
       // 2. Fetch Access stats from view
-      const { data: accessStats } = await supabase
+      const { data: accessStats, error: accessErr } = await supabase
         .from('user_access_status')
-        .select('has_lifetime_access, has_active_assistant, assistant_expires_at, has_flow_access')
+        .select('*')
         .eq('user_id', user.id)
         .single();
+      if (accessErr) console.error('[minha-conta] user_access_status:', accessErr);
 
-      setStats(accessStats);
+      // RPC como fonte autoritativa — não depende do cache do schema da view
+      const { data: flowAccess } = await supabase.rpc('has_flow_access', { user_uuid: user.id });
+
+      setStats(accessStats
+        ? { ...(accessStats as unknown as ClientStats), has_flow_access: Boolean(flowAccess) }
+        : null
+      );
     } catch (err: any) {
       console.error('Error fetching account data:', err);
       setErrorMsg('Não foi possível carregar os dados da conta. Tente novamente.');
