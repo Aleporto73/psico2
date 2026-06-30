@@ -85,18 +85,20 @@ export default function AppProdutosPage() {
       if (!user) return;
 
       // 1. Fetch user profile type from user_access_status
-      const { data: status } = await supabase
+      const { data: status, error: statusError } = await supabase
         .from('user_access_status')
-        .select('profile_type, has_lifetime_access, has_active_assistant, assistant_expires_at, has_flow_access')
+        .select('*')
         .eq('user_id', user.id)
         .single();
 
+      if (statusError) console.error('[produtos] user_access_status:', statusError);
       if (status) {
-        setProfileType(status.profile_type || 'unknown');
-        setHasLifetimeAccess(Boolean(status.has_lifetime_access));
-        setHasAssistantAccess(Boolean(status.has_active_assistant));
-        setAssistantExpiresAt(status.assistant_expires_at || null);
-        setHasFlowAccess(Boolean((status as Record<string, unknown>).has_flow_access));
+        const s = status as Record<string, unknown>;
+        setProfileType((s.profile_type as string) || 'unknown');
+        setHasLifetimeAccess(Boolean(s.has_lifetime_access));
+        setHasAssistantAccess(Boolean(s.has_active_assistant));
+        setAssistantExpiresAt((s.assistant_expires_at as string | null) || null);
+        setHasFlowAccess(Boolean(s.has_flow_access));
       }
 
       // 2. Fetch products from products_public (view sanitizada — sem access_url).
