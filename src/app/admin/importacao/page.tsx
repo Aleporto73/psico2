@@ -42,6 +42,7 @@ export default function AdminImportacaoPage() {
     profile_type: 'unknown',
     source: 'manual_pix',
     has_lifetime_access: false,
+    has_flow_access: false,
     activate_pro: false,
     pro_expires_at: '',
   });
@@ -391,6 +392,7 @@ export default function AdminImportacaoPage() {
         profile_type: 'unknown',
         source: 'manual_pix',
         has_lifetime_access: false,
+        has_flow_access: false,
         activate_pro: false,
         pro_expires_at: '',
       });
@@ -820,6 +822,18 @@ export default function AdminImportacaoPage() {
                         )}
                       </div>
                       <div className="flex justify-between items-center text-sm">
+                        <span className="text-[#CBD5E1]">PsicoPlanilhas Flow</span>
+                        {manualResult.client.flow_status !== 'não liberado' ? (
+                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 uppercase">
+                            Liberado
+                          </span>
+                        ) : (
+                          <span className="px-3 py-1 text-xs font-bold rounded-full text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C] uppercase">
+                            Não liberado
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex justify-between items-center text-sm">
                         <span className="text-[#CBD5E1]">Assistente IA Pro</span>
                         {manualResult.client.pro_status !== 'não ativado' ? (
                           <span className="px-3 py-1 text-xs font-bold rounded-full text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20 uppercase">
@@ -898,6 +912,7 @@ export default function AdminImportacaoPage() {
                         profile_type: 'unknown',
                         source: 'manual_pix',
                         has_lifetime_access: false,
+                        has_flow_access: false,
                         activate_pro: false,
                         pro_expires_at: '',
                       });
@@ -1052,6 +1067,33 @@ export default function AdminImportacaoPage() {
                         </span>
                         <p className="text-[10px] text-[#94A3B8] leading-normal">
                           Libera acesso permanente a toda a biblioteca de planilhas e ao Assistente GPT Incluso (externo).
+                        </p>
+                      </div>
+                    </label>
+
+                    {/* Checkbox PsicoPlanilhas Flow */}
+                    <label
+                      htmlFor="manual_flow"
+                      className={`flex items-start space-x-3 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${
+                        manualForm.has_flow_access
+                          ? 'bg-[#0E2A38] border-[#7DD3FC] shadow-md shadow-[#7DD3FC]/5'
+                          : 'bg-[#061923] border-[#1F4D5C] hover:border-[#7DD3FC]/50'
+                      }`}
+                    >
+                      <input
+                        id="manual_flow"
+                        name="has_flow_access"
+                        type="checkbox"
+                        checked={manualForm.has_flow_access}
+                        onChange={handleManualChange}
+                        className="mt-1 w-4 h-4 text-[#061923] bg-[#061923] border-[#1F4D5C] rounded focus:ring-[#7DD3FC]/50 focus:ring-2 accent-[#7DD3FC]"
+                      />
+                      <div className="space-y-1">
+                        <span className="text-xs font-bold text-[#F8FAFC] uppercase tracking-wider block">
+                          Liberar PsicoPlanilhas Flow
+                        </span>
+                        <p className="text-[10px] text-[#94A3B8] leading-normal">
+                          Libera acesso vitalício ao app externo PsicoPlanilhas Flow (pagamento único).
                         </p>
                       </div>
                     </label>

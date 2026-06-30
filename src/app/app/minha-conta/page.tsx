@@ -18,6 +18,7 @@ interface ClientStats {
   has_lifetime_access: boolean;
   has_active_assistant: boolean;
   assistant_expires_at: string | null;
+  has_flow_access: boolean;
 }
 
 export default function AppMinhaContaPage() {
@@ -56,7 +57,7 @@ export default function AppMinhaContaPage() {
       // 2. Fetch Access stats from view
       const { data: accessStats } = await supabase
         .from('user_access_status')
-        .select('has_lifetime_access, has_active_assistant, assistant_expires_at')
+        .select('has_lifetime_access, has_active_assistant, assistant_expires_at, has_flow_access')
         .eq('user_id', user.id)
         .single();
 
@@ -183,6 +184,19 @@ export default function AppMinhaContaPage() {
               {stats?.has_lifetime_access ? (
                 <span className="inline-block px-3 py-1 text-xs font-medium text-pp-success bg-pp-success/10 rounded-pill">
                   Acesso vitalício liberado
+                </span>
+              ) : (
+                <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink-soft bg-pp-hairline-soft rounded-pill">
+                  Sem acesso
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-pp-ink-soft block text-xs font-medium">PsicoPlanilhas Flow</span>
+              {stats?.has_flow_access ? (
+                <span className="inline-block px-3 py-1 text-xs font-medium text-pp-success bg-pp-success/10 rounded-pill">
+                  Acesso liberado
                 </span>
               ) : (
                 <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink-soft bg-pp-hairline-soft rounded-pill">

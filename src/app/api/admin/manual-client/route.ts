@@ -18,6 +18,7 @@ export async function POST(request: Request) {
       profile_type,
       source,
       has_lifetime_access,
+      has_flow_access,
       activate_pro,
       pro_expires_at,
     } = body;
@@ -238,6 +239,69 @@ export async function POST(request: Request) {
       }
     }
 
+    // 5b. Provision PsicoPlanilhas Flow access (purchases) if checked
+    let flowStatus = 'não liberado';
+    if (has_flow_access) {
+      const { data: flowProduct, error: flowProdErr } = await adminSupabase
+        .from('products')
+        .select('id')
+        .eq('slug', 'psicoplanilhas-flow')
+        .maybeSingle();
+
+      if (flowProdErr || !flowProduct) {
+        return NextResponse.json(
+          { message: 'Produto psicoplanilhas-flow não cadastrado no sistema.' },
+          { status: 500 }
+        );
+      }
+
+      // limit(1): purchases não tem unique (user_id, product_id); sem isto,
+      // maybeSingle lançaria em caso de múltiplas linhas. Mesma guarda do action route.
+      const { data: existingFlowPurchase } = await adminSupabase
+        .from('purchases')
+        .select('id, payment_status')
+        .eq('user_id', userId)
+        .eq('product_id', flowProduct.id)
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingFlowPurchase) {
+        const { error: flowPurchaseErr } = await adminSupabase.from('purchases').insert({
+          user_id: userId,
+          product_id: flowProduct.id,
+          payment_status: 'manual',
+          source: cleanSource,
+        });
+        if (flowPurchaseErr) {
+          console.error('Error inserting flow purchase:', flowPurchaseErr);
+          return NextResponse.json(
+            { message: 'Erro ao salvar compra do PsicoPlanilhas Flow.' },
+            { status: 500 }
+          );
+        }
+        flowStatus = 'liberado';
+      } else {
+        // Não sobrescreve compra paga; só reativa se estava cancelada/estornada.
+        if (existingFlowPurchase.payment_status !== 'paid' && existingFlowPurchase.payment_status !== 'manual') {
+          const { error: flowUpdateErr } = await adminSupabase
+            .from('purchases')
+            .update({ payment_status: 'manual' })
+            .eq('id', existingFlowPurchase.id);
+
+          if (flowUpdateErr) {
+            console.error('Error updating flow purchase status:', flowUpdateErr);
+            return NextResponse.json(
+              { message: 'Erro ao reativar compra do PsicoPlanilhas Flow.' },
+              { status: 500 }
+            );
+          }
+          flowStatus = 'liberado';
+        } else {
+          flowStatus = 'já existia';
+        }
+      }
+    }
+
     // 6. Provision Assistente IA Pro (subscriptions) if checked
     let proStatus = 'não ativado';
     let proExpiresAt: string | null = null;
@@ -319,6 +383,7 @@ export async function POST(request: Request) {
         email: normalizedEmail,
         source: cleanSource,
         has_lifetime_access: !!has_lifetime_access,
+        has_flow_access: !!has_flow_access,
         activate_pro: !!activate_pro,
         pro_expires_at: proExpiresAt,
       },
@@ -339,6 +404,7 @@ export async function POST(request: Request) {
         name: cleanName,
         activation_status: finalProfile?.activation_status || 'pending_activation',
         has_lifetime_access: lifetimeStatus,
+        flow_status: flowStatus,
         pro_status: proStatus,
         pro_expires_at: proExpiresAt,
       },

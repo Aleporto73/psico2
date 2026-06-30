@@ -33,7 +33,7 @@ export async function POST(
       return NextResponse.json({ message: 'Cliente não encontrado.' }, { status: 404 });
     }
 
-    const destructiveActions = ['bloquear', 'cancelar-vitalicio', 'cancelar-pro'];
+    const destructiveActions = ['bloquear', 'cancelar-vitalicio', 'cancelar-pro', 'cancelar-flow'];
 
     if (destructiveActions.includes(action)) {
       if (clientProfile.id === adminUser?.id) {
@@ -66,6 +66,15 @@ export async function POST(
       .select('id')
       .eq('slug', 'assistente-ia-pro')
       .single();
+
+    // maybeSingle (não single): se a migration do Flow não estiver aplicada neste
+    // ambiente, flowProduct fica null e os cases liberar/cancelar-flow respondem 400
+    // limpo, em vez de derrubar TODAS as ações desta rota com erro de "no rows".
+    const { data: flowProduct } = await adminSupabase
+      .from('products')
+      .select('id')
+      .eq('slug', 'psicoplanilhas-flow')
+      .maybeSingle();
 
     // ==========================================
     // PROCESS ACTIONS
@@ -154,28 +163,43 @@ export async function POST(
           return NextResponse.json({ message: 'Produto psicoplanilhas-vitalicio não cadastrado.' }, { status: 400 });
         }
 
-        // Check if manual purchase already exists
-        const { data: existingPurchase } = await adminSupabase
+        // Só cria/reativa se ainda não houver acesso ativo (paid OU manual).
+        // limit(1)+maybeSingle evita erro PGRST116 em linhas duplicadas: purchases
+        // não tem unique por (user_id, product_id).
+        const { data: activeVitalicio } = await adminSupabase
           .from('purchases')
-          .select('*')
+          .select('id')
           .eq('user_id', clientId)
           .eq('product_id', vitalicioProduct.id)
+          .in('payment_status', ['paid', 'manual'])
+          .limit(1)
           .maybeSingle();
 
-        if (existingPurchase) {
-          // Reactivate existing purchase
-          await adminSupabase
+        if (!activeVitalicio) {
+          // Reativa compra anterior cancelada/estornada, se existir; senão cria nova manual.
+          const { data: inactiveVitalicio } = await adminSupabase
             .from('purchases')
-            .update({ payment_status: 'manual' })
-            .eq('id', existingPurchase.id);
-        } else {
-          // Create new manual purchase
-          await adminSupabase.from('purchases').insert({
-            user_id: clientId,
-            product_id: vitalicioProduct.id,
-            payment_status: 'manual',
-            source: 'admin',
-          });
+            .select('id')
+            .eq('user_id', clientId)
+            .eq('product_id', vitalicioProduct.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (inactiveVitalicio) {
+            const { error: reactErr } = await adminSupabase
+              .from('purchases')
+              .update({ payment_status: 'manual' })
+              .eq('id', inactiveVitalicio.id);
+            if (reactErr) throw new Error(`Erro ao reativar acesso vitalício: ${reactErr.message}`);
+          } else {
+            const { error: insErr } = await adminSupabase.from('purchases').insert({
+              user_id: clientId,
+              product_id: vitalicioProduct.id,
+              payment_status: 'manual',
+              source: 'admin',
+            });
+            if (insErr) throw new Error(`Erro ao liberar acesso vitalício: ${insErr.message}`);
+          }
         }
 
         await adminSupabase.from('admin_logs').insert({
@@ -194,12 +218,13 @@ export async function POST(
           return NextResponse.json({ message: 'Produto psicoplanilhas-vitalicio não cadastrado.' }, { status: 400 });
         }
 
-        // Cancel all purchases of this product for this user
+        // Only cancel manual purchases — paid purchases must follow the official refund flow
         const { error: cancelErr = null } = await adminSupabase
           .from('purchases')
           .update({ payment_status: 'cancelled' })
           .eq('user_id', clientId)
-          .eq('product_id', vitalicioProduct.id);
+          .eq('product_id', vitalicioProduct.id)
+          .eq('payment_status', 'manual');
 
         if (cancelErr) throw cancelErr;
 
@@ -212,6 +237,89 @@ export async function POST(
         });
 
         return NextResponse.json({ message: 'Acesso vitalício cancelado com sucesso!' });
+      }
+
+      case 'liberar-flow': {
+        if (!flowProduct) {
+          return NextResponse.json({ message: 'Produto psicoplanilhas-flow não cadastrado.' }, { status: 400 });
+        }
+
+        // Só cria/reativa se ainda não houver acesso ativo (paid OU manual).
+        // limit(1)+maybeSingle evita erro de múltiplas linhas: purchases não tem
+        // unique por (user_id, product_id), e o webhook futuro também grava aqui.
+        const { data: activeFlow } = await adminSupabase
+          .from('purchases')
+          .select('id')
+          .eq('user_id', clientId)
+          .eq('product_id', flowProduct.id)
+          .in('payment_status', ['paid', 'manual'])
+          .limit(1)
+          .maybeSingle();
+
+        if (!activeFlow) {
+          // Reativa uma compra anterior cancelada/estornada, se existir; senão cria nova manual.
+          const { data: inactiveFlow } = await adminSupabase
+            .from('purchases')
+            .select('id')
+            .eq('user_id', clientId)
+            .eq('product_id', flowProduct.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (inactiveFlow) {
+            const { error: reactErr } = await adminSupabase
+              .from('purchases')
+              .update({ payment_status: 'manual' })
+              .eq('id', inactiveFlow.id);
+            if (reactErr) throw new Error(`Erro ao reativar acesso Flow: ${reactErr.message}`);
+          } else {
+            const { error: insErr } = await adminSupabase.from('purchases').insert({
+              user_id: clientId,
+              product_id: flowProduct.id,
+              payment_status: 'manual',
+              source: 'admin',
+            });
+            if (insErr) throw new Error(`Erro ao liberar acesso Flow: ${insErr.message}`);
+          }
+        }
+
+        await adminSupabase.from('admin_logs').insert({
+          admin_id: adminUser?.id,
+          action: 'liberar acesso flow',
+          target_table: 'purchases',
+          target_id: clientId,
+          metadata: { product_slug: 'psicoplanilhas-flow' },
+        });
+
+        return NextResponse.json({ message: 'Acesso ao PsicoPlanilhas Flow liberado com sucesso!' });
+      }
+
+      case 'cancelar-flow': {
+        if (!flowProduct) {
+          return NextResponse.json({ message: 'Produto psicoplanilhas-flow não cadastrado.' }, { status: 400 });
+        }
+
+        // PROTEÇÃO: cancela APENAS acesso manual. O filtro .eq('payment_status','manual')
+        // garante que compras pagas ('paid') NÃO são tocadas — elas devem seguir o
+        // fluxo de pagamento/estorno oficial, nunca cancelamento administrativo manual.
+        const { error: cancelErr = null } = await adminSupabase
+          .from('purchases')
+          .update({ payment_status: 'cancelled' })
+          .eq('user_id', clientId)
+          .eq('product_id', flowProduct.id)
+          .eq('payment_status', 'manual');
+
+        if (cancelErr) throw new Error(`Erro ao cancelar acesso Flow: ${cancelErr.message}`);
+
+        await adminSupabase.from('admin_logs').insert({
+          admin_id: adminUser?.id,
+          action: 'cancelar acesso flow',
+          target_table: 'purchases',
+          target_id: clientId,
+          metadata: { product_slug: 'psicoplanilhas-flow' },
+        });
+
+        return NextResponse.json({ message: 'Acesso manual ao PsicoPlanilhas Flow cancelado com sucesso!' });
       }
 
       case 'ativar-pro': {

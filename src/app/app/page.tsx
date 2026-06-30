@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { HeroBanner } from '@/components/ui/hero-banner';
-import { FileText, MessageSquare, Sparkles, Lock, Play, X, ArrowRight } from 'lucide-react';
+import { FileText, MessageSquare, Sparkles, Lock, Play, X, ArrowRight, Workflow } from 'lucide-react';
 
 interface ClientStats {
   name: string | null;
@@ -13,7 +13,12 @@ interface ClientStats {
   has_lifetime_access: boolean;
   has_active_assistant: boolean;
   assistant_expires_at: string | null;
+  has_flow_access: boolean;
 }
+
+// Flow não tem checkout próprio ainda. Quando o fluxo de pagamento existir,
+// preencha aqui (espelha CHECKOUT_URL_IA_PRO da página assistente-pro).
+const FLOW_CHECKOUT_URL = '';
 
 // ── Helpers de apresentação ──────────────────────────────────────────────────
 
@@ -46,10 +51,41 @@ export default function AppDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeVideoUrl, setActiveVideoUrl] = useState<string | null>(null);
   const [activeVideoCta, setActiveVideoCta] = useState<{ text: string; url: string } | null>(null);
+  const [flowOpening, setFlowOpening] = useState(false);
+  const [flowMsg, setFlowMsg] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProfileStatus();
   }, []);
+
+  // Ativa o Flow neste computador: pede um token one-time ao backend
+  // (/api/flow/generate-token só responde com acesso confirmado) e abre o app
+  // Flow com o token no fragmento da URL — token nunca fica no bundle.
+  const handleOpenFlow = async () => {
+    setFlowMsg(null);
+    setFlowOpening(true);
+    try {
+      const res = await fetch('/api/flow/generate-token', { method: 'POST' });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.activationUrl) {
+        setFlowMsg('Não foi possível ativar o Flow agora. Atualize a página ou fale com o suporte.');
+        return;
+      }
+      window.open(data.activationUrl as string, '_blank', 'noopener,noreferrer');
+    } catch {
+      setFlowMsg('Não foi possível ativar o Flow agora. Atualize a página ou fale com o suporte.');
+    } finally {
+      setFlowOpening(false);
+    }
+  };
+
+  const handleBuyFlow = () => {
+    if (FLOW_CHECKOUT_URL) {
+      window.open(FLOW_CHECKOUT_URL, '_blank', 'noopener,noreferrer');
+    } else {
+      setFlowMsg('Em breve! A compra do PsicoPlanilhas Flow ainda não está disponível por aqui. Fale com o suporte para liberar seu acesso.');
+    }
+  };
 
   const fetchProfileStatus = async () => {
     try {
@@ -250,6 +286,53 @@ export default function AppDashboardPage() {
           </div>
         </article>
 
+      </section>
+
+      {/* 3b. PSICOPLANILHAS FLOW — produto externo, ativação via token one-time (/api/flow/generate-token) */}
+      <section className="bg-pp-block-lilac rounded-block p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-3 max-w-2xl">
+          <div className="flex items-center gap-2 text-pp-ink-soft">
+            <Workflow className="w-5 h-5" aria-hidden="true" />
+            <p className="font-serif italic text-sm">
+              {profile?.has_flow_access ? 'Seu acesso' : 'Ferramenta externa'}
+            </p>
+          </div>
+          <h2 className="text-2xl md:text-[28px] text-pp-ink font-medium leading-tight">
+            PsicoPlanilhas Flow
+          </h2>
+          <p className="text-pp-ink-soft text-base leading-relaxed">
+            {profile?.has_flow_access
+              ? 'Seu acesso vitalício está liberado. Abra o app Flow em uma nova aba.'
+              : 'App externo para organizar seu fluxo de atendimentos. Acesso vitalício por pagamento único de R$39.'}
+          </p>
+          {flowMsg && (
+            <p className="text-sm text-pp-ink bg-white/60 rounded-xl px-4 py-2.5 leading-relaxed">
+              {flowMsg}
+            </p>
+          )}
+        </div>
+        <div className="shrink-0">
+          {profile?.has_flow_access ? (
+            <button
+              type="button"
+              onClick={handleOpenFlow}
+              disabled={flowOpening}
+              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {flowOpening ? 'Ativando...' : 'Ativar Flow neste computador'}
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleBuyFlow}
+              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+            >
+              <Lock className="w-4 h-4" aria-hidden="true" />
+              Comprar por R$39
+            </button>
+          )}
+        </div>
       </section>
 
       {/* 4. WARNING SE PERFIL DESCONHECIDO (lógica mantida) */}
