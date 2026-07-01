@@ -1,4 +1,9 @@
-import { ExternalLink, Workflow, Calendar, Users, ListChecks, Wand2, Download, Printer, Image as ImageIcon } from 'lucide-react';
+'use client';
+
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { createClient } from '@/utils/supabase/client';
+import { ExternalLink, Workflow, Calendar, Users, ListChecks, Wand2, Download, Printer, Image as ImageIcon, ArrowRight } from 'lucide-react';
 
 const FLOW_URL = 'https://flow.psicoplanilha.com';
 
@@ -21,6 +26,40 @@ const STEPS = [
 const SCREENS = ['Dashboard', 'Aprendentes', 'Plano semanal', 'Atividades', 'Prompts/Roteiros', 'Meus dados/backup'];
 
 export default function AppFlowPage() {
+  const [hasFlowAccess, setHasFlowAccess] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+
+    (async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          if (!cancelled) setHasFlowAccess(false);
+          return;
+        }
+        const { data, error } = await supabase
+          .from('user_access_status')
+          .select('has_flow_access')
+          .eq('user_id', user.id)
+          .single();
+        if (cancelled) return;
+        if (error) {
+          setHasFlowAccess(false);
+          return;
+        }
+        setHasFlowAccess(Boolean(data?.has_flow_access));
+      } catch {
+        if (!cancelled) setHasFlowAccess(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
@@ -54,16 +93,33 @@ export default function AppFlowPage() {
         </p>
 
         <div>
-          <a
-            href={FLOW_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
-          >
-            Acessar PsicoPlanilhas Flow
-            <ExternalLink className="w-4 h-4" aria-hidden="true" />
-          </a>
-          <p className="text-xs text-pp-ink-soft mt-2">Abre em uma nova aba.</p>
+          {hasFlowAccess === null ? (
+            <div className="h-[52px] w-72 max-w-full rounded-pill bg-pp-ink/10 animate-pulse" />
+          ) : hasFlowAccess === true ? (
+            <>
+              <a
+                href={FLOW_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
+              >
+                Acessar PsicoPlanilhas Flow
+                <ExternalLink className="w-4 h-4" aria-hidden="true" />
+              </a>
+              <p className="text-xs text-pp-ink-soft mt-2">Abre em uma nova aba.</p>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/app/produtos#psicoplanilhas-flow"
+                className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
+              >
+                Comprar por R$39,00
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              </Link>
+              <p className="text-xs text-pp-ink-soft mt-2">Você será levado até a vitrine de produtos.</p>
+            </>
+          )}
         </div>
       </section>
 
