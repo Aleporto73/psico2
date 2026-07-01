@@ -954,7 +954,7 @@ export default function AppAssistenteProPage() {
             </p>
             <p className="text-pp-ink-soft text-base leading-relaxed pt-1">
               Renove sua assinatura anual do Assistente de Relatórios IA por apenas{' '}
-              <strong className="font-medium text-pp-ink">R$50/ano</strong> para continuar gerando relatórios de apoio a
+              <strong className="font-medium text-pp-ink">R$57/ano</strong> para continuar gerando relatórios de apoio a
               partir das suas planilhas profissionais.
             </p>
           </div>
@@ -963,7 +963,7 @@ export default function AppAssistenteProPage() {
             onClick={() => window.open(CHECKOUT_URL_IA_PRO, '_blank', 'noopener,noreferrer')}
             className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
           >
-            Renovar assinatura (R$50/ano)
+            Renovar assinatura (R$57/ano)
           </button>
         </div>
       )}
@@ -977,7 +977,7 @@ export default function AppAssistenteProPage() {
             <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Assistente de Relatórios IA bloqueado</h2>
             <p className="text-pp-ink-soft text-base leading-relaxed">
               O Assistente de Relatórios IA é um recurso adicional com assinatura anual. Assine por apenas{' '}
-              <strong className="font-medium text-pp-ink">R$50/ano</strong> para gerar relatórios de apoio estruturados
+              <strong className="font-medium text-pp-ink">R$57/ano</strong> para gerar relatórios de apoio estruturados
               diretamente integrados com seus dados de planilhas profissionais.
             </p>
           </div>
@@ -1018,7 +1018,7 @@ export default function AppAssistenteProPage() {
             onClick={() => window.open(CHECKOUT_URL_IA_PRO, '_blank', 'noopener,noreferrer')}
             className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
           >
-            Assinar por R$50/ano
+            Assinar por R$57/ano
           </button>
         </div>
       )}
