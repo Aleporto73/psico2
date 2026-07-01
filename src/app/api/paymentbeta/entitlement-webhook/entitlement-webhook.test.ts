@@ -288,6 +288,7 @@ function signedRequest(
 const products = () => [
   { id: 'prod-vit', slug: 'psicoplanilhas-vitalicio' },
   { id: 'prod-ia', slug: 'assistente-ia-pro' },
+  { id: 'prod-flow', slug: 'psicoplanilhas-flow' },
 ];
 
 type Body = { status?: string; message?: string; previous_status?: string };
@@ -569,5 +570,69 @@ describe('POST /api/paymentbeta/entitlement-webhook', () => {
     expect(createUserCalls).toHaveLength(0);
     expect(db.tables.subscriptions).toHaveLength(0);
     expect(db.tables.paymentbeta_webhook_events[0].status).toBe('invalid_payload');
+  });
+
+  it('14) comprador novo + psicoplanilhas-flow: cria usuário, grava purchase (prod-flow) e envia ativação', async () => {
+    const db = new FakeDb({ products: products() });
+    const { client, createUserCalls } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const payload = vitalicioPayload({
+      entitlement: { code: 'psicoplanilhas-flow' },
+      customer: { email: 'flow@x.com' },
+    });
+
+    const res = await POST(signedRequest(payload));
+    const body = (await res.json()) as Body;
+
+    expect(res.status).toBe(200);
+    expect(body.status).toBe('processed');
+    expect(createUserCalls).toHaveLength(1);
+    expect(mocks.sendActivationLink).toHaveBeenCalledTimes(1);
+    // Concessão foi realmente gravada (não é sucesso silencioso).
+    expect(db.tables.purchases).toHaveLength(1);
+    expect(db.tables.purchases[0].product_id).toBe('prod-flow');
+    expect(db.tables.purchases[0].payment_status).toBe('paid');
+    // Flow NUNCA usa subscriptions.
+    expect(db.tables.subscriptions).toHaveLength(0);
+  });
+
+  it('15) psicoplanilhas-flow reativa purchase cancelada sem duplicar', async () => {
+    const db = new FakeDb({
+      products: products(),
+      profiles: [{ id: 'u-1', email: 'flow@x.com', activation_status: 'active', status: 'active' }],
+      purchases: [
+        {
+          id: 'pf-1',
+          user_id: 'u-1',
+          product_id: 'prod-flow',
+          payment_reference: 'ref-antiga',
+          payment_status: 'cancelled',
+        },
+      ],
+    });
+    const { client, createUserCalls } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const payload = vitalicioPayload({
+      entitlement: { code: 'psicoplanilhas-flow' },
+      customer: { email: 'flow@x.com' },
+      delivery_id: 'dlv-flow',
+      transaction_id: 'tx-flow',
+    });
+
+    const res = await POST(signedRequest(payload, { deliveryId: 'dlv-flow' }));
+    const body = (await res.json()) as Body;
+
+    expect(res.status).toBe(200);
+    expect(body.status).toBe('processed');
+    expect(createUserCalls).toHaveLength(0);
+    // Reativou a linha existente (update), não inseriu outra.
+    expect(db.tables.purchases).toHaveLength(1);
+    expect(db.tables.purchases[0].id).toBe('pf-1');
+    expect(db.tables.purchases[0].payment_status).toBe('paid');
+    expect(db.tables.purchases[0].payment_reference).toBe('tx-flow');
+    // Flow NUNCA usa subscriptions.
+    expect(db.tables.subscriptions).toHaveLength(0);
   });
 });
