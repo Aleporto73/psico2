@@ -102,7 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
     { name: 'Assistente GPT',   path: '/app/assistente-gpt',   icon: <IconChat /> },
     { name: 'Assistente de Relatórios IA',path: '/app/assistente-pro',   icon: <IconSpark /> },
-    { name: 'PsicoPlanilhas Flow', path: 'https://flow.psicoplanilha.com', icon: <IconFlow />, badge: 'Novo', external: true },
+    { name: 'PsicoPlanilhas Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
     { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
   ];

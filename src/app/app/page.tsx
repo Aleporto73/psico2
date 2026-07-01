@@ -268,15 +268,13 @@ export default function AppDashboardPage() {
           </p>
         </div>
         <div className="shrink-0">
-          <a
-            href="https://flow.psicoplanilha.com"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/app/flow"
             className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
           >
             Acessar PsicoPlanilhas Flow
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
-          </a>
+          </Link>
         </div>
       </section>
 

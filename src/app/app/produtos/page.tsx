@@ -324,15 +324,13 @@ export default function AppProdutosPage() {
                     </Link>
                   )
                 ) : isFlowProduct(prod) ? (
-                  <a
-                    href="https://flow.psicoplanilha.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Link
+                    href="/app/flow"
                     className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
                   >
                     Acessar PsicoPlanilhas Flow
-                    <ExternalLink className="w-4 h-4" aria-hidden="true" />
-                  </a>
+                    <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                  </Link>
                 ) : (
                   (prod.video_url || prod.checkout_url) && (
                     <button
