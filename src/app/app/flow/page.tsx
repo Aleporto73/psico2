@@ -80,13 +80,15 @@ export default function AppFlowPage() {
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           <p className="text-pp-ink text-3xl md:text-4xl font-medium">
-            R$39,00
+            R$47,00
             <span className="text-pp-ink-soft text-base font-normal ml-2">pagamento único</span>
           </p>
           <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink bg-white/60 rounded-pill">
             Licença vitalícia por computador
           </span>
         </div>
+
+        <p className="text-pp-ink-soft text-sm font-medium">Pague uma vez e use Vitalício.</p>
 
         <p className="text-pp-ink-soft text-base leading-relaxed max-w-2xl">
           O Flow é um aplicativo separado do Psico2. Suas informações ficam guardadas no seu próprio computador.
@@ -114,7 +116,7 @@ export default function AppFlowPage() {
                 href="/app/produtos#psicoplanilhas-flow"
                 className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
               >
-                Comprar por R$39,00
+                Comprar por R$47,00
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
               <p className="text-xs text-pp-ink-soft mt-2">Você será levado até a vitrine de produtos.</p>
