@@ -23,6 +23,7 @@ interface ClientStats {
   has_lifetime_access: boolean;
   has_active_assistant: boolean;
   assistant_expires_at: string | null;
+  has_flow_access: boolean;
 }
 
 export default function AppMinhaContaPage() {
@@ -72,13 +73,14 @@ export default function AppMinhaContaPage() {
       setCredentialNumber(prof.credential_number || '');
 
       // 2. Fetch Access stats from view
-      const { data: accessStats } = await supabase
+      const { data: accessStats, error: accessErr } = await supabase
         .from('user_access_status')
-        .select('has_lifetime_access, has_active_assistant, assistant_expires_at')
+        .select('*')
         .eq('user_id', user.id)
         .single();
+      if (accessErr) console.error('[minha-conta] user_access_status:', accessErr);
 
-      setStats(accessStats);
+      setStats(accessStats ? (accessStats as unknown as ClientStats) : null);
     } catch (err: any) {
       console.error('Error fetching account data:', err);
       setErrorMsg('Não foi possível carregar os dados da conta. Tente novamente.');
@@ -229,6 +231,19 @@ export default function AppMinhaContaPage() {
               {stats?.has_lifetime_access ? (
                 <span className="inline-block px-3 py-1 text-xs font-medium text-pp-success bg-pp-success/10 rounded-pill">
                   Acesso vitalício liberado
+                </span>
+              ) : (
+                <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink-soft bg-pp-hairline-soft rounded-pill">
+                  Sem acesso
+                </span>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <span className="text-pp-ink-soft block text-xs font-medium">PsicoPlanilhas Flow</span>
+              {stats?.has_flow_access ? (
+                <span className="inline-block px-3 py-1 text-xs font-medium text-pp-success bg-pp-success/10 rounded-pill">
+                  Acesso liberado
                 </span>
               ) : (
                 <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink-soft bg-pp-hairline-soft rounded-pill">

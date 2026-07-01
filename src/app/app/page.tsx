@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { HeroBanner } from '@/components/ui/hero-banner';
-import { FileText, MessageSquare, Sparkles, Lock, Play, X, ArrowRight } from 'lucide-react';
+import { FileText, MessageSquare, Sparkles, Lock, Play, X, ArrowRight, Workflow } from 'lucide-react';
 
 interface ClientStats {
   name: string | null;
@@ -13,6 +13,7 @@ interface ClientStats {
   has_lifetime_access: boolean;
   has_active_assistant: boolean;
   assistant_expires_at: string | null;
+  has_flow_access: boolean;
 }
 
 // ── Helpers de apresentação ──────────────────────────────────────────────────
@@ -250,6 +251,31 @@ export default function AppDashboardPage() {
           </div>
         </article>
 
+      </section>
+
+      {/* 3b. PSICOPLANILHAS FLOW — produto externo, acesso direto */}
+      <section className="bg-pp-block-lilac rounded-block p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div className="space-y-3 max-w-2xl">
+          <div className="flex items-center gap-2 text-pp-ink-soft">
+            <Workflow className="w-5 h-5" aria-hidden="true" />
+            <p className="font-serif italic text-sm">Ferramenta externa</p>
+          </div>
+          <h2 className="text-2xl md:text-[28px] text-pp-ink font-medium leading-tight">
+            PsicoPlanilhas Flow
+          </h2>
+          <p className="text-pp-ink-soft text-base leading-relaxed">
+            App externo para organizar seu fluxo de atendimentos.
+          </p>
+        </div>
+        <div className="shrink-0">
+          <Link
+            href="/app/flow"
+            className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+          >
+            Acessar PsicoPlanilhas Flow
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </Link>
+        </div>
       </section>
 
       {/* 4. WARNING SE PERFIL DESCONHECIDO (lógica mantida) */}
