@@ -497,7 +497,7 @@ export default function AdminClienteDetalhePage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-start gap-3 flex-wrap">
                   <div className="space-y-1">
-                    <h4 className="font-semibold text-[#F8FAFC] text-base">Assinatura do Assistente IA Pro (R$50/ano)</h4>
+                    <h4 className="font-semibold text-[#F8FAFC] text-base">Assinatura do Assistente IA Pro (R$57/ano)</h4>
                     <p className="text-sm text-[#CBD5E1] leading-relaxed">Libera a geração inteligente de relatórios profissionais por 1 ano.</p>
                   </div>
                   <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full ${isActivePro(subscription) ? 'text-[#7DD3FC] bg-[#7DD3FC]/10 border border-[#7DD3FC]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>

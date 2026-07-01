@@ -244,8 +244,8 @@ export default function AppDashboardPage() {
               {assistantState === 'active'
                 ? 'Abrir assistente'
                 : assistantState === 'expired'
-                  ? 'Renovar por R$50/ano'
-                  : 'Assinar por R$50/ano'}
+                  ? 'Renovar por R$57/ano'
+                  : 'Assinar por R$57/ano'}
               {assistantState !== 'blocked' && <ArrowRight className="w-4 h-4" aria-hidden="true" />}
             </Link>
           </div>
