@@ -44,3 +44,7 @@ next-env.d.ts
 
 # supabase (CLI temp/state local)
 supabase/.temp/
+
+# relatorios de scripts locais (contem e-mail de clientes)
+scripts/reports/
+.claude/

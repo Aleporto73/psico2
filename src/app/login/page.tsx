@@ -111,7 +111,7 @@ function LoginContent() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-[#061923] text-[#F8FAFC]">
+    <div className="flex min-h-screen flex-col items-center justify-center p-6 bg-pp-canvas text-pp-ink">
 
       {/* Toast de boas-vindas para clientes legacy (migração v1 → v2). Mobile:
           faixa fina no topo; desktop: toast no canto superior direito. Dispensável
@@ -138,27 +138,33 @@ function LoginContent() {
         </div>
       )}
 
-      <div className="w-full max-w-md p-8 space-y-6 bg-[#0B2430] backdrop-blur-md rounded-2xl shadow-2xl border border-[#1F4D5C]">
-        
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-xl border border-pp-hairline">
+
+        {/* Marca tipográfica — igual /app/layout */}
+        <div className="text-center">
+          <p className="font-serif italic text-[22px] leading-tight text-pp-ink">PsicoPlanilhas 2.0</p>
+          <p className="font-serif italic text-xs text-pp-ink-soft mt-0.5">Área do cliente</p>
+        </div>
+
         {/* Title */}
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#F8FAFC]">
+          <h1 className="text-3xl font-extrabold tracking-tight text-pp-ink">
             Entrar na plataforma
           </h1>
-          <p className="text-[#CBD5E1] text-base">
+          <p className="text-pp-ink-soft text-base">
             Acesse suas planilhas e materiais.
           </p>
         </div>
 
         {/* Feedback Messages */}
         {errorMsg && (
-          <div className="p-4 text-base font-medium text-[#FB7185] bg-[#FB7185]/10 border border-[#FB7185]/20 rounded-xl text-center">
+          <div className="p-4 text-base font-medium text-pp-danger bg-pp-danger/10 border border-pp-danger/20 rounded-xl text-center">
             {errorMsg}
           </div>
         )}
 
         {infoMsg && (
-          <div className="p-4 text-base font-medium text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20 rounded-xl text-center">
+          <div className="p-4 text-base font-medium text-pp-success bg-pp-success/10 border border-pp-success/20 rounded-xl text-center">
             {infoMsg}
           </div>
         )}
@@ -166,21 +172,21 @@ function LoginContent() {
         {/* Form */}
         <form onSubmit={handleLogin} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-sm font-bold text-[#CBD5E1]">E-mail</label>
+            <label className="text-sm font-bold text-pp-ink">E-mail</label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="exemplo@email.com"
-              className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
+              className="w-full px-4 py-3.5 bg-white border border-pp-hairline rounded-xl text-base text-pp-ink placeholder-pp-ink-soft/50 focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink transition duration-200"
             />
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between items-center">
-              <label className="text-sm font-bold text-[#CBD5E1]">Senha</label>
-              <Link href="/esqueci-senha" className="text-sm text-[#7DD3FC] hover:text-[#67E8F9] transition">
+              <label className="text-sm font-bold text-pp-ink">Senha</label>
+              <Link href="/esqueci-senha" className="text-sm text-pp-ink-soft underline hover:text-pp-ink transition">
                 Esqueci minha senha
               </Link>
             </div>
@@ -190,18 +196,18 @@ function LoginContent() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-3.5 bg-[#0E2A38] border border-[#1F4D5C] rounded-xl text-base text-[#F8FAFC] placeholder-[#94A3B8]/60 focus:outline-none focus:border-[#7DD3FC] focus:ring-1 focus:ring-[#7DD3FC] transition duration-200"
+              className="w-full px-4 py-3.5 bg-white border border-pp-hairline rounded-xl text-base text-pp-ink placeholder-pp-ink-soft/50 focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink transition duration-200"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 text-base font-bold bg-[#7DD3FC] text-[#061923] hover:bg-[#67E8F9] disabled:bg-[#0E2A38] disabled:text-[#94A3B8] rounded-xl transition duration-200 shadow-md shadow-[#7DD3FC]/15 flex items-center justify-center gap-2"
+            className="w-full py-4 text-base font-bold bg-pp-ink text-pp-canvas hover:bg-pp-ink-soft disabled:opacity-50 rounded-pill transition duration-200 flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <span className="w-5 h-5 border-2 border-[#061923]/30 border-t-[#061923] rounded-full animate-spin" />
+                <span className="w-5 h-5 border-2 border-pp-canvas/30 border-t-pp-canvas rounded-full animate-spin" />
                 Entrando...
               </>
             ) : (
@@ -211,20 +217,20 @@ function LoginContent() {
         </form>
 
         {/* Activation Block */}
-        <div className="border-t border-[#1F4D5C] pt-5 text-center space-y-3">
-          <p className="text-base text-[#CBD5E1]">
+        <div className="border-t border-pp-hairline pt-5 text-center space-y-3">
+          <p className="text-base text-pp-ink-soft">
             Ainda não criou sua senha?
           </p>
           <Link
             href="/ativar-acesso"
-            className="inline-block w-full py-3.5 text-base font-bold text-[#7DD3FC] bg-[#0E2A38] border border-[#1F4D5C] hover:border-[#7DD3FC] rounded-xl transition duration-200 text-center"
+            className="inline-block w-full py-3.5 text-base font-bold text-pp-ink bg-white border border-pp-hairline hover:border-pp-ink rounded-pill transition duration-200 text-center"
           >
             Ativar meu acesso
           </Link>
         </div>
       </div>
-      
-      <div className="mt-8 text-center text-xs text-[#94A3B8]/60 max-w-sm">
+
+      <div className="mt-8 text-center text-xs text-pp-ink-soft/70 max-w-sm">
         Esta plataforma é um recurso de apoio operacional. Exige o uso do manual original e não substitui avaliação profissional.
       </div>
     </div>
@@ -234,10 +240,10 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="flex min-h-screen items-center justify-center bg-[#061923] text-[#F8FAFC]">
+      <div className="flex min-h-screen items-center justify-center bg-pp-canvas text-pp-ink">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-3 border-[#1F4D5C] border-t-[#7DD3FC] rounded-full animate-spin mx-auto" />
-          <p className="text-[#CBD5E1]">Carregando...</p>
+          <div className="w-8 h-8 border-3 border-pp-hairline border-t-pp-ink rounded-full animate-spin mx-auto" />
+          <p className="text-pp-ink-soft">Carregando...</p>
         </div>
       </div>
     }>
