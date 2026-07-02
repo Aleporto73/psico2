@@ -3,14 +3,14 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
-import { ExternalLink, Workflow, Calendar, Users, ListChecks, Wand2, Download, Printer, Image as ImageIcon, ArrowRight } from 'lucide-react';
+import { ExternalLink, Workflow, Calendar, Users, ListChecks, Wand2, Download, Printer, ArrowRight } from 'lucide-react';
 
 const FLOW_URL = 'https://flow.psicoplanilha.com';
 
 const BENEFITS = [
   { icon: Calendar, title: 'Plano semanal visual', description: 'Veja a semana toda organizada em um só lugar.' },
   { icon: Users, title: 'Cadastro de aprendentes', description: 'Mantenha os dados de cada aprendente organizados.' },
-  { icon: ListChecks, title: '81 atividades organizadas', description: 'Banco de atividades pronto para usar no dia a dia.' },
+  { icon: ListChecks, title: 'Atividades por área do desenvolvimento', description: 'Atividades elaboradas para apoiar o planejamento e a condução das sessões.' },
   { icon: Wand2, title: 'Prompts e roteiros para IA externa', description: 'Roteiros prontos para usar com assistentes de IA externos.' },
   { icon: Download, title: 'Backup manual dos dados', description: 'Exporte uma cópia dos seus dados quando quiser.' },
   { icon: Printer, title: 'Impressão/PDF do plano', description: 'Gere o plano em PDF ou imprima quando precisar.' },
@@ -22,8 +22,6 @@ const STEPS = [
   'Monte planos e registre atividades',
   'Faça backup quando quiser',
 ];
-
-const SCREENS = ['Dashboard', 'Aprendentes', 'Plano semanal', 'Atividades', 'Prompts/Roteiros', 'Meus dados/backup'];
 
 export default function AppFlowPage() {
   const [hasFlowAccess, setHasFlowAccess] = useState<boolean | null>(null);
@@ -91,7 +89,7 @@ export default function AppFlowPage() {
         <p className="text-pp-ink-soft text-sm font-medium">Pague uma vez e use Vitalício.</p>
 
         <p className="text-pp-ink-soft text-base leading-relaxed max-w-2xl">
-          O Flow é um aplicativo separado do Psico2. Suas informações ficam guardadas no seu próprio computador.
+          O Flow funciona separado da plataforma PsicoPlanilhas. Seus dados ficam guardados no seu próprio computador.
         </p>
 
         <div>
@@ -125,6 +123,22 @@ export default function AppFlowPage() {
         </div>
       </section>
 
+      {/* Demonstração — vídeo do Flow */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-medium text-pp-ink">Veja o Flow funcionando</h2>
+          <p className="text-sm text-pp-ink-soft mt-1">Uma demonstração rápida da organização de aprendentes, plano semanal, atividades e prompts.</p>
+        </div>
+        <video
+          src="/videos/flow-demo.mp4"
+          controls
+          muted
+          playsInline
+          preload="metadata"
+          className="w-full rounded-xl border border-pp-hairline shadow-sm"
+        />
+      </section>
+
       {/* Cards de benefícios */}
       <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {BENEFITS.map(({ icon: Icon, title, description }) => (
@@ -149,25 +163,6 @@ export default function AppFlowPage() {
             </li>
           ))}
         </ol>
-      </section>
-
-      {/* Telas do Flow — placeholders elegantes, sem imagem ainda */}
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-xl font-medium text-pp-ink">Telas do Flow</h2>
-          <p className="text-sm text-pp-ink-soft mt-1">Em breve, uma prévia visual de cada parte do Flow.</p>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {SCREENS.map((label) => (
-            <div
-              key={label}
-              className="aspect-video rounded-xl border-2 border-dashed border-pp-hairline bg-pp-hairline-soft/60 flex flex-col items-center justify-center gap-2 text-pp-ink-soft"
-            >
-              <ImageIcon className="w-6 h-6" aria-hidden="true" />
-              <span className="text-xs font-medium">{label}</span>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* Rodapé */}
