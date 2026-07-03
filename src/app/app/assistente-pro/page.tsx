@@ -52,7 +52,7 @@ const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 const MAX_IMAGES = 4;
 const MAX_NOTES_CHARS = 6000;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-const CHECKOUT_URL_IA_PRO = 'https://payment.abaminds.com/checkout?product=MCGNKAAY&price=74F2T5WL';
+const CHECKOUT_URL_IA_PRO = 'https://www.payment.eng.br/checkout?product=MCGNKAAY&price=74F2T5WL';
 
 const MONTHLY_LIMIT = 50;
 
