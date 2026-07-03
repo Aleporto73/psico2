@@ -51,18 +51,33 @@ export default function AdminClientesPage() {
   const fetchClients = async () => {
     setLoading(true);
     setErrorMsg(null);
-    try {
-      // Query the user_access_status view
-      const { data, error } = await supabase
-        .from('user_access_status')
-        .select('*')
-        .order('name', { ascending: true });
 
-      if (error) {
-        throw new Error('Erro ao carregar lista de clientes.');
+    try {
+      const pageSize = 1000;
+      const maxClients = 10000;
+      const allClients: ClientAccessStatus[] = [];
+
+      for (let from = 0; from < maxClients; from += pageSize) {
+        const to = from + pageSize - 1;
+
+        const { data, error } = await supabase
+          .from('user_access_status')
+          .select('*')
+          .order('name', { ascending: true })
+          .range(from, to);
+
+        if (error) {
+          throw new Error('Erro ao carregar lista de clientes.');
+        }
+
+        allClients.push(...(data || []));
+
+        if (!data || data.length < pageSize) {
+          break;
+        }
       }
 
-      setClients(data || []);
+      setClients(allClients);
     } catch (err: any) {
       console.error('Error fetching clients:', err);
       setErrorMsg('Não foi possível carregar os clientes. Tente novamente.');
