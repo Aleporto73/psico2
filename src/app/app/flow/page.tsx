@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { ExternalLink, Workflow, Calendar, Users, ListChecks, Wand2, Download, Printer, ArrowRight } from 'lucide-react';
 
@@ -110,14 +109,14 @@ export default function AppFlowPage() {
             </>
           ) : (
             <>
-              <Link
-                href="/app/produtos#psicoplanilhas-flow"
+              <a
+                href="https://www.payment.eng.br/checkout?product=DRNXPECN&price=YBU36C9S"
                 className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
               >
                 Comprar por R$47,00
                 <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
-              <p className="text-xs text-pp-ink-soft mt-2">Você será levado até a vitrine de produtos.</p>
+              </a>
+              <p className="text-xs text-pp-ink-soft mt-2">Você será levado ao checkout seguro.</p>
             </>
           )}
         </div>
