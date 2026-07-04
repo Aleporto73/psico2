@@ -107,28 +107,53 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
   ];
 
+  // Rail compacto (somente ícones) exclusivo do Doc Studio. Qualquer outra rota
+  // — inclusive a página-mãe /app — mantém a sidebar normal com textos.
+  const isDocStudioRoute =
+    pathname === '/app/doc-studio' || pathname.startsWith('/app/doc-studio/');
+
   return (
     <div className="flex min-h-screen bg-pp-canvas text-pp-ink font-sans">
 
-      {/* ── Sidebar — visível apenas em md+ ──────────────────────────────── */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-pp-hairline flex-col justify-between shrink-0">
-        <div className="p-6 space-y-8">
+      {/* ── Sidebar — visível apenas em md+ (rail compacto no Doc Studio) ──── */}
+      <aside
+        className={`hidden md:flex print:hidden bg-white border-r border-pp-hairline flex-col justify-between shrink-0 ${
+          isDocStudioRoute ? 'w-[76px]' : 'w-64'
+        }`}
+      >
+        <div className={isDocStudioRoute ? 'px-3 py-5 space-y-7' : 'p-6 space-y-8'}>
 
           {/* Logo */}
-          <div>
-            <Link
-              href="/app"
-              className="font-serif italic text-[22px] leading-tight text-pp-ink hover:text-pp-ink-soft transition duration-200 block"
-            >
-              PsicoPlanilhas 2.0
-            </Link>
-            <p className="font-serif italic text-xs text-pp-ink-soft mt-0.5">
-              Área do cliente
-            </p>
-          </div>
+          {isDocStudioRoute ? (
+            <div className="flex justify-center">
+              <Link
+                href="/app"
+                className="flex h-11 w-11 items-center justify-center rounded-2xl bg-pp-block-cream font-serif italic text-[17px] leading-none text-pp-ink transition duration-200 hover:bg-pp-hairline-soft hover:text-pp-ink-soft"
+                title="PsicoPlanilhas 2.0"
+                aria-label="PsicoPlanilhas 2.0"
+              >
+                PP
+              </Link>
+            </div>
+          ) : (
+            <div>
+              <Link
+                href="/app"
+                className="font-serif italic text-[22px] leading-tight text-pp-ink hover:text-pp-ink-soft transition duration-200 block"
+              >
+                PsicoPlanilhas 2.0
+              </Link>
+              <p className="font-serif italic text-xs text-pp-ink-soft mt-0.5">
+                Área do cliente
+              </p>
+            </div>
+          )}
 
           {/* Navegação */}
-          <nav className="space-y-0.5" aria-label="Navegação principal">
+          <nav
+            className={isDocStudioRoute ? 'flex flex-col items-center gap-1.5' : 'space-y-0.5'}
+            aria-label="Navegação principal"
+          >
             {navItems.map((item) => {
               const isActive = !item.external && pathname === item.path;
               return (
@@ -136,22 +161,43 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.path}
                   href={item.path}
                   {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${
-                    isActive
-                      ? 'bg-pp-ink text-pp-canvas rounded-pill'
-                      : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'
-                  }`}
+                  className={
+                    isDocStudioRoute
+                      ? `relative flex h-11 w-11 items-center justify-center text-sm font-medium transition duration-200 ${
+                          isActive
+                            ? 'bg-pp-ink text-pp-canvas rounded-2xl shadow-sm'
+                            : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-2xl'
+                        }`
+                      : `flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${
+                          isActive
+                            ? 'bg-pp-ink text-pp-canvas rounded-pill'
+                            : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'
+                        }`
+                  }
                   aria-current={isActive ? 'page' : undefined}
+                  aria-label={isDocStudioRoute ? item.name : undefined}
+                  title={isDocStudioRoute ? item.name : undefined}
                 >
-                  <span className="shrink-0 opacity-90">{item.icon}</span>
-                  <span className="flex items-center gap-2">
-                    {item.name}
-                    {item.badge && (
-                      <span className="text-[9px] font-semibold bg-green-500 text-white px-1.5 py-0.5 rounded-full leading-none">
-                        {item.badge}
-                      </span>
-                    )}
+                  <span className="shrink-0 opacity-90" aria-hidden={isDocStudioRoute ? 'true' : undefined}>
+                    {item.icon}
                   </span>
+                  {isDocStudioRoute ? (
+                    item.badge && (
+                      <span
+                        className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-green-500 ring-2 ring-white"
+                        aria-hidden="true"
+                      />
+                    )
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      {item.name}
+                      {item.badge && (
+                        <span className="text-[9px] font-semibold bg-green-500 text-white px-1.5 py-0.5 rounded-full leading-none">
+                          {item.badge}
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -159,13 +205,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Área de saída */}
-        <div className="p-4 border-t border-pp-hairline">
+        <div className={`border-t border-pp-hairline p-4 ${isDocStudioRoute ? 'flex justify-center' : ''}`}>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-pp-danger hover:bg-pp-danger/10 rounded-lg transition duration-200"
+            className={
+              isDocStudioRoute
+                ? 'flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-medium text-pp-danger transition duration-200 hover:bg-pp-danger/10'
+                : 'w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-pp-danger hover:bg-pp-danger/10 rounded-lg transition duration-200'
+            }
+            title={isDocStudioRoute ? 'Sair da Conta' : undefined}
+            aria-label={isDocStudioRoute ? 'Sair da Conta' : undefined}
           >
             <IconLogout />
-            <span>Sair da Conta</span>
+            {!isDocStudioRoute && <span>Sair da Conta</span>}
           </button>
         </div>
       </aside>
@@ -174,7 +226,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Topo mobile */}
-        <header className="md:hidden bg-white border-b border-pp-hairline px-4 py-3 flex justify-between items-center">
+        <header className="md:hidden print:hidden bg-white border-b border-pp-hairline px-4 py-3 flex justify-between items-center">
           <Link href="/app" className="font-serif italic text-lg leading-tight text-pp-ink">
             PsicoPlanilhas
           </Link>
@@ -193,7 +245,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Nav mobile em linha */}
         <nav
-          className="md:hidden bg-white border-b border-pp-hairline px-2 py-1.5 flex gap-0.5 overflow-x-auto"
+          className="md:hidden print:hidden bg-white border-b border-pp-hairline px-2 py-1.5 flex gap-0.5 overflow-x-auto"
           aria-label="Navegação mobile"
         >
           {navItems.map((item) => {
