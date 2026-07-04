@@ -9,6 +9,7 @@ import type {
   DraftFieldKey,
   DraftFields,
   LineKey,
+  ReportProfile,
   TemplateKey,
 } from './types';
 
@@ -1164,4 +1165,28 @@ export function getLineTitle(line: LineKey): string {
 export function lineFromProfileType(profileType: string | null | undefined): LineKey {
   if (profileType === 'psychologist') return 'psychology';
   return 'psychopedagogy';
+}
+
+/**
+ * Linha inicial a partir de profession_category (Minha Conta).
+ * Retorna null quando a profissão não define catálogo na v1 (fono, TO, médico,
+ * pediatra, outro, ausente) — o chamador deve cair no fallback por profile_type.
+ * Não promete catálogo Fono/TO: essas profissões usam o fallback seguro.
+ */
+export function lineFromProfessionCategory(category: string | null | undefined): LineKey | null {
+  if (category === 'psicologo') return 'psychology';
+  if (category === 'psicopedagogo' || category === 'neuropsicopedagogo') return 'psychopedagogy';
+  return null;
+}
+
+/**
+ * Linha inicial com prioridade: profession_category primeiro, profile_type depois,
+ * fallback seguro por último (lineFromProfileType já default para 'psychopedagogy').
+ */
+export function lineFromProfile(
+  profile: Pick<ReportProfile, 'profession_category' | 'profile_type'> | null | undefined,
+): LineKey {
+  return (
+    lineFromProfessionCategory(profile?.profession_category) ?? lineFromProfileType(profile?.profile_type)
+  );
 }

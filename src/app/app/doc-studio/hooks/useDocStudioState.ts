@@ -23,7 +23,7 @@ import {
   getFirstTemplateForLine,
   getLineTitle,
   initialDraft,
-  lineFromProfileType,
+  lineFromProfile,
   lineOptions,
   templates,
 } from '../templates';
@@ -106,7 +106,7 @@ export function useDocStudioState() {
 
       setProfile((data as ReportProfile | null) ?? null);
       if (!restoredDraftRef.current) {
-        const preferredLine = lineFromProfileType(data?.profile_type);
+        const preferredLine = lineFromProfile(data as ReportProfile | null);
         const preferredTemplate = getFirstTemplateForLine(preferredLine);
         setLine(preferredLine);
         setTemplateKey(preferredTemplate.id);
