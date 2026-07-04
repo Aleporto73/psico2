@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ReportProfile } from '../types';
 import { buildHeader, getProfessionalSignature } from '../lib/profile';
-import { lineFromProfileType } from '../templates';
+import { lineFromProfessionCategory, lineFromProfile, lineFromProfileType } from '../templates';
 
 const fullProfile: ReportProfile = {
   profile_type: 'psychopedagogue',
@@ -50,5 +50,64 @@ describe('lineFromProfileType', () => {
     expect(lineFromProfileType('psychopedagogue')).toBe('psychopedagogy');
     expect(lineFromProfileType(null)).toBe('psychopedagogy');
     expect(lineFromProfileType('unknown')).toBe('psychopedagogy');
+  });
+});
+
+describe('lineFromProfessionCategory', () => {
+  it('psicologo mapeia para psychology', () => {
+    expect(lineFromProfessionCategory('psicologo')).toBe('psychology');
+  });
+
+  it('psicopedagogo e neuropsicopedagogo mapeiam para psychopedagogy', () => {
+    expect(lineFromProfessionCategory('psicopedagogo')).toBe('psychopedagogy');
+    expect(lineFromProfessionCategory('neuropsicopedagogo')).toBe('psychopedagogy');
+  });
+
+  it('profissões sem catálogo v1 retornam null (sem promessa Fono/TO)', () => {
+    expect(lineFromProfessionCategory('fonoaudiologo')).toBeNull();
+    expect(lineFromProfessionCategory('terapeuta_ocupacional')).toBeNull();
+    expect(lineFromProfessionCategory('medico')).toBeNull();
+    expect(lineFromProfessionCategory('pediatra')).toBeNull();
+    expect(lineFromProfessionCategory('outro')).toBeNull();
+    expect(lineFromProfessionCategory(null)).toBeNull();
+    expect(lineFromProfessionCategory(undefined)).toBeNull();
+  });
+});
+
+describe('lineFromProfile — prioridade profession_category > profile_type > fallback', () => {
+  it('usa profession_category quando definido', () => {
+    expect(lineFromProfile({ profession_category: 'psicologo', profile_type: 'psychopedagogue' })).toBe(
+      'psychology',
+    );
+    expect(lineFromProfile({ profession_category: 'psicopedagogo', profile_type: 'psychologist' })).toBe(
+      'psychopedagogy',
+    );
+    expect(lineFromProfile({ profession_category: 'neuropsicopedagogo', profile_type: null })).toBe(
+      'psychopedagogy',
+    );
+  });
+
+  it('cai em profile_type quando profession_category está ausente', () => {
+    expect(lineFromProfile({ profession_category: null, profile_type: 'psychologist' })).toBe('psychology');
+    expect(lineFromProfile({ profession_category: null, profile_type: 'psychopedagogue' })).toBe(
+      'psychopedagogy',
+    );
+  });
+
+  it('fono/TO/outro caem no fallback seguro sem quebrar (usa profile_type ou default)', () => {
+    // profissão sem catálogo, mas com profile_type -> respeita o profile_type
+    expect(lineFromProfile({ profession_category: 'fonoaudiologo', profile_type: 'psychologist' })).toBe(
+      'psychology',
+    );
+    // profissão sem catálogo e sem profile_type -> default seguro psychopedagogy
+    expect(lineFromProfile({ profession_category: 'terapeuta_ocupacional', profile_type: null })).toBe(
+      'psychopedagogy',
+    );
+    expect(lineFromProfile({ profession_category: 'outro', profile_type: null })).toBe('psychopedagogy');
+  });
+
+  it('perfil nulo mantém comportamento seguro', () => {
+    expect(lineFromProfile(null)).toBe('psychopedagogy');
+    expect(lineFromProfile(undefined)).toBe('psychopedagogy');
   });
 });
