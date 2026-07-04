@@ -5,7 +5,15 @@ import { Check, Copy, Palette, Printer, SlidersHorizontal } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 type LineKey = 'psychopedagogy' | 'psychology';
-type TemplateKey = 'family-feedback' | 'psychological-report';
+type TemplateKey =
+  | 'family-feedback'
+  | 'school-followup'
+  | 'psychopedagogy-session'
+  | 'psychopedagogy-referral'
+  | 'psychological-report'
+  | 'psychological-followup-summary'
+  | 'psychological-progress-note'
+  | 'psychological-referral';
 type FontStyle = 'editorial' | 'classic' | 'clean';
 type Density = 'comfortable' | 'compact';
 type CopyState = 'idle' | 'success' | 'error';
@@ -32,13 +40,15 @@ interface DraftFields {
 }
 
 interface TemplateDefinition {
-  key: TemplateKey;
+  id: TemplateKey;
   line: LineKey;
+  category: string;
   title: string;
-  eyebrow: string;
-  intro: string;
+  description: string;
   defaultPurpose: string;
+  guidedFields: Array<{ key: keyof DraftFields; label: string }>;
   sections: Array<{ key: keyof DraftFields; title: string }>;
+  footerNote: string;
 }
 
 const lineOptions: Array<{ key: LineKey; title: string; description: string }> = [
@@ -56,13 +66,21 @@ const lineOptions: Array<{ key: LineKey; title: string; description: string }> =
 
 const templates: TemplateDefinition[] = [
   {
-    key: 'family-feedback',
+    id: 'family-feedback',
     line: 'psychopedagogy',
+    category: 'Família',
     title: 'Devolutiva psicopedagógica para família',
-    eyebrow: 'Família',
-    intro:
+    description:
       'Documento de devolutiva em linguagem clara, com foco em aprendizagem, observações, potencialidades e próximos encaminhamentos.',
     defaultPurpose: 'Compartilhar com a família uma síntese psicopedagógica clara e acolhedora.',
+    guidedFields: [
+      { key: 'context', label: 'Contexto da demanda' },
+      { key: 'observations', label: 'Observações relevantes' },
+      { key: 'strengths', label: 'Potencialidades observadas' },
+      { key: 'attentionPoints', label: 'Pontos que merecem acompanhamento' },
+      { key: 'recommendations', label: 'Orientações para família e escola' },
+      { key: 'nextSteps', label: 'Próximos passos sugeridos' },
+    ],
     sections: [
       { key: 'context', title: 'Contexto da demanda' },
       { key: 'observations', title: 'Observações relevantes' },
@@ -71,15 +89,106 @@ const templates: TemplateDefinition[] = [
       { key: 'recommendations', title: 'Orientações para família e escola' },
       { key: 'nextSteps', title: 'Próximos passos sugeridos' },
     ],
+    footerNote:
+      'Documento de apoio psicopedagógico. O conteúdo deve ser revisado pelo profissional responsável e não substitui avaliação interdisciplinar quando necessária.',
   },
   {
-    key: 'psychological-report',
+    id: 'school-followup',
+    line: 'psychopedagogy',
+    category: 'Escola',
+    title: 'Relatório de acompanhamento escolar',
+    description:
+      'Síntese objetiva para organizar informações de acompanhamento, participação, aprendizagem e orientações à escola.',
+    defaultPurpose: 'Registrar o acompanhamento escolar e orientar adaptações possíveis sem estabelecer diagnóstico.',
+    guidedFields: [
+      { key: 'context', label: 'Contexto escolar observado' },
+      { key: 'observations', label: 'Participação e rotina de aprendizagem' },
+      { key: 'strengths', label: 'Recursos e respostas positivas' },
+      { key: 'attentionPoints', label: 'Necessidades de apoio observadas' },
+      { key: 'recommendations', label: 'Estratégias pedagógicas sugeridas' },
+      { key: 'nextSteps', label: 'Combinados para acompanhamento' },
+    ],
+    sections: [
+      { key: 'context', title: 'Contexto escolar' },
+      { key: 'observations', title: 'Acompanhamento da aprendizagem' },
+      { key: 'strengths', title: 'Recursos observados' },
+      { key: 'attentionPoints', title: 'Necessidades de apoio' },
+      { key: 'recommendations', title: 'Orientações à escola' },
+      { key: 'nextSteps', title: 'Próximos combinados' },
+    ],
+    footerNote:
+      'Registro orientativo para apoio educacional. As informações devem ser contextualizadas com família, escola e demais profissionais envolvidos.',
+  },
+  {
+    id: 'psychopedagogy-session',
+    line: 'psychopedagogy',
+    category: 'Sessão',
+    title: 'Registro de sessão psicopedagógica',
+    description:
+      'Modelo interno para documentar objetivo da sessão, respostas observadas, recursos utilizados e continuidade do plano.',
+    defaultPurpose: 'Registrar de forma descritiva a sessão psicopedagógica e apoiar a continuidade do acompanhamento.',
+    guidedFields: [
+      { key: 'context', label: 'Objetivo da sessão' },
+      { key: 'observations', label: 'Atividades e respostas observadas' },
+      { key: 'strengths', label: 'Recursos mobilizados' },
+      { key: 'attentionPoints', label: 'Aspectos para observar nas próximas sessões' },
+      { key: 'recommendations', label: 'Intervenções ou ajustes planejados' },
+      { key: 'nextSteps', label: 'Continuidade do plano' },
+    ],
+    sections: [
+      { key: 'context', title: 'Objetivo da sessão' },
+      { key: 'observations', title: 'Descrição da sessão' },
+      { key: 'strengths', title: 'Recursos e engajamento' },
+      { key: 'attentionPoints', title: 'Pontos de acompanhamento' },
+      { key: 'recommendations', title: 'Ajustes planejados' },
+      { key: 'nextSteps', title: 'Encaminhamentos internos' },
+    ],
+    footerNote:
+      'Registro de uso profissional interno. Não constitui laudo, diagnóstico ou parecer conclusivo.',
+  },
+  {
+    id: 'psychopedagogy-referral',
+    line: 'psychopedagogy',
+    category: 'Encaminhamento',
+    title: 'Encaminhamento orientativo',
+    description:
+      'Texto breve para organizar motivo do encaminhamento, observações descritivas e recomendações de continuidade.',
+    defaultPurpose: 'Orientar encaminhamento para avaliação ou acompanhamento complementar, sem conclusão diagnóstica.',
+    guidedFields: [
+      { key: 'context', label: 'Motivo do encaminhamento' },
+      { key: 'observations', label: 'Observações que sustentam a orientação' },
+      { key: 'strengths', label: 'Recursos e contextos favoráveis' },
+      { key: 'attentionPoints', label: 'Aspectos que precisam de investigação' },
+      { key: 'recommendations', label: 'Profissional ou serviço sugerido' },
+      { key: 'nextSteps', label: 'Orientações para a família/escola' },
+    ],
+    sections: [
+      { key: 'context', title: 'Motivo do encaminhamento' },
+      { key: 'observations', title: 'Observações descritivas' },
+      { key: 'strengths', title: 'Recursos identificados' },
+      { key: 'attentionPoints', title: 'Aspectos a investigar' },
+      { key: 'recommendations', title: 'Encaminhamento sugerido' },
+      { key: 'nextSteps', title: 'Orientações de continuidade' },
+    ],
+    footerNote:
+      'Encaminhamento orientativo. A definição de conduta, avaliação ou diagnóstico cabe ao profissional ou serviço de destino.',
+  },
+  {
+    id: 'psychological-report',
     line: 'psychology',
+    category: 'Técnico',
     title: 'Relatório psicológico descritivo',
-    eyebrow: 'Técnico',
-    intro:
+    description:
       'Estrutura descritiva para organizar dados observacionais e informações recebidas, sem diagnóstico automático ou inferências fechadas.',
     defaultPurpose: 'Organizar uma síntese descritiva de apoio ao registro profissional.',
+    guidedFields: [
+      { key: 'context', label: 'Motivo do documento' },
+      { key: 'observations', label: 'Dados observacionais e informações consideradas' },
+      { key: 'strengths', label: 'Recursos e aspectos preservados' },
+      { key: 'attentionPoints', label: 'Aspectos que requerem atenção' },
+      { key: 'recommendations', label: 'Encaminhamentos e recomendações' },
+      { key: 'nextSteps', label: 'Considerações finais' },
+    ],
     sections: [
       { key: 'context', title: 'Motivo do documento' },
       { key: 'observations', title: 'Dados observacionais e informações consideradas' },
@@ -88,6 +197,89 @@ const templates: TemplateDefinition[] = [
       { key: 'recommendations', title: 'Encaminhamentos e recomendações' },
       { key: 'nextSteps', title: 'Considerações finais' },
     ],
+    footerNote:
+      'Documento de apoio ao registro profissional. Deve ser revisado pelo psicólogo responsável e não substitui avaliação formal específica.',
+  },
+  {
+    id: 'psychological-followup-summary',
+    line: 'psychology',
+    category: 'Síntese',
+    title: 'Síntese de acompanhamento psicológico',
+    description:
+      'Organiza evolução geral, temas trabalhados e orientações de continuidade em tom técnico e não pericial.',
+    defaultPurpose: 'Sintetizar o acompanhamento psicológico de forma descritiva, preservando sigilo e limites técnicos.',
+    guidedFields: [
+      { key: 'context', label: 'Contexto do acompanhamento' },
+      { key: 'observations', label: 'Temas e aspectos observados' },
+      { key: 'strengths', label: 'Recursos e estratégias desenvolvidas' },
+      { key: 'attentionPoints', label: 'Pontos que permanecem em atenção' },
+      { key: 'recommendations', label: 'Orientações de continuidade' },
+      { key: 'nextSteps', label: 'Plano ou revisão do acompanhamento' },
+    ],
+    sections: [
+      { key: 'context', title: 'Contexto do acompanhamento' },
+      { key: 'observations', title: 'Síntese descritiva' },
+      { key: 'strengths', title: 'Recursos observados' },
+      { key: 'attentionPoints', title: 'Pontos em acompanhamento' },
+      { key: 'recommendations', title: 'Orientações de continuidade' },
+      { key: 'nextSteps', title: 'Considerações finais' },
+    ],
+    footerNote:
+      'Síntese de acompanhamento, sem finalidade pericial. O conteúdo deve respeitar sigilo, contexto clínico e limites éticos da comunicação.',
+  },
+  {
+    id: 'psychological-progress-note',
+    line: 'psychology',
+    category: 'Evolução',
+    title: 'Registro de evolução / acompanhamento',
+    description:
+      'Registro interno de evolução, com foco em observações de sessão, intervenções e planejamento de continuidade.',
+    defaultPurpose: 'Registrar a evolução do acompanhamento psicológico de forma objetiva e descritiva.',
+    guidedFields: [
+      { key: 'context', label: 'Foco do atendimento ou período' },
+      { key: 'observations', label: 'Observações clínicas descritivas' },
+      { key: 'strengths', label: 'Recursos, adesão e estratégias' },
+      { key: 'attentionPoints', label: 'Pontos de atenção para continuidade' },
+      { key: 'recommendations', label: 'Intervenções realizadas ou planejadas' },
+      { key: 'nextSteps', label: 'Plano para próximos atendimentos' },
+    ],
+    sections: [
+      { key: 'context', title: 'Foco do registro' },
+      { key: 'observations', title: 'Evolução observada' },
+      { key: 'strengths', title: 'Recursos e estratégias' },
+      { key: 'attentionPoints', title: 'Pontos de atenção' },
+      { key: 'recommendations', title: 'Intervenções e manejo' },
+      { key: 'nextSteps', title: 'Plano de continuidade' },
+    ],
+    footerNote:
+      'Registro técnico de acompanhamento. Não deve ser utilizado como laudo, declaração conclusiva ou documento pericial.',
+  },
+  {
+    id: 'psychological-referral',
+    line: 'psychology',
+    category: 'Encaminhamento',
+    title: 'Encaminhamento orientativo',
+    description:
+      'Modelo para indicar continuidade de cuidado ou avaliação complementar com linguagem cautelosa e não diagnóstica.',
+    defaultPurpose: 'Orientar encaminhamento para cuidado ou avaliação complementar, sem afirmar hipótese diagnóstica como conclusão.',
+    guidedFields: [
+      { key: 'context', label: 'Motivo da orientação' },
+      { key: 'observations', label: 'Elementos observados ou relatados' },
+      { key: 'strengths', label: 'Recursos e fatores de proteção' },
+      { key: 'attentionPoints', label: 'Aspectos que indicam necessidade de cuidado' },
+      { key: 'recommendations', label: 'Encaminhamento ou cuidado sugerido' },
+      { key: 'nextSteps', label: 'Orientações de continuidade' },
+    ],
+    sections: [
+      { key: 'context', title: 'Motivo do encaminhamento' },
+      { key: 'observations', title: 'Elementos considerados' },
+      { key: 'strengths', title: 'Recursos e fatores de proteção' },
+      { key: 'attentionPoints', title: 'Aspectos de atenção' },
+      { key: 'recommendations', title: 'Encaminhamento sugerido' },
+      { key: 'nextSteps', title: 'Orientações finais' },
+    ],
+    footerNote:
+      'Encaminhamento orientativo. A avaliação e a conduta final devem ser definidas pelo profissional ou serviço responsável pelo atendimento subsequente.',
   },
 ];
 
@@ -206,6 +398,8 @@ function composePlainText(
     lines.push('');
   });
 
+  lines.push(template.footerNote);
+
   return lines.join('\n').trim();
 }
 
@@ -271,8 +465,9 @@ export default function DocStudioPage() {
 
       setProfile((data as ReportProfile | null) ?? null);
       const preferredLine = lineFromProfileType(data?.profile_type);
+      const preferredTemplate = templates.find((template) => template.line === preferredLine) ?? templates[0];
       setLine(preferredLine);
-      setTemplateKey(preferredLine === 'psychology' ? 'psychological-report' : 'family-feedback');
+      setTemplateKey(preferredTemplate.id);
       setLoadingProfile(false);
     }
 
@@ -283,9 +478,17 @@ export default function DocStudioPage() {
     };
   }, []);
 
+  const templatesForActiveLine = useMemo(
+    () => templates.filter((template) => template.line === line),
+    [line],
+  );
+
   const selectedTemplate = useMemo(
-    () => templates.find((template) => template.key === templateKey) ?? templates[0],
-    [templateKey],
+    () =>
+      templates.find((template) => template.id === templateKey && template.line === line) ??
+      templatesForActiveLine[0] ??
+      templates[0],
+    [line, templateKey, templatesForActiveLine],
   );
 
   const header = useMemo(() => buildHeader(profile), [profile]);
@@ -302,20 +505,19 @@ export default function DocStudioPage() {
   const hasIncompleteHeader = showHeader && !loadingProfile && headerMissingItems.length > 0;
 
   function updateTemplate(nextTemplateKey: TemplateKey) {
-    const nextTemplate = templates.find((template) => template.key === nextTemplateKey) ?? templates[0];
-    setTemplateKey(nextTemplate.key);
+    const nextTemplate = templates.find((template) => template.id === nextTemplateKey) ?? templates[0];
+    setTemplateKey(nextTemplate.id);
     setLine(nextTemplate.line);
     setFields((current) => ({
       ...current,
-      documentPurpose:
-        current.documentPurpose === selectedTemplate.defaultPurpose ? nextTemplate.defaultPurpose : current.documentPurpose,
+      documentPurpose: nextTemplate.defaultPurpose,
     }));
   }
 
   function updateLine(nextLine: LineKey) {
     setLine(nextLine);
     const nextTemplate = templates.find((template) => template.line === nextLine) ?? templates[0];
-    setTemplateKey(nextTemplate.key);
+    setTemplateKey(nextTemplate.id);
     setFields((current) => ({
       ...current,
       documentPurpose: nextTemplate.defaultPurpose,
@@ -557,13 +759,13 @@ export default function DocStudioPage() {
             <div className="space-y-3 pt-8 border-t border-pp-hairline-soft">
               <p className="font-serif italic text-pp-ink-soft text-sm">Templates</p>
               <div className="space-y-1">
-                {templates.map((template) => {
-                  const isActive = template.key === templateKey;
+                {templatesForActiveLine.map((template) => {
+                  const isActive = template.id === selectedTemplate.id;
                   return (
                     <button
-                      key={template.key}
+                      key={template.id}
                       type="button"
-                      onClick={() => updateTemplate(template.key)}
+                      onClick={() => updateTemplate(template.id)}
                       className={`block w-full text-left rounded-xl border-l-2 px-3.5 py-3 transition ${
                         isActive
                           ? 'border-l-pp-ink bg-pp-block-cream/60'
@@ -574,9 +776,10 @@ export default function DocStudioPage() {
                         className="text-[10px] font-semibold uppercase tracking-wide text-pp-ink-soft"
                         style={isActive ? accentStyle : undefined}
                       >
-                        {template.eyebrow}
+                        {template.category}
                       </span>
                       <span className="mt-0.5 block text-sm font-medium text-pp-ink">{template.title}</span>
+                      <span className="mt-1 block text-xs leading-relaxed text-pp-ink-soft">{template.description}</span>
                     </button>
                   );
                 })}
@@ -656,7 +859,10 @@ export default function DocStudioPage() {
             <div className="space-y-2 border-b border-pp-hairline-soft pb-5">
               <p className="font-serif italic text-pp-ink-soft text-sm">Campos guiados</p>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <h2 className="text-xl text-pp-ink font-medium">{selectedTemplate.title}</h2>
+                <div className="max-w-xl space-y-1">
+                  <h2 className="text-xl text-pp-ink font-medium">{selectedTemplate.title}</h2>
+                  <p className="text-sm leading-relaxed text-pp-ink-soft">{selectedTemplate.description}</p>
+                </div>
                 <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
                   <button
                     type="button"
@@ -729,15 +935,15 @@ export default function DocStudioPage() {
                 />
               </div>
 
-              {selectedTemplate.sections.map((section) => (
-                <div key={section.key} className="space-y-2">
-                  <label htmlFor={section.key} className="text-xs font-medium text-pp-ink-soft">
-                    {section.title}
+              {selectedTemplate.guidedFields.map((field) => (
+                <div key={field.key} className="space-y-2">
+                  <label htmlFor={field.key} className="text-xs font-medium text-pp-ink-soft">
+                    {field.label}
                   </label>
                   <textarea
-                    id={section.key}
-                    value={fields[section.key]}
-                    onChange={(event) => setFields((current) => ({ ...current, [section.key]: event.target.value }))}
+                    id={field.key}
+                    value={fields[field.key]}
+                    onChange={(event) => setFields((current) => ({ ...current, [field.key]: event.target.value }))}
                     rows={density === 'compact' ? 3 : 4}
                     className="w-full px-4 py-3 bg-white border border-pp-hairline rounded-xl text-sm text-pp-ink leading-relaxed resize-y focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
                   />
@@ -769,7 +975,7 @@ export default function DocStudioPage() {
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] font-semibold" style={accentStyle}>
                       <Palette className="w-3.5 h-3.5" aria-hidden="true" />
-                      {selectedTemplate.eyebrow}
+                      {selectedTemplate.category}
                     </div>
                     <h2 className={`${titleFontClass} text-3xl md:text-4xl leading-tight text-pp-ink`}>
                       {selectedTemplate.title}
@@ -808,7 +1014,7 @@ export default function DocStudioPage() {
                   ))}
 
                   <footer className="pt-4 border-t border-pp-hairline text-xs leading-relaxed text-pp-ink-soft">
-                    Documento de apoio profissional. O conteúdo deve ser revisado e validado pelo profissional responsável antes de uso formal.
+                    {selectedTemplate.footerNote}
                   </footer>
                 </article>
               </div>
