@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Copy, Palette, Printer, SlidersHorizontal } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
@@ -17,6 +17,7 @@ type TemplateKey =
 type FontStyle = 'editorial' | 'classic' | 'clean';
 type Density = 'comfortable' | 'compact';
 type CopyState = 'idle' | 'success' | 'error';
+type DraftStatus = 'idle' | 'saved' | 'restored' | 'cleared' | 'unavailable';
 
 interface ReportProfile {
   profile_type: string | null;
@@ -39,6 +40,19 @@ interface DraftFields {
   nextSteps: string;
 }
 
+interface DocStudioDraft {
+  version: 1;
+  line: LineKey;
+  templateKey: TemplateKey;
+  fields: DraftFields;
+  primaryColor: string;
+  fontStyle: FontStyle;
+  density: Density;
+  blackAndWhite: boolean;
+  showHeader: boolean;
+  updatedAt: string;
+}
+
 interface TemplateDefinition {
   id: TemplateKey;
   line: LineKey;
@@ -50,6 +64,8 @@ interface TemplateDefinition {
   sections: Array<{ key: keyof DraftFields; title: string }>;
   footerNote: string;
 }
+
+const DOC_STUDIO_DRAFT_KEY = 'psicoplanilhas:doc-studio:draft:v1';
 
 const lineOptions: Array<{ key: LineKey; title: string; description: string }> = [
   {
@@ -295,6 +311,8 @@ const initialDraft: DraftFields = {
   nextSteps: 'Feche com próximos passos objetivos, revisão do plano de acompanhamento ou encaminhamentos necessários.',
 };
 
+const draftFieldKeys = Object.keys(initialDraft) as Array<keyof DraftFields>;
+
 const professionLabels: Record<string, Record<string, string>> = {
   psicologo: { F: 'Psicóloga', M: 'Psicólogo', N: 'Psicólogo(a)' },
   psicopedagogo: { F: 'Psicopedagoga', M: 'Psicopedagogo', N: 'Psicopedagogo(a)' },
@@ -325,6 +343,106 @@ const colorOptions = [
   { label: 'Verde', value: '#315D4F' },
   { label: 'Grafite', value: '#2C3340' },
 ];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isLineKey(value: unknown): value is LineKey {
+  return value === 'psychopedagogy' || value === 'psychology';
+}
+
+function isTemplateKey(value: unknown): value is TemplateKey {
+  return typeof value === 'string' && templates.some((template) => template.id === value);
+}
+
+function isFontStyle(value: unknown): value is FontStyle {
+  return value === 'editorial' || value === 'classic' || value === 'clean';
+}
+
+function isDensity(value: unknown): value is Density {
+  return value === 'comfortable' || value === 'compact';
+}
+
+function getFirstTemplateForLine(line: LineKey) {
+  return templates.find((template) => template.line === line) ?? templates[0];
+}
+
+function getTemplateForDraft(line: LineKey, templateKey: unknown) {
+  if (isTemplateKey(templateKey)) {
+    const template = templates.find((item) => item.id === templateKey && item.line === line);
+    if (template) return template;
+  }
+
+  return getFirstTemplateForLine(line);
+}
+
+function getDefaultFieldsForTemplate(template: TemplateDefinition): DraftFields {
+  return {
+    ...initialDraft,
+    documentPurpose: template.defaultPurpose,
+  };
+}
+
+function normalizeDraftFields(value: unknown, template: TemplateDefinition): DraftFields {
+  const defaults = getDefaultFieldsForTemplate(template);
+  if (!isRecord(value)) return defaults;
+
+  return draftFieldKeys.reduce((nextFields, key) => {
+    const fieldValue = value[key];
+    return {
+      ...nextFields,
+      [key]: typeof fieldValue === 'string' ? fieldValue : defaults[key],
+    };
+  }, defaults);
+}
+
+function parseStoredDraft(rawDraft: string | null): DocStudioDraft | null {
+  if (!rawDraft) return null;
+
+  try {
+    const parsed: unknown = JSON.parse(rawDraft);
+    if (!isRecord(parsed)) return null;
+
+    const line = isLineKey(parsed.line) ? parsed.line : 'psychopedagogy';
+    const template = getTemplateForDraft(line, parsed.templateKey);
+    const primaryColor =
+      typeof parsed.primaryColor === 'string' &&
+      colorOptions.some((color) => color.value === parsed.primaryColor)
+        ? parsed.primaryColor
+        : colorOptions[0].value;
+
+    return {
+      version: 1,
+      line,
+      templateKey: template.id,
+      fields: normalizeDraftFields(parsed.fields, template),
+      primaryColor,
+      fontStyle: isFontStyle(parsed.fontStyle) ? parsed.fontStyle : 'editorial',
+      density: isDensity(parsed.density) ? parsed.density : 'comfortable',
+      blackAndWhite: typeof parsed.blackAndWhite === 'boolean' ? parsed.blackAndWhite : false,
+      showHeader: typeof parsed.showHeader === 'boolean' ? parsed.showHeader : true,
+      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : new Date().toISOString(),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getDraftStatusLabel(status: DraftStatus) {
+  switch (status) {
+    case 'restored':
+      return 'Rascunho restaurado neste navegador';
+    case 'cleared':
+      return 'Rascunho limpo neste navegador';
+    case 'unavailable':
+      return 'Rascunho local indisponível';
+    case 'saved':
+    case 'idle':
+    default:
+      return 'Rascunho salvo neste navegador';
+  }
+}
 
 function getProfessionLabel(category: string | null | undefined, gender: string | null | undefined): string {
   if (!category || category === 'outro') return '';
@@ -440,7 +558,46 @@ export default function DocStudioPage() {
   const [density, setDensity] = useState<Density>('comfortable');
   const [showHeader, setShowHeader] = useState(true);
   const [copyState, setCopyState] = useState<CopyState>('idle');
+  const [draftStatus, setDraftStatus] = useState<DraftStatus>('idle');
+  const [hasHydratedDraft, setHasHydratedDraft] = useState(false);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const restoredDraftRef = useRef(false);
+  const skipNextDraftSaveRef = useRef(false);
+
+  useEffect(() => {
+    let restoreTimer: number | undefined;
+
+    try {
+      const storedDraft = parseStoredDraft(window.localStorage.getItem(DOC_STUDIO_DRAFT_KEY));
+      restoredDraftRef.current = Boolean(storedDraft);
+
+      restoreTimer = window.setTimeout(() => {
+        if (storedDraft) {
+          setLine(storedDraft.line);
+          setTemplateKey(storedDraft.templateKey);
+          setFields(storedDraft.fields);
+          setPrimaryColor(storedDraft.primaryColor);
+          setFontStyle(storedDraft.fontStyle);
+          setBlackAndWhite(storedDraft.blackAndWhite);
+          setDensity(storedDraft.density);
+          setShowHeader(storedDraft.showHeader);
+          setDraftStatus('restored');
+        } else {
+          setDraftStatus('saved');
+        }
+        setHasHydratedDraft(true);
+      }, 0);
+    } catch {
+      restoreTimer = window.setTimeout(() => {
+        setDraftStatus('unavailable');
+        setHasHydratedDraft(true);
+      }, 0);
+    }
+
+    return () => {
+      if (restoreTimer !== undefined) window.clearTimeout(restoreTimer);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -464,10 +621,12 @@ export default function DocStudioPage() {
       if (!isMounted) return;
 
       setProfile((data as ReportProfile | null) ?? null);
-      const preferredLine = lineFromProfileType(data?.profile_type);
-      const preferredTemplate = templates.find((template) => template.line === preferredLine) ?? templates[0];
-      setLine(preferredLine);
-      setTemplateKey(preferredTemplate.id);
+      if (!restoredDraftRef.current) {
+        const preferredLine = lineFromProfileType(data?.profile_type);
+        const preferredTemplate = getFirstTemplateForLine(preferredLine);
+        setLine(preferredLine);
+        setTemplateKey(preferredTemplate.id);
+      }
       setLoadingProfile(false);
     }
 
@@ -504,6 +663,49 @@ export default function DocStudioPage() {
   const headerMissingItems = useMemo(() => getHeaderMissingItems(profile), [profile]);
   const hasIncompleteHeader = showHeader && !loadingProfile && headerMissingItems.length > 0;
 
+  useEffect(() => {
+    if (!hasHydratedDraft) return;
+
+    if (skipNextDraftSaveRef.current) {
+      skipNextDraftSaveRef.current = false;
+      return;
+    }
+
+    const saveTimer = window.setTimeout(() => {
+      try {
+        const draft: DocStudioDraft = {
+          version: 1,
+          line,
+          templateKey: selectedTemplate.id,
+          fields,
+          primaryColor,
+          fontStyle,
+          density,
+          blackAndWhite,
+          showHeader,
+          updatedAt: new Date().toISOString(),
+        };
+
+        window.localStorage.setItem(DOC_STUDIO_DRAFT_KEY, JSON.stringify(draft));
+        setDraftStatus('saved');
+      } catch {
+        setDraftStatus('unavailable');
+      }
+    }, 350);
+
+    return () => window.clearTimeout(saveTimer);
+  }, [
+    blackAndWhite,
+    density,
+    fields,
+    fontStyle,
+    hasHydratedDraft,
+    line,
+    primaryColor,
+    selectedTemplate.id,
+    showHeader,
+  ]);
+
   function updateTemplate(nextTemplateKey: TemplateKey) {
     const nextTemplate = templates.find((template) => template.id === nextTemplateKey) ?? templates[0];
     setTemplateKey(nextTemplate.id);
@@ -522,6 +724,26 @@ export default function DocStudioPage() {
       ...current,
       documentPurpose: nextTemplate.defaultPurpose,
     }));
+  }
+
+  function handleClearDraft() {
+    skipNextDraftSaveRef.current = true;
+
+    try {
+      window.localStorage.removeItem(DOC_STUDIO_DRAFT_KEY);
+      setDraftStatus('cleared');
+    } catch {
+      setDraftStatus('unavailable');
+    }
+
+    setLine(selectedTemplate.line);
+    setTemplateKey(selectedTemplate.id);
+    setFields(getDefaultFieldsForTemplate(selectedTemplate));
+    setPrimaryColor(colorOptions[0].value);
+    setFontStyle('editorial');
+    setBlackAndWhite(false);
+    setDensity('comfortable');
+    setShowHeader(true);
   }
 
   async function handleCopy() {
@@ -882,6 +1104,16 @@ export default function DocStudioPage() {
                     Imprimir
                   </button>
                 </div>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-relaxed text-pp-ink-soft" aria-live="polite">
+                <span>{getDraftStatusLabel(draftStatus)}</span>
+                <button
+                  type="button"
+                  onClick={handleClearDraft}
+                  className="font-medium text-pp-ink-soft underline-offset-4 transition hover:text-pp-ink hover:underline"
+                >
+                  Limpar rascunho
+                </button>
               </div>
               <p className="text-xs leading-relaxed text-pp-ink-soft">
                 Na janela de impressão, desative Cabeçalhos e rodapés para gerar um PDF limpo.
