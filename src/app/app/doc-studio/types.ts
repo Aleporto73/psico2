@@ -29,7 +29,18 @@ export type TemplateKey =
   | 'psychological-report-cfp'
   | 'psychological-followup-summary'
   | 'psychological-progress-note'
-  | 'psychological-referral';
+  | 'psychological-referral'
+  | 'psychology-anamnesis-adult'
+  | 'psychology-anamnesis-child'
+  | 'psychology-treatment-plan'
+  | 'psychology-opinion'
+  | 'psychology-clinical-feedback'
+  | 'psychology-family-guidance'
+  | 'psychology-therapy-contract'
+  | 'psychology-minor-authorization'
+  | 'psychology-online-protocol'
+  | 'psychology-attendance-declaration'
+  | 'psychology-tcle';
 
 export type FontStyle = 'editorial' | 'classic' | 'clean';
 export type Density = 'comfortable' | 'compact';
