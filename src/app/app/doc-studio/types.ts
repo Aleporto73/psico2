@@ -51,8 +51,6 @@ export type DocStudioTemplateStatus = 'active' | 'hidden';
 
 export type RiskLevel = 'low' | 'medium' | 'restricted';
 
-export type AiRuleProfileId = 'psychopedagogy_safe' | 'psychology_cfp_06_2019' | 'general_safe';
-
 // Perfil lido de Supabase `profiles` (somente estes campos; assinatura é texto).
 export interface ReportProfile {
   profile_type: string | null;
@@ -105,7 +103,6 @@ export interface DocStudioTemplate {
   guidedFields: GuidedField[];
   sections: DocSection[];
   ethicalFooter: string;
-  aiRulesProfile: AiRuleProfileId;
 }
 
 export interface ColorOption {
@@ -126,14 +123,4 @@ export interface DocStudioDraft {
   showHeader: boolean;
   showSignature: boolean;
   updatedAt: string;
-}
-
-// Regras de IA revisora como DADOS (sem chamada de API nesta fase).
-export interface AiRuleProfile {
-  id: AiRuleProfileId;
-  line: LineKey | 'any';
-  allowedOperations: string[];
-  forbiddenOperations: string[];
-  requiredDisclaimer: string;
-  toneRules: string[];
 }

@@ -1,7 +1,7 @@
 // Doc Studio — dados dos modelos (catálogo bruto) + seleção de template.
 // Copiado seletivamente de feature/doc-studio-lab (conteúdo dos 8 modelos preservado).
 // Metadados de catálogo (status, documentKind, searchTerms, allowedProfessionCategories,
-// recommendedForProfileTypes, riskLevel, aiRulesProfile) adicionados nesta refatoração.
+// recommendedForProfileTypes, riskLevel) adicionados nesta refatoração.
 
 import type {
   ColorOption,
@@ -50,9 +50,7 @@ export const templates: DocStudioTemplate[] = [
     recommendedForProfileTypes: ['psychopedagogue', 'both', 'unknown'],
     allowedProfessionCategories: ['psicopedagogo', 'neuropsicopedagogo'],
     riskLevel: 'low',
-    requiresHeader: true,
-    aiRulesProfile: 'psychopedagogy_safe',
-    guidedFields: [
+    requiresHeader: true,    guidedFields: [
       { key: 'context', label: 'Contexto da demanda' },
       { key: 'observations', label: 'Observações relevantes' },
       { key: 'strengths', label: 'Potencialidades observadas' },
@@ -86,9 +84,7 @@ export const templates: DocStudioTemplate[] = [
     recommendedForProfileTypes: ['psychopedagogue', 'both', 'unknown'],
     allowedProfessionCategories: ['psicopedagogo', 'neuropsicopedagogo'],
     riskLevel: 'low',
-    requiresHeader: true,
-    aiRulesProfile: 'psychopedagogy_safe',
-    guidedFields: [
+    requiresHeader: true,    guidedFields: [
       { key: 'context', label: 'Contexto escolar observado' },
       { key: 'observations', label: 'Participação e rotina de aprendizagem' },
       { key: 'strengths', label: 'Recursos e respostas positivas' },
@@ -122,9 +118,7 @@ export const templates: DocStudioTemplate[] = [
     recommendedForProfileTypes: ['psychopedagogue', 'both', 'unknown'],
     allowedProfessionCategories: ['psicopedagogo', 'neuropsicopedagogo'],
     riskLevel: 'low',
-    requiresHeader: true,
-    aiRulesProfile: 'psychopedagogy_safe',
-    guidedFields: [
+    requiresHeader: true,    guidedFields: [
       { key: 'context', label: 'Objetivo da sessão' },
       { key: 'observations', label: 'Atividades e respostas observadas' },
       { key: 'strengths', label: 'Recursos mobilizados' },
@@ -157,9 +151,7 @@ export const templates: DocStudioTemplate[] = [
     recommendedForProfileTypes: ['psychopedagogue', 'both', 'unknown'],
     allowedProfessionCategories: ['psicopedagogo', 'neuropsicopedagogo'],
     riskLevel: 'medium',
-    requiresHeader: true,
-    aiRulesProfile: 'psychopedagogy_safe',
-    guidedFields: [
+    requiresHeader: true,    guidedFields: [
       { key: 'context', label: 'Motivo do encaminhamento' },
       { key: 'observations', label: 'Observações que sustentam a orientação' },
       { key: 'strengths', label: 'Recursos e contextos favoráveis' },
@@ -198,9 +190,7 @@ export const templates: DocStudioTemplate[] = [
     recommendedForProfileTypes: ['psychologist', 'both'],
     allowedProfessionCategories: ['psicologo'],
     riskLevel: 'medium',
-    requiresHeader: true,
-    aiRulesProfile: 'psychology_cfp_06_2019',
-    guidedFields: [
+    requiresHeader: true,    guidedFields: [
       { key: 'context', label: 'Motivo do documento' },
       { key: 'observations', label: 'Dados observacionais e informações consideradas' },
       { key: 'strengths', label: 'Recursos e aspectos preservados' },
@@ -234,9 +224,7 @@ export const templates: DocStudioTemplate[] = [
     recommendedForProfileTypes: ['psychologist', 'both'],
     allowedProfessionCategories: ['psicologo'],
     riskLevel: 'low',
-    requiresHeader: true,
-    aiRulesProfile: 'psychology_cfp_06_2019',
-    guidedFields: [
+    requiresHeader: true,    guidedFields: [
       { key: 'context', label: 'Contexto do acompanhamento' },
       { key: 'observations', label: 'Temas e aspectos observados' },
       { key: 'strengths', label: 'Recursos e estratégias desenvolvidas' },
@@ -270,9 +258,7 @@ export const templates: DocStudioTemplate[] = [
     recommendedForProfileTypes: ['psychologist', 'both'],
     allowedProfessionCategories: ['psicologo'],
     riskLevel: 'low',
-    requiresHeader: true,
-    aiRulesProfile: 'psychology_cfp_06_2019',
-    guidedFields: [
+    requiresHeader: true,    guidedFields: [
       { key: 'context', label: 'Foco do atendimento ou período' },
       { key: 'observations', label: 'Observações clínicas descritivas' },
       { key: 'strengths', label: 'Recursos, adesão e estratégias' },
@@ -306,9 +292,7 @@ export const templates: DocStudioTemplate[] = [
     recommendedForProfileTypes: ['psychologist', 'both'],
     allowedProfessionCategories: ['psicologo'],
     riskLevel: 'medium',
-    requiresHeader: true,
-    aiRulesProfile: 'psychology_cfp_06_2019',
-    guidedFields: [
+    requiresHeader: true,    guidedFields: [
       { key: 'context', label: 'Motivo da orientação' },
       { key: 'observations', label: 'Elementos observados ou relatados' },
       { key: 'strengths', label: 'Recursos e fatores de proteção' },
