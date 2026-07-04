@@ -15,6 +15,7 @@ export type TemplateKey =
   | 'psychopedagogy-session'
   | 'psychopedagogy-referral'
   | 'psychological-report'
+  | 'psychological-report-cfp'
   | 'psychological-followup-summary'
   | 'psychological-progress-note'
   | 'psychological-referral';
