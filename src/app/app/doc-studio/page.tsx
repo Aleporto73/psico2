@@ -194,6 +194,32 @@ function composePlainText(
   return lines.join('\n').trim();
 }
 
+function ToggleField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (value: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 text-sm text-pp-ink cursor-pointer select-none">
+      <span>{label}</span>
+      <span className="relative inline-flex h-5 w-9 shrink-0 items-center">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+          className="peer sr-only"
+        />
+        <span className="absolute inset-0 rounded-full bg-pp-hairline transition-colors peer-checked:bg-pp-ink peer-focus-visible:ring-2 peer-focus-visible:ring-pp-ink/30 peer-focus-visible:ring-offset-2" />
+        <span className="relative h-3.5 w-3.5 translate-x-1 rounded-full bg-white shadow-sm transition-transform peer-checked:translate-x-[18px]" />
+      </span>
+    </label>
+  );
+}
+
 export default function DocStudioPage() {
   const [profile, setProfile] = useState<ReportProfile | null>(null);
   const [line, setLine] = useState<LineKey>('psychopedagogy');
@@ -256,6 +282,7 @@ export default function DocStudioPage() {
     fontStyle === 'classic' ? 'font-serif' : fontStyle === 'clean' ? 'font-sans' : 'font-sans';
   const titleFontClass = fontStyle === 'clean' ? 'font-sans' : 'font-serif italic';
   const densityClass = density === 'compact' ? 'space-y-4 text-[14px]' : 'space-y-6 text-[15px]';
+  const activeLine = lineOptions.find((option) => option.key === line) ?? lineOptions[0];
 
   function updateTemplate(nextTemplateKey: TemplateKey) {
     const nextTemplate = templates.find((template) => template.key === nextTemplateKey) ?? templates[0];
@@ -292,6 +319,27 @@ export default function DocStudioPage() {
   return (
     <>
       <style jsx global>{`
+        @keyframes docStudioRise {
+          from {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .doc-studio-rise {
+          animation: docStudioRise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .doc-studio-rise {
+            animation: none;
+          }
+        }
+
         @media print {
           body {
             background: #ffffff !important;
@@ -311,11 +359,8 @@ export default function DocStudioPage() {
             display: block !important;
           }
 
-          .doc-studio-preview-shell {
-            padding: 0 !important;
-            background: transparent !important;
-            border: 0 !important;
-            box-shadow: none !important;
+          .doc-studio-glow {
+            display: none !important;
           }
 
           .doc-studio-page {
@@ -333,30 +378,29 @@ export default function DocStudioPage() {
         }
       `}</style>
 
-      <div className="doc-studio-shell max-w-[1560px] mx-auto space-y-5 xl:space-y-6">
-        <header className="doc-studio-no-print flex flex-col gap-3 pt-2 md:flex-row md:items-end md:justify-between">
+      <div className="doc-studio-shell max-w-[1640px] mx-auto space-y-6 xl:space-y-8 pb-16">
+        <header className="doc-studio-rise doc-studio-no-print flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1.5">
             <p className="font-serif italic text-pp-ink-soft text-sm">Studio de documentos</p>
-            <h1 className="font-serif italic text-3xl md:text-4xl text-pp-ink leading-tight">Doc Studio</h1>
-            <p className="text-pp-ink-soft text-sm md:text-base max-w-2xl">
+            <h1 className="font-serif italic text-3xl md:text-4xl text-pp-ink leading-[1.05]">Doc Studio</h1>
+            <p className="text-pp-ink-soft text-sm max-w-xl leading-relaxed">
               Rascunho local, campos guiados e uma folha profissional pronta para copiar ou imprimir.
             </p>
           </div>
-          <div className="w-fit rounded-2xl border border-pp-hairline bg-white px-4 py-3 text-sm shadow-[0_14px_35px_rgba(14,42,56,0.06)]">
-            <p className="font-serif italic text-pp-ink-soft text-xs">Modo atual</p>
-            <p className="text-pp-ink font-medium">Local · sem IA · sem salvamento</p>
+          <div className="inline-flex w-fit items-center gap-2 rounded-full bg-pp-hairline-soft px-3.5 py-1.5 text-xs text-pp-ink-soft">
+            <span className="h-1.5 w-1.5 rounded-full bg-pp-success" aria-hidden="true" />
+            Local · sem IA · sem salvamento
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[300px_minmax(360px,440px)_minmax(420px,1fr)] 2xl:grid-cols-[320px_minmax(420px,500px)_minmax(520px,1fr)] items-start">
-          <aside className="doc-studio-no-print space-y-4 xl:sticky xl:top-5 xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto xl:pr-1">
-            <section className="bg-white border border-pp-hairline rounded-2xl p-4 space-y-3 shadow-[0_14px_35px_rgba(14,42,56,0.04)]">
-              <div className="space-y-1">
-                <p className="font-serif italic text-pp-ink-soft text-sm">Linha</p>
-                <h2 className="text-lg text-pp-ink font-medium">Área do documento</h2>
-              </div>
-
-              <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-8 xl:gap-10 2xl:gap-12 xl:grid-cols-[280px_minmax(380px,1fr)_minmax(420px,1fr)] items-start">
+          <aside
+            className="doc-studio-rise doc-studio-no-print space-y-8 xl:sticky xl:top-8"
+            style={{ animationDelay: '80ms' }}
+          >
+            <div className="space-y-3">
+              <p className="font-serif italic text-pp-ink-soft text-sm">Linha</p>
+              <div className="inline-flex w-full rounded-full bg-pp-hairline-soft p-1">
                 {lineOptions.map((option) => {
                   const isActive = option.key === line;
                   return (
@@ -364,27 +408,21 @@ export default function DocStudioPage() {
                       key={option.key}
                       type="button"
                       onClick={() => updateLine(option.key)}
-                      className={`w-full text-left p-3.5 rounded-xl border transition ${
-                        isActive
-                          ? 'border-pp-ink bg-pp-hairline-soft text-pp-ink'
-                          : 'border-pp-hairline bg-white text-pp-ink-soft hover:border-pp-ink/30'
+                      className={`flex-1 rounded-full px-3 py-2 text-xs font-medium transition ${
+                        isActive ? 'bg-pp-ink text-pp-canvas shadow-sm' : 'text-pp-ink-soft hover:text-pp-ink'
                       }`}
                     >
-                      <span className="block text-sm font-medium text-pp-ink">{option.title}</span>
-                      <span className="block text-xs leading-relaxed mt-1">{option.description}</span>
+                      {option.title.split(' / ')[0]}
                     </button>
                   );
                 })}
               </div>
-            </section>
+              <p className="text-xs leading-relaxed text-pp-ink-soft">{activeLine.description}</p>
+            </div>
 
-            <section className="bg-white border border-pp-hairline rounded-2xl p-4 space-y-3 shadow-[0_14px_35px_rgba(14,42,56,0.04)]">
+            <div className="space-y-3 pt-8 border-t border-pp-hairline-soft">
+              <p className="font-serif italic text-pp-ink-soft text-sm">Templates</p>
               <div className="space-y-1">
-                <p className="font-serif italic text-pp-ink-soft text-sm">Templates</p>
-                <h2 className="text-lg text-pp-ink font-medium">Âncoras iniciais</h2>
-              </div>
-
-              <div className="space-y-3">
                 {templates.map((template) => {
                   const isActive = template.key === templateKey;
                   return (
@@ -392,52 +430,51 @@ export default function DocStudioPage() {
                       key={template.key}
                       type="button"
                       onClick={() => updateTemplate(template.key)}
-                      className={`w-full text-left p-3.5 rounded-xl border transition ${
+                      className={`block w-full text-left rounded-xl border-l-2 px-3.5 py-3 transition ${
                         isActive
-                          ? 'border-pp-ink bg-pp-block-cream/60 text-pp-ink'
-                          : 'border-pp-hairline bg-white text-pp-ink-soft hover:border-pp-ink/30'
+                          ? 'border-l-pp-ink bg-pp-block-cream/60'
+                          : 'border-l-transparent hover:bg-pp-hairline-soft/70'
                       }`}
                     >
-                      <span className="text-[11px] uppercase tracking-wide font-medium" style={isActive ? accentStyle : undefined}>
+                      <span
+                        className="text-[10px] font-semibold uppercase tracking-wide text-pp-ink-soft"
+                        style={isActive ? accentStyle : undefined}
+                      >
                         {template.eyebrow}
                       </span>
-                      <span className="block text-sm font-medium text-pp-ink mt-1">{template.title}</span>
-                      <span className="block text-xs leading-relaxed mt-1">{template.intro}</span>
+                      <span className="mt-0.5 block text-sm font-medium text-pp-ink">{template.title}</span>
                     </button>
                   );
                 })}
               </div>
-            </section>
+            </div>
 
-            <section className="bg-white border border-pp-hairline rounded-2xl p-4 space-y-3 shadow-[0_14px_35px_rgba(14,42,56,0.04)]">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <p className="font-serif italic text-pp-ink-soft text-sm">Aparência</p>
-                  <h2 className="text-lg text-pp-ink font-medium">Acabamento</h2>
-                </div>
-                <SlidersHorizontal className="w-5 h-5 text-pp-ink-soft" aria-hidden="true" />
+            <div className="space-y-4 pt-8 border-t border-pp-hairline-soft">
+              <div className="flex items-center justify-between">
+                <p className="font-serif italic text-pp-ink-soft text-sm">Aparência</p>
+                <SlidersHorizontal className="w-4 h-4 text-pp-ink-soft" aria-hidden="true" />
               </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-xs font-medium text-pp-ink-soft">Cor principal</label>
-                  <div className="flex flex-wrap gap-2">
-                    {colorOptions.map((color) => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        onClick={() => setPrimaryColor(color.value)}
-                        className={`h-9 w-9 rounded-full border-2 transition ${
-                          primaryColor === color.value ? 'border-pp-ink' : 'border-transparent'
-                        }`}
-                        style={{ backgroundColor: color.value }}
-                        aria-label={color.label}
-                      />
-                    ))}
-                  </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-pp-ink-soft">Cor principal</label>
+                <div className="flex flex-wrap gap-2">
+                  {colorOptions.map((color) => (
+                    <button
+                      key={color.value}
+                      type="button"
+                      onClick={() => setPrimaryColor(color.value)}
+                      className={`h-9 w-9 rounded-full border-2 transition ${
+                        primaryColor === color.value ? 'border-pp-ink' : 'border-transparent'
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      aria-label={color.label}
+                    />
+                  ))}
                 </div>
+              </div>
 
-                <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
                   <label htmlFor="fontStyle" className="text-xs font-medium text-pp-ink-soft">
                     Estilo de fonte
                   </label>
@@ -445,7 +482,7 @@ export default function DocStudioPage() {
                     id="fontStyle"
                     value={fontStyle}
                     onChange={(event) => setFontStyle(event.target.value as FontStyle)}
-                    className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+                    className="w-full px-3 py-2 bg-white border border-pp-hairline rounded-lg text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
                   >
                     <option value="editorial">Editorial</option>
                     <option value="classic">Clássica</option>
@@ -453,7 +490,7 @@ export default function DocStudioPage() {
                   </select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <label htmlFor="density" className="text-xs font-medium text-pp-ink-soft">
                     Densidade
                   </label>
@@ -461,51 +498,31 @@ export default function DocStudioPage() {
                     id="density"
                     value={density}
                     onChange={(event) => setDensity(event.target.value as Density)}
-                    className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+                    className="w-full px-3 py-2 bg-white border border-pp-hairline rounded-lg text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
                   >
                     <option value="comfortable">Confortável</option>
                     <option value="compact">Compacta</option>
                   </select>
                 </div>
-
-                <label className="flex items-center justify-between gap-3 text-sm text-pp-ink">
-                  <span>Modo preto e branco</span>
-                  <input
-                    type="checkbox"
-                    checked={blackAndWhite}
-                    onChange={(event) => setBlackAndWhite(event.target.checked)}
-                    className="h-4 w-4 accent-pp-ink"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between gap-3 text-sm text-pp-ink">
-                  <span>Mostrar cabeçalho</span>
-                  <input
-                    type="checkbox"
-                    checked={showHeader}
-                    onChange={(event) => setShowHeader(event.target.checked)}
-                    className="h-4 w-4 accent-pp-ink"
-                  />
-                </label>
               </div>
-            </section>
+
+              <div className="space-y-2 pt-1">
+                <ToggleField label="Modo preto e branco" checked={blackAndWhite} onChange={setBlackAndWhite} />
+                <ToggleField label="Mostrar cabeçalho" checked={showHeader} onChange={setShowHeader} />
+              </div>
+            </div>
           </aside>
 
-          <main className="doc-studio-no-print bg-white border border-pp-hairline rounded-2xl p-4 md:p-5 space-y-4 shadow-[0_18px_45px_rgba(14,42,56,0.05)]">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="space-y-1">
-                  <p className="font-serif italic text-pp-ink-soft text-sm">Campos guiados</p>
-                  <h2 className="text-lg text-pp-ink font-medium">{selectedTemplate.title}</h2>
-                  <p className="text-sm text-pp-ink-soft max-w-2xl">
-                    {loadingProfile ? 'Carregando cabeçalho profissional...' : 'Preencha os blocos e acompanhe o documento ao lado.'}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
+          <main className="doc-studio-rise doc-studio-no-print space-y-6" style={{ animationDelay: '140ms' }}>
+            <div className="space-y-2 border-b border-pp-hairline-soft pb-5">
+              <p className="font-serif italic text-pp-ink-soft text-sm">Campos guiados</p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-xl text-pp-ink font-medium">{selectedTemplate.title}</h2>
+                <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleCopy}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-pill text-sm font-medium text-pp-ink border border-pp-ink/15 hover:bg-pp-ink/5 transition"
+                    className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-4 py-2 text-sm font-medium text-pp-ink transition hover:bg-pp-ink/5"
                   >
                     {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     {copied ? 'Copiado' : 'Copiar'}
@@ -513,15 +530,20 @@ export default function DocStudioPage() {
                   <button
                     type="button"
                     onClick={handlePrint}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-pill text-sm font-medium bg-pp-ink text-pp-canvas hover:bg-pp-ink-soft transition"
+                    className="inline-flex items-center gap-2 rounded-pill bg-pp-ink px-4 py-2 text-sm font-medium text-pp-canvas transition hover:bg-pp-ink-soft"
                   >
                     <Printer className="w-4 h-4" />
                     Imprimir
                   </button>
                 </div>
               </div>
+              <p className="text-sm text-pp-ink-soft max-w-md">
+                {loadingProfile ? 'Carregando cabeçalho profissional...' : 'Preencha os blocos e acompanhe o documento ao lado.'}
+              </p>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <label htmlFor="subjectName" className="text-xs font-medium text-pp-ink-soft">
                     Nome ou identificação
@@ -530,7 +552,7 @@ export default function DocStudioPage() {
                     id="subjectName"
                     value={fields.subjectName}
                     onChange={(event) => setFields((current) => ({ ...current, subjectName: event.target.value }))}
-                    className="w-full px-4 py-2.5 bg-pp-canvas border border-pp-hairline rounded-xl text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+                    className="w-full px-4 py-2.5 bg-white border border-pp-hairline rounded-xl text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
                   />
                 </div>
 
@@ -542,44 +564,55 @@ export default function DocStudioPage() {
                     id="subjectAge"
                     value={fields.subjectAge}
                     onChange={(event) => setFields((current) => ({ ...current, subjectAge: event.target.value }))}
-                    className="w-full px-4 py-2.5 bg-pp-canvas border border-pp-hairline rounded-xl text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+                    className="w-full px-4 py-2.5 bg-white border border-pp-hairline rounded-xl text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
                   />
                 </div>
-
-                <div className="space-y-2 md:col-span-2">
-                  <label htmlFor="documentPurpose" className="text-xs font-medium text-pp-ink-soft">
-                    Finalidade
-                  </label>
-                  <input
-                    id="documentPurpose"
-                    value={fields.documentPurpose}
-                    onChange={(event) => setFields((current) => ({ ...current, documentPurpose: event.target.value }))}
-                    className="w-full px-4 py-2.5 bg-pp-canvas border border-pp-hairline rounded-xl text-sm text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
-                  />
-                </div>
-
-                {selectedTemplate.sections.map((section) => (
-                  <div key={section.key} className="space-y-2 md:col-span-2">
-                    <label htmlFor={section.key} className="text-xs font-medium text-pp-ink-soft">
-                      {section.title}
-                    </label>
-                    <textarea
-                      id={section.key}
-                      value={fields[section.key]}
-                      onChange={(event) => setFields((current) => ({ ...current, [section.key]: event.target.value }))}
-                      rows={density === 'compact' ? 3 : 4}
-                      className="w-full px-4 py-2.5 bg-pp-canvas border border-pp-hairline rounded-xl text-sm text-pp-ink leading-relaxed resize-y focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
-                    />
-                  </div>
-                ))}
               </div>
+
+              <div className="space-y-2">
+                <label htmlFor="documentPurpose" className="text-xs font-medium text-pp-ink-soft">
+                  Finalidade
+                </label>
+                <textarea
+                  id="documentPurpose"
+                  value={fields.documentPurpose}
+                  onChange={(event) => setFields((current) => ({ ...current, documentPurpose: event.target.value }))}
+                  rows={2}
+                  className="w-full px-4 py-2.5 bg-white border border-pp-hairline rounded-xl text-sm text-pp-ink leading-relaxed resize-y focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+                />
+              </div>
+
+              {selectedTemplate.sections.map((section) => (
+                <div key={section.key} className="space-y-2">
+                  <label htmlFor={section.key} className="text-xs font-medium text-pp-ink-soft">
+                    {section.title}
+                  </label>
+                  <textarea
+                    id={section.key}
+                    value={fields[section.key]}
+                    onChange={(event) => setFields((current) => ({ ...current, [section.key]: event.target.value }))}
+                    rows={density === 'compact' ? 3 : 4}
+                    className="w-full px-4 py-3 bg-white border border-pp-hairline rounded-xl text-sm text-pp-ink leading-relaxed resize-y focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+                  />
+                </div>
+              ))}
+            </div>
           </main>
 
-          <section className="doc-studio-print-area xl:sticky xl:top-5 xl:max-h-[calc(100vh-2.5rem)] xl:overflow-y-auto xl:pr-1">
-            <div className="doc-studio-preview-shell rounded-[28px] border border-pp-hairline bg-white/75 p-2.5 shadow-[0_22px_65px_rgba(14,42,56,0.10)]">
-              <div className="doc-studio-page bg-white border border-pp-hairline rounded-[22px] shadow-[0_24px_70px_rgba(14,42,56,0.12)] p-6 md:p-8 xl:p-7 2xl:p-10 min-h-[760px]">
+          <section
+            className="doc-studio-rise doc-studio-print-area xl:sticky xl:top-8"
+            style={{ animationDelay: '200ms' }}
+          >
+            <div className="relative mx-auto max-w-[720px] print:mx-0 print:max-w-none">
+              <div
+                className="doc-studio-glow pointer-events-none absolute -inset-8 -z-10 opacity-60 blur-2xl"
+                style={{ background: `radial-gradient(closest-side, ${activeColor}14, transparent)` }}
+                aria-hidden="true"
+              />
+
+              <div className="doc-studio-page min-h-[720px] rounded-block border border-pp-hairline/70 bg-white p-7 shadow-[0_30px_80px_rgba(14,42,56,0.14)] md:p-9 2xl:p-10">
                 {showHeader && (
-                  <header className="pb-4 mb-6 border-b" style={borderStyle}>
+                  <header className="mb-7 border-b pb-5" style={borderStyle}>
                     <p className={`${titleFontClass} text-[25px] leading-tight text-pp-ink`}>{header.name}</p>
                     <p className="text-sm text-pp-ink-soft mt-1">{header.subtitle}</p>
                   </header>
@@ -596,16 +629,16 @@ export default function DocStudioPage() {
                     </h2>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
-                    <div className="rounded-xl border border-pp-hairline p-3" style={{ backgroundColor: softBackground }}>
+                  <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
+                    <div className="rounded-xl p-3" style={{ backgroundColor: softBackground }}>
                       <span className="block text-[11px] uppercase tracking-wide text-pp-ink-soft">Avaliado(a)</span>
                       <strong className="block font-medium text-pp-ink mt-1">{fields.subjectName || 'Não informado'}</strong>
                     </div>
-                    <div className="rounded-xl border border-pp-hairline p-3" style={{ backgroundColor: softBackground }}>
+                    <div className="rounded-xl p-3" style={{ backgroundColor: softBackground }}>
                       <span className="block text-[11px] uppercase tracking-wide text-pp-ink-soft">Idade/Faixa</span>
                       <strong className="block font-medium text-pp-ink mt-1">{fields.subjectAge || 'Não informado'}</strong>
                     </div>
-                    <div className="rounded-xl border border-pp-hairline p-3" style={{ backgroundColor: softBackground }}>
+                    <div className="rounded-xl p-3" style={{ backgroundColor: softBackground }}>
                       <span className="block text-[11px] uppercase tracking-wide text-pp-ink-soft">Linha</span>
                       <strong className="block font-medium text-pp-ink mt-1">
                         {line === 'psychology' ? 'Psicologia' : 'Psicopedagogia'}
@@ -613,7 +646,7 @@ export default function DocStudioPage() {
                     </div>
                   </div>
 
-                  <section className="rounded-2xl p-5 border-l-4" style={{ ...borderStyle, backgroundColor: softBackground }}>
+                  <section className="rounded-2xl p-6 border-l-4" style={{ ...borderStyle, backgroundColor: softBackground }}>
                     <h3 className="text-sm font-semibold text-pp-ink mb-2">Finalidade</h3>
                     <p className="leading-relaxed text-pp-ink-soft">{fields.documentPurpose}</p>
                   </section>
@@ -633,7 +666,7 @@ export default function DocStudioPage() {
                 </article>
               </div>
             </div>
-            </section>
+          </section>
         </div>
       </div>
     </>
