@@ -8,6 +8,7 @@ type LineKey = 'psychopedagogy' | 'psychology';
 type TemplateKey = 'family-feedback' | 'psychological-report';
 type FontStyle = 'editorial' | 'classic' | 'clean';
 type Density = 'comfortable' | 'compact';
+type CopyState = 'idle' | 'success' | 'error';
 
 interface ReportProfile {
   profile_type: string | null;
@@ -158,6 +159,20 @@ function buildHeader(profile: ReportProfile | null) {
   };
 }
 
+function getHeaderMissingItems(profile: ReportProfile | null) {
+  const missing: string[] = [];
+  const hasName = Boolean(profile?.display_name?.trim());
+  const hasProfession = Boolean(getProfessionLabel(profile?.profession_category, profile?.gender));
+  const hasCredential = Boolean(
+    getCredentialLabel(profile?.credential_type) && profile?.credential_number?.trim(),
+  );
+
+  if (!hasName) missing.push('nome profissional');
+  if (!hasProfession && !hasCredential) missing.push('identificação profissional');
+
+  return missing;
+}
+
 function lineFromProfileType(profileType: string | null | undefined): LineKey {
   if (profileType === 'psychologist') return 'psychology';
   return 'psychopedagogy';
@@ -230,7 +245,7 @@ export default function DocStudioPage() {
   const [blackAndWhite, setBlackAndWhite] = useState(false);
   const [density, setDensity] = useState<Density>('comfortable');
   const [showHeader, setShowHeader] = useState(true);
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>('idle');
   const [loadingProfile, setLoadingProfile] = useState(true);
 
   useEffect(() => {
@@ -283,6 +298,8 @@ export default function DocStudioPage() {
   const titleFontClass = fontStyle === 'clean' ? 'font-sans' : 'font-serif italic';
   const densityClass = density === 'compact' ? 'space-y-4 text-[14px]' : 'space-y-6 text-[15px]';
   const activeLine = lineOptions.find((option) => option.key === line) ?? lineOptions[0];
+  const headerMissingItems = useMemo(() => getHeaderMissingItems(profile), [profile]);
+  const hasIncompleteHeader = showHeader && !loadingProfile && headerMissingItems.length > 0;
 
   function updateTemplate(nextTemplateKey: TemplateKey) {
     const nextTemplate = templates.find((template) => template.key === nextTemplateKey) ?? templates[0];
@@ -307,9 +324,33 @@ export default function DocStudioPage() {
 
   async function handleCopy() {
     const text = composePlainText(profile, selectedTemplate, fields, showHeader);
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1800);
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textArea = document.createElement('textarea');
+        try {
+          textArea.value = text;
+          textArea.setAttribute('readonly', '');
+          textArea.style.position = 'fixed';
+          textArea.style.top = '-9999px';
+          document.body.appendChild(textArea);
+          textArea.select();
+
+          if (!document.execCommand('copy')) {
+            throw new Error('Copy command was not accepted.');
+          }
+        } finally {
+          textArea.parentNode?.removeChild(textArea);
+        }
+      }
+
+      setCopyState('success');
+      window.setTimeout(() => setCopyState('idle'), 1800);
+    } catch {
+      setCopyState('error');
+      window.setTimeout(() => setCopyState('idle'), 2400);
+    }
   }
 
   function handlePrint() {
@@ -345,6 +386,10 @@ export default function DocStudioPage() {
             background: #ffffff !important;
           }
 
+          body * {
+            visibility: hidden !important;
+          }
+
           .doc-studio-no-print {
             display: none !important;
           }
@@ -357,6 +402,16 @@ export default function DocStudioPage() {
 
           .doc-studio-print-area {
             display: block !important;
+            position: absolute !important;
+            inset: 0 auto auto 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            visibility: visible !important;
+          }
+
+          .doc-studio-print-area * {
+            visibility: visible !important;
           }
 
           .doc-studio-glow {
@@ -364,16 +419,95 @@ export default function DocStudioPage() {
           }
 
           .doc-studio-page {
-            width: 190mm !important;
+            box-sizing: border-box !important;
+            width: 186mm !important;
+            max-width: 186mm !important;
             min-height: auto !important;
             margin: 0 auto !important;
+            padding: 9mm 10mm !important;
             box-shadow: none !important;
             border: 0 !important;
+            border-radius: 0 !important;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+
+          .doc-studio-page * {
+            overflow-wrap: anywhere;
+          }
+
+          .doc-studio-page article {
+            font-size: 12.25px !important;
+            line-height: 1.55 !important;
+          }
+
+          .doc-studio-page article > :not([hidden]) ~ :not([hidden]) {
+            margin-top: 13px !important;
+          }
+
+          .doc-studio-page header {
+            margin-bottom: 16px !important;
+            padding-bottom: 12px !important;
+          }
+
+          .doc-studio-page h2 {
+            font-size: 25px !important;
+            line-height: 1.12 !important;
+          }
+
+          .doc-studio-page h3 {
+            font-size: 15px !important;
+            margin-bottom: 6px !important;
+            padding-bottom: 5px !important;
+          }
+
+          .doc-studio-page section {
+            margin-top: 13px !important;
+          }
+
+          .doc-studio-meta-grid {
+            display: grid !important;
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+            gap: 7px !important;
+            margin-top: 15px !important;
+          }
+
+          .doc-studio-meta-card {
+            min-height: 0 !important;
+            padding: 7px 8px !important;
+            border-radius: 8px !important;
+          }
+
+          .doc-studio-meta-label {
+            font-size: 8.5px !important;
+            letter-spacing: 0.04em !important;
+          }
+
+          .doc-studio-meta-value {
+            margin-top: 2px !important;
+            font-size: 11px !important;
+            line-height: 1.25 !important;
+          }
+
+          .doc-studio-purpose-box {
+            margin-top: 14px !important;
+            padding: 11px 13px !important;
+            border-radius: 10px !important;
+          }
+
+          .doc-studio-page footer {
+            margin-top: 15px !important;
+            padding-top: 10px !important;
+          }
+
+          .doc-studio-purpose-box p,
+          .doc-studio-page section p {
+            line-height: 1.55 !important;
           }
 
           @page {
             size: A4;
-            margin: 14mm;
+            margin: 12mm;
           }
         }
       `}</style>
@@ -473,7 +607,7 @@ export default function DocStudioPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label htmlFor="fontStyle" className="text-xs font-medium text-pp-ink-soft">
                     Estilo de fonte
@@ -509,6 +643,11 @@ export default function DocStudioPage() {
               <div className="space-y-2 pt-1">
                 <ToggleField label="Modo preto e branco" checked={blackAndWhite} onChange={setBlackAndWhite} />
                 <ToggleField label="Mostrar cabeçalho" checked={showHeader} onChange={setShowHeader} />
+                {hasIncompleteHeader && (
+                  <p className="rounded-xl bg-pp-block-cream/70 px-3 py-2 text-xs leading-relaxed text-pp-ink-soft">
+                    Cabeçalho incompleto: revise {headerMissingItems.join(' e ')} em Minha conta.
+                  </p>
+                )}
               </div>
             </div>
           </aside>
@@ -518,27 +657,35 @@ export default function DocStudioPage() {
               <p className="font-serif italic text-pp-ink-soft text-sm">Campos guiados</p>
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h2 className="text-xl text-pp-ink font-medium">{selectedTemplate.title}</h2>
-                <div className="flex gap-2">
+                <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
                   <button
                     type="button"
                     onClick={handleCopy}
-                    className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-4 py-2 text-sm font-medium text-pp-ink transition hover:bg-pp-ink/5"
+                    aria-live="polite"
+                    className="inline-flex items-center justify-center gap-2 rounded-pill border border-pp-ink/15 px-4 py-2 text-sm font-medium text-pp-ink transition hover:bg-pp-ink/5"
                   >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {copied ? 'Copiado' : 'Copiar'}
+                    {copyState === 'success' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copyState === 'success' ? 'Copiado' : copyState === 'error' ? 'Falhou' : 'Copiar'}
                   </button>
                   <button
                     type="button"
                     onClick={handlePrint}
-                    className="inline-flex items-center gap-2 rounded-pill bg-pp-ink px-4 py-2 text-sm font-medium text-pp-canvas transition hover:bg-pp-ink-soft"
+                    className="inline-flex items-center justify-center gap-2 rounded-pill bg-pp-ink px-4 py-2 text-sm font-medium text-pp-canvas transition hover:bg-pp-ink-soft"
                   >
                     <Printer className="w-4 h-4" />
                     Imprimir
                   </button>
                 </div>
               </div>
+              <p className="text-xs leading-relaxed text-pp-ink-soft">
+                Na janela de impressão, desative Cabeçalhos e rodapés para gerar um PDF limpo.
+              </p>
               <p className="text-sm text-pp-ink-soft max-w-md">
-                {loadingProfile ? 'Carregando cabeçalho profissional...' : 'Preencha os blocos e acompanhe o documento ao lado.'}
+                {loadingProfile
+                  ? 'Carregando cabeçalho profissional...'
+                  : hasIncompleteHeader
+                    ? `Cabeçalho incompleto: faltam ${headerMissingItems.join(' e ')}.`
+                    : 'Preencha os blocos e acompanhe o documento ao lado.'}
               </p>
             </div>
 
@@ -610,7 +757,7 @@ export default function DocStudioPage() {
                 aria-hidden="true"
               />
 
-              <div className="doc-studio-page min-h-[720px] rounded-block border border-pp-hairline/70 bg-white p-7 shadow-[0_30px_80px_rgba(14,42,56,0.14)] md:p-9 2xl:p-10">
+              <div className="doc-studio-page min-h-[720px] rounded-block border border-pp-hairline/70 bg-white p-5 shadow-[0_30px_80px_rgba(14,42,56,0.14)] sm:p-7 md:p-9 2xl:p-10">
                 {showHeader && (
                   <header className="mb-7 border-b pb-5" style={borderStyle}>
                     <p className={`${titleFontClass} text-[25px] leading-tight text-pp-ink`}>{header.name}</p>
@@ -629,24 +776,24 @@ export default function DocStudioPage() {
                     </h2>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-3">
-                    <div className="rounded-xl p-3" style={{ backgroundColor: softBackground }}>
-                      <span className="block text-[11px] uppercase tracking-wide text-pp-ink-soft">Avaliado(a)</span>
-                      <strong className="block font-medium text-pp-ink mt-1">{fields.subjectName || 'Não informado'}</strong>
+                  <div className="doc-studio-meta-grid grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
+                    <div className="doc-studio-meta-card rounded-xl p-3" style={{ backgroundColor: softBackground }}>
+                      <span className="doc-studio-meta-label block text-[11px] uppercase tracking-wide text-pp-ink-soft">Avaliado(a)</span>
+                      <strong className="doc-studio-meta-value block font-medium text-pp-ink mt-1">{fields.subjectName || 'Não informado'}</strong>
                     </div>
-                    <div className="rounded-xl p-3" style={{ backgroundColor: softBackground }}>
-                      <span className="block text-[11px] uppercase tracking-wide text-pp-ink-soft">Idade/Faixa</span>
-                      <strong className="block font-medium text-pp-ink mt-1">{fields.subjectAge || 'Não informado'}</strong>
+                    <div className="doc-studio-meta-card rounded-xl p-3" style={{ backgroundColor: softBackground }}>
+                      <span className="doc-studio-meta-label block text-[11px] uppercase tracking-wide text-pp-ink-soft">Idade/Faixa</span>
+                      <strong className="doc-studio-meta-value block font-medium text-pp-ink mt-1">{fields.subjectAge || 'Não informado'}</strong>
                     </div>
-                    <div className="rounded-xl p-3" style={{ backgroundColor: softBackground }}>
-                      <span className="block text-[11px] uppercase tracking-wide text-pp-ink-soft">Linha</span>
-                      <strong className="block font-medium text-pp-ink mt-1">
+                    <div className="doc-studio-meta-card rounded-xl p-3" style={{ backgroundColor: softBackground }}>
+                      <span className="doc-studio-meta-label block text-[11px] uppercase tracking-wide text-pp-ink-soft">Linha</span>
+                      <strong className="doc-studio-meta-value block font-medium text-pp-ink mt-1">
                         {line === 'psychology' ? 'Psicologia' : 'Psicopedagogia'}
                       </strong>
                     </div>
                   </div>
 
-                  <section className="rounded-2xl p-6 border-l-4" style={{ ...borderStyle, backgroundColor: softBackground }}>
+                  <section className="doc-studio-purpose-box rounded-2xl p-5 sm:p-6 border-l-4" style={{ ...borderStyle, backgroundColor: softBackground }}>
                     <h3 className="text-sm font-semibold text-pp-ink mb-2">Finalidade</h3>
                     <p className="leading-relaxed text-pp-ink-soft">{fields.documentPurpose}</p>
                   </section>
