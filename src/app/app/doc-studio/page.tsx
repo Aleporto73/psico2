@@ -714,7 +714,7 @@ export default function DocStudioPage() {
         }
       `}</style>
 
-      <div className="doc-studio-shell max-w-[1640px] mx-auto space-y-6 xl:space-y-8 pb-16">
+      <div className="doc-studio-shell max-w-[1880px] mx-auto space-y-8 xl:space-y-10 pb-16">
         <header className="doc-studio-rise doc-studio-no-print flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div className="space-y-1.5">
             <p className="font-serif italic text-pp-ink-soft text-sm">Studio de documentos</p>
@@ -729,7 +729,7 @@ export default function DocStudioPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 gap-8 xl:gap-10 2xl:gap-12 xl:grid-cols-[280px_minmax(380px,1fr)_minmax(420px,1fr)] items-start">
+        <div className="grid grid-cols-1 gap-9 xl:gap-14 2xl:gap-16 xl:grid-cols-[280px_minmax(380px,440px)_minmax(560px,1fr)] items-start">
           <aside
             className="doc-studio-rise doc-studio-no-print space-y-8 xl:sticky xl:top-8"
             style={{ animationDelay: '80ms' }}
@@ -953,10 +953,10 @@ export default function DocStudioPage() {
           </main>
 
           <section
-            className="doc-studio-rise doc-studio-print-area xl:sticky xl:top-8"
+            className="doc-studio-rise doc-studio-print-area xl:sticky xl:top-10"
             style={{ animationDelay: '200ms' }}
           >
-            <div className="relative mx-auto max-w-[720px] print:mx-0 print:max-w-none">
+            <div className="relative mx-auto w-full max-w-[900px] print:mx-0 print:max-w-none">
               <div
                 className="doc-studio-glow pointer-events-none absolute -inset-8 -z-10 opacity-60 blur-2xl"
                 style={{ background: `radial-gradient(closest-side, ${activeColor}14, transparent)` }}
