@@ -50,6 +50,7 @@ interface DocStudioDraft {
   density: Density;
   blackAndWhite: boolean;
   showHeader: boolean;
+  showSignature: boolean;
   updatedAt: string;
 }
 
@@ -422,6 +423,7 @@ function parseStoredDraft(rawDraft: string | null): DocStudioDraft | null {
       density: isDensity(parsed.density) ? parsed.density : 'comfortable',
       blackAndWhite: typeof parsed.blackAndWhite === 'boolean' ? parsed.blackAndWhite : false,
       showHeader: typeof parsed.showHeader === 'boolean' ? parsed.showHeader : true,
+      showSignature: typeof parsed.showSignature === 'boolean' ? parsed.showSignature : false,
       updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : new Date().toISOString(),
     };
   } catch {
@@ -488,35 +490,106 @@ function lineFromProfileType(profileType: string | null | undefined): LineKey {
   return 'psychopedagogy';
 }
 
+function getLineTitle(line: LineKey) {
+  return lineOptions.find((option) => option.key === line)?.title ?? lineOptions[0].title;
+}
+
+function getProfessionalSignature(profile: ReportProfile | null) {
+  const name = profile?.display_name?.trim() ?? '';
+  const profession = getProfessionLabel(profile?.profession_category, profile?.gender);
+  const credential = [getCredentialLabel(profile?.credential_type), profile?.credential_number?.trim()]
+    .filter(Boolean)
+    .join(' ');
+  const missingItems: string[] = [];
+
+  if (!name) missingItems.push('nome profissional');
+  if (!profession) missingItems.push('categoria profissional');
+  if (!credential) missingItems.push('registro profissional');
+
+  return {
+    name,
+    profession,
+    credential,
+    missingItems,
+    hasAny: Boolean(name || profession || credential),
+  };
+}
+
+function getCopyHeader(profile: ReportProfile | null) {
+  const signature = getProfessionalSignature(profile);
+  const subtitle = [signature.profession, signature.credential].filter(Boolean).join(' - ');
+
+  if (!signature.name && !subtitle) return null;
+
+  return { name: signature.name, subtitle };
+}
+
+function formatCopyValue(value: string, fallback: string) {
+  return value.trim() || fallback;
+}
+
+function appendCopySection(lines: string[], title: string, content: string) {
+  const cleanContent = content.trim();
+  if (!cleanContent) return;
+
+  lines.push(title);
+  lines.push(cleanContent);
+  lines.push('');
+}
+
+function appendCopySignature(lines: string[], profile: ReportProfile | null) {
+  const signature = getProfessionalSignature(profile);
+
+  lines.push('Assinatura');
+  lines.push('______________________________');
+
+  if (!signature.hasAny) {
+    lines.push('Dados profissionais não informados');
+    lines.push('');
+    return;
+  }
+
+  if (signature.name) lines.push(signature.name);
+  if (signature.profession) lines.push(signature.profession);
+  if (signature.credential) lines.push(`Registro: ${signature.credential}`);
+  lines.push('');
+}
+
 function composePlainText(
   profile: ReportProfile | null,
   template: TemplateDefinition,
   fields: DraftFields,
   showHeader: boolean,
+  showSignature: boolean,
 ) {
-  const header = buildHeader(profile);
+  const header = getCopyHeader(profile);
   const lines: string[] = [];
 
-  if (showHeader) {
-    lines.push(header.name);
+  if (showHeader && header) {
+    if (header.name) lines.push(header.name);
     if (header.subtitle) lines.push(header.subtitle);
     lines.push('');
   }
 
   lines.push(template.title);
   lines.push('');
-  lines.push(`Avaliado(a): ${fields.subjectName}`);
-  lines.push(`Idade/Faixa etária: ${fields.subjectAge}`);
-  lines.push(`Finalidade: ${fields.documentPurpose}`);
+  lines.push(`Linha/Categoria: ${getLineTitle(template.line)} / ${template.category}`);
+  lines.push(`Avaliado(a): ${formatCopyValue(fields.subjectName, 'Não informado')}`);
+  lines.push(`Idade/Faixa etária: ${formatCopyValue(fields.subjectAge, 'Não informado')}`);
+  lines.push(`Finalidade: ${formatCopyValue(fields.documentPurpose, 'Não informada')}`);
   lines.push('');
 
   template.sections.forEach((section) => {
-    lines.push(section.title);
-    lines.push(fields[section.key]);
-    lines.push('');
+    appendCopySection(lines, section.title, fields[section.key]);
   });
 
+  lines.push('Observação ética');
   lines.push(template.footerNote);
+
+  if (showSignature) {
+    lines.push('');
+    appendCopySignature(lines, profile);
+  }
 
   return lines.join('\n').trim();
 }
@@ -557,6 +630,7 @@ export default function DocStudioPage() {
   const [blackAndWhite, setBlackAndWhite] = useState(false);
   const [density, setDensity] = useState<Density>('comfortable');
   const [showHeader, setShowHeader] = useState(true);
+  const [showSignature, setShowSignature] = useState(false);
   const [copyState, setCopyState] = useState<CopyState>('idle');
   const [draftStatus, setDraftStatus] = useState<DraftStatus>('idle');
   const [hasHydratedDraft, setHasHydratedDraft] = useState(false);
@@ -581,6 +655,7 @@ export default function DocStudioPage() {
           setBlackAndWhite(storedDraft.blackAndWhite);
           setDensity(storedDraft.density);
           setShowHeader(storedDraft.showHeader);
+          setShowSignature(storedDraft.showSignature);
           setDraftStatus('restored');
         } else {
           setDraftStatus('saved');
@@ -662,6 +737,8 @@ export default function DocStudioPage() {
   const activeLine = lineOptions.find((option) => option.key === line) ?? lineOptions[0];
   const headerMissingItems = useMemo(() => getHeaderMissingItems(profile), [profile]);
   const hasIncompleteHeader = showHeader && !loadingProfile && headerMissingItems.length > 0;
+  const signature = useMemo(() => getProfessionalSignature(profile), [profile]);
+  const hasIncompleteSignature = showSignature && !loadingProfile && signature.missingItems.length > 0;
 
   useEffect(() => {
     if (!hasHydratedDraft) return;
@@ -683,6 +760,7 @@ export default function DocStudioPage() {
           density,
           blackAndWhite,
           showHeader,
+          showSignature,
           updatedAt: new Date().toISOString(),
         };
 
@@ -704,6 +782,7 @@ export default function DocStudioPage() {
     primaryColor,
     selectedTemplate.id,
     showHeader,
+    showSignature,
   ]);
 
   function updateTemplate(nextTemplateKey: TemplateKey) {
@@ -744,10 +823,11 @@ export default function DocStudioPage() {
     setBlackAndWhite(false);
     setDensity('comfortable');
     setShowHeader(true);
+    setShowSignature(false);
   }
 
   async function handleCopy() {
-    const text = composePlainText(profile, selectedTemplate, fields, showHeader);
+    const text = composePlainText(profile, selectedTemplate, fields, showHeader, showSignature);
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
@@ -1068,9 +1148,15 @@ export default function DocStudioPage() {
               <div className="space-y-2 pt-1">
                 <ToggleField label="Modo preto e branco" checked={blackAndWhite} onChange={setBlackAndWhite} />
                 <ToggleField label="Mostrar cabeçalho" checked={showHeader} onChange={setShowHeader} />
+                <ToggleField label="Mostrar assinatura" checked={showSignature} onChange={setShowSignature} />
                 {hasIncompleteHeader && (
                   <p className="rounded-xl bg-pp-block-cream/70 px-3 py-2 text-xs leading-relaxed text-pp-ink-soft">
                     Cabeçalho incompleto: revise {headerMissingItems.join(' e ')} em Minha conta.
+                  </p>
+                )}
+                {hasIncompleteSignature && (
+                  <p className="rounded-xl bg-pp-block-cream/70 px-3 py-2 text-xs leading-relaxed text-pp-ink-soft">
+                    Assinatura incompleta: revise {signature.missingItems.join(' e ')} em Minha conta.
                   </p>
                 )}
               </div>
@@ -1093,7 +1179,7 @@ export default function DocStudioPage() {
                     className="inline-flex items-center justify-center gap-2 rounded-pill border border-pp-ink/15 px-4 py-2 text-sm font-medium text-pp-ink transition hover:bg-pp-ink/5"
                   >
                     {copyState === 'success' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    {copyState === 'success' ? 'Copiado' : copyState === 'error' ? 'Falhou' : 'Copiar'}
+                    {copyState === 'success' ? 'Pronto para colar' : copyState === 'error' ? 'Falhou' : 'Copiar'}
                   </button>
                   <button
                     type="button"
@@ -1248,6 +1334,31 @@ export default function DocStudioPage() {
                   <footer className="pt-4 border-t border-pp-hairline text-xs leading-relaxed text-pp-ink-soft">
                     {selectedTemplate.footerNote}
                   </footer>
+
+                  {showSignature && (
+                    <section className="break-inside-avoid pt-4">
+                      <div className="w-72 max-w-full border-t border-pp-ink/40 pt-3">
+                        <p className="font-medium text-pp-ink">
+                          {loadingProfile
+                            ? 'Carregando dados profissionais...'
+                            : signature.name || 'Nome profissional não informado'}
+                        </p>
+                        {signature.profession && (
+                          <p className="mt-1 text-sm leading-relaxed text-pp-ink-soft">{signature.profession}</p>
+                        )}
+                        {signature.credential && (
+                          <p className="text-sm leading-relaxed text-pp-ink-soft">
+                            Registro: {signature.credential}
+                          </p>
+                        )}
+                        {hasIncompleteSignature && (
+                          <p className="mt-2 text-[11px] leading-relaxed text-pp-ink-soft">
+                            Assinatura incompleta: revise os dados profissionais em Minha conta.
+                          </p>
+                        )}
+                      </div>
+                    </section>
+                  )}
                 </article>
               </div>
             </div>
