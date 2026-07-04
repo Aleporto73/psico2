@@ -75,12 +75,12 @@ export const templates: DocStudioTemplate[] = [
     status: 'active',
     line: 'psychopedagogy',
     documentKind: 'school_orientation',
-    category: 'Escola',
-    title: 'Relatório de acompanhamento escolar',
+    category: 'Acompanhamento',
+    title: 'Relatório de acompanhamento psicopedagógico',
     description:
       'Síntese objetiva para organizar informações de acompanhamento, participação, aprendizagem e orientações à escola.',
-    defaultPurpose: 'Registrar o acompanhamento escolar e orientar adaptações possíveis sem estabelecer diagnóstico.',
-    searchTerms: ['escola', 'acompanhamento', 'aprendizagem', 'orientação'],
+    defaultPurpose: 'Registrar o acompanhamento psicopedagógico e orientar adaptações possíveis sem estabelecer diagnóstico.',
+    searchTerms: ['acompanhamento', 'psicopedagógico', 'escola', 'aprendizagem', 'orientação', 'relatório'],
     recommendedForProfileTypes: ['psychopedagogue', 'both', 'unknown'],
     allowedProfessionCategories: ['psicopedagogo', 'neuropsicopedagogo'],
     riskLevel: 'low',
@@ -210,9 +210,65 @@ export const templates: DocStudioTemplate[] = [
       'Documento de apoio ao registro profissional. Deve ser revisado pelo psicólogo responsável e não substitui avaliação formal específica.',
   },
   {
+    id: 'psychological-report-cfp',
+    schemaVersion: 1,
+    // Relatório psicológico estruturado (Bloco B2). Segue a organização documental
+    // Identificação / Descrição da demanda / Procedimento / Análise / Conclusão, com
+    // responsabilidade profissional no rodapé ético. NÃO é laudo, não conclui
+    // diagnóstico, não cita CID/DSM e não interpreta teste — apenas estrutura o texto
+    // que o profissional escreve. neuropsicologo não existe no enum ProfessionCategory
+    // hoje, então allowedProfessionCategories usa apenas 'psicologo'.
+    status: 'active',
+    line: 'psychology',
+    documentKind: 'psychological_report',
+    category: 'Relatório',
+    title: 'Relatório psicológico estruturado',
+    description:
+      'Estrutura documental de relatório psicológico com identificação, descrição da demanda, procedimento, análise e conclusão. Organiza o texto escrito pelo profissional; não gera diagnóstico nem conclusão automática.',
+    defaultPurpose:
+      'Organizar um relatório psicológico de forma estruturada, descritiva e dentro dos limites técnicos e éticos.',
+    searchTerms: [
+      'relatório',
+      'psicológico',
+      'estruturado',
+      'CFP',
+      'identificação',
+      'demanda',
+      'procedimento',
+      'análise',
+      'conclusão',
+    ],
+    recommendedForProfileTypes: ['psychologist', 'both'],
+    allowedProfessionCategories: ['psicologo'],
+    riskLevel: 'restricted',
+    requiresHeader: true,
+    guidedFields: [
+      { key: 'context', label: 'Identificação (avaliado, solicitante, finalidade e data)' },
+      { key: 'observations', label: 'Descrição da demanda (motivo e questão apresentada)' },
+      { key: 'strengths', label: 'Procedimento (fontes de informação e como foram obtidas)' },
+      { key: 'attentionPoints', label: 'Análise (organização descritiva dos elementos considerados)' },
+      { key: 'recommendations', label: 'Conclusão (síntese e encaminhamentos, sem diagnóstico fechado)' },
+    ],
+    sections: [
+      { key: 'context', title: 'Identificação' },
+      { key: 'observations', title: 'Descrição da demanda' },
+      { key: 'strengths', title: 'Procedimento' },
+      { key: 'attentionPoints', title: 'Análise' },
+      { key: 'recommendations', title: 'Conclusão' },
+    ],
+    ethicalFooter:
+      'Relatório psicológico elaborado sob responsabilidade do psicólogo signatário. O conteúdo é descritivo, deve ser revisado pelo profissional responsável e não constitui laudo, diagnóstico conclusivo, parecer pericial ou interpretação de teste.',
+  },
+  {
     id: 'psychological-followup-summary',
     schemaVersion: 1,
-    status: 'active',
+    // Oculto (Bloco B1): não bate 1:1 com nenhum dos 15 documentos de Psicologia da
+    // spec v1.1 e seu conteúdo (síntese técnica de registro profissional) se sobrepõe
+    // a 'psychological-progress-note'. "Devolutiva clínica" e "Orientação à família" da
+    // spec são documentos de linguagem acessível voltados à família — tom diferente —
+    // e serão criados como modelos próprios no bloco de expansão do catálogo. Mantido
+    // (não deletado) para preservar id de rascunho local; fica fora da vitrine.
+    status: 'hidden',
     line: 'psychology',
     documentKind: 'record',
     category: 'Síntese',
