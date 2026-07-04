@@ -14,7 +14,7 @@ export function DocStudioHeaderStatus() {
       </div>
       <div className="inline-flex w-fit items-center gap-2 rounded-full bg-pp-hairline-soft px-3.5 py-1.5 text-xs text-pp-ink-soft">
         <span className="h-1.5 w-1.5 rounded-full bg-pp-success" aria-hidden="true" />
-        Local · sem IA · sem salvamento
+        Rascunho local · sem salvamento na nuvem
       </div>
     </header>
   );
