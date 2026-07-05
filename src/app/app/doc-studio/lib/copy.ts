@@ -42,6 +42,8 @@ export function composePlainText(
   fields: DraftFields,
   showHeader: boolean,
   showSignature: boolean,
+  // Rótulo da linha/categoria profissional ativa. Fallback: título do catálogo bruto.
+  lineLabel?: string,
 ): string {
   const header = getCopyHeader(profile);
   const lines: string[] = [];
@@ -54,7 +56,7 @@ export function composePlainText(
 
   lines.push(template.title);
   lines.push('');
-  lines.push(`Linha/Categoria: ${getLineTitle(template.line)} / ${template.category}`);
+  lines.push(`Linha/Categoria: ${lineLabel ?? getLineTitle(template.line)} / ${template.category}`);
   lines.push(`Avaliado(a): ${formatCopyValue(fields.subjectName, 'Não informado')}`);
   lines.push(`Idade/Faixa etária: ${formatCopyValue(fields.subjectAge, 'Não informado')}`);
   lines.push(`Finalidade: ${formatCopyValue(fields.documentPurpose, 'Não informada')}`);
