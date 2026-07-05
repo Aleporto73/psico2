@@ -25,7 +25,7 @@ export function DocStudioPreview({ state }: { state: DocStudioState }) {
     showHeader,
     selectedTemplate,
     fields,
-    line,
+    activeCategory,
     activeColor,
     blackAndWhite,
     fontStyle,
@@ -92,7 +92,7 @@ export function DocStudioPreview({ state }: { state: DocStudioState }) {
           <div className="break-inside-avoid flex flex-wrap gap-x-8 gap-y-3 border-y border-pp-hairline py-3.5">
             <MetaItem label="Avaliado(a)" value={fields.subjectName || 'Não informado'} />
             <MetaItem label="Idade/Faixa" value={fields.subjectAge || 'Não informado'} />
-            <MetaItem label="Linha" value={line === 'psychology' ? 'Psicologia' : 'Psicopedagogia'} />
+            <MetaItem label="Linha" value={activeCategory.title} />
           </div>
 
           <section
