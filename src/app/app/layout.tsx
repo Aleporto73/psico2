@@ -100,8 +100,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string; external?: boolean }[] = [
     { name: 'Dashboard',        path: '/app',                  icon: <IconDashboard /> },
     { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
-    { name: 'Assistente GPT',   path: '/app/assistente-gpt',   icon: <IconChat /> },
-    { name: 'Assistente de Relatórios IA',path: '/app/assistente-pro',   icon: <IconSpark /> },
+    { name: 'Relatório Grátis', path: '/app/assistente-gpt',   icon: <IconChat />, badge: 'Incluído' },
+    { name: 'Relatório Pro',    path: '/app/assistente-pro',   icon: <IconSpark />, badge: 'Pro' },
     { name: 'PsicoPlanilhas Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
     { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },

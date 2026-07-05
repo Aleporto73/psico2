@@ -569,6 +569,9 @@ export default function AppAssistenteProPage() {
         <p className="text-pp-ink-soft text-base md:text-lg">
           Envie o print da planilha preenchida e gere um relatório editável em poucos minutos.
         </p>
+        <p className="text-sm text-pp-ink-soft">
+          O Relatório Grátis continua disponível. O Pro é opcional para relatórios mais completos.
+        </p>
       </header>
 
       {assistantState === 'active' && (
