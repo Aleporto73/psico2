@@ -119,19 +119,19 @@ function LoginContent() {
       {!splashDismissed && (
         <div
           role="status"
-          className="fixed top-0 left-0 right-0 z-50 flex items-start gap-2 border-l-4 border-amber-400 bg-amber-50 p-3 text-amber-900 shadow-lg sm:left-auto sm:top-4 sm:right-4 sm:max-w-[340px] sm:rounded-lg"
+          className="fixed top-0 left-0 right-0 z-50 flex items-start gap-2 bg-orange-500 p-3 text-white shadow-lg sm:left-auto sm:top-4 sm:right-4 sm:max-w-[340px] sm:rounded-lg"
         >
           <div className="flex-1 space-y-0.5">
-            <p className="text-sm font-bold">Bem-vindo à PsicoPlanilhas 2.0 ✨</p>
+            <p className="text-sm font-bold">Se você já usava o PsicoPlanilhas antigo:</p>
             <p className="text-sm">
-              Já é cliente? Clique em “Ativar meu acesso” abaixo para criar sua senha.
+              Clique em “Ativar meu acesso” para criar sua nova senha.
             </p>
           </div>
           <button
             type="button"
             onClick={handleDismissSplash}
             aria-label="Fechar aviso"
-            className="flex-shrink-0 rounded p-0.5 text-amber-700 transition hover:bg-amber-100 hover:text-amber-900"
+            className="flex-shrink-0 rounded p-0.5 text-white/80 transition hover:bg-white/20 hover:text-white"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
