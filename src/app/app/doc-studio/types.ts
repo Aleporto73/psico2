@@ -74,6 +74,17 @@ export type DocStudioTemplateStatus = 'active' | 'hidden';
 
 export type RiskLevel = 'low' | 'medium' | 'restricted';
 
+// Linha do Doc Studio por profissão (profession_category é o eixo central).
+// `catalog` aponta para o conjunto de templates (LineKey) ou null = "em preparação".
+// `emptyStateMessage` é usado apenas quando catalog === null.
+export interface ProfessionCategoryLine {
+  category: ProfessionCategory;
+  title: string;
+  description: string;
+  catalog: LineKey | null;
+  emptyStateMessage: string;
+}
+
 // Perfil lido de Supabase `profiles` (somente estes campos; assinatura é texto).
 export interface ReportProfile {
   profile_type: string | null;
