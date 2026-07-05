@@ -9,6 +9,8 @@ import type {
   DraftFieldKey,
   DraftFields,
   LineKey,
+  ProfessionCategory,
+  ProfessionCategoryLine,
   ReportProfile,
   TemplateKey,
 } from './types';
@@ -27,6 +29,71 @@ export const lineOptions: Array<{ key: LineKey; title: string; description: stri
     description: 'Relatórios descritivos com linguagem técnica, cautelosa e profissional.',
   },
 ];
+
+// Eixo central do Doc Studio: cada profession_category é uma linha própria.
+// Psicologia/Psicopedagogia/Neuropsicopedagogia têm catálogo (LineKey); as demais
+// existem como categorias estruturais visíveis, com estado vazio premium até terem
+// modelos. Ordem = ordem de exibição no seletor.
+export const professionCategoryOptions: ProfessionCategoryLine[] = [
+  {
+    category: 'psicologo',
+    title: 'Psicologia / Neuropsicologia',
+    description: 'Relatórios, anamneses e registros clínicos com linguagem técnica e cautelosa.',
+    catalog: 'psychology',
+    emptyStateMessage: '',
+  },
+  {
+    category: 'psicopedagogo',
+    title: 'Psicopedagogia',
+    description: 'Anamneses, devolutivas e relatórios de apoio ao acompanhamento da aprendizagem.',
+    catalog: 'psychopedagogy',
+    emptyStateMessage: '',
+  },
+  {
+    category: 'neuropsicopedagogo',
+    title: 'Neuropsicopedagogia',
+    description: 'Registros e relatórios de acompanhamento neuropsicopedagógico da aprendizagem.',
+    catalog: 'psychopedagogy',
+    emptyStateMessage: '',
+  },
+  {
+    category: 'fonoaudiologo',
+    title: 'Fonoaudiologia',
+    description: 'Linha profissional de Fonoaudiologia.',
+    catalog: null,
+    emptyStateMessage: 'Modelos em preparação para Fonoaudiologia.',
+  },
+  {
+    category: 'terapeuta_ocupacional',
+    title: 'Terapia Ocupacional',
+    description: 'Linha profissional de Terapia Ocupacional.',
+    catalog: null,
+    emptyStateMessage: 'Modelos em preparação para Terapia Ocupacional.',
+  },
+  {
+    category: 'medico',
+    title: 'Medicina',
+    description: 'Linha profissional de Medicina.',
+    catalog: null,
+    emptyStateMessage: 'Modelos em preparação para Medicina.',
+  },
+  {
+    category: 'pediatra',
+    title: 'Pediatria',
+    description: 'Linha profissional de Pediatria.',
+    catalog: null,
+    emptyStateMessage: 'Modelos em preparação para Pediatria.',
+  },
+  {
+    category: 'outro',
+    title: 'Outros documentos',
+    description: 'Documentos gerais para outras categorias profissionais.',
+    catalog: null,
+    emptyStateMessage: 'Modelos em preparação para esta categoria.',
+  },
+];
+
+export const DEFAULT_PROFESSION_CATEGORY: ProfessionCategory = 'outro';
 
 export const colorOptions: ColorOption[] = [
   { label: 'Petróleo', value: '#0E2A38' },
@@ -1162,31 +1229,31 @@ export function getLineTitle(line: LineKey): string {
   return lineOptions.find((option) => option.key === line)?.title ?? lineOptions[0].title;
 }
 
-export function lineFromProfileType(profileType: string | null | undefined): LineKey {
-  if (profileType === 'psychologist') return 'psychology';
-  return 'psychopedagogy';
+export function isProfessionCategory(value: unknown): value is ProfessionCategory {
+  return professionCategoryOptions.some((option) => option.category === value);
 }
 
-/**
- * Linha inicial a partir de profession_category (Minha Conta).
- * Retorna null quando a profissão não define catálogo na v1 (fono, TO, médico,
- * pediatra, outro, ausente) — o chamador deve cair no fallback por profile_type.
- * Não promete catálogo Fono/TO: essas profissões usam o fallback seguro.
- */
-export function lineFromProfessionCategory(category: string | null | undefined): LineKey | null {
-  if (category === 'psicologo') return 'psychology';
-  if (category === 'psicopedagogo' || category === 'neuropsicopedagogo') return 'psychopedagogy';
-  return null;
-}
-
-/**
- * Linha inicial com prioridade: profession_category primeiro, profile_type depois,
- * fallback seguro por último (lineFromProfileType já default para 'psychopedagogy').
- */
-export function lineFromProfile(
-  profile: Pick<ReportProfile, 'profession_category' | 'profile_type'> | null | undefined,
-): LineKey {
+/** Opção de linha (título, descrição, catálogo, estado vazio) da categoria. Cai em 'outro'. */
+export function getProfessionCategoryOption(category: string | null | undefined): ProfessionCategoryLine {
   return (
-    lineFromProfessionCategory(profile?.profession_category) ?? lineFromProfileType(profile?.profile_type)
+    professionCategoryOptions.find((option) => option.category === category) ??
+    professionCategoryOptions.find((option) => option.category === DEFAULT_PROFESSION_CATEGORY)!
   );
+}
+
+/** Catálogo (LineKey) da categoria, ou null quando a linha está "em preparação". */
+export function catalogForCategory(category: string | null | undefined): LineKey | null {
+  return getProfessionCategoryOption(category).catalog;
+}
+
+/**
+ * Categoria inicial a partir do perfil (profession_category é o eixo central).
+ * Sem profession_category reconhecível -> 'outro' (Outros documentos), sem fallback
+ * silencioso para Psicologia/Psicopedagogia.
+ */
+export function categoryFromProfile(
+  profile: Pick<ReportProfile, 'profession_category'> | null | undefined,
+): ProfessionCategory {
+  const category = profile?.profession_category;
+  return isProfessionCategory(category) ? category : DEFAULT_PROFESSION_CATEGORY;
 }

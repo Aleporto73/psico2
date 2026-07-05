@@ -14,20 +14,22 @@ import type {
   DraftStatus,
   FontStyle,
   LineKey,
+  ProfessionCategory,
   ReportProfile,
   TemplateKey,
 } from '../types';
 import {
+  catalogForCategory,
+  categoryFromProfile,
   colorOptions,
   getDefaultFieldsForTemplate,
   getFirstTemplateForLine,
-  getLineTitle,
+  getProfessionCategoryOption,
   initialDraft,
-  lineFromProfile,
-  lineOptions,
+  professionCategoryOptions,
   templates,
 } from '../templates';
-import { getTemplatesForLine } from '../template-catalog';
+import { getTemplatesForCategory, getTemplatesForLine } from '../template-catalog';
 import { buildHeader, getHeaderMissingItems, getProfessionalSignature } from '../lib/profile';
 import { composePlainText } from '../lib/copy';
 import { clearDraft, loadDraft, saveDraft } from '../lib/storage';
@@ -39,6 +41,9 @@ function nowIso(): string {
 export function useDocStudioState() {
   const [profile, setProfile] = useState<ReportProfile | null>(null);
   const [line, setLine] = useState<LineKey>('psychopedagogy');
+  // Categoria = eixo de UI (profession_category). Inicia em 'psicopedagogo' para casar
+  // com a linha default ('psychopedagogy') antes do perfil carregar; o perfil corrige.
+  const [category, setCategory] = useState<ProfessionCategory>('psicopedagogo');
   const [templateKey, setTemplateKey] = useState<TemplateKey>('family-feedback');
   const [fields, setFields] = useState<DraftFields>(initialDraft);
   const [primaryColor, setPrimaryColor] = useState(colorOptions[0].value);
@@ -105,11 +110,18 @@ export function useDocStudioState() {
       if (!isMounted) return;
 
       setProfile((data as ReportProfile | null) ?? null);
+      // Categoria reflete sempre a profissão do usuário (mesmo com rascunho restaurado).
+      const nextCategory = categoryFromProfile(data as ReportProfile | null);
+      setCategory(nextCategory);
       if (!restoredDraftRef.current) {
-        const preferredLine = lineFromProfile(data as ReportProfile | null);
-        const preferredTemplate = getFirstTemplateForLine(preferredLine);
-        setLine(preferredLine);
-        setTemplateKey(preferredTemplate.id);
+        const catalog = catalogForCategory(nextCategory);
+        if (catalog) {
+          const preferredTemplate = getFirstTemplateForLine(catalog);
+          setLine(catalog);
+          setTemplateKey(preferredTemplate.id);
+        }
+        // Categoria sem catálogo (fono/TO/médico/pediatra/outro): mantém line/template
+        // default; o catálogo exibe o estado "em preparação". Sem fallback silencioso.
       }
       setLoadingProfile(false);
     }
@@ -189,9 +201,13 @@ export function useDocStudioState() {
     setFields((current) => ({ ...current, documentPurpose: nextTemplate.defaultPurpose }));
   }, []);
 
-  const updateLine = useCallback((nextLine: LineKey) => {
-    setLine(nextLine);
-    const nextTemplate = getFirstTemplateForLine(nextLine);
+  const updateCategory = useCallback((nextCategory: ProfessionCategory) => {
+    setCategory(nextCategory);
+    const catalog = catalogForCategory(nextCategory);
+    // Linha em preparação: mantém o documento atual; o catálogo mostra o placeholder.
+    if (!catalog) return;
+    const nextTemplate = getFirstTemplateForLine(catalog);
+    setLine(catalog);
     setTemplateKey(nextTemplate.id);
     setFields((current) => ({ ...current, documentPurpose: nextTemplate.defaultPurpose }));
   }, []);
@@ -243,7 +259,8 @@ export function useDocStudioState() {
   }, []);
 
   const activeColor = blackAndWhite ? '#111111' : primaryColor;
-  const activeLine = lineOptions.find((option) => option.key === line) ?? lineOptions[0];
+  const activeCategory = getProfessionCategoryOption(category);
+  const templatesForActiveCategory = getTemplatesForCategory(category);
 
   return {
     // dados
@@ -251,12 +268,13 @@ export function useDocStudioState() {
     loadingProfile,
     // seleção
     line,
+    category,
     templateKey,
     selectedTemplate,
     templatesForActiveLine,
-    lineOptions,
-    activeLine,
-    lineTitle: getLineTitle(line),
+    templatesForActiveCategory,
+    professionCategoryOptions,
+    activeCategory,
     // campos
     fields,
     updateField,
@@ -285,7 +303,7 @@ export function useDocStudioState() {
     copyState,
     draftStatus,
     // ações
-    updateLine,
+    updateCategory,
     updateTemplate,
     handleCopy,
     handlePrint,

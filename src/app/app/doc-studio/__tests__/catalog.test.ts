@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { getActiveTemplates, listDocumentKinds, searchTemplates } from '../template-catalog';
-import { templates } from '../templates';
+import type { ProfessionCategory } from '../types';
+import {
+  getActiveTemplates,
+  getTemplatesForCategory,
+  listDocumentKinds,
+  searchTemplates,
+} from '../template-catalog';
+import { getProfessionCategoryOption, professionCategoryOptions, templates } from '../templates';
 import { normalizeText } from '../lib/format';
 
 function ids(list: ReturnType<typeof searchTemplates>): string[] {
@@ -231,5 +237,69 @@ describe('segurança de linguagem — templates ativos', () => {
         expect(tokens, `"${template.title}" contém token "${forbidden}"`).not.toContain(forbidden);
       }
     }
+  });
+});
+
+describe('Doc Studio por profissão (profession_category)', () => {
+  it('há exatamente 8 categorias profissionais', () => {
+    expect(professionCategoryOptions).toHaveLength(8);
+  });
+
+  it('psicologo abre Psicologia / Neuropsicologia com catálogo psychology', () => {
+    const option = getProfessionCategoryOption('psicologo');
+    expect(option.title).toBe('Psicologia / Neuropsicologia');
+    expect(option.catalog).toBe('psychology');
+    const models = getTemplatesForCategory('psicologo');
+    expect(models).toHaveLength(15);
+    expect(models.every((t) => t.line === 'psychology')).toBe(true);
+  });
+
+  it('psicopedagogo abre Psicopedagogia com catálogo psychopedagogy', () => {
+    const option = getProfessionCategoryOption('psicopedagogo');
+    expect(option.title).toBe('Psicopedagogia');
+    expect(option.catalog).toBe('psychopedagogy');
+    const models = getTemplatesForCategory('psicopedagogo');
+    expect(models).toHaveLength(15);
+    expect(models.every((t) => t.line === 'psychopedagogy')).toBe(true);
+  });
+
+  it('neuropsicopedagogo abre Neuropsicopedagogia reutilizando o catálogo psychopedagogy', () => {
+    const option = getProfessionCategoryOption('neuropsicopedagogo');
+    expect(option.title).toBe('Neuropsicopedagogia');
+    expect(option.catalog).toBe('psychopedagogy');
+    const models = getTemplatesForCategory('neuropsicopedagogo');
+    expect(models).toHaveLength(15);
+    expect(models.every((t) => t.line === 'psychopedagogy')).toBe(true);
+  });
+
+  it('fono/TO/médico/pediatra/outro abrem linha própria com placeholder e catálogo vazio', () => {
+    const emptyCategories: Array<[ProfessionCategory, string, string]> = [
+      ['fonoaudiologo', 'Fonoaudiologia', 'Modelos em preparação para Fonoaudiologia.'],
+      ['terapeuta_ocupacional', 'Terapia Ocupacional', 'Modelos em preparação para Terapia Ocupacional.'],
+      ['medico', 'Medicina', 'Modelos em preparação para Medicina.'],
+      ['pediatra', 'Pediatria', 'Modelos em preparação para Pediatria.'],
+      ['outro', 'Outros documentos', 'Modelos em preparação para esta categoria.'],
+    ];
+    for (const [category, title, message] of emptyCategories) {
+      const option = getProfessionCategoryOption(category);
+      expect(option.title, `título de ${category}`).toBe(title);
+      expect(option.catalog, `catálogo de ${category}`).toBeNull();
+      expect(option.emptyStateMessage, `placeholder de ${category}`).toBe(message);
+      expect(getTemplatesForCategory(category), `modelos de ${category}`).toHaveLength(0);
+    }
+  });
+
+  it('psicologo não vê modelos psicopedagógicos como linha inicial', () => {
+    expect(getTemplatesForCategory('psicologo').some((t) => t.line === 'psychopedagogy')).toBe(false);
+  });
+
+  it('fono/TO/médico/pediatra não recebem fallback silencioso de Psicologia/Psicopedagogia', () => {
+    for (const category of ['fonoaudiologo', 'terapeuta_ocupacional', 'medico', 'pediatra'] as ProfessionCategory[]) {
+      expect(getTemplatesForCategory(category)).toEqual([]);
+    }
+  });
+
+  it('catálogo continua com 30 templates ativos (não mudou com as categorias)', () => {
+    expect(getActiveTemplates()).toHaveLength(30);
   });
 });

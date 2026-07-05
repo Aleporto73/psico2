@@ -5,14 +5,16 @@ import type {
   DocStudioDocumentKind,
   DocStudioTemplate,
   LineKey,
+  ProfessionCategory,
   ProfileTypeKey,
 } from './types';
-import { templates } from './templates';
+import { catalogForCategory, templates } from './templates';
 import { normalizeText } from './lib/format';
 
 export interface CatalogFilters {
   query?: string;
   line?: LineKey;
+  professionCategory?: ProfessionCategory;
   documentKind?: DocStudioDocumentKind;
   profileType?: ProfileTypeKey;
   includeHidden?: boolean;
@@ -26,9 +28,29 @@ export function getTemplatesForLine(line: LineKey, includeHidden = false): DocSt
   return getActiveTemplates(includeHidden).filter((template) => template.line === line);
 }
 
+/**
+ * Modelos visíveis para uma profession_category. Resolve o catálogo da categoria e
+ * filtra por allowedProfessionCategories. Categoria sem catálogo (fono/TO/médico/
+ * pediatra/outro) retorna [] — sem fallback silencioso para outra linha.
+ */
+export function getTemplatesForCategory(
+  category: ProfessionCategory,
+  includeHidden = false,
+): DocStudioTemplate[] {
+  const catalog = catalogForCategory(category);
+  if (!catalog) return [];
+  return getActiveTemplates(includeHidden).filter(
+    (template) => template.line === catalog && template.allowedProfessionCategories.includes(category),
+  );
+}
+
 export function listDocumentKinds(line?: LineKey): DocStudioDocumentKind[] {
   const source = line ? getTemplatesForLine(line) : getActiveTemplates();
   return Array.from(new Set(source.map((template) => template.documentKind)));
+}
+
+export function listDocumentKindsForCategory(category: ProfessionCategory): DocStudioDocumentKind[] {
+  return Array.from(new Set(getTemplatesForCategory(category).map((template) => template.documentKind)));
 }
 
 /** Recomendado primeiro: templates cujo recommendedForProfileTypes inclui o perfil. */
@@ -62,7 +84,12 @@ function matchesQuery(template: DocStudioTemplate, normalizedQuery: string): boo
 export function searchTemplates(filters: CatalogFilters = {}): DocStudioTemplate[] {
   const normalizedQuery = filters.query ? normalizeText(filters.query) : '';
 
-  const filtered = getActiveTemplates(filters.includeHidden).filter((template) => {
+  // Base: quando há professionCategory, parte só do que a categoria permite (pode ser []).
+  const base = filters.professionCategory
+    ? getTemplatesForCategory(filters.professionCategory, filters.includeHidden)
+    : getActiveTemplates(filters.includeHidden);
+
+  const filtered = base.filter((template) => {
     if (filters.line && template.line !== filters.line) return false;
     if (filters.documentKind && template.documentKind !== filters.documentKind) return false;
     return matchesQuery(template, normalizedQuery);
