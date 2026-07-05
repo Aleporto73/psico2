@@ -1200,9 +1200,14 @@ export const templates: DocStudioTemplate[] = [
     professionCategories: ALL_PROFESSIONS,
     riskLevel: 'low',
     requiresHeader: true,
-    essentialFields: ['subjectName', 'documentPurpose', 'observations'],
+    essentialFields: ['document_title', 'subjectName', 'documentPurpose', 'observations'],
     optionalFields: ['document_date', 'recommendations', 'nextSteps'],
     guidedFields: [
+      {
+        key: 'document_title',
+        label: 'Título do documento',
+        placeholder: 'Ex.: Declaração simples, Registro de orientação, Documento para escola',
+      },
       { key: 'observations', label: 'Conteúdo do documento' },
       { key: 'document_date', label: 'Data (opcional)' },
       { key: 'recommendations', label: 'Observações complementares (opcional)' },
@@ -1415,6 +1420,7 @@ export const initialDraft: DraftFields = {
   attentionPoints: 'Organize os pontos que merecem acompanhamento, sempre com linguagem descritiva e cuidadosa.',
   recommendations: 'Inclua orientações práticas, possíveis adaptações e sugestões de acompanhamento.',
   nextSteps: 'Feche com próximos passos objetivos, revisão do plano de acompanhamento ou encaminhamentos necessários.',
+  document_title: 'Documento em branco',
   document_date: 'Data do atendimento, entrevista ou emissão.',
   start_time: 'Horário de início. Ex.: 14:00.',
   end_time: 'Horário de término. Ex.: 14:50.',

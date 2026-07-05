@@ -54,7 +54,11 @@ export function composePlainText(
     lines.push('');
   }
 
-  lines.push(template.title);
+  const title =
+    template.id === 'universal_blank_document'
+      ? fields.document_title.trim() || 'Documento em branco'
+      : template.title;
+  lines.push(title);
   lines.push('');
   lines.push(`Linha/Categoria: ${lineLabel ?? getLineTitle(template.line)} / ${template.category}`);
   lines.push(`Avaliado(a): ${formatCopyValue(fields.subjectName, 'Não informado')}`);

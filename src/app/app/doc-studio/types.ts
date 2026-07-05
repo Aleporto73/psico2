@@ -115,6 +115,7 @@ export interface DraftFields {
   nextSteps: string;
   // Campos aditivos (D1) para suportar os universais. snake_case por vir da spec v2;
   // os campos legados acima permanecem em camelCase (não renomear ainda).
+  document_title: string;
   document_date: string;
   start_time: string;
   end_time: string;
@@ -130,6 +131,7 @@ export type DraftFieldKey = keyof DraftFields;
 export interface GuidedField {
   key: DraftFieldKey;
   label: string;
+  placeholder?: string;
 }
 
 export interface DocSection {

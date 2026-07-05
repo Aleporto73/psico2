@@ -84,3 +84,22 @@ describe('composePlainText — rótulo de linha/categoria (C4)', () => {
     );
   });
 });
+
+describe('composePlainText — título editável do Documento em branco (D2)', () => {
+  const blank = templates.find((item) => item.id === 'universal_blank_document') as DocStudioTemplate;
+
+  it('usa fields.document_title como título', () => {
+    const text = composePlainText(profile, blank, { ...initialDraft, document_title: 'Meu documento' }, false, false);
+    expect(text.startsWith('Meu documento')).toBe(true);
+  });
+
+  it('cai no fallback "Documento em branco" quando document_title está vazio', () => {
+    const text = composePlainText(profile, blank, { ...initialDraft, document_title: '   ' }, false, false);
+    expect(text.startsWith('Documento em branco')).toBe(true);
+  });
+
+  it('não afeta o título dos outros templates', () => {
+    const text = composePlainText(profile, template, { ...initialDraft, document_title: 'Meu documento' }, false, false);
+    expect(text.startsWith(template.title)).toBe(true);
+  });
+});

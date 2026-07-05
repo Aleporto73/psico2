@@ -85,7 +85,9 @@ export function DocStudioPreview({ state }: { state: DocStudioState }) {
               {selectedTemplate.category}
             </div>
             <h2 className={`${titleFontClass} text-[28px] leading-tight text-pp-ink md:text-[32px]`}>
-              {selectedTemplate.title}
+              {selectedTemplate.id === 'universal_blank_document'
+                ? fields.document_title.trim() || 'Documento em branco'
+                : selectedTemplate.title}
             </h2>
           </div>
 
