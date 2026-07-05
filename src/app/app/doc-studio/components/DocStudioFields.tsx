@@ -9,6 +9,7 @@ import { getDraftStatusLabel } from '../lib/storage';
 export function DocStudioFields({ state }: { state: DocStudioState }) {
   const {
     selectedTemplate,
+    activeCategory,
     fields,
     updateField,
     density,
@@ -21,6 +22,22 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
     hasIncompleteHeader,
     headerMissingItems,
   } = state;
+
+  // Categoria sem catálogo: estado vazio premium, sem campos guiados nem ações.
+  if (!selectedTemplate) {
+    return (
+      <div className="rounded-block border border-dashed border-pp-hairline bg-pp-hairline-soft/30 px-6 py-12 text-center">
+        <p className="font-serif italic text-pp-ink-soft text-sm">{activeCategory.title}</p>
+        <p className="mx-auto mt-2 max-w-md text-lg font-medium text-pp-ink">
+          Tudo pronto para receber os modelos desta área.
+        </p>
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-pp-ink-soft">
+          Esta categoria já está separada no Doc Studio. Os modelos serão adicionados em uma etapa
+          própria, sem misturar documentos de outras profissões.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>

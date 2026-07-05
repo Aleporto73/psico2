@@ -114,7 +114,7 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
             ) : (
               <div className="space-y-1">
                 {results.map((template) => {
-                  const isActive = template.id === selectedTemplate.id;
+                  const isActive = template.id === selectedTemplate?.id;
                   return (
                     <button
                       key={template.id}
