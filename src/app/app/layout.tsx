@@ -97,15 +97,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string; external?: boolean }[] = [
+  const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string; badgeTone?: 'neutral'; external?: boolean }[] = [
     { name: 'Dashboard',        path: '/app',                  icon: <IconDashboard /> },
     { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
-    { name: 'Relatório Grátis', path: '/app/assistente-gpt',   icon: <IconChat />, badge: 'Incluído' },
-    { name: 'Relatório Pro',    path: '/app/assistente-pro',   icon: <IconSpark />, badge: 'Pro' },
+    { name: 'Relatório Free',   path: '/app/assistente-gpt',   icon: <IconChat />, badge: 'Incluído', badgeTone: 'neutral' },
+    { name: 'Relatório Pró',    path: '/app/assistente-pro',   icon: <IconSpark />, badge: 'Novo' },
     { name: 'PsicoPlanilhas Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
     { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
   ];
+
+  // Classe do badge do menu: neutro (borda que herda a cor do texto — legível
+  // nos estados ativo/inativo, sem verde) ou destaque verde para novidades.
+  const badgeClass = (tone?: 'neutral') =>
+    tone === 'neutral' ? 'border border-current opacity-60' : 'bg-green-500 text-white';
 
   return (
     <div className="flex min-h-screen bg-pp-canvas text-pp-ink font-sans">
@@ -147,7 +152,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <span className="flex items-center gap-2">
                     {item.name}
                     {item.badge && (
-                      <span className="text-[9px] font-semibold bg-green-500 text-white px-1.5 py-0.5 rounded-full leading-none">
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${badgeClass(item.badgeTone)}`}>
                         {item.badge}
                       </span>
                     )}
@@ -214,7 +219,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <span className="hidden sm:flex items-center gap-1 leading-none">
                   {item.name}
                   {item.badge && (
-                    <span className="text-[8px] font-semibold bg-green-500 text-white px-1 py-0.5 rounded-full leading-none">
+                    <span className={`text-[8px] font-semibold px-1 py-0.5 rounded-full leading-none ${badgeClass(item.badgeTone)}`}>
                       {item.badge}
                     </span>
                   )}
