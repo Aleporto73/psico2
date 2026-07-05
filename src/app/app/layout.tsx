@@ -102,7 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
     { name: 'Relatório Free',   path: '/app/assistente-gpt',   icon: <IconChat />, badge: 'Incluído', badgeTone: 'neutral' },
     { name: 'Relatório Pró',    path: '/app/assistente-pro',   icon: <IconSpark />, badge: 'Novo' },
-    { name: 'PsicoPlanilhas Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
+    { name: 'Psico Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
     { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
   ];
@@ -141,7 +141,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.path}
                   href={item.path}
                   {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${
                     isActive
                       ? 'bg-pp-ink text-pp-canvas rounded-pill'
                       : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'
@@ -149,10 +149,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   aria-current={isActive ? 'page' : undefined}
                 >
                   <span className="shrink-0 opacity-90">{item.icon}</span>
-                  <span className="flex items-center gap-2">
-                    {item.name}
+                  <span className="flex items-center w-full gap-2">
+                    <span className="flex-1 min-w-0 truncate">{item.name}</span>
                     {item.badge && (
-                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${badgeClass(item.badgeTone)}`}>
+                      <span className={`ml-auto shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${badgeClass(item.badgeTone)}`}>
                         {item.badge}
                       </span>
                     )}
