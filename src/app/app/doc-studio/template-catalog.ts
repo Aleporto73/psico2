@@ -37,11 +37,16 @@ export function getTemplatesForCategory(
   category: ProfessionCategory,
   includeHidden = false,
 ): DocStudioTemplate[] {
+  const active = getActiveTemplates(includeHidden);
   const catalog = catalogForCategory(category);
-  if (!catalog) return [];
-  return getActiveTemplates(includeHidden).filter(
-    (template) => template.line === catalog && template.allowedProfessionCategories.includes(category),
-  );
+  // Modelos próprios da profissão (por `line`). Categoria sem catálogo -> só universais.
+  const professional = catalog
+    ? active.filter((t) => t.line === catalog && t.allowedProfessionCategories.includes(category))
+    : [];
+  // Universais: marcados por `professionCategories` (todas as profissões), sem `line`.
+  const universals = active.filter((t) => t.professionCategories?.includes(category));
+  // Profissionais primeiro, universais depois. Sem duplicar (universais não têm `line`).
+  return [...professional, ...universals];
 }
 
 export function listDocumentKinds(line?: LineKey): DocStudioDocumentKind[] {

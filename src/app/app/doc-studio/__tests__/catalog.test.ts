@@ -125,6 +125,17 @@ const PSYCHOLOGY_ACTIVE_IDS = [
   'psychology-tcle',
 ] as const;
 
+// Universais (D1) — aparecem para todas as profissões.
+const UNIVERSAL_IDS = [
+  'universal_blank_document',
+  'universal_attendance_statement',
+  'universal_payment_receipt',
+  'universal_referral',
+  'universal_service_agreement',
+  'universal_simple_authorization',
+  'universal_simplified_tcle',
+] as const;
+
 // Termos proibidos por palavra (não substring): "ia" casaria com "psicologia",
 // "cid" com outras palavras. Tokenizamos e comparamos por igualdade de token.
 const FORBIDDEN_CLINICAL = ['laudo', 'diagnostico', 'dsm', 'cid', 'teste', 'escala'];
@@ -137,8 +148,8 @@ function words(text: string): string[] {
 }
 
 describe('catálogo v1 — contagem e status', () => {
-  it('tem 30 templates ativos', () => {
-    expect(getActiveTemplates()).toHaveLength(30);
+  it('tem 37 templates ativos (30 de profissão + 7 universais)', () => {
+    expect(getActiveTemplates()).toHaveLength(37);
   });
 
   it('linha psychopedagogy tem 15 ativos', () => {
@@ -245,66 +256,72 @@ describe('Doc Studio por profissão (profession_category)', () => {
     expect(professionCategoryOptions).toHaveLength(8);
   });
 
-  it('psicologo abre Psicologia / Neuropsicologia com catálogo psychology', () => {
+  it('psicologo abre Psicologia / Neuropsicologia = universais + 15 psicológicos', () => {
     const option = getProfessionCategoryOption('psicologo');
     expect(option.title).toBe('Psicologia / Neuropsicologia');
     expect(option.catalog).toBe('psychology');
     const models = getTemplatesForCategory('psicologo');
-    expect(models).toHaveLength(15);
-    expect(models.every((t) => t.line === 'psychology')).toBe(true);
+    expect(models).toHaveLength(22); // 15 psicologia + 7 universais
+    expect(models.filter((t) => t.line === 'psychology')).toHaveLength(15);
+    for (const universalId of UNIVERSAL_IDS) {
+      expect(models.some((t) => t.id === universalId), `universal ausente: ${universalId}`).toBe(true);
+    }
   });
 
-  it('psicopedagogo abre Psicopedagogia com catálogo psychopedagogy', () => {
+  it('psicopedagogo abre Psicopedagogia = universais + 15 psicopedagógicos', () => {
     const option = getProfessionCategoryOption('psicopedagogo');
     expect(option.title).toBe('Psicopedagogia');
     expect(option.catalog).toBe('psychopedagogy');
     const models = getTemplatesForCategory('psicopedagogo');
-    expect(models).toHaveLength(15);
-    expect(models.every((t) => t.line === 'psychopedagogy')).toBe(true);
+    expect(models).toHaveLength(22);
+    expect(models.filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
   });
 
-  it('neuropsicopedagogo abre Neuropsicopedagogia reutilizando o catálogo psychopedagogy', () => {
+  it('neuropsicopedagogo abre Neuropsicopedagogia = universais + 15 psicopedagógicos', () => {
     const option = getProfessionCategoryOption('neuropsicopedagogo');
     expect(option.title).toBe('Neuropsicopedagogia');
     expect(option.catalog).toBe('psychopedagogy');
     const models = getTemplatesForCategory('neuropsicopedagogo');
-    expect(models).toHaveLength(15);
-    expect(models.every((t) => t.line === 'psychopedagogy')).toBe(true);
+    expect(models).toHaveLength(22);
+    expect(models.filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
   });
 
-  it('fono/TO/médico/pediatra/outro abrem linha própria com placeholder e catálogo vazio', () => {
-    const emptyCategories: Array<[ProfessionCategory, string, string]> = [
-      ['fonoaudiologo', 'Fonoaudiologia', 'Modelos em preparação para Fonoaudiologia.'],
-      ['terapeuta_ocupacional', 'Terapia Ocupacional', 'Modelos em preparação para Terapia Ocupacional.'],
-      ['medico', 'Medicina', 'Modelos em preparação para Medicina.'],
-      ['pediatra', 'Pediatria', 'Modelos em preparação para Pediatria.'],
-      ['outro', 'Outros documentos', 'Modelos em preparação para esta categoria.'],
+  it('fono/TO/médico/pediatra/outro abrem linha própria — somente universais (7)', () => {
+    const emptyCategories: Array<[ProfessionCategory, string]> = [
+      ['fonoaudiologo', 'Fonoaudiologia'],
+      ['terapeuta_ocupacional', 'Terapia Ocupacional'],
+      ['medico', 'Medicina'],
+      ['pediatra', 'Pediatria'],
+      ['outro', 'Outros documentos'],
     ];
-    for (const [category, title, message] of emptyCategories) {
+    for (const [category, title] of emptyCategories) {
       const option = getProfessionCategoryOption(category);
       expect(option.title, `título de ${category}`).toBe(title);
       expect(option.catalog, `catálogo de ${category}`).toBeNull();
-      expect(option.emptyStateMessage, `placeholder de ${category}`).toBe(message);
-      expect(getTemplatesForCategory(category), `modelos de ${category}`).toHaveLength(0);
+      const models = getTemplatesForCategory(category);
+      expect(models, `modelos de ${category}`).toHaveLength(7);
+      // Só universais: nenhum tem `line` de psicologia/psicopedagogia.
+      expect(models.every((t) => t.line === undefined), `${category} só universais`).toBe(true);
     }
   });
 
-  it('psicologo não vê modelos psicopedagógicos como linha inicial', () => {
+  it('psicologo não vê modelos psicopedagógicos', () => {
     expect(getTemplatesForCategory('psicologo').some((t) => t.line === 'psychopedagogy')).toBe(false);
   });
 
   it('fono/TO/médico/pediatra não recebem fallback silencioso de Psicologia/Psicopedagogia', () => {
     for (const category of ['fonoaudiologo', 'terapeuta_ocupacional', 'medico', 'pediatra'] as ProfessionCategory[]) {
-      expect(getTemplatesForCategory(category)).toEqual([]);
+      const models = getTemplatesForCategory(category);
+      expect(models.some((t) => t.line === 'psychology' || t.line === 'psychopedagogy')).toBe(false);
     }
   });
 
-  it('catálogo continua com 30 templates ativos (não mudou com as categorias)', () => {
-    expect(getActiveTemplates()).toHaveLength(30);
+  it('catálogo tem 37 templates ativos (30 profissão + 7 universais)', () => {
+    expect(getActiveTemplates()).toHaveLength(37);
   });
 });
 
-describe('estado vazio completo por categoria (C2)', () => {
+describe('categorias sem catálogo próprio (D1: mostram universais)', () => {
   const emptyCategories: ProfessionCategory[] = [
     'fonoaudiologo',
     'terapeuta_ocupacional',
@@ -313,27 +330,72 @@ describe('estado vazio completo por categoria (C2)', () => {
     'outro',
   ];
 
-  // catalogForCategory === null é o que faz o hook zerar selectedTemplate (sem template
-  // antigo) e a página inteira entrar em estado vazio.
-  it('categorias sem catálogo não têm template selecionável (catalog null + modelos vazios)', () => {
+  // catalogForCategory continua null (sem linha própria), mas agora recebem os
+  // universais — não ficam mais 100% vazias.
+  it('sem catálogo próprio (catalog null), mas com os 7 universais', () => {
     for (const category of emptyCategories) {
       expect(catalogForCategory(category), `catálogo de ${category}`).toBeNull();
-      expect(getTemplatesForCategory(category), `modelos de ${category}`).toEqual([]);
+      expect(getTemplatesForCategory(category), `modelos de ${category}`).toHaveLength(7);
     }
   });
 
-  it('fonoaudiologo e terapeuta_ocupacional não renderizam template antigo (sem catálogo)', () => {
-    expect(catalogForCategory('fonoaudiologo')).toBeNull();
-    expect(getTemplatesForCategory('fonoaudiologo')).toEqual([]);
-    expect(catalogForCategory('terapeuta_ocupacional')).toBeNull();
-    expect(getTemplatesForCategory('terapeuta_ocupacional')).toEqual([]);
+  it('não vazam modelos profissionais de outra linha', () => {
+    for (const category of emptyCategories) {
+      const models = getTemplatesForCategory(category);
+      expect(models.some((t) => t.line === 'psychology' || t.line === 'psychopedagogy')).toBe(false);
+    }
   });
 
-  it('Psicologia e Psicopedagogia seguem com catálogo (15 ativos cada)', () => {
+  it('Psicologia e Psicopedagogia seguem com catálogo (15 próprios + universais)', () => {
     expect(catalogForCategory('psicologo')).toBe('psychology');
     expect(catalogForCategory('psicopedagogo')).toBe('psychopedagogy');
-    expect(getTemplatesForCategory('psicologo')).toHaveLength(15);
-    expect(getTemplatesForCategory('psicopedagogo')).toHaveLength(15);
+    expect(getTemplatesForCategory('psicologo').filter((t) => t.line === 'psychology')).toHaveLength(15);
+    expect(getTemplatesForCategory('psicopedagogo').filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+  });
+});
+
+describe('Universais (D1)', () => {
+  const ALL_CATEGORIES: ProfessionCategory[] = [
+    'psicologo',
+    'psicopedagogo',
+    'neuropsicopedagogo',
+    'fonoaudiologo',
+    'terapeuta_ocupacional',
+    'medico',
+    'pediatra',
+    'outro',
+  ];
+
+  it('os 7 universais aparecem para todas as 8 categorias', () => {
+    for (const category of ALL_CATEGORIES) {
+      const ids = getTemplatesForCategory(category).map((t) => t.id);
+      for (const universalId of UNIVERSAL_IDS) {
+        expect(ids, `${universalId} ausente em ${category}`).toContain(universalId);
+      }
+    }
+  });
+
+  it('há exatamente 7 universais ativos, todos sem `line`', () => {
+    const universals = getActiveTemplates().filter((t) => t.professionCategories);
+    expect(universals).toHaveLength(7);
+    expect(universals.every((t) => t.line === undefined)).toBe(true);
+    expect(universals.map((t) => t.id).sort()).toEqual([...UNIVERSAL_IDS].sort());
+  });
+
+  it('cada universal tem essentialFields, optionalFields, skeleton e riskLevel', () => {
+    for (const id of UNIVERSAL_IDS) {
+      const template = templates.find((t) => t.id === id);
+      expect(template, `id ausente: ${id}`).toBeDefined();
+      expect((template?.essentialFields ?? []).length, `${id} essentialFields`).toBeGreaterThan(0);
+      expect(template?.optionalFields, `${id} optionalFields`).toBeDefined();
+      expect((template?.skeleton ?? '').length, `${id} skeleton`).toBeGreaterThanOrEqual(0);
+      expect(['low', 'medium', 'restricted']).toContain(template?.riskLevel);
+    }
+  });
+
+  it('não há IDs duplicados no catálogo', () => {
+    const ids = templates.map((t) => t.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 });
 

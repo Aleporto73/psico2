@@ -95,6 +95,9 @@ export const professionCategoryOptions: ProfessionCategoryLine[] = [
 
 export const DEFAULT_PROFESSION_CATEGORY: ProfessionCategory = 'outro';
 
+// Todas as profissões — usado pelos universais (aparecem em todas as categorias).
+export const ALL_PROFESSIONS: ProfessionCategory[] = professionCategoryOptions.map((option) => option.category);
+
 export const colorOptions: ColorOption[] = [
   { label: 'Petróleo', value: '#0E2A38' },
   { label: 'Vinho', value: '#7A2E3A' },
@@ -1181,6 +1184,225 @@ export const templates: DocStudioTemplate[] = [
     ethicalFooter:
       'Termo simplificado de consentimento. Não substitui documento jurídico completo — revisar e adequar ao contexto e à legislação aplicável.',
   },
+  // ── Universais (D1) — sem `line`; aparecem para todas as profissões ──────────
+  {
+    id: 'universal_blank_document',
+    schemaVersion: 1,
+    status: 'active',
+    documentKind: 'formal_document',
+    category: 'Documento',
+    title: 'Documento em branco',
+    description: 'Documento livre para escrever qualquer conteúdo administrativo ou descritivo, sem estrutura fixa.',
+    defaultPurpose: 'Registrar um documento livre com finalidade definida pela profissional.',
+    searchTerms: ['documento', 'em branco', 'livre', 'geral', 'modelo vazio'],
+    recommendedForProfileTypes: ['psychologist', 'psychopedagogue', 'both', 'unknown'],
+    allowedProfessionCategories: ALL_PROFESSIONS,
+    professionCategories: ALL_PROFESSIONS,
+    riskLevel: 'low',
+    requiresHeader: true,
+    essentialFields: ['subjectName', 'documentPurpose', 'observations'],
+    optionalFields: ['document_date', 'recommendations', 'nextSteps'],
+    guidedFields: [
+      { key: 'observations', label: 'Conteúdo do documento' },
+      { key: 'document_date', label: 'Data (opcional)' },
+      { key: 'recommendations', label: 'Observações complementares (opcional)' },
+      { key: 'nextSteps', label: 'Próximos passos (opcional)' },
+    ],
+    sections: [
+      { key: 'observations', title: 'Conteúdo' },
+      { key: 'recommendations', title: 'Observações complementares' },
+      { key: 'nextSteps', title: 'Próximos passos' },
+    ],
+    skeleton: 'Finalidade: ___.\nConteúdo: ___.\nObservações: ___.',
+    ethicalFooter:
+      'Documento livre preenchido pela profissional. O sistema não emite conclusão técnica, diagnóstico ou laudo.',
+  },
+  {
+    id: 'universal_attendance_statement',
+    schemaVersion: 1,
+    status: 'active',
+    documentKind: 'formal_document',
+    category: 'Declaração',
+    title: 'Declaração de comparecimento',
+    description: 'Declaração simples de presença em atendimento, com data e horário, sem conteúdo clínico.',
+    defaultPurpose: 'Declarar o comparecimento a atendimento para fins administrativos.',
+    searchTerms: ['declaração', 'comparecimento', 'presença', 'atestado de comparecimento', 'justificativa'],
+    recommendedForProfileTypes: ['psychologist', 'psychopedagogue', 'both', 'unknown'],
+    allowedProfessionCategories: ALL_PROFESSIONS,
+    professionCategories: ALL_PROFESSIONS,
+    riskLevel: 'low',
+    requiresHeader: true,
+    essentialFields: ['subjectName', 'document_date', 'start_time', 'end_time'],
+    optionalFields: ['documentPurpose'],
+    guidedFields: [
+      { key: 'document_date', label: 'Data do comparecimento' },
+      { key: 'start_time', label: 'Horário de início' },
+      { key: 'end_time', label: 'Horário de término' },
+    ],
+    sections: [
+      { key: 'document_date', title: 'Data do comparecimento' },
+      { key: 'start_time', title: 'Horário de início' },
+      { key: 'end_time', title: 'Horário de término' },
+    ],
+    skeleton: 'Declaro, para os devidos fins, que ___ esteve presente em atendimento no dia ___, das ___ às ___.',
+    ethicalFooter:
+      'Declaração de comparecimento sem conteúdo clínico, diagnóstico, sintomas ou detalhes do atendimento.',
+  },
+  {
+    id: 'universal_payment_receipt',
+    schemaVersion: 1,
+    status: 'active',
+    documentKind: 'formal_document',
+    category: 'Recibo',
+    title: 'Recibo / declaração de pagamento',
+    description: 'Recibo administrativo de pagamento de serviço, sem descrição de condição clínica.',
+    defaultPurpose: 'Registrar o recebimento de pagamento por serviço prestado.',
+    searchTerms: ['recibo', 'pagamento', 'declaração de pagamento', 'valor', 'honorários'],
+    recommendedForProfileTypes: ['psychologist', 'psychopedagogue', 'both', 'unknown'],
+    allowedProfessionCategories: ALL_PROFESSIONS,
+    professionCategories: ALL_PROFESSIONS,
+    riskLevel: 'low',
+    requiresHeader: true,
+    essentialFields: ['subjectName', 'payment_description', 'document_date'],
+    optionalFields: ['documentPurpose'],
+    guidedFields: [
+      { key: 'payment_description', label: 'Descrição do pagamento (serviço, valor, forma)' },
+      { key: 'document_date', label: 'Data' },
+    ],
+    sections: [
+      { key: 'payment_description', title: 'Descrição do pagamento' },
+      { key: 'document_date', title: 'Data' },
+    ],
+    skeleton: 'Declaro o recebimento de ___ referente a ___, realizado em ___.',
+    ethicalFooter: 'Documento administrativo. Não descreve condição clínica, sintomas ou diagnóstico.',
+  },
+  {
+    id: 'universal_referral',
+    schemaVersion: 1,
+    status: 'active',
+    documentKind: 'referral',
+    category: 'Encaminhamento',
+    title: 'Encaminhamento profissional',
+    description: 'Encaminhamento orientativo para avaliação ou atendimento com outro profissional ou serviço.',
+    defaultPurpose: 'Orientar o encaminhamento para avaliação ou atendimento complementar.',
+    searchTerms: ['encaminhamento', 'encaminhar', 'profissional', 'continuidade'],
+    recommendedForProfileTypes: ['psychologist', 'psychopedagogue', 'both', 'unknown'],
+    allowedProfessionCategories: ALL_PROFESSIONS,
+    professionCategories: ALL_PROFESSIONS,
+    riskLevel: 'medium',
+    requiresHeader: true,
+    essentialFields: ['subjectName', 'documentPurpose', 'context', 'recommendations'],
+    optionalFields: ['observations', 'nextSteps'],
+    guidedFields: [
+      { key: 'context', label: 'Motivo do encaminhamento' },
+      { key: 'observations', label: 'Observações relevantes (opcional)' },
+      { key: 'recommendations', label: 'Recomendação de continuidade' },
+      { key: 'nextSteps', label: 'Próximos passos (opcional)' },
+    ],
+    sections: [
+      { key: 'context', title: 'Motivo do encaminhamento' },
+      { key: 'observations', title: 'Observações relevantes' },
+      { key: 'recommendations', title: 'Recomendação de continuidade' },
+      { key: 'nextSteps', title: 'Próximos passos' },
+    ],
+    skeleton: 'Encaminho ___ para avaliação/atendimento em ___, tendo em vista ___.',
+    ethicalFooter:
+      'Encaminhamento orientativo. Não constitui diagnóstico, laudo ou conclusão clínica automática.',
+  },
+  {
+    id: 'universal_service_agreement',
+    schemaVersion: 1,
+    status: 'active',
+    documentKind: 'formal_document',
+    category: 'Contrato',
+    title: 'Contrato / termo de prestação de serviço',
+    description: 'Termo administrativo simples que registra os combinados da prestação de serviço.',
+    defaultPurpose: 'Registrar os combinados da prestação de serviço entre as partes.',
+    searchTerms: ['contrato', 'termo', 'prestação de serviço', 'combinado', 'acordo'],
+    recommendedForProfileTypes: ['psychologist', 'psychopedagogue', 'both', 'unknown'],
+    allowedProfessionCategories: ALL_PROFESSIONS,
+    professionCategories: ALL_PROFESSIONS,
+    riskLevel: 'medium',
+    requiresHeader: true,
+    essentialFields: ['subjectName', 'documentPurpose', 'authorization_scope', 'recommendations'],
+    optionalFields: ['document_date', 'nextSteps'],
+    guidedFields: [
+      { key: 'authorization_scope', label: 'Objeto do serviço' },
+      { key: 'recommendations', label: 'Combinados e responsabilidades' },
+      { key: 'document_date', label: 'Data (opcional)' },
+      { key: 'nextSteps', label: 'Cancelamento e comunicação (opcional)' },
+    ],
+    sections: [
+      { key: 'authorization_scope', title: 'Objeto do serviço' },
+      { key: 'recommendations', title: 'Combinados e responsabilidades' },
+      { key: 'nextSteps', title: 'Cancelamento e comunicação' },
+    ],
+    skeleton:
+      'Este termo registra a prestação de serviço de ___, com objetivo de ___, conforme combinados entre as partes.',
+    ethicalFooter: 'Modelo administrativo simplificado. Não substitui orientação jurídica quando necessária.',
+  },
+  {
+    id: 'universal_simple_authorization',
+    schemaVersion: 1,
+    status: 'active',
+    documentKind: 'formal_document',
+    category: 'Autorização',
+    title: 'Autorização simples',
+    description: 'Autorização administrativa para uma finalidade e período definidos, sem dados sensíveis além do necessário.',
+    defaultPurpose: 'Registrar uma autorização administrativa simples.',
+    searchTerms: ['autorização', 'autorizar', 'permissão', 'consentimento simples'],
+    recommendedForProfileTypes: ['psychologist', 'psychopedagogue', 'both', 'unknown'],
+    allowedProfessionCategories: ALL_PROFESSIONS,
+    professionCategories: ALL_PROFESSIONS,
+    riskLevel: 'low',
+    requiresHeader: true,
+    essentialFields: ['subjectName', 'authorization_scope', 'document_date'],
+    optionalFields: ['documentPurpose', 'nextSteps'],
+    guidedFields: [
+      { key: 'authorization_scope', label: 'Objeto da autorização' },
+      { key: 'document_date', label: 'Validade / período' },
+      { key: 'nextSteps', label: 'Observações (opcional)' },
+    ],
+    sections: [
+      { key: 'authorization_scope', title: 'Objeto da autorização' },
+      { key: 'document_date', title: 'Validade / período' },
+      { key: 'nextSteps', title: 'Observações' },
+    ],
+    skeleton: 'Autorizo ___ a realizar ___ no período de ___, para a finalidade de ___.',
+    ethicalFooter: 'Autorização administrativa. Não inclui dados sensíveis além do necessário.',
+  },
+  {
+    id: 'universal_simplified_tcle',
+    schemaVersion: 1,
+    status: 'active',
+    documentKind: 'formal_document',
+    category: 'Consentimento',
+    title: 'TCLE simplificado',
+    description: 'Termo de consentimento livre e esclarecido simplificado, adaptável ao serviço e ao público.',
+    defaultPurpose: 'Registrar consentimento livre e esclarecido de forma simplificada.',
+    searchTerms: ['tcle', 'consentimento', 'livre', 'esclarecido', 'termo'],
+    recommendedForProfileTypes: ['psychologist', 'psychopedagogue', 'both', 'unknown'],
+    allowedProfessionCategories: ALL_PROFESSIONS,
+    professionCategories: ALL_PROFESSIONS,
+    riskLevel: 'medium',
+    requiresHeader: true,
+    essentialFields: ['subjectName', 'documentPurpose', 'authorization_scope', 'recommendations'],
+    optionalFields: ['document_date', 'nextSteps'],
+    guidedFields: [
+      { key: 'authorization_scope', label: 'Procedimentos e finalidade' },
+      { key: 'recommendations', label: 'Sigilo e limites' },
+      { key: 'document_date', label: 'Data (opcional)' },
+      { key: 'nextSteps', label: 'Consentimento (opcional)' },
+    ],
+    sections: [
+      { key: 'authorization_scope', title: 'Procedimentos e finalidade' },
+      { key: 'recommendations', title: 'Sigilo e limites' },
+      { key: 'nextSteps', title: 'Consentimento' },
+    ],
+    skeleton: 'Declaro que fui informado(a) sobre ___, seus objetivos e limites, e autorizo ___.',
+    ethicalFooter:
+      'Termo simplificado. Deve ser adaptado pela profissional conforme serviço, público e exigências aplicáveis.',
+  },
 ];
 
 export const initialDraft: DraftFields = {
@@ -1193,6 +1415,14 @@ export const initialDraft: DraftFields = {
   attentionPoints: 'Organize os pontos que merecem acompanhamento, sempre com linguagem descritiva e cuidadosa.',
   recommendations: 'Inclua orientações práticas, possíveis adaptações e sugestões de acompanhamento.',
   nextSteps: 'Feche com próximos passos objetivos, revisão do plano de acompanhamento ou encaminhamentos necessários.',
+  document_date: 'Data do atendimento, entrevista ou emissão.',
+  start_time: 'Horário de início. Ex.: 14:00.',
+  end_time: 'Horário de término. Ex.: 14:50.',
+  procedures: 'Entrevistas, observações, atendimentos ou instrumentos utilizados.',
+  family_guidance: 'Orientações práticas para a família/responsáveis.',
+  school_guidance: 'Orientações para a escola/equipe pedagógica.',
+  authorization_scope: 'O que está sendo autorizado e em qual período/contexto.',
+  payment_description: 'Serviço, valor, data e forma de pagamento.',
 };
 
 export const DRAFT_FIELD_KEYS = Object.keys(initialDraft) as DraftFieldKey[];
@@ -1212,7 +1442,10 @@ export function getTemplateById(id: unknown): DocStudioTemplate | undefined {
 
 export function getTemplateForDraft(line: LineKey, templateKey: unknown): DocStudioTemplate {
   if (isTemplateKey(templateKey)) {
-    const template = templates.find((item) => item.id === templateKey && item.line === line);
+    // Universais não têm `line`: casam por id independentemente da linha salva.
+    const template = templates.find(
+      (item) => item.id === templateKey && (item.line === line || item.line === undefined),
+    );
     if (template) return template;
   }
   return getFirstTemplateForLine(line);
@@ -1225,7 +1458,7 @@ export function getDefaultFieldsForTemplate(template: DocStudioTemplate): DraftF
   };
 }
 
-export function getLineTitle(line: LineKey): string {
+export function getLineTitle(line: LineKey | null | undefined): string {
   return lineOptions.find((option) => option.key === line)?.title ?? lineOptions[0].title;
 }
 

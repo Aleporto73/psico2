@@ -40,7 +40,15 @@ export type TemplateKey =
   | 'psychology-minor-authorization'
   | 'psychology-online-protocol'
   | 'psychology-attendance-declaration'
-  | 'psychology-tcle';
+  | 'psychology-tcle'
+  // Universais (D1) — aparecem para todas as profissões.
+  | 'universal_blank_document'
+  | 'universal_attendance_statement'
+  | 'universal_payment_receipt'
+  | 'universal_referral'
+  | 'universal_service_agreement'
+  | 'universal_simple_authorization'
+  | 'universal_simplified_tcle';
 
 export type FontStyle = 'editorial' | 'classic' | 'clean';
 export type Density = 'comfortable' | 'compact';
@@ -105,6 +113,16 @@ export interface DraftFields {
   attentionPoints: string;
   recommendations: string;
   nextSteps: string;
+  // Campos aditivos (D1) para suportar os universais. snake_case por vir da spec v2;
+  // os campos legados acima permanecem em camelCase (não renomear ainda).
+  document_date: string;
+  start_time: string;
+  end_time: string;
+  procedures: string;
+  family_guidance: string;
+  school_guidance: string;
+  authorization_scope: string;
+  payment_description: string;
 }
 
 export type DraftFieldKey = keyof DraftFields;
@@ -123,7 +141,9 @@ export interface DocStudioTemplate {
   id: TemplateKey;
   schemaVersion: number;
   status: DocStudioTemplateStatus;
-  line: LineKey;
+  // `line` é o catálogo por linha (psicologia/psicopedagogia). Opcional a partir do D1:
+  // universais não pertencem a uma linha — aparecem via `professionCategories`.
+  line?: LineKey;
   documentKind: DocStudioDocumentKind;
   category: string;
   title: string;
@@ -137,6 +157,12 @@ export interface DocStudioTemplate {
   guidedFields: GuidedField[];
   sections: DocSection[];
   ethicalFooter: string;
+  // Aditivos (D1). `professionCategories` marca universais (todas as profissões).
+  // `essentialFields`/`optionalFields`/`skeleton` são dados para blocos futuros.
+  professionCategories?: ProfessionCategory[];
+  essentialFields?: DraftFieldKey[];
+  optionalFields?: DraftFieldKey[];
+  skeleton?: string;
 }
 
 export interface ColorOption {

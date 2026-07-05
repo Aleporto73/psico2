@@ -23,7 +23,6 @@ import {
   categoryFromProfile,
   colorOptions,
   getDefaultFieldsForTemplate,
-  getFirstTemplateForLine,
   getProfessionCategoryOption,
   initialDraft,
   professionCategoryOptions,
@@ -115,13 +114,10 @@ export function useDocStudioState() {
       setCategory(nextCategory);
       if (!restoredDraftRef.current) {
         const catalog = catalogForCategory(nextCategory);
-        if (catalog) {
-          const preferredTemplate = getFirstTemplateForLine(catalog);
-          setLine(catalog);
-          setTemplateKey(preferredTemplate.id);
-        }
-        // Categoria sem catálogo (fono/TO/médico/pediatra/outro): mantém line/template
-        // default; o catálogo exibe o estado "em preparação". Sem fallback silencioso.
+        if (catalog) setLine(catalog);
+        // Primeiro documento da categoria: profissional se houver, senão universal.
+        const first = getTemplatesForCategory(nextCategory)[0];
+        if (first) setTemplateKey(first.id);
       }
       setLoadingProfile(false);
     }
@@ -134,19 +130,19 @@ export function useDocStudioState() {
   }, []);
 
   const templatesForActiveLine = useMemo(() => getTemplatesForLine(line), [line]);
+  const templatesForActiveCategory = useMemo(() => getTemplatesForCategory(category), [category]);
 
-  // Categoria sem catálogo (fono/TO/médico/pediatra/outro) => nenhum template
-  // selecionado: a página inteira entra em estado vazio, sem renderizar documento antigo.
+  // Catálogo profissional próprio? (universais sempre existem; isto serve só à nota
+  // "modelos específicos em preparação" nas categorias sem linha própria.)
   const hasTemplateCatalog = catalogForCategory(category) !== null;
 
+  // Template selecionado dentro do que a categoria mostra (universais + profissão).
   const selectedTemplate = useMemo(
     () =>
-      hasTemplateCatalog
-        ? (templates.find((template) => template.id === templateKey && template.line === line) ??
-          templatesForActiveLine[0] ??
-          templates[0])
-        : null,
-    [hasTemplateCatalog, line, templateKey, templatesForActiveLine],
+      templatesForActiveCategory.find((template) => template.id === templateKey) ??
+      templatesForActiveCategory[0] ??
+      null,
+    [templatesForActiveCategory, templateKey],
   );
 
   const hasSelectedTemplate = selectedTemplate !== null;
@@ -206,19 +202,21 @@ export function useDocStudioState() {
   const updateTemplate = useCallback((nextTemplateKey: TemplateKey) => {
     const nextTemplate = templates.find((template) => template.id === nextTemplateKey) ?? templates[0];
     setTemplateKey(nextTemplate.id);
-    setLine(nextTemplate.line);
+    // Universais não têm `line`: mantém a linha atual.
+    if (nextTemplate.line) setLine(nextTemplate.line);
     setFields((current) => ({ ...current, documentPurpose: nextTemplate.defaultPurpose }));
   }, []);
 
   const updateCategory = useCallback((nextCategory: ProfessionCategory) => {
     setCategory(nextCategory);
     const catalog = catalogForCategory(nextCategory);
-    // Linha em preparação: mantém o documento atual; o catálogo mostra o placeholder.
-    if (!catalog) return;
-    const nextTemplate = getFirstTemplateForLine(catalog);
-    setLine(catalog);
-    setTemplateKey(nextTemplate.id);
-    setFields((current) => ({ ...current, documentPurpose: nextTemplate.defaultPurpose }));
+    if (catalog) setLine(catalog);
+    // Primeiro documento da categoria: profissional se houver, senão universal.
+    const first = getTemplatesForCategory(nextCategory)[0];
+    if (first) {
+      setTemplateKey(first.id);
+      setFields((current) => ({ ...current, documentPurpose: first.defaultPurpose }));
+    }
   }, []);
 
   const handleClearDraft = useCallback(() => {
@@ -227,7 +225,7 @@ export function useDocStudioState() {
 
     setFields(selectedTemplate ? getDefaultFieldsForTemplate(selectedTemplate) : initialDraft);
     if (selectedTemplate) {
-      setLine(selectedTemplate.line);
+      if (selectedTemplate.line) setLine(selectedTemplate.line);
       setTemplateKey(selectedTemplate.id);
     }
     setPrimaryColor(colorOptions[0].value);
@@ -273,7 +271,6 @@ export function useDocStudioState() {
 
   const activeColor = blackAndWhite ? '#111111' : primaryColor;
   const activeCategory = getProfessionCategoryOption(category);
-  const templatesForActiveCategory = getTemplatesForCategory(category);
 
   return {
     // dados
