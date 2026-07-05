@@ -135,13 +135,21 @@ export function useDocStudioState() {
 
   const templatesForActiveLine = useMemo(() => getTemplatesForLine(line), [line]);
 
+  // Categoria sem catálogo (fono/TO/médico/pediatra/outro) => nenhum template
+  // selecionado: a página inteira entra em estado vazio, sem renderizar documento antigo.
+  const hasTemplateCatalog = catalogForCategory(category) !== null;
+
   const selectedTemplate = useMemo(
     () =>
-      templates.find((template) => template.id === templateKey && template.line === line) ??
-      templatesForActiveLine[0] ??
-      templates[0],
-    [line, templateKey, templatesForActiveLine],
+      hasTemplateCatalog
+        ? (templates.find((template) => template.id === templateKey && template.line === line) ??
+          templatesForActiveLine[0] ??
+          templates[0])
+        : null,
+    [hasTemplateCatalog, line, templateKey, templatesForActiveLine],
   );
+
+  const hasSelectedTemplate = selectedTemplate !== null;
 
   const header = useMemo(() => buildHeader(profile), [profile]);
   const headerMissingItems = useMemo(() => getHeaderMissingItems(profile), [profile]);
@@ -162,7 +170,7 @@ export function useDocStudioState() {
       const draft: DocStudioDraft = {
         schemaVersion: 1,
         line,
-        templateKey: selectedTemplate.id,
+        templateKey: selectedTemplate?.id ?? templateKey,
         fields,
         primaryColor,
         fontStyle,
@@ -185,7 +193,8 @@ export function useDocStudioState() {
     hasHydratedDraft,
     line,
     primaryColor,
-    selectedTemplate.id,
+    selectedTemplate?.id,
+    templateKey,
     showHeader,
     showSignature,
   ]);
@@ -216,9 +225,11 @@ export function useDocStudioState() {
     skipNextDraftSaveRef.current = true;
     setDraftStatus(clearDraft() ? 'cleared' : 'unavailable');
 
-    setFields(getDefaultFieldsForTemplate(selectedTemplate));
-    setLine(selectedTemplate.line);
-    setTemplateKey(selectedTemplate.id);
+    setFields(selectedTemplate ? getDefaultFieldsForTemplate(selectedTemplate) : initialDraft);
+    if (selectedTemplate) {
+      setLine(selectedTemplate.line);
+      setTemplateKey(selectedTemplate.id);
+    }
     setPrimaryColor(colorOptions[0].value);
     setFontStyle('editorial');
     setBlackAndWhite(false);
@@ -228,6 +239,7 @@ export function useDocStudioState() {
   }, [selectedTemplate]);
 
   const handleCopy = useCallback(async () => {
+    if (!selectedTemplate) return;
     const text = composePlainText(profile, selectedTemplate, fields, showHeader, showSignature);
     try {
       if (navigator.clipboard?.writeText) {
@@ -271,6 +283,8 @@ export function useDocStudioState() {
     category,
     templateKey,
     selectedTemplate,
+    hasSelectedTemplate,
+    hasTemplateCatalog,
     templatesForActiveLine,
     templatesForActiveCategory,
     professionCategoryOptions,

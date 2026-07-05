@@ -6,7 +6,7 @@ import {
   listDocumentKinds,
   searchTemplates,
 } from '../template-catalog';
-import { getProfessionCategoryOption, professionCategoryOptions, templates } from '../templates';
+import { catalogForCategory, getProfessionCategoryOption, professionCategoryOptions, templates } from '../templates';
 import { normalizeText } from '../lib/format';
 
 function ids(list: ReturnType<typeof searchTemplates>): string[] {
@@ -301,5 +301,38 @@ describe('Doc Studio por profissão (profession_category)', () => {
 
   it('catálogo continua com 30 templates ativos (não mudou com as categorias)', () => {
     expect(getActiveTemplates()).toHaveLength(30);
+  });
+});
+
+describe('estado vazio completo por categoria (C2)', () => {
+  const emptyCategories: ProfessionCategory[] = [
+    'fonoaudiologo',
+    'terapeuta_ocupacional',
+    'medico',
+    'pediatra',
+    'outro',
+  ];
+
+  // catalogForCategory === null é o que faz o hook zerar selectedTemplate (sem template
+  // antigo) e a página inteira entrar em estado vazio.
+  it('categorias sem catálogo não têm template selecionável (catalog null + modelos vazios)', () => {
+    for (const category of emptyCategories) {
+      expect(catalogForCategory(category), `catálogo de ${category}`).toBeNull();
+      expect(getTemplatesForCategory(category), `modelos de ${category}`).toEqual([]);
+    }
+  });
+
+  it('fonoaudiologo e terapeuta_ocupacional não renderizam template antigo (sem catálogo)', () => {
+    expect(catalogForCategory('fonoaudiologo')).toBeNull();
+    expect(getTemplatesForCategory('fonoaudiologo')).toEqual([]);
+    expect(catalogForCategory('terapeuta_ocupacional')).toBeNull();
+    expect(getTemplatesForCategory('terapeuta_ocupacional')).toEqual([]);
+  });
+
+  it('Psicologia e Psicopedagogia seguem com catálogo (15 ativos cada)', () => {
+    expect(catalogForCategory('psicologo')).toBe('psychology');
+    expect(catalogForCategory('psicopedagogo')).toBe('psychopedagogy');
+    expect(getTemplatesForCategory('psicologo')).toHaveLength(15);
+    expect(getTemplatesForCategory('psicopedagogo')).toHaveLength(15);
   });
 });

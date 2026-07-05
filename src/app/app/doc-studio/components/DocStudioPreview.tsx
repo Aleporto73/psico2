@@ -36,6 +36,20 @@ export function DocStudioPreview({ state }: { state: DocStudioState }) {
     hasIncompleteSignature,
   } = state;
 
+  // Categoria sem catálogo: prévia indisponível — não renderiza documento antigo.
+  if (!selectedTemplate) {
+    return (
+      <div className="relative mx-auto w-full max-w-[860px] print:mx-0 print:max-w-none">
+        <div className="doc-studio-page flex min-h-[760px] flex-col items-center justify-center rounded-block border border-dashed border-pp-hairline bg-white p-10 text-center shadow-[0_28px_70px_rgba(14,42,56,0.08)]">
+          <p className="font-serif italic text-lg text-pp-ink">Prévia indisponível nesta categoria</p>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-pp-ink-soft">
+            Assim que os modelos forem adicionados, a folha profissional aparecerá aqui.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const accentStyle = { color: activeColor };
   const borderStyle = { borderColor: activeColor };
   const softBackground = blackAndWhite ? '#F4F4F4' : `${activeColor}0f`;
