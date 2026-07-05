@@ -63,3 +63,24 @@ describe('composePlainText', () => {
     expect(text).toContain('Dados profissionais não informados');
   });
 });
+
+describe('composePlainText — rótulo de linha/categoria (C4)', () => {
+  it('usa o lineLabel da categoria profissional ativa quando fornecido', () => {
+    expect(composePlainText(profile, template, fields, true, false, 'Neuropsicopedagogia')).toContain(
+      'Linha/Categoria: Neuropsicopedagogia /',
+    );
+    expect(composePlainText(profile, template, fields, true, false, 'Psicopedagogia')).toContain(
+      'Linha/Categoria: Psicopedagogia /',
+    );
+    expect(
+      composePlainText(profile, template, fields, true, false, 'Psicologia / Neuropsicologia'),
+    ).toContain('Linha/Categoria: Psicologia / Neuropsicologia /');
+  });
+
+  it('sem lineLabel, cai no título do catálogo bruto (fallback preservado)', () => {
+    // family-feedback é da linha psychopedagogy -> título do catálogo.
+    expect(composePlainText(profile, template, fields, true, false)).toContain(
+      'Linha/Categoria: Psicopedagogia / Neuropsicopedagogia /',
+    );
+  });
+});

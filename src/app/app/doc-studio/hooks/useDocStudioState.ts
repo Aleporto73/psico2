@@ -240,7 +240,8 @@ export function useDocStudioState() {
 
   const handleCopy = useCallback(async () => {
     if (!selectedTemplate) return;
-    const text = composePlainText(profile, selectedTemplate, fields, showHeader, showSignature);
+    const lineLabel = getProfessionCategoryOption(category).title;
+    const text = composePlainText(profile, selectedTemplate, fields, showHeader, showSignature, lineLabel);
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
@@ -264,7 +265,7 @@ export function useDocStudioState() {
       setCopyState('error');
       window.setTimeout(() => setCopyState('idle'), 2400);
     }
-  }, [profile, selectedTemplate, fields, showHeader, showSignature]);
+  }, [profile, selectedTemplate, fields, showHeader, showSignature, category]);
 
   const handlePrint = useCallback(() => {
     window.print();
