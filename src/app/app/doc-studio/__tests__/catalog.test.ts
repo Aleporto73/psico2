@@ -336,3 +336,18 @@ describe('estado vazio completo por categoria (C2)', () => {
     expect(getTemplatesForCategory('psicopedagogo')).toHaveLength(15);
   });
 });
+
+describe('rótulo da linha no preview (C3)', () => {
+  // O preview usa activeCategory.title (categoria profissional), não o catálogo bruto.
+  it('neuropsicopedagogo mostra "Neuropsicopedagogia" (não "Psicopedagogia")', () => {
+    expect(getProfessionCategoryOption('neuropsicopedagogo').title).toBe('Neuropsicopedagogia');
+  });
+
+  it('psicopedagogo mostra "Psicopedagogia"', () => {
+    expect(getProfessionCategoryOption('psicopedagogo').title).toBe('Psicopedagogia');
+  });
+
+  it('psicologo mostra "Psicologia / Neuropsicologia"', () => {
+    expect(getProfessionCategoryOption('psicologo').title).toBe('Psicologia / Neuropsicologia');
+  });
+});
