@@ -1,12 +1,17 @@
 'use client';
 
-// Catálogo por profissão: seletor de profession_category + busca + filtro por tipo
-// + lista ordenada por perfil. Categorias sem catálogo (fono/TO/médico/pediatra/outro)
-// mostram estado vazio premium "em preparação". Lógica pura vem de ../template-catalog.
+// Catálogo por profissão: seletor de profession_category + busca + filtro por tipo.
+// A lista é agrupada visualmente: "Modelos essenciais para todos" (universais) primeiro,
+// depois "Modelos de {profissão}" (só quando existirem). Lógica pura em ../template-catalog.
 // Só modelos `active` aparecem (padrão de searchTemplates).
 
 import { useMemo, useState } from 'react';
-import type { DocStudioDocumentKind, ProfessionCategory, ProfileTypeKey } from '../types';
+import type {
+  DocStudioDocumentKind,
+  DocStudioTemplate,
+  ProfessionCategory,
+  ProfileTypeKey,
+} from '../types';
 import type { DocStudioState } from '../hooks/useDocStudioState';
 import { listDocumentKindsForCategory, searchTemplates } from '../template-catalog';
 
@@ -45,6 +50,34 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
     [query, category, documentKind, profileType],
   );
 
+  // Universais = têm `professionCategories` (todas as profissões). Profissionais = por `line`.
+  const universalResults = results.filter((template) => template.professionCategories);
+  const professionalResults = results.filter((template) => !template.professionCategories);
+
+  const renderItem = (template: DocStudioTemplate) => {
+    const isActive = template.id === selectedTemplate?.id;
+    return (
+      <button
+        key={template.id}
+        type="button"
+        onClick={() => updateTemplate(template.id)}
+        aria-pressed={isActive}
+        className={`block w-full rounded-xl border-l-2 px-3.5 py-3 text-left transition ${
+          isActive ? 'border-l-pp-ink bg-pp-block-cream/60' : 'border-l-transparent hover:bg-pp-hairline-soft/70'
+        }`}
+      >
+        <span
+          className="text-[10px] font-semibold uppercase tracking-wide text-pp-ink-soft"
+          style={isActive ? { color: activeColor } : undefined}
+        >
+          {documentKindLabels[template.documentKind]}
+        </span>
+        <span className="mt-0.5 block text-sm font-medium text-pp-ink">{template.title}</span>
+        <span className="mt-1 block text-xs leading-relaxed text-pp-ink-soft">{template.description}</span>
+      </button>
+    );
+  };
+
   return (
     <div className="space-y-8">
       <div className="space-y-3">
@@ -67,13 +100,7 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
         <p className="text-xs leading-relaxed text-pp-ink-soft">{activeCategory.description}</p>
       </div>
 
-      <div className="space-y-3 border-t border-pp-hairline-soft pt-8">
-        {!hasCatalog && (
-          <p className="rounded-xl border border-dashed border-pp-hairline bg-pp-hairline-soft/40 px-3.5 py-3 text-xs leading-relaxed text-pp-ink-soft">
-            Modelos específicos de {activeCategory.title} em preparação. Enquanto isso, use os modelos universais abaixo.
-          </p>
-        )}
-
+      <div className="space-y-4 border-t border-pp-hairline-soft pt-8">
         <div className="flex items-center justify-between gap-3">
           <p className="font-serif italic text-pp-ink-soft text-sm">Modelos</p>
           <span className="text-[11px] text-pp-ink-soft">{results.length} modelo(s)</span>
@@ -108,30 +135,30 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
             Nenhum modelo encontrado. Ajuste a busca ou o filtro de tipo.
           </p>
         ) : (
-          <div className="space-y-1">
-            {results.map((template) => {
-              const isActive = template.id === selectedTemplate?.id;
-              return (
-                <button
-                  key={template.id}
-                  type="button"
-                  onClick={() => updateTemplate(template.id)}
-                  aria-pressed={isActive}
-                  className={`block w-full rounded-xl border-l-2 px-3.5 py-3 text-left transition ${
-                    isActive ? 'border-l-pp-ink bg-pp-block-cream/60' : 'border-l-transparent hover:bg-pp-hairline-soft/70'
-                  }`}
-                >
-                  <span
-                    className="text-[10px] font-semibold uppercase tracking-wide text-pp-ink-soft"
-                    style={isActive ? { color: activeColor } : undefined}
-                  >
-                    {documentKindLabels[template.documentKind]}
-                  </span>
-                  <span className="mt-0.5 block text-sm font-medium text-pp-ink">{template.title}</span>
-                  <span className="mt-1 block text-xs leading-relaxed text-pp-ink-soft">{template.description}</span>
-                </button>
-              );
-            })}
+          <div className="space-y-6">
+            {universalResults.length > 0 && (
+              <section className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
+                  Modelos essenciais para todos
+                </p>
+                <div className="space-y-1">{universalResults.map(renderItem)}</div>
+              </section>
+            )}
+
+            {professionalResults.length > 0 && (
+              <section className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
+                  Modelos de {activeCategory.title}
+                </p>
+                <div className="space-y-1">{professionalResults.map(renderItem)}</div>
+              </section>
+            )}
+
+            {!hasCatalog && (
+              <p className="rounded-xl border border-dashed border-pp-hairline bg-pp-hairline-soft/40 px-3.5 py-3 text-xs leading-relaxed text-pp-ink-soft">
+                Modelos específicos de {activeCategory.title} em preparação.
+              </p>
+            )}
           </div>
         )}
       </div>
