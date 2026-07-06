@@ -1,14 +1,9 @@
-import { randomInt } from 'crypto';
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/utils/supabase/admin-auth';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { setTemporaryPassword } from '@/utils/auth/temp-password';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-
-function generateTemporaryPassword(length = 10) {
-  return Array.from({ length }, () => PASSWORD_ALPHABET[randomInt(PASSWORD_ALPHABET.length)]).join('');
-}
 
 export async function POST(request: Request) {
   try {
@@ -47,29 +42,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const temporaryPassword = generateTemporaryPassword();
-
-    const { error: authErr } = await adminSupabase.auth.admin.updateUserById(profile.id, {
-      password: temporaryPassword,
-      email_confirm: true,
-    });
-
-    if (authErr) {
-      throw new Error(`Erro ao atualizar senha no Auth: ${authErr.message}`);
-    }
-
-    const { error: profileUpdateErr } = await adminSupabase
-      .from('profiles')
-      .update({
-        status: 'active',
-        activation_status: 'active',
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', profile.id);
-
-    if (profileUpdateErr) {
-      throw new Error(`Senha alterada, mas houve erro ao ativar profile: ${profileUpdateErr.message}`);
-    }
+    const temporaryPassword = await setTemporaryPassword(adminSupabase, profile.id);
 
     await adminSupabase.from('admin_logs').insert({
       admin_id: adminUser?.id,

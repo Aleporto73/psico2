@@ -146,14 +146,28 @@ function LoginContent() {
           <p className="font-serif italic text-xs text-pp-ink-soft mt-0.5">Área do cliente</p>
         </div>
 
-        {/* Title */}
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-pp-ink">
-            Entrar na plataforma
-          </h1>
-          <p className="text-pp-ink-soft text-base">
-            Acesse suas planilhas e materiais.
+        {/* AÇÃO PRIMÁRIA — clientes legados / primeiro acesso.
+            Causa-raiz da onda de suporte: a senhora legada clicava em "Esqueci
+            minha senha" em vez de ativar. Este bloco laranja gigante (mesma cor
+            do aviso de migração) captura o clique certo antes do formulário. */}
+        <div className="space-y-3 rounded-2xl border-2 border-orange-400 bg-orange-50 p-5 text-center">
+          <p className="text-lg font-extrabold text-pp-ink">Primeira vez no novo site?</p>
+          <p className="text-sm text-pp-ink-soft">
+            Se você já era cliente do PsicoPlanilhas, precisa criar sua senha uma vez.
           </p>
+          <Link
+            href="/ativar-acesso"
+            className="flex w-full items-center justify-center py-5 text-lg font-extrabold bg-orange-500 text-white hover:bg-orange-600 rounded-pill shadow-lg transition duration-200"
+          >
+            Ativar meu acesso
+          </Link>
+        </div>
+
+        {/* Divisor — quem já tem senha entra abaixo */}
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-pp-hairline" />
+          <span className="text-xs font-medium text-pp-ink-soft whitespace-nowrap">já tem senha? entre abaixo</span>
+          <span className="h-px flex-1 bg-pp-hairline" />
         </div>
 
         {/* Feedback Messages */}
@@ -215,19 +229,6 @@ function LoginContent() {
             )}
           </button>
         </form>
-
-        {/* Activation Block */}
-        <div className="border-t border-pp-hairline pt-5 text-center space-y-3">
-          <p className="text-base text-pp-ink-soft">
-            Ainda não criou sua senha?
-          </p>
-          <Link
-            href="/ativar-acesso"
-            className="inline-block w-full py-3.5 text-base font-bold text-pp-ink bg-white border border-pp-hairline hover:border-pp-ink rounded-pill transition duration-200 text-center"
-          >
-            Ativar meu acesso
-          </Link>
-        </div>
       </div>
 
       <div className="mt-8 text-center text-xs text-pp-ink-soft/70 max-w-sm">
