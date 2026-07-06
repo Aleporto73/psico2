@@ -26,8 +26,8 @@ export default function AtivarAcessoPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        // API returned an error (e.g. email not found)
-        setErrorMsg('Não foi possível enviar o link. Tente novamente.');
+        // API returned an error (e.g. email not found, inactive access, SMTP failure)
+        setErrorMsg(data?.message || 'Não foi possível enviar o link. Tente novamente.');
         return;
       }
 
