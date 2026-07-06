@@ -39,19 +39,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. If profile exists and is active, trigger the shared activation email flow
-    if (profile.status === 'active') {
-      const origin = new URL(request.url).origin;
-
-      // Reusa o helper compartilhado; aqui logamos e seguimos (mantém o 200 da rota).
-      try {
-        await sendActivationLink(adminSupabase, normalizedEmail, origin);
-      } catch (resetError) {
-        console.error('Error triggering native reset password for activation:', resetError);
-      }
+    // 3. If profile exists but is blocked/inactive, do not pretend an email was sent.
+    if (profile.status !== 'active') {
+      return NextResponse.json(
+        { message: 'Este acesso não está ativo. Entre em contato com o suporte.' },
+        { status: 403 }
+      );
     }
 
-    // 4. Return success
+    // 4. Trigger the shared activation email flow.
+    const origin = new URL(request.url).origin;
+    try {
+      await sendActivationLink(adminSupabase, normalizedEmail, origin);
+    } catch (resetError) {
+      console.error('Error triggering native reset password for activation:', resetError);
+
+      return NextResponse.json(
+        { message: 'Não foi possível enviar o link agora. Verifique a configuração de e-mail e tente novamente.' },
+        { status: 502 }
+      );
+    }
+
+    // 5. Return success only after Supabase accepts the email request.
     return NextResponse.json(
       { message: 'Link enviado com sucesso.' },
       { status: 200 }
