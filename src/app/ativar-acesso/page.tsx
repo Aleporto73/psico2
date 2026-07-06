@@ -3,16 +3,42 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 
+const ACTIVATION_COOLDOWN_MS = 5 * 60 * 1000;
+const COOLDOWN_STORAGE_KEY = 'psico2-activation-cooldown-until';
+
+function getInitialCooldownUntil() {
+  if (typeof window === 'undefined') return 0;
+  const stored = window.localStorage.getItem(COOLDOWN_STORAGE_KEY);
+  const parsed = stored ? Number(stored) : 0;
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
 export default function AtivarAcessoPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [cooldownUntil, setCooldownUntil] = useState(getInitialCooldownUntil);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const cooldownActive = Date.now() < cooldownUntil;
+
+  const startCooldown = () => {
+    const nextCooldown = Date.now() + ACTIVATION_COOLDOWN_MS;
+    setCooldownUntil(nextCooldown);
+    window.localStorage.setItem(COOLDOWN_STORAGE_KEY, String(nextCooldown));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (cooldownActive) {
+      setErrorMsg('Aguarde alguns minutos antes de pedir outro link. Se já solicitou, verifique também spam e promoções.');
+      return;
+    }
+
     setLoading(true);
     setErrorMsg(null);
+    startCooldown();
 
     try {
       const response = await fetch('/api/auth/ativar-acesso', {
@@ -105,7 +131,7 @@ export default function AtivarAcessoPage() {
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || cooldownActive}
                 className="w-full py-4 text-base font-bold bg-pp-ink text-pp-canvas hover:bg-pp-ink-soft disabled:opacity-50 rounded-pill transition duration-200 flex items-center justify-center gap-2"
               >
                 {loading ? (
@@ -113,6 +139,8 @@ export default function AtivarAcessoPage() {
                     <span className="w-5 h-5 border-2 border-pp-canvas/30 border-t-pp-canvas rounded-full animate-spin" />
                     Enviando...
                   </>
+                ) : cooldownActive ? (
+                  'Aguarde alguns minutos'
                 ) : (
                   'Receber link por e-mail'
                 )}
