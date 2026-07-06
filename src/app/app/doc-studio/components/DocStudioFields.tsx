@@ -2,7 +2,9 @@
 
 // Campos guiados + ações (copiar/imprimir) + status do rascunho local.
 
+import { useEffect, useState } from 'react';
 import { Check, Copy, Printer } from 'lucide-react';
+import type { GuidedField } from '../types';
 import type { DocStudioState } from '../hooks/useDocStudioState';
 import { getDraftStatusLabel } from '../lib/storage';
 
@@ -22,6 +24,12 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
     hasIncompleteHeader,
     headerMissingItems,
   } = state;
+
+  const [showOptional, setShowOptional] = useState(false);
+  // Recolhe os detalhes opcionais ao trocar de modelo.
+  useEffect(() => {
+    setShowOptional(false);
+  }, [selectedTemplate?.id]);
 
   // Categoria sem catálogo: estado vazio premium, sem campos guiados nem ações.
   if (!selectedTemplate) {
@@ -44,6 +52,34 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
   const displayTitle = isBlankDocument
     ? fields.document_title.trim() || 'Documento em branco'
     : selectedTemplate.title;
+
+  // Grupos de campos (D5): quando o template declara essentialFields, separa os campos
+  // guiados em essenciais (sempre visíveis) e opcionais (atrás de "Adicionar mais detalhes").
+  // Templates sem grupos mantêm o comportamento atual: todos os guidedFields visíveis.
+  const hasFieldGroups = Boolean(selectedTemplate.essentialFields);
+  const essentialKeys = new Set(selectedTemplate.essentialFields ?? []);
+  const essentialGuided = hasFieldGroups
+    ? selectedTemplate.guidedFields.filter((field) => essentialKeys.has(field.key))
+    : selectedTemplate.guidedFields;
+  const optionalGuided = hasFieldGroups
+    ? selectedTemplate.guidedFields.filter((field) => !essentialKeys.has(field.key))
+    : [];
+
+  const renderGuidedField = (field: GuidedField) => (
+    <div key={field.key} className="space-y-2">
+      <label htmlFor={field.key} className="text-xs font-medium text-pp-ink-soft">
+        {field.label}
+      </label>
+      <textarea
+        id={field.key}
+        value={fields[field.key]}
+        onChange={(event) => updateField(field.key, event.target.value)}
+        placeholder={field.placeholder}
+        rows={density === 'compact' ? 3 : 4}
+        className="w-full resize-y rounded-xl border border-pp-hairline bg-white px-4 py-3 text-sm leading-relaxed text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
+      />
+    </div>
+  );
 
   return (
     <>
@@ -150,21 +186,21 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
           />
         </div>
 
-        {selectedTemplate.guidedFields.map((field) => (
-          <div key={field.key} className="space-y-2">
-            <label htmlFor={field.key} className="text-xs font-medium text-pp-ink-soft">
-              {field.label}
-            </label>
-            <textarea
-              id={field.key}
-              value={fields[field.key]}
-              onChange={(event) => updateField(field.key, event.target.value)}
-              placeholder={field.placeholder}
-              rows={density === 'compact' ? 3 : 4}
-              className="w-full resize-y rounded-xl border border-pp-hairline bg-white px-4 py-3 text-sm leading-relaxed text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
-            />
+        {essentialGuided.map(renderGuidedField)}
+
+        {optionalGuided.length > 0 && (
+          <div className="space-y-5">
+            <button
+              type="button"
+              onClick={() => setShowOptional((value) => !value)}
+              aria-expanded={showOptional}
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-pp-ink-soft underline-offset-4 transition hover:text-pp-ink hover:underline"
+            >
+              {showOptional ? 'Ocultar detalhes' : 'Adicionar mais detalhes'}
+            </button>
+            {showOptional && optionalGuided.map(renderGuidedField)}
           </div>
-        ))}
+        )}
       </div>
     </>
   );

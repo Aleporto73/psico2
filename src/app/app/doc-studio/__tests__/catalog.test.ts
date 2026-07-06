@@ -429,3 +429,37 @@ describe('seleção inicial do modelo (D4)', () => {
     }
   });
 });
+
+describe('campos essenciais e opcionais (D5)', () => {
+  // Campos fixos renderizados sempre no formulário (não são guidedFields).
+  const FIXED_FIELD_KEYS = ['subjectName', 'subjectAge', 'documentPurpose', 'document_title'];
+
+  it('(a) todo universal tem essentialFields não-vazio', () => {
+    const universals = getActiveTemplates().filter((t) => t.professionCategories);
+    expect(universals.length).toBeGreaterThan(0);
+    for (const t of universals) {
+      expect((t.essentialFields ?? []).length, `${t.id} essentialFields`).toBeGreaterThan(0);
+    }
+  });
+
+  it('(b) essentialFields/optionalFields só referenciam campos renderizáveis (guidedFields ou fixos)', () => {
+    for (const t of templates) {
+      const renderable = new Set<string>([...t.guidedFields.map((g) => g.key), ...FIXED_FIELD_KEYS]);
+      for (const key of t.essentialFields ?? []) {
+        expect(renderable.has(key), `${t.id}: essential "${key}" sem render`).toBe(true);
+      }
+      for (const key of t.optionalFields ?? []) {
+        expect(renderable.has(key), `${t.id}: optional "${key}" sem render`).toBe(true);
+      }
+    }
+  });
+
+  it('(c) templates antigos (sem grupos) continuam com guidedFields e serão renderizados por inteiro', () => {
+    const legacy = templates.filter((t) => !t.essentialFields);
+    expect(legacy.length).toBeGreaterThan(0);
+    for (const t of legacy) {
+      expect(t.guidedFields.length, `${t.id} guidedFields`).toBeGreaterThan(0);
+      expect(t.optionalFields, `${t.id} não deve ter optionalFields`).toBeUndefined();
+    }
+  });
+});
