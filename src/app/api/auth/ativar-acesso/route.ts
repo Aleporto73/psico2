@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { sendActivationLink } from '@/utils/auth/activation';
 
+const ACTIVATION_EMAIL_PURPOSE = 'activation_email_request';
+const ACTIVATION_THROTTLE_MINUTES = 15;
+
 export async function POST(request: Request) {
   try {
     const { email } = await request.json();
@@ -19,7 +22,7 @@ export async function POST(request: Request) {
     // 1. Check if email exists in public.profiles and is active
     const { data: profile, error } = await adminSupabase
       .from('profiles')
-      .select('email, status')
+      .select('id, email, status')
       .eq('email', normalizedEmail)
       .maybeSingle();
 
@@ -47,6 +50,31 @@ export async function POST(request: Request) {
       );
     }
 
+    const throttleSince = new Date(Date.now() - ACTIVATION_THROTTLE_MINUTES * 60 * 1000).toISOString();
+    const { data: recentRequest, error: recentRequestError } = await adminSupabase
+      .from('activation_tokens')
+      .select('id, created_at')
+      .eq('user_id', profile.id)
+      .eq('purpose', ACTIVATION_EMAIL_PURPOSE)
+      .gte('created_at', throttleSince)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (recentRequestError) {
+      console.error('Error checking activation email throttle:', recentRequestError);
+    }
+
+    if (recentRequest) {
+      return NextResponse.json(
+        {
+          message: 'Se o e-mail estiver cadastrado, o link já foi solicitado. Aguarde alguns minutos e verifique spam ou promoções.',
+          throttled: true,
+        },
+        { status: 200 }
+      );
+    }
+
     // 4. Trigger the shared activation email flow.
     const origin = new URL(request.url).origin;
     try {
@@ -66,6 +94,18 @@ export async function POST(request: Request) {
         { message: 'Não foi possível enviar o link agora. Verifique a configuração de e-mail e tente novamente.' },
         { status: 502 }
       );
+    }
+
+    const { error: logError } = await adminSupabase.from('activation_tokens').insert({
+      user_id: profile.id,
+      email: normalizedEmail,
+      token_hash: 'supabase_recovery_email_sent',
+      purpose: ACTIVATION_EMAIL_PURPOSE,
+      expires_at: new Date(Date.now() + ACTIVATION_THROTTLE_MINUTES * 60 * 1000).toISOString(),
+    });
+
+    if (logError) {
+      console.error('Error recording activation email request:', logError);
     }
 
     // 5. Return success only after Supabase accepts the email request.
