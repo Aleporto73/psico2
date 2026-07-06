@@ -413,3 +413,19 @@ describe('rótulo da linha no preview (C3)', () => {
     expect(getProfessionCategoryOption('psicologo').title).toBe('Psicologia / Neuropsicologia');
   });
 });
+
+describe('seleção inicial do modelo (D4)', () => {
+  // O hook seleciona getTemplatesForCategory(category)[0] ao abrir/trocar a categoria.
+  it('categorias com catálogo abrem em modelo profissional (não universal)', () => {
+    expect(getTemplatesForCategory('psicologo')[0].line).toBe('psychology');
+    expect(getTemplatesForCategory('psicopedagogo')[0].line).toBe('psychopedagogy');
+    expect(getTemplatesForCategory('neuropsicopedagogo')[0].line).toBe('psychopedagogy');
+    expect(getTemplatesForCategory('psicologo')[0].professionCategories).toBeUndefined();
+  });
+
+  it('categorias sem catálogo abrem no Documento em branco (primeiro universal)', () => {
+    for (const cat of ['fonoaudiologo', 'terapeuta_ocupacional', 'medico', 'pediatra', 'outro'] as ProfessionCategory[]) {
+      expect(getTemplatesForCategory(cat)[0].id).toBe('universal_blank_document');
+    }
+  });
+});

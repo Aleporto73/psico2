@@ -1202,12 +1202,9 @@ export const templates: DocStudioTemplate[] = [
     requiresHeader: true,
     essentialFields: ['document_title', 'subjectName', 'documentPurpose', 'observations'],
     optionalFields: ['document_date', 'recommendations', 'nextSteps'],
+    // document_title é renderizado como input de linha única (DocStudioFields), não como
+    // guidedField (textarea). Fica só em essentialFields como dado.
     guidedFields: [
-      {
-        key: 'document_title',
-        label: 'Título do documento',
-        placeholder: 'Ex.: Declaração simples, Registro de orientação, Documento para escola',
-      },
       { key: 'observations', label: 'Conteúdo do documento' },
       { key: 'document_date', label: 'Data (opcional)' },
       { key: 'recommendations', label: 'Observações complementares (opcional)' },

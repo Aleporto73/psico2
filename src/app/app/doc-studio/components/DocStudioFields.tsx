@@ -39,16 +39,18 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
     );
   }
 
+  // Documento em branco: título vem do campo editável (fallback quando vazio).
+  const isBlankDocument = selectedTemplate.id === 'universal_blank_document';
+  const displayTitle = isBlankDocument
+    ? fields.document_title.trim() || 'Documento em branco'
+    : selectedTemplate.title;
+
   return (
     <>
-      <div className="space-y-2 border-b border-pp-hairline-soft pb-5">
-        <p className="font-serif italic text-pp-ink-soft text-sm">Campos guiados</p>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="max-w-xl space-y-1">
-            <h2 className="text-xl font-medium text-pp-ink">{selectedTemplate.title}</h2>
-            <p className="text-sm leading-relaxed text-pp-ink-soft">{selectedTemplate.description}</p>
-          </div>
-          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
+      <div className="space-y-3 border-b border-pp-hairline-soft pb-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <p className="font-serif italic text-pp-ink-soft text-sm">Campos guiados</p>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
             <button
               type="button"
               onClick={handleCopy}
@@ -68,6 +70,12 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
             </button>
           </div>
         </div>
+
+        <div className="max-w-xl space-y-1">
+          <h2 className="text-xl font-medium text-pp-ink">{displayTitle}</h2>
+          <p className="text-sm leading-relaxed text-pp-ink-soft">{selectedTemplate.description}</p>
+        </div>
+
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs leading-relaxed text-pp-ink-soft" aria-live="polite">
           <span>{getDraftStatusLabel(draftStatus)}</span>
           <button
@@ -88,6 +96,21 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
       </div>
 
       <div className="space-y-5">
+        {isBlankDocument && (
+          <div className="space-y-2">
+            <label htmlFor="document_title" className="text-xs font-medium text-pp-ink-soft">
+              Título do documento
+            </label>
+            <input
+              id="document_title"
+              value={fields.document_title}
+              onChange={(event) => updateField('document_title', event.target.value)}
+              placeholder="Ex.: Declaração simples, Registro de orientação, Documento para escola"
+              className="w-full rounded-xl border border-pp-hairline bg-white px-4 py-2.5 text-sm font-medium text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="space-y-2">
             <label htmlFor="subjectName" className="text-xs font-medium text-pp-ink-soft">

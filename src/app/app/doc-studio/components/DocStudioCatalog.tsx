@@ -34,7 +34,6 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
   const { professionCategoryOptions, category, updateCategory, activeCategory, selectedTemplate, updateTemplate, activeColor, profile } =
     state;
 
-  const [query, setQuery] = useState('');
   const [kind, setKind] = useState<'all' | DocStudioDocumentKind>('all');
 
   const profileType = toProfileTypeKey(profile?.profile_type);
@@ -46,8 +45,8 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
   const documentKind = kindValue === 'all' ? undefined : kindValue;
 
   const results = useMemo(
-    () => searchTemplates({ query, professionCategory: category, documentKind, profileType }),
-    [query, category, documentKind, profileType],
+    () => searchTemplates({ professionCategory: category, documentKind, profileType }),
+    [category, documentKind, profileType],
   );
 
   // Universais = têm `professionCategories` (todas as profissões). Profissionais = por `line`.
@@ -106,29 +105,19 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
           <span className="text-[11px] text-pp-ink-soft">{results.length} modelo(s)</span>
         </div>
 
-        <div className="space-y-2">
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar modelo..."
-            aria-label="Buscar modelo"
-            className="w-full rounded-lg border border-pp-hairline bg-white px-3 py-2 text-sm text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
-          />
-          <select
-            value={kindValue}
-            onChange={(event) => setKind(event.target.value as 'all' | DocStudioDocumentKind)}
-            aria-label="Filtrar por tipo de documento"
-            className="w-full rounded-lg border border-pp-hairline bg-white px-3 py-2 text-sm text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
-          >
-            <option value="all">Todos os tipos</option>
-            {availableKinds.map((documentKindOption) => (
-              <option key={documentKindOption} value={documentKindOption}>
-                {documentKindLabels[documentKindOption]}
-              </option>
-            ))}
-          </select>
-        </div>
+        <select
+          value={kindValue}
+          onChange={(event) => setKind(event.target.value as 'all' | DocStudioDocumentKind)}
+          aria-label="Filtrar por tipo de documento"
+          className="w-full rounded-lg border border-pp-hairline bg-white px-3 py-2 text-sm text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
+        >
+          <option value="all">Todos os tipos</option>
+          {availableKinds.map((documentKindOption) => (
+            <option key={documentKindOption} value={documentKindOption}>
+              {documentKindLabels[documentKindOption]}
+            </option>
+          ))}
+        </select>
 
         {results.length === 0 ? (
           <p className="rounded-xl bg-pp-hairline-soft/70 px-3 py-3 text-xs leading-relaxed text-pp-ink-soft">
