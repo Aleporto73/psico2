@@ -51,8 +51,16 @@ export async function POST(request: Request) {
     const origin = new URL(request.url).origin;
     try {
       await sendActivationLink(adminSupabase, normalizedEmail, origin);
-    } catch (resetError) {
+    } catch (resetError: any) {
       console.error('Error triggering native reset password for activation:', resetError);
+
+      const message = String(resetError?.message || '').toLowerCase();
+      if (message.includes('rate') || message.includes('429') || message.includes('too many')) {
+        return NextResponse.json(
+          { message: 'Muitas solicitações de acesso em pouco tempo. Aguarde alguns minutos ou fale com o suporte para senha manual.' },
+          { status: 429 }
+        );
+      }
 
       return NextResponse.json(
         { message: 'Não foi possível enviar o link agora. Verifique a configuração de e-mail e tente novamente.' },
