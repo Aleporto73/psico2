@@ -19,6 +19,7 @@ export default function AtivarAcessoPage() {
   const [sent, setSent] = useState(false);
   const [cooldownUntil, setCooldownUntil] = useState(getInitialCooldownUntil);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
   const cooldownActive = Date.now() < cooldownUntil;
 
@@ -32,12 +33,14 @@ export default function AtivarAcessoPage() {
     e.preventDefault();
 
     if (cooldownActive) {
-      setErrorMsg('Aguarde alguns minutos antes de pedir outro link. Se já solicitou, verifique também spam e promoções.');
+      setErrorMsg(null);
+      setInfoMsg('Aguarde alguns minutos antes de pedir outro link. Se já solicitou, verifique também spam e promoções.');
       return;
     }
 
     setLoading(true);
     setErrorMsg(null);
+    setInfoMsg(null);
     startCooldown();
 
     try {
@@ -54,6 +57,11 @@ export default function AtivarAcessoPage() {
       if (!response.ok) {
         // API returned an error (e.g. email not found, inactive access, SMTP failure)
         setErrorMsg(data?.message || 'Não foi possível enviar o link. Tente novamente.');
+        return;
+      }
+
+      if (data?.throttled) {
+        setInfoMsg(data.message || 'O link já foi solicitado. Aguarde alguns minutos antes de tentar novamente.');
         return;
       }
 
@@ -113,6 +121,12 @@ export default function AtivarAcessoPage() {
             {errorMsg && (
               <div className="p-4 text-base font-medium text-pp-danger bg-pp-danger/10 border border-pp-danger/20 rounded-xl text-center">
                 {errorMsg}
+              </div>
+            )}
+
+            {infoMsg && (
+              <div className="p-4 text-base font-medium text-pp-ink bg-pp-ink/5 border border-pp-hairline rounded-xl text-center">
+                {infoMsg}
               </div>
             )}
 
