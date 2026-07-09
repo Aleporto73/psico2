@@ -122,9 +122,9 @@ function LoginContent() {
           className="fixed top-0 left-0 right-0 z-50 flex items-start gap-2 bg-orange-500 p-3 text-white shadow-lg sm:left-auto sm:top-4 sm:right-4 sm:max-w-[340px] sm:rounded-lg"
         >
           <div className="flex-1 space-y-0.5">
-            <p className="text-sm font-bold">Se você já usava o PsicoPlanilhas antigo:</p>
+            <p className="text-sm font-bold">Cliente antigo do PsicoPlanilhas?</p>
             <p className="text-sm">
-              Clique em “Ativar meu acesso” para criar sua nova senha.
+              A plataforma mudou. Clique em “Ativar cadastro antigo” para criar sua nova senha.
             </p>
           </div>
           <button
@@ -152,7 +152,7 @@ function LoginContent() {
             Entrar na plataforma
           </h1>
           <p className="text-pp-ink-soft text-base">
-            Acesse suas planilhas e materiais.
+            Já ativou seu cadastro ou já tem senha? Entre abaixo
           </p>
         </div>
 
@@ -218,14 +218,17 @@ function LoginContent() {
 
         {/* Activation Block */}
         <div className="border-t border-pp-hairline pt-5 text-center space-y-3">
+          <p className="text-base font-bold text-pp-ink">
+            Já era cliente do PsicoPlanilhas?
+          </p>
           <p className="text-base text-pp-ink-soft">
-            Ainda não criou sua senha?
+            A plataforma mudou. Para acessar o PsicoPlanilhas 2.0 pela primeira vez, você precisa ativar seu cadastro antigo e criar uma nova senha.
           </p>
           <Link
             href="/ativar-acesso"
-            className="inline-block w-full py-3.5 text-base font-bold text-pp-ink bg-white border border-pp-hairline hover:border-pp-ink rounded-pill transition duration-200 text-center"
+            className="inline-block w-full py-3.5 text-base font-bold text-white bg-orange-500 border border-orange-500 hover:bg-orange-600 hover:border-orange-600 rounded-pill transition duration-200 text-center"
           >
-            Ativar meu acesso
+            Ativar cadastro antigo
           </Link>
         </div>
       </div>
