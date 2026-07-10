@@ -124,7 +124,7 @@ function LoginContent() {
           <div className="flex-1 space-y-0.5">
             <p className="text-sm font-bold">Se você já usava o PsicoPlanilhas antigo:</p>
             <p className="text-sm">
-              Clique em “Ativar meu acesso” para criar sua nova senha.
+              Clique em “Ativar cadastro antigo” para criar sua nova senha.
             </p>
           </div>
           <button
@@ -151,15 +151,15 @@ function LoginContent() {
             minha senha" em vez de ativar. Este bloco laranja gigante (mesma cor
             do aviso de migração) captura o clique certo antes do formulário. */}
         <div className="space-y-3 rounded-2xl border-2 border-orange-400 bg-orange-50 p-5 text-center">
-          <p className="text-lg font-extrabold text-pp-ink">Primeira vez no novo site?</p>
+          <p className="text-lg font-extrabold text-pp-ink">Cliente antigo do PsicoPlanilhas?</p>
           <p className="text-sm text-pp-ink-soft">
-            Se você já era cliente do PsicoPlanilhas, precisa criar sua senha uma vez.
+            A plataforma mudou. Para acessar o PsicoPlanilhas 2.0 pela primeira vez, você precisa ativar seu cadastro antigo e criar uma nova senha.
           </p>
           <Link
             href="/ativar-acesso"
             className="flex w-full items-center justify-center py-5 text-lg font-extrabold bg-orange-500 text-white hover:bg-orange-600 rounded-pill shadow-lg transition duration-200"
           >
-            Ativar meu acesso
+            Ativar cadastro antigo
           </Link>
         </div>
 
