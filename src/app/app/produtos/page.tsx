@@ -66,6 +66,7 @@ export default function AppProdutosPage() {
   const [profileType, setProfileType] = useState('unknown');
   const [hasLifetimeAccess, setHasLifetimeAccess] = useState(false);
   const [hasAssistantAccess, setHasAssistantAccess] = useState(false);
+  const [hasDocStudioAccess, setHasDocStudioAccess] = useState(false);
   const [assistantExpiresAt, setAssistantExpiresAt] = useState<string | null>(null);
   const [products, setProducts] = useState<PublicProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -95,6 +96,7 @@ export default function AppProdutosPage() {
         setProfileType((s.profile_type as string) || 'unknown');
         setHasLifetimeAccess(Boolean(s.has_lifetime_access));
         setHasAssistantAccess(Boolean(s.has_active_assistant));
+        setHasDocStudioAccess(Boolean(s.has_doc_studio_access));
         setAssistantExpiresAt((s.assistant_expires_at as string | null) || null);
       }
 
@@ -136,6 +138,8 @@ export default function AppProdutosPage() {
   };
 
   const isFlowProduct = (prod: PublicProduct) => prod.slug === 'psicoplanilhas-flow';
+
+  const isDocStudioProduct = (prod: PublicProduct) => prod.slug === 'psicoplanilhas-doc-studio';
 
   const getEmbedUrl = (url: string | null) => {
     if (!url) return '';
@@ -232,7 +236,7 @@ export default function AppProdutosPage() {
           {displayedProducts.map((prod) => (
             <article
               key={prod.id}
-              id={isFlowProduct(prod) ? 'psicoplanilhas-flow' : undefined}
+              id={isFlowProduct(prod) ? 'psicoplanilhas-flow' : isDocStudioProduct(prod) ? 'psicoplanilhas-doc-studio' : undefined}
               className={cn(
                 categoryToBlockClass(prod.category, prod.slug),
                 'rounded-block p-8 md:p-10 flex flex-col gap-6 min-h-[320px]'
@@ -261,7 +265,7 @@ export default function AppProdutosPage() {
                 <p className="font-serif italic text-pp-ink text-base">
                   {assistantExpiresAt ? `Válido até ${formatDateBR(assistantExpiresAt)}` : 'Relatórios IA liberado'}
                 </p>
-              ) : prod.price && !(isLifetimeProduct(prod) && hasLifetimeAccess) ? (
+              ) : prod.price && !(isLifetimeProduct(prod) && hasLifetimeAccess) && !(isDocStudioProduct(prod) && hasDocStudioAccess) ? (
                 <p className="text-pp-ink text-2xl font-medium">
                   {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(prod.price)}
                   {prod.billing_type && (
@@ -274,6 +278,11 @@ export default function AppProdutosPage() {
 
               {/* Status vitalício — conditional separado preservado, re-estilizado (sem badge verde) */}
               {isLifetimeProduct(prod) && hasLifetimeAccess && (
+                <p className="font-serif italic text-pp-ink text-base">Acesso vitalício liberado</p>
+              )}
+
+              {/* Status Doc Studio liberado — mesma linguagem do vitalício */}
+              {isDocStudioProduct(prod) && hasDocStudioAccess && (
                 <p className="font-serif italic text-pp-ink text-base">Acesso vitalício liberado</p>
               )}
 
@@ -331,6 +340,34 @@ export default function AppProdutosPage() {
                     Acessar PsicoPlanilhas Flow
                     <ArrowRight className="w-4 h-4" aria-hidden="true" />
                   </Link>
+                ) : isDocStudioProduct(prod) ? (
+                  hasDocStudioAccess ? (
+                    <Link
+                      href="/app/doc-studio"
+                      className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
+                    >
+                      Acessar Doc Studio
+                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                    </Link>
+                  ) : prod.checkout_url ? (
+                    <a
+                      href={prod.checkout_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
+                    >
+                      Comprar Doc Studio
+                      <ExternalLink className="w-4 h-4" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <Link
+                      href="/app/doc-studio"
+                      className="flex-1 inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas rounded-pill px-5 py-3 text-sm font-medium hover:bg-pp-ink-soft transition"
+                    >
+                      Conhecer Doc Studio
+                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                    </Link>
+                  )
                 ) : (
                   (prod.video_url || prod.checkout_url) && (
                     <button

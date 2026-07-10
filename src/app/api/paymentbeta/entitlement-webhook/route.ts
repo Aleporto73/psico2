@@ -8,10 +8,13 @@ export const runtime = 'nodejs';
 const CONTRACT_VERSION = '2026-06-10';
 const SUPPORTED_EVENT = 'sale.confirmed';
 const TIMESTAMP_TOLERANCE_SECONDS = 300;
+// Três produtos one_time (vitalício, flow, doc-studio) gravam em purchases;
+// assistente-ia-pro é o único subscription (grava em subscriptions).
 const SUPPORTED_ENTITLEMENTS = new Set([
   'psicoplanilhas-vitalicio',
   'assistente-ia-pro',
   'psicoplanilhas-flow',
+  'psicoplanilhas-doc-studio',
 ]);
 // Status terminais de sucesso: um reenvio que colida com um destes é ignorado
 // como duplicado. 'user_not_found' foi REMOVIDO de propósito — comprador novo
@@ -748,13 +751,15 @@ export async function POST(request: Request) {
     // Falhas aqui propagam para o catch -> status 'failed' (HTTP 500, retryável).
     const buyer = await ensureBuyer(supabase, customerEmail);
 
-    // Vitalício e Flow são ambos one_time -> gravam em purchases via
-    // upsertLifetimePurchase. Flow NUNCA usa subscriptions. Falha em
-    // getProductId/upsert propaga ao catch (status 'failed' + HTTP 500):
-    // 'processed' só é marcado abaixo se o acesso for realmente gravado.
+    // Vitalício, Flow e Doc Studio são os três produtos one_time suportados
+    // -> todos gravam em purchases via upsertLifetimePurchase e NUNCA usam
+    // subscriptions. Falha em getProductId/upsert propaga ao catch (status
+    // 'failed' + HTTP 500): 'processed' só é marcado abaixo se o acesso for
+    // realmente gravado.
     if (
       entitlementCode === 'psicoplanilhas-vitalicio' ||
-      entitlementCode === 'psicoplanilhas-flow'
+      entitlementCode === 'psicoplanilhas-flow' ||
+      entitlementCode === 'psicoplanilhas-doc-studio'
     ) {
       const productId = await getProductId(supabase, entitlementCode);
       await upsertLifetimePurchase(supabase, buyer.userId, transactionId, productId);
