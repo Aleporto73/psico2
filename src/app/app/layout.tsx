@@ -112,28 +112,46 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const badgeClass = (tone?: 'neutral') =>
     tone === 'neutral' ? 'border border-current opacity-60' : 'bg-green-500 text-white';
 
+  const isDocStudioRoute =
+    pathname === '/app/doc-studio' || pathname.startsWith('/app/doc-studio/');
+
   return (
     <div className="flex min-h-screen bg-pp-canvas text-pp-ink font-sans">
 
       {/* ── Sidebar — visível apenas em md+ ──────────────────────────────── */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-pp-hairline flex-col justify-between shrink-0">
-        <div className="p-6 space-y-8">
+      <aside
+        className={`hidden md:flex print:hidden bg-white border-r border-pp-hairline flex-col justify-between shrink-0 ${isDocStudioRoute ? 'w-[76px]' : 'w-64'}`}
+      >
+        <div className={isDocStudioRoute ? 'px-3 py-5 space-y-7' : 'p-6 space-y-8'}>
 
           {/* Logo */}
           <div>
-            <Link
-              href="/app"
-              className="font-serif italic text-[22px] leading-tight text-pp-ink hover:text-pp-ink-soft transition duration-200 block"
-            >
-              PsicoPlanilhas 2.0
-            </Link>
-            <p className="font-serif italic text-xs text-pp-ink-soft mt-0.5">
-              Área do cliente
-            </p>
+            {isDocStudioRoute ? (
+              <Link
+                href="/app"
+                className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-pp-accent-soft font-serif italic text-lg text-pp-ink transition duration-200 hover:text-pp-ink-soft"
+                aria-label="PsicoPlanilhas 2.0"
+                title="PsicoPlanilhas 2.0"
+              >
+                PP
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/app"
+                  className="font-serif italic text-[22px] leading-tight text-pp-ink hover:text-pp-ink-soft transition duration-200 block"
+                >
+                  PsicoPlanilhas 2.0
+                </Link>
+                <p className="font-serif italic text-xs text-pp-ink-soft mt-0.5">
+                  ?rea do cliente
+                </p>
+              </>
+            )}
           </div>
 
           {/* Navegação */}
-          <nav className="space-y-0.5" aria-label="Navegação principal">
+          <nav className={isDocStudioRoute ? 'flex flex-col items-center gap-1.5' : 'space-y-0.5'} aria-label="Navegação principal">
             {navItems.map((item) => {
               const isActive = !item.external && pathname === item.path;
               return (
@@ -141,22 +159,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   key={item.path}
                   href={item.path}
                   {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${
-                    isActive
-                      ? 'bg-pp-ink text-pp-canvas rounded-pill'
-                      : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'
-                  }`}
+                  className={
+                    isDocStudioRoute
+                      ? `relative flex h-11 w-11 items-center justify-center text-sm font-medium transition duration-200 ${isActive ? 'bg-pp-ink text-pp-canvas rounded-2xl shadow-sm' : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-2xl'}`
+                      : `w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${isActive ? 'bg-pp-ink text-pp-canvas rounded-pill' : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'}`
+                  }
                   aria-current={isActive ? 'page' : undefined}
-                >
-                  <span className="shrink-0 opacity-90">{item.icon}</span>
-                  <span className="flex items-center w-full gap-2">
-                    <span className="flex-1 min-w-0 truncate">{item.name}</span>
-                    {item.badge && (
-                      <span className={`ml-auto shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${badgeClass(item.badgeTone)}`}>
-                        {item.badge}
-                      </span>
-                    )}
-                  </span>
+                  aria-label={isDocStudioRoute ? item.name : undefined}
+                  title={isDocStudioRoute ? item.name : undefined}                >
+                  <span className="shrink-0 opacity-90" aria-hidden={isDocStudioRoute ? 'true' : undefined}>{item.icon}</span>
+                  {isDocStudioRoute ? (
+                    item.badge && (
+                      <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-green-500 ring-2 ring-white" aria-hidden="true" />
+                    )
+                  ) : (
+                    <span className="flex items-center w-full gap-2">
+                      <span className="flex-1 min-w-0 truncate">{item.name}</span>
+                      {item.badge && (
+                        <span className={`ml-auto shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${badgeClass(item.badgeTone)}`}>
+                          {item.badge}
+                        </span>
+                      )}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -164,13 +189,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Área de saída */}
-        <div className="p-4 border-t border-pp-hairline">
+        <div className={`border-t border-pp-hairline p-4 ${isDocStudioRoute ? 'flex justify-center' : ''}`}>
           <button
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-pp-danger hover:bg-pp-danger/10 rounded-lg transition duration-200"
+            className={
+              isDocStudioRoute
+                ? 'flex h-11 w-11 items-center justify-center text-pp-danger hover:bg-pp-danger/10 rounded-2xl transition duration-200'
+                : 'w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium text-pp-danger hover:bg-pp-danger/10 rounded-lg transition duration-200'
+            }
+            title={isDocStudioRoute ? 'Sair da Conta' : undefined}
+            aria-label={isDocStudioRoute ? 'Sair da Conta' : undefined}
           >
             <IconLogout />
-            <span>Sair da Conta</span>
+            {!isDocStudioRoute && <span>Sair da Conta</span>}
           </button>
         </div>
       </aside>
@@ -179,7 +210,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col min-w-0">
 
         {/* Topo mobile */}
-        <header className="md:hidden bg-white border-b border-pp-hairline px-4 py-3 flex justify-between items-center">
+        <header className="md:hidden print:hidden bg-white border-b border-pp-hairline px-4 py-3 flex justify-between items-center">
           <Link href="/app" className="font-serif italic text-lg leading-tight text-pp-ink">
             PsicoPlanilhas
           </Link>
@@ -198,7 +229,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Nav mobile em linha */}
         <nav
-          className="md:hidden bg-white border-b border-pp-hairline px-2 py-1.5 flex gap-0.5 overflow-x-auto"
+          className="md:hidden print:hidden bg-white border-b border-pp-hairline px-2 py-1.5 flex gap-0.5 overflow-x-auto"
           aria-label="Navegação mobile"
         >
           {navItems.map((item) => {

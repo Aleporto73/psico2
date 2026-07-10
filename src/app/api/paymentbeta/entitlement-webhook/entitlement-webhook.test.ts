@@ -289,6 +289,7 @@ const products = () => [
   { id: 'prod-vit', slug: 'psicoplanilhas-vitalicio' },
   { id: 'prod-ia', slug: 'assistente-ia-pro' },
   { id: 'prod-flow', slug: 'psicoplanilhas-flow' },
+  { id: 'prod-doc-studio', slug: 'psicoplanilhas-doc-studio' },
 ];
 
 type Body = { status?: string; message?: string; previous_status?: string };
@@ -633,6 +634,79 @@ describe('POST /api/paymentbeta/entitlement-webhook', () => {
     expect(db.tables.purchases[0].payment_status).toBe('paid');
     expect(db.tables.purchases[0].payment_reference).toBe('tx-flow');
     // Flow NUNCA usa subscriptions.
+    expect(db.tables.subscriptions).toHaveLength(0);
+  });
+
+  it('16) comprador existente + psicoplanilhas-doc-studio: grava purchase paid (prod-doc-studio), sem subscription', async () => {
+    const db = new FakeDb({
+      products: products(),
+      profiles: [{ id: 'u-1', email: 'doc@x.com', activation_status: 'active', status: 'active' }],
+    });
+    const { client, createUserCalls } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const payload = vitalicioPayload({
+      entitlement: { code: 'psicoplanilhas-doc-studio' },
+      customer: { email: 'doc@x.com' },
+    });
+
+    const res = await POST(signedRequest(payload));
+    const body = (await res.json()) as Body;
+
+    // 1) entitlement aceito e 7) evento processed.
+    expect(res.status).toBe(200);
+    expect(body.status).toBe('processed');
+    expect(createUserCalls).toHaveLength(0);
+    // 2) comprador existente recebe UMA linha em purchases.
+    expect(db.tables.purchases).toHaveLength(1);
+    // 3) product_id corresponde ao produto Doc Studio.
+    expect(db.tables.purchases[0].product_id).toBe('prod-doc-studio');
+    // 4) payment_status paid e 5) source paymentbeta.
+    expect(db.tables.purchases[0].payment_status).toBe('paid');
+    expect(db.tables.purchases[0].source).toBe('paymentbeta');
+    // 6) Doc Studio NUNCA usa subscriptions.
+    expect(db.tables.subscriptions).toHaveLength(0);
+    expect(db.tables.paymentbeta_webhook_events[0].status).toBe('processed');
+  });
+
+  it('17) psicoplanilhas-doc-studio recompra: atualiza a purchase existente sem duplicar e persiste o novo payment_reference', async () => {
+    const db = new FakeDb({
+      products: products(),
+      profiles: [{ id: 'u-1', email: 'doc@x.com', activation_status: 'active', status: 'active' }],
+      purchases: [
+        {
+          id: 'pd-1',
+          user_id: 'u-1',
+          product_id: 'prod-doc-studio',
+          payment_reference: 'ref-antiga',
+          payment_status: 'cancelled',
+        },
+      ],
+    });
+    const { client, createUserCalls } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const payload = vitalicioPayload({
+      entitlement: { code: 'psicoplanilhas-doc-studio' },
+      customer: { email: 'doc@x.com' },
+      delivery_id: 'dlv-doc',
+      transaction_id: 'tx-doc',
+    });
+
+    const res = await POST(signedRequest(payload, { deliveryId: 'dlv-doc' }));
+    const body = (await res.json()) as Body;
+
+    expect(res.status).toBe(200);
+    expect(body.status).toBe('processed');
+    expect(createUserCalls).toHaveLength(0);
+    // Atualizou a MESMA linha (não duplicou).
+    expect(db.tables.purchases).toHaveLength(1);
+    expect(db.tables.purchases[0].id).toBe('pd-1');
+    expect(db.tables.purchases[0].payment_status).toBe('paid');
+    // Novo payment_reference persistido.
+    expect(db.tables.purchases[0].payment_reference).toBe('tx-doc');
+    expect(db.tables.purchases[0].source).toBe('paymentbeta');
+    // Doc Studio NUNCA usa subscriptions.
     expect(db.tables.subscriptions).toHaveLength(0);
   });
 });

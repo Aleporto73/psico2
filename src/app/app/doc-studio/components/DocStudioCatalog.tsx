@@ -1,0 +1,156 @@
+'use client';
+
+// Catálogo por profissão: seletor de profession_category + busca + filtro por tipo.
+// A lista é agrupada visualmente: "Modelos essenciais para todos" (universais) primeiro,
+// depois "Modelos de {profissão}" (só quando existirem). Lógica pura em ../template-catalog.
+// Só modelos `active` aparecem (padrão de searchTemplates).
+
+import { useMemo, useState } from 'react';
+import type {
+  DocStudioDocumentKind,
+  DocStudioTemplate,
+  ProfessionCategory,
+  ProfileTypeKey,
+} from '../types';
+import type { DocStudioState } from '../hooks/useDocStudioState';
+import { listDocumentKindsForCategory, searchTemplates } from '../template-catalog';
+
+const documentKindLabels: Record<DocStudioDocumentKind, string> = {
+  formal_document: 'Documento formal',
+  structured_form: 'Formulário estruturado',
+  record: 'Registro',
+  referral: 'Encaminhamento',
+  family_orientation: 'Orientação à família',
+  school_orientation: 'Orientação à escola',
+  psychological_report: 'Relatório psicológico (CFP)',
+};
+
+function toProfileTypeKey(value: string | null | undefined): ProfileTypeKey {
+  if (value === 'psychologist' || value === 'psychopedagogue' || value === 'both') return value;
+  return 'unknown';
+}
+
+export function DocStudioCatalog({ state }: { state: DocStudioState }) {
+  const { professionCategoryOptions, category, updateCategory, activeCategory, selectedTemplate, updateTemplate, activeColor, profile } =
+    state;
+
+  const [kind, setKind] = useState<'all' | DocStudioDocumentKind>('all');
+
+  const profileType = toProfileTypeKey(profile?.profile_type);
+  const hasCatalog = activeCategory.catalog !== null;
+  const availableKinds = useMemo(() => listDocumentKindsForCategory(category), [category]);
+
+  // Evita valor de <select> fora das opções ao trocar de categoria.
+  const kindValue = kind !== 'all' && availableKinds.includes(kind) ? kind : 'all';
+  const documentKind = kindValue === 'all' ? undefined : kindValue;
+
+  const results = useMemo(
+    () => searchTemplates({ professionCategory: category, documentKind, profileType }),
+    [category, documentKind, profileType],
+  );
+
+  // Universais = têm `professionCategories` (todas as profissões). Profissionais = por `line`.
+  const universalResults = results.filter((template) => template.professionCategories);
+  const professionalResults = results.filter((template) => !template.professionCategories);
+
+  const renderItem = (template: DocStudioTemplate) => {
+    const isActive = template.id === selectedTemplate?.id;
+    return (
+      <button
+        key={template.id}
+        type="button"
+        onClick={() => updateTemplate(template.id)}
+        aria-pressed={isActive}
+        className={`block w-full rounded-xl border-l-2 px-3.5 py-3 text-left transition ${
+          isActive ? 'border-l-pp-ink bg-pp-block-cream/60' : 'border-l-transparent hover:bg-pp-hairline-soft/70'
+        }`}
+      >
+        <span
+          className="text-[10px] font-semibold uppercase tracking-wide text-pp-ink-soft"
+          style={isActive ? { color: activeColor } : undefined}
+        >
+          {documentKindLabels[template.documentKind]}
+        </span>
+        <span className="mt-0.5 block text-sm font-medium text-pp-ink">{template.title}</span>
+        <span className="mt-1 block text-xs leading-relaxed text-pp-ink-soft">{template.description}</span>
+      </button>
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <label htmlFor="professionCategory" className="font-serif italic text-pp-ink-soft text-sm">
+          Profissão
+        </label>
+        <select
+          id="professionCategory"
+          value={category}
+          onChange={(event) => updateCategory(event.target.value as ProfessionCategory)}
+          aria-label="Selecionar profissão"
+          className="w-full rounded-lg border border-pp-hairline bg-white px-3 py-2 text-sm text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
+        >
+          {professionCategoryOptions.map((option) => (
+            <option key={option.category} value={option.category}>
+              {option.title}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs leading-relaxed text-pp-ink-soft">{activeCategory.description}</p>
+      </div>
+
+      <div className="space-y-4 border-t border-pp-hairline-soft pt-8">
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-serif italic text-pp-ink-soft text-sm">Modelos</p>
+          <span className="text-[11px] text-pp-ink-soft">{results.length} modelo(s)</span>
+        </div>
+
+        <select
+          value={kindValue}
+          onChange={(event) => setKind(event.target.value as 'all' | DocStudioDocumentKind)}
+          aria-label="Filtrar por tipo de documento"
+          className="w-full rounded-lg border border-pp-hairline bg-white px-3 py-2 text-sm text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
+        >
+          <option value="all">Todos os tipos</option>
+          {availableKinds.map((documentKindOption) => (
+            <option key={documentKindOption} value={documentKindOption}>
+              {documentKindLabels[documentKindOption]}
+            </option>
+          ))}
+        </select>
+
+        {results.length === 0 ? (
+          <p className="rounded-xl bg-pp-hairline-soft/70 px-3 py-3 text-xs leading-relaxed text-pp-ink-soft">
+            Nenhum modelo encontrado. Ajuste a busca ou o filtro de tipo.
+          </p>
+        ) : (
+          <div className="space-y-6">
+            {universalResults.length > 0 && (
+              <section className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
+                  Modelos essenciais para todos
+                </p>
+                <div className="space-y-1">{universalResults.map(renderItem)}</div>
+              </section>
+            )}
+
+            {professionalResults.length > 0 && (
+              <section className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
+                  Modelos de {activeCategory.title}
+                </p>
+                <div className="space-y-1">{professionalResults.map(renderItem)}</div>
+              </section>
+            )}
+
+            {!hasCatalog && (
+              <p className="rounded-xl border border-dashed border-pp-hairline bg-pp-hairline-soft/40 px-3.5 py-3 text-xs leading-relaxed text-pp-ink-soft">
+                Modelos específicos de {activeCategory.title} em preparação.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
