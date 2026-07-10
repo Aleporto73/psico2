@@ -565,12 +565,12 @@ export default function AppAssistenteProPage() {
 
       {/* Header editorial */}
       <header className="space-y-2 pt-4">
-        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Assistente de Relatórios IA</h1>
+        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Relatório Pró — pague uma vez, use o ano todo</h1>
         <p className="text-pp-ink-soft text-base md:text-lg">
-          Envie o print da planilha preenchida e gere um relatório editável em poucos minutos.
+          Não é mensalidade. Você paga R$57 uma única vez e recebe 50 relatórios liberados a cada mês, durante 12 meses.
         </p>
         <p className="text-sm text-pp-ink-soft">
-          O Relatório Grátis continua disponível. O Pro é opcional para relatórios mais completos.
+          O Relatório Grátis continua disponível e é excelente. O Pró é para quem precisa de mais volume: vale por 12 meses e depois é só renovar se quiser continuar.
         </p>
       </header>
 
@@ -950,15 +950,15 @@ export default function AppAssistenteProPage() {
             <Lock className="w-10 h-10" aria-hidden="true" />
           </div>
           <div className="space-y-3">
-            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Sua assinatura expirou</h2>
+            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Seu acesso ao Pró expirou</h2>
             <p className="text-pp-ink-soft text-sm">
               Acesso encerrado em:{' '}
               <strong className="font-medium text-pp-ink">{formatDate(profile?.assistant_expires_at)}</strong>
             </p>
             <p className="text-pp-ink-soft text-base leading-relaxed pt-1">
-              Renove sua assinatura anual do Assistente de Relatórios IA por apenas{' '}
-              <strong className="font-medium text-pp-ink">R$57/ano</strong> para continuar gerando relatórios de apoio a
-              partir das suas planilhas profissionais.
+              Seu período de 12 meses terminou. Para voltar a ter 50 relatórios por mês, faça um novo pagamento de{' '}
+              <strong className="font-medium text-pp-ink">R$57/ano</strong> — sem mensalidade.
+              
             </p>
           </div>
           <button
@@ -966,7 +966,7 @@ export default function AppAssistenteProPage() {
             onClick={() => window.open(CHECKOUT_URL_IA_PRO, '_blank', 'noopener,noreferrer')}
             className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
           >
-            Renovar assinatura (R$57/ano)
+            Reativar por R$57
           </button>
         </div>
       )}
@@ -977,27 +977,27 @@ export default function AppAssistenteProPage() {
             <Lock className="w-10 h-10" aria-hidden="true" />
           </div>
           <div className="space-y-3">
-            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Assistente de Relatórios IA bloqueado</h2>
+            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Quando o Grátis não é suficiente</h2>
             <p className="text-pp-ink-soft text-base leading-relaxed">
-              O Assistente de Relatórios IA é um recurso adicional com assinatura anual. Assine por apenas{' '}
-              <strong className="font-medium text-pp-ink">R$57/ano</strong> para gerar relatórios de apoio estruturados
-              diretamente integrados com seus dados de planilhas profissionais.
+              O Relatório Grátis é ótimo, mas permite poucos usos por mês. O Relatório Pró libera 50 relatórios todo mês, que renovam durante 12 meses. Um pagamento de{' '}
+              <strong className="font-medium text-pp-ink">R$57</strong>, válido por 12 meses — sem mensalidade, sem plano de IA caro.
+              
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left pt-2">
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
               <div className="text-pp-ink"><Zap className="w-[22px] h-[22px]" aria-hidden="true" /></div>
-              <strong className="text-pp-ink block text-sm font-medium">Rapidez operacional</strong>
+              <strong className="text-pp-ink block text-sm font-medium">50 todo mês</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Gere relatórios estruturados a partir dos dados da planilha em segundos.
+                50 relatórios liberados a cada mês. Usou 34? No mês seguinte volta a 50.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
               <div className="text-pp-ink"><History className="w-[22px] h-[22px]" aria-hidden="true" /></div>
-              <strong className="text-pp-ink block text-sm font-medium">Histórico completo</strong>
+              <strong className="text-pp-ink block text-sm font-medium">Pagamento único</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Todos os relatórios gerados ficam salvos e acessíveis a qualquer momento.
+                R$57 uma vez, pelo ano inteiro. Não é assinatura mensal.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
@@ -1009,9 +1009,9 @@ export default function AppAssistenteProPage() {
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
               <div className="text-pp-ink"><SquarePen className="w-[22px] h-[22px]" aria-hidden="true" /></div>
-              <strong className="text-pp-ink block text-sm font-medium">Totalmente editável</strong>
+              <strong className="text-pp-ink block text-sm font-medium">Fica tudo salvo</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                O relatório é um ponto de partida. Copie, edite e complemente conforme necessário.
+                Todos os relatórios gerados ficam salvos no sistema e acessíveis quando quiser.
               </p>
             </div>
           </div>
@@ -1021,7 +1021,7 @@ export default function AppAssistenteProPage() {
             onClick={() => window.open(CHECKOUT_URL_IA_PRO, '_blank', 'noopener,noreferrer')}
             className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
           >
-            Assinar por R$57/ano
+            Pagar R$57 uma vez e liberar
           </button>
         </div>
       )}
