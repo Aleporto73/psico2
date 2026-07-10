@@ -1,5 +1,15 @@
 import Link from 'next/link';
-import { FileText, ArrowRight, ExternalLink, Check } from 'lucide-react';
+import {
+  FileText,
+  ArrowRight,
+  ExternalLink,
+  Files,
+  PencilLine,
+  BadgeCheck,
+  Printer,
+  FilePlus,
+  Save,
+} from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 
 // Tela comercial do Doc Studio para quem ainda NÃO tem acesso. É um Server
@@ -7,16 +17,55 @@ import { createClient } from '@/utils/supabase/server';
 // da view sanitizada products_public (sem access_url) pelo slug. Preço e texto
 // vêm do banco; só caem no fallback fixo se a consulta falhar (fail-closed já
 // garantido no page.tsx). checkout_url pode ainda ser null — ver CTA abaixo.
+// Estrutura de marketing (vídeo, benefícios, "como funciona") espelha a tela
+// de venda do Flow (src/app/app/flow/page.tsx), sem copiar a lógica de acesso.
 
 const SLUG = 'psicoplanilhas-doc-studio';
 // Fallback quando ainda não há checkout_url: manda para o card na vitrine.
 const FALLBACK_CTA = '/app/produtos#psicoplanilhas-doc-studio';
 
-const HIGHLIGHTS = [
-  'Modelos universais e por profissão prontos para usar',
-  'Personalize cabeçalho, finalidade, seções e assinatura',
-  'Documento em branco com título editável',
-  'Impressão e PDF em A4 com um clique',
+// PLACEHOLDER temporário: reutiliza o vídeo do Flow enquanto o vídeo real do
+// Doc Studio não existe. Trocar por /videos/doc-studio-demo.mp4 quando houver.
+const DEMO_VIDEO_SRC = '/videos/flow-demo.mp4';
+
+const BENEFITS = [
+  {
+    icon: Files,
+    title: '22 modelos prontos',
+    description: 'Anamneses, devolutivas, declarações e relatórios, organizados por profissão.',
+  },
+  {
+    icon: PencilLine,
+    title: 'Campos guiados',
+    description: 'Preencha os blocos e veja o documento profissional se montar ao lado, na hora.',
+  },
+  {
+    icon: BadgeCheck,
+    title: 'Cabeçalho profissional',
+    description: 'Seu nome, registro e identidade em todo documento.',
+  },
+  {
+    icon: Printer,
+    title: 'Copiar ou imprimir',
+    description: 'Folha pronta para colar onde quiser ou imprimir em A4/PDF.',
+  },
+  {
+    icon: FilePlus,
+    title: 'Documento em branco',
+    description: 'Modelo livre para escrever qualquer conteúdo fora dos padrões.',
+  },
+  {
+    icon: Save,
+    title: 'Rascunho local',
+    description: 'Salvo no seu navegador, sem nuvem, sob seu controle.',
+  },
+];
+
+const STEPS = [
+  'Escolha a profissão e o modelo',
+  'Preencha os campos guiados',
+  'Acompanhe o documento montado ao lado',
+  'Copie ou imprima em A4/PDF',
 ];
 
 type LockedProduct = {
@@ -58,7 +107,7 @@ export async function DocStudioLocked() {
         <p className="text-pp-ink-soft text-base md:text-lg">{description}</p>
       </header>
 
-      {/* Bloco comercial — preço, licença, benefícios e CTA */}
+      {/* Bloco comercial — preço, licença e CTA */}
       <section className="bg-pp-block-lilac rounded-block p-8 md:p-10 space-y-6">
         <div className="flex items-center gap-2 text-pp-ink-soft">
           <FileText className="w-5 h-5" aria-hidden="true" />
@@ -71,20 +120,14 @@ export async function DocStudioLocked() {
             <span className="text-pp-ink-soft text-base font-normal ml-2">pagamento único</span>
           </p>
           <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink bg-white/60 rounded-pill">
-            Acesso vitalício
+            Acesso vitalício — pague uma vez
           </span>
         </div>
 
-        <p className="text-pp-ink-soft text-sm font-medium">Pague uma vez e use para sempre.</p>
-
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {HIGHLIGHTS.map((item) => (
-            <li key={item} className="flex items-start gap-2 text-pp-ink-soft text-sm leading-relaxed">
-              <Check className="w-4 h-4 mt-0.5 shrink-0 text-pp-ink" aria-hidden="true" />
-              {item}
-            </li>
-          ))}
-        </ul>
+        <p className="text-pp-ink-soft text-base leading-relaxed max-w-2xl">
+          Crie documentos profissionais direto no PsicoPlanilhas: escolha um modelo, preencha os
+          campos guiados e veja a folha pronta se montar ao lado. Sem instalar nada.
+        </p>
 
         <div>
           {checkoutUrl ? (
@@ -113,6 +156,48 @@ export async function DocStudioLocked() {
             </>
           )}
         </div>
+      </section>
+
+      {/* Demonstração — vídeo (placeholder temporário do Flow) */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-medium text-pp-ink">Veja o Doc Studio funcionando</h2>
+          <p className="text-sm text-pp-ink-soft mt-1">Uma demonstração rápida da escolha de modelo, preenchimento guiado e documento montado ao lado.</p>
+        </div>
+        <video
+          src={DEMO_VIDEO_SRC}
+          controls
+          muted
+          playsInline
+          preload="metadata"
+          className="w-full rounded-xl border border-pp-hairline shadow-sm"
+        />
+      </section>
+
+      {/* Cards de benefícios */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {BENEFITS.map(({ icon: Icon, title, description }) => (
+          <div key={title} className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
+            <div className="text-pp-ink"><Icon className="w-[22px] h-[22px]" aria-hidden="true" /></div>
+            <strong className="text-pp-ink block text-sm font-medium">{title}</strong>
+            <p className="text-xs text-pp-ink-soft leading-relaxed">{description}</p>
+          </div>
+        ))}
+      </section>
+
+      {/* Como funciona */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-medium text-pp-ink">Como funciona</h2>
+        <ol className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {STEPS.map((step, i) => (
+            <li key={step} className="flex items-start gap-3 bg-white border border-pp-hairline rounded-xl p-4">
+              <span className="shrink-0 w-8 h-8 rounded-full bg-pp-ink text-pp-canvas flex items-center justify-center text-sm font-medium">
+                {i + 1}
+              </span>
+              <p className="text-sm text-pp-ink leading-relaxed pt-1.5">{step}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* Rodapé */}
