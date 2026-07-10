@@ -35,6 +35,9 @@ begin;
 -- select do /admin/produtos; a vitrine só oculta type = 'spreadsheet'.
 -- access_url é interno e estático (/app/doc-studio) — NÃO é exposto pela
 -- view products_public. checkout_url é deliberadamente omitido (null).
+--
+-- O produto permanece inativo durante o teste controlado.
+-- Ativar somente após compra, webhook e acesso serem validados.
 insert into public.products
   (name, slug, type, audience, description, access_url, price, billing_type, is_active)
 values
@@ -47,7 +50,7 @@ values
     '/app/doc-studio',
     47.00,
     'one_time',
-    true
+    false
   )
 on conflict (slug) do update set
   name          = excluded.name,
@@ -57,9 +60,11 @@ on conflict (slug) do update set
   access_url    = excluded.access_url,
   price         = excluded.price,
   billing_type  = excluded.billing_type,
-  is_active     = excluded.is_active;
-  -- checkout_url NÃO entra no update: preserva uma URL de checkout futura
-  -- já cadastrada manualmente.
+  -- is_active forçado a false (NÃO usa excluded): reaplicar a migration
+  -- nunca ativa o produto automaticamente durante o teste controlado.
+  is_active     = false;
+  -- checkout_url NÃO entra no update: preserva um checkout_url existente
+  -- já cadastrado manualmente.
 
 -- ------------------------------------------------------------
 -- B) has_doc_studio_access(user_uuid uuid)
