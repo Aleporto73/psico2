@@ -122,9 +122,9 @@ function LoginContent() {
           className="fixed top-0 left-0 right-0 z-50 flex items-start gap-2 bg-orange-500 p-3 text-white shadow-lg sm:left-auto sm:top-4 sm:right-4 sm:max-w-[340px] sm:rounded-lg"
         >
           <div className="flex-1 space-y-0.5">
-            <p className="text-sm font-bold">Cliente antigo do PsicoPlanilhas?</p>
+            <p className="text-sm font-bold">Se você já usava o PsicoPlanilhas antigo:</p>
             <p className="text-sm">
-              A plataforma mudou. Clique em “Ativar cadastro antigo” para criar sua nova senha.
+              Clique em “Ativar cadastro antigo” para criar sua nova senha.
             </p>
           </div>
           <button
@@ -146,14 +146,28 @@ function LoginContent() {
           <p className="font-serif italic text-xs text-pp-ink-soft mt-0.5">Área do cliente</p>
         </div>
 
-        {/* Title */}
-        <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight text-pp-ink">
-            Entrar na plataforma
-          </h1>
-          <p className="text-pp-ink-soft text-base">
-            Já ativou seu cadastro ou já tem senha? Entre abaixo
+        {/* AÇÃO PRIMÁRIA — clientes legados / primeiro acesso.
+            Causa-raiz da onda de suporte: a senhora legada clicava em "Esqueci
+            minha senha" em vez de ativar. Este bloco laranja gigante (mesma cor
+            do aviso de migração) captura o clique certo antes do formulário. */}
+        <div className="space-y-3 rounded-2xl border-2 border-orange-400 bg-orange-50 p-5 text-center">
+          <p className="text-lg font-extrabold text-pp-ink">Cliente antigo do PsicoPlanilhas?</p>
+          <p className="text-sm text-pp-ink-soft">
+            A plataforma mudou. Para acessar o PsicoPlanilhas 2.0 pela primeira vez, você precisa ativar seu cadastro antigo e criar uma nova senha.
           </p>
+          <Link
+            href="/ativar-acesso"
+            className="flex w-full items-center justify-center py-5 text-lg font-extrabold bg-orange-500 text-white hover:bg-orange-600 rounded-pill shadow-lg transition duration-200"
+          >
+            Ativar cadastro antigo
+          </Link>
+        </div>
+
+        {/* Divisor — quem já tem senha entra abaixo */}
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-pp-hairline" />
+          <span className="text-xs font-medium text-pp-ink-soft whitespace-nowrap">já tem senha? entre abaixo</span>
+          <span className="h-px flex-1 bg-pp-hairline" />
         </div>
 
         {/* Feedback Messages */}
@@ -215,22 +229,6 @@ function LoginContent() {
             )}
           </button>
         </form>
-
-        {/* Activation Block */}
-        <div className="border-t border-pp-hairline pt-5 text-center space-y-3">
-          <p className="text-base font-bold text-pp-ink">
-            Já era cliente do PsicoPlanilhas?
-          </p>
-          <p className="text-base text-pp-ink-soft">
-            A plataforma mudou. Para acessar o PsicoPlanilhas 2.0 pela primeira vez, você precisa ativar seu cadastro antigo e criar uma nova senha.
-          </p>
-          <Link
-            href="/ativar-acesso"
-            className="inline-block w-full py-3.5 text-base font-bold text-white bg-orange-500 border border-orange-500 hover:bg-orange-600 hover:border-orange-600 rounded-pill transition duration-200 text-center"
-          >
-            Ativar cadastro antigo
-          </Link>
-        </div>
       </div>
 
       <div className="mt-8 text-center text-xs text-pp-ink-soft/70 max-w-sm">
