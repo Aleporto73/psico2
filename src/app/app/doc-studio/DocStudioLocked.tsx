@@ -31,33 +31,33 @@ const DEMO_VIDEO_SRC = '/videos/flow-demo.mp4';
 const BENEFITS = [
   {
     icon: Files,
-    title: '22 modelos prontos',
-    description: 'Anamneses, devolutivas, declarações e relatórios, organizados por profissão.',
+    title: 'Feito pra sua rotina',
+    description: 'Documentos do dia a dia, prontos pra preencher.',
   },
   {
     icon: PencilLine,
     title: 'Campos guiados',
-    description: 'Preencha os blocos e veja o documento profissional se montar ao lado, na hora.',
+    description: 'Preencha e veja a folha se montar ao lado.',
   },
   {
     icon: BadgeCheck,
     title: 'Cabeçalho profissional',
-    description: 'Seu nome, registro e identidade em todo documento.',
+    description: 'Seu nome e registro em cada documento.',
   },
   {
     icon: Printer,
     title: 'Copiar ou imprimir',
-    description: 'Folha pronta para colar onde quiser ou imprimir em A4/PDF.',
+    description: 'Folha pronta pra copiar ou imprimir em A4/PDF.',
   },
   {
     icon: FilePlus,
     title: 'Documento em branco',
-    description: 'Modelo livre para escrever qualquer conteúdo fora dos padrões.',
+    description: 'Modelo livre pra escrever fora dos padrões.',
   },
   {
     icon: Save,
     title: 'Rascunho local',
-    description: 'Salvo no seu navegador, sem nuvem, sob seu controle.',
+    description: 'Salvo no navegador, sem nuvem, é seu.',
   },
 ];
 
@@ -66,6 +66,66 @@ const STEPS = [
   'Preencha os campos guiados',
   'Acompanhe o documento montado ao lado',
   'Copie ou imprima em A4/PDF',
+];
+
+// Sanfonas "Feito para a sua profissão". Nomes copiados VERBATIM do catálogo real
+// (src/app/app/doc-studio/templates.ts). Só as 3 profissões com catálogo próprio;
+// Psicopedagogia e Neuropsicopedagogia compartilham o MESMO catálogo (psychopedagogy).
+// Cada sanfona lista os modelos PRÓPRIOS e depois os COMUNS. Nada inventado.
+
+// 7 universais (professionCategories: ALL_PROFESSIONS) — comuns a todas as profissões.
+const COMMON_MODELS = [
+  'Documento em branco',
+  'Declaração de comparecimento',
+  'Recibo / declaração de pagamento',
+  'Encaminhamento profissional',
+  'Contrato / termo de prestação de serviço',
+  'Autorização simples',
+  'TCLE simplificado',
+];
+
+// 15 modelos da linha `psychopedagogy` (Psicopedagogia + Neuropsicopedagogia).
+const PSYCHOPEDAGOGY_MODELS = [
+  'Devolutiva psicopedagógica para família',
+  'Relatório de acompanhamento psicopedagógico',
+  'Registro de sessão psicopedagógica',
+  'Encaminhamento orientativo',
+  'Anamnese psicopedagógica inicial',
+  'Entrevista com família',
+  'Entrevista com aprendente',
+  'Entrevista com professor/escola',
+  'Observação escolar',
+  'Observação lúdica',
+  'Devolutiva para escola',
+  'Relatório de observação escolar',
+  'Relatório individual AEE',
+  'Plano de apoio escolar / PEI simplificado',
+  'Autorização / contrato / declaração simples',
+];
+
+// 15 modelos ATIVOS da linha `psychology` (o 16º do catálogo é status: 'hidden').
+const PSYCHOLOGY_MODELS = [
+  'Síntese psicológica descritiva',
+  'Relatório psicológico estruturado',
+  'Registro de evolução / acompanhamento',
+  'Encaminhamento orientativo',
+  'Anamnese psicológica adulto',
+  'Anamnese psicológica infantil/adolescente',
+  'Planejamento terapêutico inicial',
+  'Parecer psicológico orientativo',
+  'Devolutiva clínica em linguagem acessível',
+  'Orientação à família/responsáveis',
+  'Contrato terapêutico',
+  'Autorização para atendimento de menor',
+  'Protocolo de atendimento online',
+  'Declaração de comparecimento / recibo',
+  'TCLE simplificado',
+];
+
+const PROFESSION_ACCORDIONS: { title: string; own: string[] }[] = [
+  { title: 'Psicopedagogia', own: PSYCHOPEDAGOGY_MODELS },
+  { title: 'Psicologia / Neuropsicologia', own: PSYCHOLOGY_MODELS },
+  { title: 'Neuropsicopedagogia', own: PSYCHOPEDAGOGY_MODELS },
 ];
 
 type LockedProduct = {
@@ -175,7 +235,7 @@ export async function DocStudioLocked() {
       </section>
 
       {/* Cards de benefícios */}
-      <section className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {BENEFITS.map(({ icon: Icon, title, description }) => (
           <div key={title} className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
             <div className="text-pp-ink"><Icon className="w-[22px] h-[22px]" aria-hidden="true" /></div>
@@ -183,6 +243,59 @@ export async function DocStudioLocked() {
             <p className="text-xs text-pp-ink-soft leading-relaxed">{description}</p>
           </div>
         ))}
+      </section>
+
+      {/* Feito para a sua profissão — sanfonas nativas com o catálogo real por área */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-medium text-pp-ink">Feito para a sua profissão</h2>
+          <p className="text-sm text-pp-ink-soft mt-1">Abra a sua área e veja os modelos disponíveis — os próprios da profissão e os comuns a todas.</p>
+        </div>
+        <div className="space-y-3">
+          {PROFESSION_ACCORDIONS.map(({ title, own }) => (
+            <details
+              key={title}
+              name="doc-profession"
+              className="group bg-white border border-pp-hairline rounded-xl overflow-hidden"
+            >
+              <summary className="flex items-center justify-between gap-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden px-4 py-3.5 text-pp-ink font-medium text-sm hover:bg-pp-hairline-soft transition">
+                <span>{title}</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="shrink-0 text-pp-ink-soft transition-transform duration-200 group-open:rotate-180"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </summary>
+              <div className="px-4 pb-4 pt-3 border-t border-pp-hairline-soft space-y-3">
+                <ul className="space-y-1">
+                  {own.map((model) => (
+                    <li key={model} className="text-xs text-pp-ink-soft leading-relaxed">{model}</li>
+                  ))}
+                </ul>
+                <div>
+                  <p className="text-[11px] font-semibold text-pp-ink uppercase tracking-wide">
+                    Comuns a todas as profissões
+                  </p>
+                  <ul className="space-y-1 mt-1">
+                    {COMMON_MODELS.map((model) => (
+                      <li key={model} className="text-xs text-pp-ink-soft leading-relaxed">{model}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </details>
+          ))}
+        </div>
       </section>
 
       {/* Como funciona */}
