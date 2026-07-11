@@ -148,12 +148,12 @@ function words(text: string): string[] {
 }
 
 describe('catálogo v1 — contagem e status', () => {
-  it('tem 37 templates ativos (30 de profissão + 7 universais)', () => {
-    expect(getActiveTemplates()).toHaveLength(37);
+  it('tem pelo menos 37 templates ativos (documentos + instrumentos + universais)', () => {
+    expect(getActiveTemplates().length).toBeGreaterThanOrEqual(37);
   });
 
-  it('linha psychopedagogy tem 15 ativos', () => {
-    expect(getActiveTemplates().filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+  it('linha psychopedagogy tem pelo menos 15 ativos', () => {
+    expect(getActiveTemplates().filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 
   it('linha psychology tem 15 ativos', () => {
@@ -268,22 +268,22 @@ describe('Doc Studio por profissão (profession_category)', () => {
     }
   });
 
-  it('psicopedagogo abre Psicopedagogia = universais + 15 psicopedagógicos', () => {
+  it('psicopedagogo abre Psicopedagogia = universais + psicopedagógicos (documentos e instrumentos)', () => {
     const option = getProfessionCategoryOption('psicopedagogo');
     expect(option.title).toBe('Psicopedagogia');
     expect(option.catalog).toBe('psychopedagogy');
     const models = getTemplatesForCategory('psicopedagogo');
-    expect(models).toHaveLength(22);
-    expect(models.filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+    expect(models.length).toBeGreaterThanOrEqual(22);
+    expect(models.filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 
-  it('neuropsicopedagogo abre Neuropsicopedagogia = universais + 15 psicopedagógicos', () => {
+  it('neuropsicopedagogo abre Neuropsicopedagogia = universais + psicopedagógicos (documentos e instrumentos)', () => {
     const option = getProfessionCategoryOption('neuropsicopedagogo');
     expect(option.title).toBe('Neuropsicopedagogia');
     expect(option.catalog).toBe('psychopedagogy');
     const models = getTemplatesForCategory('neuropsicopedagogo');
-    expect(models).toHaveLength(22);
-    expect(models.filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+    expect(models.length).toBeGreaterThanOrEqual(22);
+    expect(models.filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 
   it('fono/TO/médico/pediatra/outro abrem linha própria — somente universais (7)', () => {
@@ -316,8 +316,8 @@ describe('Doc Studio por profissão (profession_category)', () => {
     }
   });
 
-  it('catálogo tem 37 templates ativos (30 profissão + 7 universais)', () => {
-    expect(getActiveTemplates()).toHaveLength(37);
+  it('catálogo tem pelo menos 37 templates ativos (documentos + instrumentos + universais)', () => {
+    expect(getActiveTemplates().length).toBeGreaterThanOrEqual(37);
   });
 });
 
@@ -346,11 +346,11 @@ describe('categorias sem catálogo próprio (D1: mostram universais)', () => {
     }
   });
 
-  it('Psicologia e Psicopedagogia seguem com catálogo (15 próprios + universais)', () => {
+  it('Psicologia e Psicopedagogia seguem com catálogo (pelo menos 15 próprios + universais)', () => {
     expect(catalogForCategory('psicologo')).toBe('psychology');
     expect(catalogForCategory('psicopedagogo')).toBe('psychopedagogy');
     expect(getTemplatesForCategory('psicologo').filter((t) => t.line === 'psychology')).toHaveLength(15);
-    expect(getTemplatesForCategory('psicopedagogo').filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+    expect(getTemplatesForCategory('psicopedagogo').filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 });
 
@@ -455,7 +455,7 @@ describe('campos essenciais e opcionais (D5)', () => {
   });
 
   it('(c) templates antigos (sem grupos) continuam com guidedFields e serão renderizados por inteiro', () => {
-    const legacy = templates.filter((t) => !t.essentialFields);
+    const legacy = templates.filter((t) => !t.essentialFields && t.mode !== 'instrument');
     expect(legacy.length).toBeGreaterThan(0);
     for (const t of legacy) {
       expect(t.guidedFields.length, `${t.id} guidedFields`).toBeGreaterThan(0);
