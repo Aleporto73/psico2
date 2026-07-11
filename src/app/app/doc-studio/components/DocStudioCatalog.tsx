@@ -49,9 +49,9 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
     [category, documentKind, profileType],
   );
 
-  // Ordem da lista: (1) "Documento em branco" no topo; (2) próprios da profissão
-  // (por `line`); (3) demais universais ("Documentos gerais"). Universais têm
-  // `professionCategories` (todas as profissões).
+  // Ordem da lista: (1) próprios da profissão (por `line`); (2) universais gerais;
+  // (3) instrumentos de avaliação; (4) "Documento em branco" no fim.
+  // Universais têm `professionCategories` (todas as profissões).
   const BLANK_TEMPLATE_ID = 'universal_blank_document';
   const blankTemplate = results.find((template) => template.id === BLANK_TEMPLATE_ID) ?? null;
   const instrumentResults = results.filter((template) => template.mode === 'instrument');
@@ -70,7 +70,7 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
         type="button"
         onClick={() => updateTemplate(template.id)}
         aria-pressed={isActive}
-        className={`block w-full rounded-lg border-l-2 px-3.5 py-2 text-left text-sm font-medium transition ${
+        className={`block w-full rounded-lg border-l-2 px-3.5 py-2 text-left text-xs font-medium transition ${
           isActive ? 'border-l-pp-ink bg-pp-block-cream/60 text-pp-ink' : 'border-l-transparent text-pp-ink hover:bg-pp-hairline-soft/70'
         }`}
         style={isActive ? { color: activeColor } : undefined}
@@ -130,15 +130,6 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
           </p>
         ) : (
           <div className="space-y-6">
-            {blankTemplate && (
-              <section className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
-                  Começar do zero
-                </p>
-                <div className="space-y-0.5">{renderItem(blankTemplate)}</div>
-              </section>
-            )}
-
             {professionalResults.length > 0 && (
               <details className="group">
                 <summary className="flex items-center justify-between gap-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-lg px-1 py-1 hover:bg-pp-hairline-soft/60 transition">
@@ -161,7 +152,7 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </summary>
-                <div className="mt-2 space-y-0.5">{professionalResults.map(renderItem)}</div>
+                <div className="mt-2 space-y-0.5">{[...professionalResults].sort((a, b) => a.title.localeCompare(b.title, 'pt-BR')).map(renderItem)}</div>
               </details>
             )}
 
@@ -187,7 +178,7 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </summary>
-                <div className="mt-2 space-y-0.5">{generalResults.map(renderItem)}</div>
+                <div className="mt-2 space-y-0.5">{[...generalResults].sort((a, b) => a.title.localeCompare(b.title, 'pt-BR')).map(renderItem)}</div>
               </details>
             )}
 
@@ -213,9 +204,11 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
                     <polyline points="6 9 12 15 18 9" />
                   </svg>
                 </summary>
-                <div className="mt-2 space-y-0.5">{instrumentResults.map(renderItem)}</div>
+                <div className="mt-2 space-y-0.5">{[...instrumentResults].sort((a, b) => a.title.localeCompare(b.title, 'pt-BR')).map(renderItem)}</div>
               </details>
             )}
+
+            {blankTemplate && renderItem(blankTemplate)}
 
             {!hasCatalog && (
               <p className="rounded-xl border border-dashed border-pp-hairline bg-pp-hairline-soft/40 px-3.5 py-3 text-xs leading-relaxed text-pp-ink-soft">
