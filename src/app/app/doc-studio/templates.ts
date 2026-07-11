@@ -700,6 +700,13 @@ export const templates: DocStudioTemplate[] = [
       { key: 'strengths', label: 'Procedimento (fontes de informação e como foram obtidas)' },
       { key: 'attentionPoints', label: 'Análise (organização descritiva dos elementos considerados)' },
       { key: 'recommendations', label: 'Conclusão (síntese e encaminhamentos, sem diagnóstico fechado)' },
+      {
+        key: 'nextSteps',
+        label:
+          'Prazo de validade do conteúdo — indique por quanto tempo as informações deste documento permanecem válidas, considerando a natureza dinâmica e não cristalizada do fenômeno psicológico.',
+        placeholder:
+          'Indique por quanto tempo as informações deste documento permanecem válidas, considerando a natureza dinâmica e não cristalizada do fenômeno psicológico.',
+      },
     ],
     sections: [
       { key: 'context', title: 'Identificação' },
@@ -707,6 +714,7 @@ export const templates: DocStudioTemplate[] = [
       { key: 'strengths', title: 'Procedimento' },
       { key: 'attentionPoints', title: 'Análise' },
       { key: 'recommendations', title: 'Conclusão' },
+      { key: 'nextSteps', title: 'Prazo de validade do conteúdo' },
     ],
     ethicalFooter:
       'Relatório psicológico elaborado sob responsabilidade do psicólogo signatário. O conteúdo é descritivo, deve ser revisado pelo profissional responsável e não constitui laudo, diagnóstico conclusivo, parecer pericial ou interpretação de teste.',
@@ -1129,27 +1137,46 @@ export const templates: DocStudioTemplate[] = [
     line: 'psychology',
     documentKind: 'formal_document',
     category: 'Documentos',
-    title: 'Declaração de comparecimento / recibo',
+    title: 'Declaração',
     description:
-      'Modelo simples e administrativo para declarar comparecimento ou registrar recibo, sem conteúdo clínico.',
-    defaultPurpose: 'Registrar uma declaração de comparecimento ou um recibo de forma simples e administrativa.',
-    searchTerms: ['declaração', 'comparecimento', 'recibo', 'presença', 'pagamento'],
+      'Modelo para declarar comparecimento a atendimento psicológico, sem registro de sintomas, estados psicológicos ou qualquer conteúdo clínico sobre a pessoa atendida.',
+    defaultPurpose:
+      'Registrar uma declaração de comparecimento a atendimento psicológico de forma administrativa e eticamente adequada.',
+    searchTerms: ['declaração', 'comparecimento', 'presença', 'atendimento'],
     recommendedForProfileTypes: ['psychologist', 'both'],
     allowedProfessionCategories: ['psicologo'],
     riskLevel: 'low',
     requiresHeader: true,
     guidedFields: [
-      { key: 'context', label: 'Tipo de documento e finalidade' },
-      { key: 'observations', label: 'Dados: nome, data, horário e/ou valor' },
-      { key: 'nextSteps', label: 'Local, data e assinatura' },
+      {
+        key: 'subjectName',
+        label: 'Nome completo ou nome social da pessoa atendida',
+        placeholder: 'Nome completo ou nome social da pessoa que compareceu ao atendimento.',
+      },
+      {
+        key: 'documentPurpose',
+        label: 'Finalidade do documento (razão ou motivo da emissão)',
+        placeholder: 'Ex.: atestado de presença para fins escolares, trabalhistas ou previdenciários.',
+      },
+      {
+        key: 'context',
+        label: 'Local, dias, horários e duração do acompanhamento',
+        placeholder: 'Local do atendimento, data(s), horário(s) de início e término e duração de cada sessão.',
+      },
+      {
+        key: 'observations',
+        label: 'Acompanhante, se houver',
+        placeholder: 'Nome e grau de parentesco ou relação do acompanhante, se presente. Deixe em branco se não houve.',
+      },
     ],
     sections: [
-      { key: 'context', title: 'Tipo de documento e finalidade' },
-      { key: 'observations', title: 'Dados: nome, data, horário e/ou valor' },
-      { key: 'nextSteps', title: 'Local, data e assinatura' },
+      { key: 'subjectName', title: 'Pessoa atendida' },
+      { key: 'documentPurpose', title: 'Finalidade' },
+      { key: 'context', title: 'Dados do acompanhamento' },
+      { key: 'observations', title: 'Acompanhante' },
     ],
     ethicalFooter:
-      'Declaração/recibo simples e administrativo. Não informa conteúdo clínico nem constitui atestado.',
+      'Esta Declaração atesta unicamente o comparecimento ao atendimento. Nos termos do Art. 9 §1 da Resolução CFP 06/2019, não registra sintomas, situações, estados psicológicos ou qualquer informação sobre o funcionamento psicológico da pessoa atendida.',
   },
   {
     id: 'psychology-tcle',
@@ -6564,9 +6591,97 @@ export const templates: DocStudioTemplate[] = [
       { type: 'line-field', label: 'Assinatura do(a) profissional', length: 'long' },
     ],
   },
+  {
+    id: 'psychology-multiprofessional-report',
+    schemaVersion: 1,
+    status: 'active',
+    line: 'psychology',
+    documentKind: 'psychological_report',
+    category: 'Relatório',
+    title: 'Relatório multiprofissional',
+    description:
+      'Estrutura documental de relatório elaborado por equipe multiprofissional, com seções separadas para os procedimentos privativos da Psicologia e os dos demais profissionais, conforme Art. 12 da Resolução CFP 06/2019.',
+    defaultPurpose:
+      'Organizar um relatório multiprofissional de forma estruturada, com responsabilidade técnica individualizada por categoria profissional e resguardo do sigilo.',
+    searchTerms: [
+      'relatório',
+      'multiprofissional',
+      'interdisciplinar',
+      'equipe',
+      'CFP',
+      'psicologia',
+      'procedimento',
+      'análise',
+      'conclusão',
+    ],
+    recommendedForProfileTypes: ['psychologist', 'both'],
+    allowedProfessionCategories: ['psicologo'],
+    riskLevel: 'restricted',
+    requiresHeader: true,
+    guidedFields: [
+      {
+        key: 'context',
+        label:
+          'Identificação — pessoa ou instituição atendida, solicitante, finalidade e nome de todas as autoras/autores com categoria profissional e registro',
+        placeholder:
+          'Nome da pessoa ou instituição atendida, nome de quem solicitou o documento (Judiciário, empresa, instituição ou a própria pessoa), finalidade do documento e nome de todos os autores, com categoria profissional e registro no órgão de classe.',
+      },
+      {
+        key: 'observations',
+        label: 'Descrição da demanda — o que motivou o trabalho multiprofissional e quem forneceu as informações',
+        placeholder:
+          'O que motivou o trabalho multiprofissional, quem forneceu as informações e as demandas que levaram à solicitação do documento.',
+      },
+      {
+        key: 'procedures',
+        label: 'Procedimento (Psicologia) — técnicas e procedimentos privativos da Psicologia utilizados',
+        placeholder:
+          'Raciocínio técnico-científico e os procedimentos e técnicas PRIVATIVOS da Psicologia, com o referencial teórico que fundamentou análises e interpretações.',
+      },
+      {
+        key: 'strengths',
+        label:
+          'Procedimento (demais profissionais) — técnicas e procedimentos descritos pelos outros membros da equipe (Art. 12 §5 CFP 06/2019)',
+        placeholder:
+          'Procedimentos e técnicas descritos pelos demais profissionais da equipe, separados dos privativos da Psicologia (Art. 12 §5).',
+      },
+      {
+        key: 'attentionPoints',
+        label:
+          'Análise — cada profissional analisa separadamente, com subtítulo identificando nome e categoria profissional',
+        placeholder:
+          'Cada profissional faz sua análise separadamente, identificando em subtítulo o nome e a categoria profissional.',
+      },
+      {
+        key: 'recommendations',
+        label:
+          'Conclusão — pode ser conjunta em processos interdisciplinares; pode conter encaminhamento, orientação e sugestão de continuidade',
+        placeholder:
+          'Conclusão a partir do que foi analisado. Pode ser conjunta em processos interdisciplinares e conter encaminhamento, orientação e sugestão de continuidade.',
+      },
+      {
+        key: 'nextSteps',
+        label:
+          'Prazo de validade do conteúdo — indique por quanto tempo as informações deste documento permanecem válidas, considerando a natureza dinâmica e não cristalizada do fenômeno psicológico.',
+        placeholder:
+          'Indique por quanto tempo as informações deste documento permanecem válidas, considerando a natureza dinâmica e não cristalizada do fenômeno psicológico.',
+      },
+    ],
+    sections: [
+      { key: 'context', title: 'Identificação' },
+      { key: 'observations', title: 'Descrição da demanda' },
+      { key: 'procedures', title: 'Procedimento (Psicologia)' },
+      { key: 'strengths', title: 'Procedimento (demais profissionais)' },
+      { key: 'attentionPoints', title: 'Análise' },
+      { key: 'recommendations', title: 'Conclusão' },
+      { key: 'nextSteps', title: 'Prazo de validade do conteúdo' },
+    ],
+    ethicalFooter:
+      'Relatório multiprofissional elaborado nos termos da Resolução CFP 06/2019. Os procedimentos privativos da Psicologia constam em item próprio, com responsabilidade técnica do psicólogo signatário. O sigilo profissional é resguardado na medida do necessário para a finalidade do documento. O conteúdo deve ser revisado por todos os profissionais responsáveis antes da emissão.',
+  },
 ];
 
-export const initialDraft: DraftFields = {
+export const defaultFieldPlaceholders: DraftFields = {
   subjectName: 'Nome do avaliado',
   subjectAge: 'Idade ou faixa etária',
   documentPurpose: templates[0].defaultPurpose,
@@ -6587,7 +6702,13 @@ export const initialDraft: DraftFields = {
   payment_description: 'Serviço, valor, data e forma de pagamento.',
 };
 
-export const DRAFT_FIELD_KEYS = Object.keys(initialDraft) as DraftFieldKey[];
+// Campos iniciam vazios; o texto cinza que aparece no textarea vem de
+// defaultFieldPlaceholders (via GuidedField.placeholder ou fallback em DocStudioFields).
+export const initialDraft = Object.fromEntries(
+  Object.keys(defaultFieldPlaceholders).map((key) => [key, '']),
+) as unknown as DraftFields;
+
+export const DRAFT_FIELD_KEYS = Object.keys(defaultFieldPlaceholders) as DraftFieldKey[];
 
 export function isTemplateKey(value: unknown): value is TemplateKey {
   return typeof value === 'string' && templates.some((template) => template.id === value);

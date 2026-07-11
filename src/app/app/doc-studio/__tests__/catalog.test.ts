@@ -122,6 +122,7 @@ const PSYCHOLOGY_ACTIVE_IDS = [
   'psychology-minor-authorization',
   'psychology-online-protocol',
   'psychology-attendance-declaration',
+  'psychology-multiprofessional-report',
   'psychology-tcle',
 ] as const;
 
@@ -178,7 +179,7 @@ describe('catálogo v1 — ids da spec', () => {
   });
 
   it('todos os ids psicológicos ativos existem, active e na linha psychology (hidden não conta)', () => {
-    expect(PSYCHOLOGY_ACTIVE_IDS).toHaveLength(15);
+    expect(PSYCHOLOGY_ACTIVE_IDS).toHaveLength(16);
     expect(PSYCHOLOGY_ACTIVE_IDS).not.toContain(HIDDEN_ID);
     for (const id of PSYCHOLOGY_ACTIVE_IDS) {
       const template = templates.find((t) => t.id === id);
@@ -205,13 +206,14 @@ describe('relatório psicológico estruturado CFP', () => {
     expect((cfp?.ethicalFooter ?? '').trim().length).toBeGreaterThan(0);
   });
 
-  it('tem as 5 seções estruturais na ordem CFP', () => {
+  it('tem as 6 seções estruturais na ordem CFP', () => {
     expect(cfp?.sections.map((s) => s.title)).toEqual([
       'Identificação',
       'Descrição da demanda',
       'Procedimento',
       'Análise',
       'Conclusão',
+      'Prazo de validade do conteúdo',
     ]);
   });
 });

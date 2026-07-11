@@ -11,8 +11,9 @@ import {
   initialDraft,
 } from '../templates';
 
-export const DRAFT_STORAGE_KEY = 'psicoplanilhas:doc-studio:draft:v1';
-export const DRAFT_SCHEMA_VERSION = 1;
+const DRAFT_STORAGE_KEY_V1 = 'psicoplanilhas:doc-studio:draft:v1';
+export const DRAFT_STORAGE_KEY = 'psicoplanilhas:doc-studio:draft:v2';
+export const DRAFT_SCHEMA_VERSION = 2;
 
 function getDefaultStorage(): Storage | null {
   try {
@@ -81,6 +82,8 @@ export function parseStoredDraft(rawDraft: string | null, now: string): DocStudi
 export function loadDraft(now: string, storage: Storage | null = getDefaultStorage()): DocStudioDraft | null {
   if (!storage) return null;
   try {
+    // Descarta rascunho v1 legado para não acumular lixo no localStorage.
+    storage.removeItem(DRAFT_STORAGE_KEY_V1);
     return parseStoredDraft(storage.getItem(DRAFT_STORAGE_KEY), now);
   } catch {
     return null;

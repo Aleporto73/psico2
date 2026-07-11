@@ -31,7 +31,7 @@ import {
 import { getTemplatesForCategory, getTemplatesForLine } from '../template-catalog';
 import { buildHeader, getHeaderMissingItems, getProfessionalSignature } from '../lib/profile';
 import { composeInstrumentText, composePlainText } from '../lib/copy';
-import { clearDraft, loadDraft, saveDraft } from '../lib/storage';
+import { DRAFT_SCHEMA_VERSION, clearDraft, loadDraft, saveDraft } from '../lib/storage';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -169,7 +169,7 @@ export function useDocStudioState() {
 
     const saveTimer = window.setTimeout(() => {
       const draft: DocStudioDraft = {
-        schemaVersion: 1,
+        schemaVersion: DRAFT_SCHEMA_VERSION,
         line,
         templateKey: selectedTemplate?.id ?? templateKey,
         fields,
@@ -205,12 +205,13 @@ export function useDocStudioState() {
   }, []);
 
   const updateTemplate = useCallback((nextTemplateKey: TemplateKey) => {
+    if (nextTemplateKey === templateKey) return;
     const nextTemplate = templates.find((template) => template.id === nextTemplateKey) ?? templates[0];
     setTemplateKey(nextTemplate.id);
     // Universais não têm `line`: mantém a linha atual.
     if (nextTemplate.line) setLine(nextTemplate.line);
-    setFields((current) => ({ ...current, documentPurpose: nextTemplate.defaultPurpose }));
-  }, []);
+    setFields(getDefaultFieldsForTemplate(nextTemplate));
+  }, [templateKey]);
 
   const updateCategory = useCallback((nextCategory: ProfessionCategory) => {
     setCategory(nextCategory);

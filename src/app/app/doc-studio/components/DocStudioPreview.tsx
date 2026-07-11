@@ -111,14 +111,16 @@ export function DocStudioPreview({ state }: { state: DocStudioState }) {
             <p className="leading-relaxed text-pp-ink">{fields.documentPurpose}</p>
           </section>
 
-          {selectedTemplate.sections.map((section) => (
-            <section key={section.key} className="break-inside-avoid">
-              <h3 className={`${titleFontClass} mb-2.5 border-b border-pp-hairline pb-2 text-lg text-pp-ink md:text-xl`}>
-                {section.title}
-              </h3>
-              <p className="whitespace-pre-wrap leading-[1.8] text-pp-ink-soft">{fields[section.key]}</p>
-            </section>
-          ))}
+          {selectedTemplate.sections
+            .filter((section) => fields[section.key].trim())
+            .map((section) => (
+              <section key={section.key} className="break-inside-avoid">
+                <h3 className={`${titleFontClass} mb-2.5 border-b border-pp-hairline pb-2 text-lg text-pp-ink md:text-xl`}>
+                  {section.title}
+                </h3>
+                <p className="whitespace-pre-wrap leading-[1.8] text-pp-ink-soft">{fields[section.key]}</p>
+              </section>
+            ))}
 
           <footer className="break-inside-avoid border-t border-pp-hairline pt-4 text-xs italic leading-relaxed text-pp-ink-soft">
             {selectedTemplate.ethicalFooter}

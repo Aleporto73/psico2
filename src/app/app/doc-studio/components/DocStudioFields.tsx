@@ -7,6 +7,7 @@ import { Check, Copy, Printer } from 'lucide-react';
 import type { GuidedField } from '../types';
 import type { DocStudioState } from '../hooks/useDocStudioState';
 import { getDraftStatusLabel } from '../lib/storage';
+import { defaultFieldPlaceholders } from '../templates';
 
 export function DocStudioFields({ state }: { state: DocStudioState }) {
   const {
@@ -108,7 +109,7 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
         id={field.key}
         value={fields[field.key]}
         onChange={(event) => updateField(field.key, event.target.value)}
-        placeholder={field.placeholder}
+        placeholder={field.placeholder ?? defaultFieldPlaceholders[field.key]}
         rows={density === 'compact' ? 3 : 4}
         className="w-full resize-y rounded-xl border border-pp-hairline bg-white px-4 py-3 text-sm leading-relaxed text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
       />

@@ -40,6 +40,7 @@ export type TemplateKey =
   | 'psychology-minor-authorization'
   | 'psychology-online-protocol'
   | 'psychology-attendance-declaration'
+  | 'psychology-multiprofessional-report'
   | 'psychology-tcle'
   // Instrumentos (Modo Instrumento).
   | 'psychopedagogy-eoca'
