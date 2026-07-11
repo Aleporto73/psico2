@@ -102,7 +102,11 @@ function appendInstrumentBlock(lines: string[], block: InstrumentBlock): void {
       break;
     }
     case 'line-field': {
-      lines.push(`${labelWithColon(block.label)} ${lineOfUnderscores(block.length)}`);
+      if (block.label.trim()) {
+        lines.push(`${labelWithColon(block.label)} ${lineOfUnderscores(block.length)}`);
+      } else {
+        lines.push(lineOfUnderscores(block.length));
+      }
       break;
     }
     case 'yes-no': {
@@ -130,6 +134,16 @@ function appendInstrumentBlock(lines: string[], block: InstrumentBlock): void {
     case 'section-title': {
       lines.push(block.title.toUpperCase());
       if (block.text) lines.push(block.text);
+      lines.push('');
+      break;
+    }
+    case 'guide-list': {
+      if (block.title) lines.push(block.title.toUpperCase());
+      block.items.forEach((item) => lines.push(`- ${item}`));
+      if (block.notesLabel) {
+        lines.push(`${labelWithColon(block.notesLabel)} ${lineOfUnderscores('long')}`);
+        for (let i = 1; i < (block.notesLines ?? 1); i++) lines.push(lineOfUnderscores('long'));
+      }
       lines.push('');
       break;
     }

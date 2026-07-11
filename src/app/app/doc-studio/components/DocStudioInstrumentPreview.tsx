@@ -91,6 +91,30 @@ function YesNoBlock({ block }: { block: Extract<InstrumentBlock, { type: 'yes-no
   );
 }
 
+function GuideListBlock({ block }: { block: Extract<InstrumentBlock, { type: 'guide-list' }> }) {
+  return (
+    <section className="break-inside-avoid space-y-2">
+      {block.title && (
+        <h3 className="doc-instrument-section-title border-b border-pp-hairline pb-2 text-sm font-semibold uppercase tracking-wide text-pp-ink-soft">
+          {block.title}
+        </h3>
+      )}
+      <ul className="space-y-1">
+        {block.items.map((item) => (
+          <li key={item} className="flex gap-2 text-sm text-pp-ink">
+            <span className="shrink-0 select-none">•</span>
+            <span>{item}</span>
+          </li>
+        ))}
+      </ul>
+      {block.notesLabel &&
+        Array.from({ length: block.notesLines ?? 1 }, (_, i) => (
+          <LineFieldBlock key={i} block={{ type: 'line-field', label: i === 0 ? block.notesLabel! : '', length: 'long' }} />
+        ))}
+    </section>
+  );
+}
+
 function ChecklistBlock({ block }: { block: Extract<InstrumentBlock, { type: 'checklist' }> }) {
   // Item em grid (não flex): flex dentro de columns quebra a contagem de
   // colunas em alguns motores de impressão do Chromium.
@@ -146,6 +170,8 @@ function renderBlock(block: InstrumentBlock, index: number) {
       return <LineFieldBlock key={index} block={block} />;
     case 'yes-no':
       return <YesNoBlock key={index} block={block} />;
+    case 'guide-list':
+      return <GuideListBlock key={index} block={block} />;
     case 'checklist':
       return <ChecklistBlock key={index} block={block} />;
     case 'free-space':

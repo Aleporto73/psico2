@@ -43,6 +43,7 @@ export type TemplateKey =
   | 'psychology-tcle'
   // Instrumentos (Modo Instrumento).
   | 'psychopedagogy-eoca'
+  | 'psychopedagogy-observacao-ludica'
   | 'neuropsychopedagogy-eoca'
   // Universais (D1) — aparecem para todas as profissões.
   | 'universal_blank_document'
@@ -154,7 +155,10 @@ export type InstrumentBlock =
   | { type: 'free-space'; label?: string; heightMm?: number }
   // Título de seção simples (sem caixa), mesmo estilo do título do checklist —
   // para textos curtos que não precisam de destaque de instrução.
-  | { type: 'section-title'; title: string; text?: string };
+  | { type: 'section-title'; title: string; text?: string }
+  // Lista-guia: bullets descritivos (pontos a observar) sem checkbox, seguidos
+  // de linhas em branco para escrita à mão. Sem colunas — itens são frases.
+  | { type: 'guide-list'; title?: string; items: string[]; notesLabel?: string; notesLines?: number };
 
 export interface DocStudioTemplate {
   id: TemplateKey;
