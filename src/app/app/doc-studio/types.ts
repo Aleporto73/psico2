@@ -44,6 +44,18 @@ export type TemplateKey =
   // Instrumentos (Modo Instrumento).
   | 'psychopedagogy-eoca'
   | 'psychopedagogy-observacao-ludica'
+  | 'psychopedagogy-logico-matematico'
+  | 'psychopedagogy-roteiro-descritivo-aluno'
+  | 'psychopedagogy-levantamento-desempenho-escolar'
+  | 'psychopedagogy-capacidades-basicas'
+  | 'psychopedagogy-entrevista-inicial-professor'
+  | 'psychopedagogy-relatorio-professor'
+  | 'psychopedagogy-observacao-escolar'
+  | 'psychopedagogy-ficha-cadastro'
+  | 'psychopedagogy-coordenacao-motora-fina'
+  | 'psychopedagogy-perfil-aprendente'
+  | 'psychopedagogy-entrevista-aprendente'
+  | 'psychopedagogy-entrevista-detalhada-aluno'
   | 'neuropsychopedagogy-eoca'
   // Universais (D1) — aparecem para todas as profissões.
   | 'universal_blank_document'

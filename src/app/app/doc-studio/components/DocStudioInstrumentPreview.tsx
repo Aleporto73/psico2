@@ -219,7 +219,7 @@ export function DocStudioInstrumentPreview({ state }: { state: DocStudioState })
             >
               Instrumento · Aplicar na sessão
             </div>
-            <h2 className="font-serif italic text-[28px] leading-tight text-pp-ink md:text-[32px]">
+            <h2 className="whitespace-pre-wrap font-serif italic text-[28px] leading-tight text-pp-ink md:text-[32px]">
               {selectedTemplate.title}
             </h2>
           </div>
@@ -235,7 +235,7 @@ export function DocStudioInstrumentPreview({ state }: { state: DocStudioState })
             ),
           )}
 
-          <footer className="break-inside-avoid border-t border-pp-hairline pt-4 text-xs italic leading-relaxed text-pp-ink-soft">
+          <footer className="border-t border-pp-hairline pt-4 text-xs italic leading-relaxed text-pp-ink-soft">
             {selectedTemplate.ethicalFooter}
           </footer>
 
