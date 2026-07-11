@@ -49,9 +49,15 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
     [category, documentKind, profileType],
   );
 
-  // Universais = têm `professionCategories` (todas as profissões). Profissionais = por `line`.
-  const universalResults = results.filter((template) => template.professionCategories);
+  // Ordem da lista: (1) "Documento em branco" no topo; (2) próprios da profissão
+  // (por `line`); (3) demais universais ("Documentos gerais"). Universais têm
+  // `professionCategories` (todas as profissões).
+  const BLANK_TEMPLATE_ID = 'universal_blank_document';
+  const blankTemplate = results.find((template) => template.id === BLANK_TEMPLATE_ID) ?? null;
   const professionalResults = results.filter((template) => !template.professionCategories);
+  const generalResults = results.filter(
+    (template) => template.professionCategories && template.id !== BLANK_TEMPLATE_ID,
+  );
 
   const renderItem = (template: DocStudioTemplate) => {
     const isActive = template.id === selectedTemplate?.id;
@@ -61,24 +67,18 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
         type="button"
         onClick={() => updateTemplate(template.id)}
         aria-pressed={isActive}
-        className={`block w-full rounded-xl border-l-2 px-3.5 py-3 text-left transition ${
-          isActive ? 'border-l-pp-ink bg-pp-block-cream/60' : 'border-l-transparent hover:bg-pp-hairline-soft/70'
+        className={`block w-full rounded-lg border-l-2 px-3.5 py-2 text-left text-sm font-medium transition ${
+          isActive ? 'border-l-pp-ink bg-pp-block-cream/60 text-pp-ink' : 'border-l-transparent text-pp-ink hover:bg-pp-hairline-soft/70'
         }`}
+        style={isActive ? { color: activeColor } : undefined}
       >
-        <span
-          className="text-[10px] font-semibold uppercase tracking-wide text-pp-ink-soft"
-          style={isActive ? { color: activeColor } : undefined}
-        >
-          {documentKindLabels[template.documentKind]}
-        </span>
-        <span className="mt-0.5 block text-sm font-medium text-pp-ink">{template.title}</span>
-        <span className="mt-1 block text-xs leading-relaxed text-pp-ink-soft">{template.description}</span>
+        {template.title}
       </button>
     );
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 rounded-2xl bg-pp-block-cream/40 p-5">
       <div className="space-y-3">
         <label htmlFor="professionCategory" className="font-serif italic text-pp-ink-soft text-sm">
           Profissão
@@ -90,11 +90,13 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
           aria-label="Selecionar profissão"
           className="w-full rounded-lg border border-pp-hairline bg-white px-3 py-2 text-sm text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
         >
-          {professionCategoryOptions.map((option) => (
-            <option key={option.category} value={option.category}>
-              {option.title}
-            </option>
-          ))}
+          {professionCategoryOptions
+            .filter((option) => option.catalog !== null)
+            .map((option) => (
+              <option key={option.category} value={option.category}>
+                {option.title}
+              </option>
+            ))}
         </select>
         <p className="text-xs leading-relaxed text-pp-ink-soft">{activeCategory.description}</p>
       </div>
@@ -125,22 +127,65 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
           </p>
         ) : (
           <div className="space-y-6">
-            {universalResults.length > 0 && (
+            {blankTemplate && (
               <section className="space-y-2">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
-                  Modelos essenciais para todos
+                  Começar do zero
                 </p>
-                <div className="space-y-1">{universalResults.map(renderItem)}</div>
+                <div className="space-y-0.5">{renderItem(blankTemplate)}</div>
               </section>
             )}
 
             {professionalResults.length > 0 && (
-              <section className="space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
-                  Modelos de {activeCategory.title}
-                </p>
-                <div className="space-y-1">{professionalResults.map(renderItem)}</div>
-              </section>
+              <details className="group">
+                <summary className="flex items-center justify-between gap-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-lg px-1 py-1 hover:bg-pp-hairline-soft/60 transition">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
+                    Modelos de {activeCategory.title}
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className="shrink-0 text-pp-ink-soft transition-transform duration-200 group-open:rotate-180"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </summary>
+                <div className="mt-2 space-y-0.5">{professionalResults.map(renderItem)}</div>
+              </details>
+            )}
+
+            {generalResults.length > 0 && (
+              <details className="group">
+                <summary className="flex items-center justify-between gap-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-lg px-1 py-1 hover:bg-pp-hairline-soft/60 transition">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
+                    Documentos gerais
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className="shrink-0 text-pp-ink-soft transition-transform duration-200 group-open:rotate-180"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </summary>
+                <div className="mt-2 space-y-0.5">{generalResults.map(renderItem)}</div>
+              </details>
             )}
 
             {!hasCatalog && (

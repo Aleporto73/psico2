@@ -109,8 +109,13 @@ export function useDocStudioState() {
       if (!isMounted) return;
 
       setProfile((data as ReportProfile | null) ?? null);
-      // Categoria reflete sempre a profissão do usuário (mesmo com rascunho restaurado).
-      const nextCategory = categoryFromProfile(data as ReportProfile | null);
+      // Categoria reflete a profissão do usuário; mas se ela não tiver catálogo
+      // próprio (fono/TO/médico/pediatra/outro — ocultas do seletor), cai em
+      // 'psicopedagogo' (visível), para o <select> nunca ficar num valor sem
+      // <option> correspondente. Não altera a função pura categoryFromProfile.
+      const resolvedCategory = categoryFromProfile(data as ReportProfile | null);
+      const nextCategory =
+        catalogForCategory(resolvedCategory) !== null ? resolvedCategory : 'psicopedagogo';
       setCategory(nextCategory);
       if (!restoredDraftRef.current) {
         const catalog = catalogForCategory(nextCategory);
