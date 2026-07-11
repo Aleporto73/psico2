@@ -59,12 +59,9 @@ on conflict (slug) do update set
   description   = excluded.description,
   access_url    = excluded.access_url,
   price         = excluded.price,
-  billing_type  = excluded.billing_type,
-  -- is_active forçado a false (NÃO usa excluded): reaplicar a migration
-  -- nunca ativa o produto automaticamente durante o teste controlado.
-  is_active     = false;
-  -- checkout_url NÃO entra no update: preserva um checkout_url existente
-  -- já cadastrado manualmente.
+  billing_type  = excluded.billing_type;
+  -- is_active e checkout_url NÃO entram no update: preservam o valor atual
+  -- do banco. Reaplicar a migration nunca desativa um produto já ativado.
 
 -- ------------------------------------------------------------
 -- B) has_doc_studio_access(user_uuid uuid)
