@@ -57,6 +57,9 @@ export type TemplateKey =
   | 'psychopedagogy-entrevista-aprendente'
   | 'psychopedagogy-entrevista-detalhada-aluno'
   | 'neuropsychopedagogy-eoca'
+  | 'psychopedagogy-dados-devolutiva'
+  | 'psychopedagogy-sala-recursos-bimestral'
+  | 'psychopedagogy-sala-recursos-diario'
   // Universais (D1) — aparecem para todas as profissões.
   | 'universal_blank_document'
   | 'universal_attendance_statement'
