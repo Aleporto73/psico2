@@ -117,7 +117,10 @@ function ChecklistBlock({ block }: { block: Extract<InstrumentBlock, { type: 'ch
           </li>
         ))}
       </ul>
-      {block.notesLabel && <LineFieldBlock block={{ type: 'line-field', label: block.notesLabel, length: 'long' }} />}
+      {block.notesLabel &&
+        Array.from({ length: block.notesLines ?? 1 }, (_, i) => (
+          <LineFieldBlock key={i} block={{ type: 'line-field', label: i === 0 ? block.notesLabel! : '', length: 'long' }} />
+        ))}
     </section>
   );
 }

@@ -113,7 +113,10 @@ function appendInstrumentBlock(lines: string[], block: InstrumentBlock): void {
     case 'checklist': {
       if (block.title) lines.push(block.title.toUpperCase());
       block.items.forEach((item) => lines.push(`( ) ${item}`));
-      if (block.notesLabel) lines.push(`${labelWithColon(block.notesLabel)} ${lineOfUnderscores('long')}`);
+      if (block.notesLabel) {
+        lines.push(`${labelWithColon(block.notesLabel)} ${lineOfUnderscores('long')}`);
+        for (let i = 1; i < (block.notesLines ?? 1); i++) lines.push(lineOfUnderscores('long'));
+      }
       lines.push('');
       break;
     }

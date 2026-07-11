@@ -43,6 +43,7 @@ export type TemplateKey =
   | 'psychology-tcle'
   // Instrumentos (Modo Instrumento).
   | 'psychopedagogy-eoca'
+  | 'neuropsychopedagogy-eoca'
   // Universais (D1) — aparecem para todas as profissões.
   | 'universal_blank_document'
   | 'universal_attendance_statement'
@@ -149,7 +150,7 @@ export type InstrumentBlock =
   | { type: 'instruction'; label?: string; text: string; items?: string[] }
   | { type: 'line-field'; label: string; length?: 'short' | 'long'; width?: 'half' | 'full' }
   | { type: 'yes-no'; label: string; withLine?: boolean }
-  | { type: 'checklist'; title?: string; items: string[]; columns?: 1 | 2; notesLabel?: string }
+  | { type: 'checklist'; title?: string; items: string[]; columns?: 1 | 2; notesLabel?: string; notesLines?: number }
   | { type: 'free-space'; label?: string; heightMm?: number }
   // Título de seção simples (sem caixa), mesmo estilo do título do checklist —
   // para textos curtos que não precisam de destaque de instrução.
