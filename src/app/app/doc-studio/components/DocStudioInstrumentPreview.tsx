@@ -217,11 +217,14 @@ export function DocStudioInstrumentPreview({ state }: { state: DocStudioState })
               className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-[10.5px] font-semibold uppercase tracking-[0.2em]"
               style={{ color: activeColor, border: `1px solid ${activeColor}` }}
             >
-              Instrumento · Aplicar na sessão
+              Instrumento · Aplicação em papel
             </div>
             <h2 className="whitespace-pre-wrap font-serif italic text-[28px] leading-tight text-pp-ink md:text-[32px]">
               {selectedTemplate.title}
             </h2>
+            <p className="text-[12px] italic leading-relaxed text-pp-ink-soft">
+              Imprima e aplique na sessão — com a criança na sua frente, não na tela.
+            </p>
           </div>
 
           {groupInstrumentBlocks(selectedTemplate.instrumentBlocks ?? []).map((item, index) =>

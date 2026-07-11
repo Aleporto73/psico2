@@ -1677,7 +1677,7 @@ export const templates: DocStudioTemplate[] = [
     line: 'psychopedagogy',
     documentKind: 'structured_form',
     category: 'Instrumento',
-    title: 'Observação lúdica',
+    title: 'Observação lúdica — roteiro de aplicação',
     description:
       'Instrumento impresso (psicopedagogia) para registrar a observação lúdica na sessão: áreas de observação, análise e conclusão clínica.',
     defaultPurpose: '',
@@ -2333,7 +2333,7 @@ export const templates: DocStudioTemplate[] = [
     line: 'psychopedagogy',
     documentKind: 'structured_form',
     category: 'Instrumento',
-    title: 'Entrevista inicial com o professor',
+    title: 'Entrevista inicial com o professor — roteiro de aplicação',
     description:
       'Instrumento impresso (psicopedagogia) para registrar informações coletadas na entrevista inicial com o professor: queixa, contexto e hipóteses de trabalho.',
     defaultPurpose: '',
@@ -2651,7 +2651,7 @@ export const templates: DocStudioTemplate[] = [
     line: 'psychopedagogy',
     documentKind: 'structured_form',
     category: 'Instrumento',
-    title: 'Relatório de observação escolar',
+    title: 'Relatório de observação escolar — roteiro de aplicação',
     description:
       'Instrumento impresso (psicopedagogia) para registrar a observação do aluno em sala de aula: aspectos físicos, sociais, emocionais e cognitivos.',
     defaultPurpose: '',
@@ -3032,7 +3032,7 @@ export const templates: DocStudioTemplate[] = [
     line: 'psychopedagogy',
     documentKind: 'structured_form',
     category: 'Instrumento',
-    title: 'Entrevista com o aprendente',
+    title: 'Entrevista com o aprendente — roteiro de aplicação',
     description:
       'Instrumento impresso (psicopedagogia) para entrevistar o aprendente: percepção de si, trajetória escolar e avaliação do contexto escolar.',
     defaultPurpose: '',
