@@ -70,6 +70,7 @@ export type TemplateKey =
   | 'psychology-anamnese-bariatrica'
   | 'psychology-anamnese-infantil-breve'
   | 'psychology-anamnese-tcc'
+  | 'psychology-anamnese-neuropsicologica-infantil'
   // Universais (D1) — aparecem para todas as profissões.
   | 'universal_blank_document'
   | 'universal_attendance_statement'
