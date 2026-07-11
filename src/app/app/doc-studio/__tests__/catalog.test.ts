@@ -156,8 +156,8 @@ describe('catálogo v1 — contagem e status', () => {
     expect(getActiveTemplates().filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 
-  it('linha psychology tem 16 ativos', () => {
-    expect(getActiveTemplates().filter((t) => t.line === 'psychology')).toHaveLength(16);
+  it('linha psychology tem 17 ativos', () => {
+    expect(getActiveTemplates().filter((t) => t.line === 'psychology')).toHaveLength(17);
   });
 
   it('existe exatamente 1 template hidden: psychological-followup-summary', () => {
@@ -256,13 +256,13 @@ describe('Doc Studio por profissão (profession_category)', () => {
     expect(professionCategoryOptions).toHaveLength(8);
   });
 
-  it('psicologo abre Psicologia / Neuropsicologia = universais + 16 psicológicos', () => {
+  it('psicologo abre Psicologia / Neuropsicologia = universais + 17 psicológicos', () => {
     const option = getProfessionCategoryOption('psicologo');
     expect(option.title).toBe('Psicologia / Neuropsicologia');
     expect(option.catalog).toBe('psychology');
     const models = getTemplatesForCategory('psicologo');
-    expect(models).toHaveLength(23); // 16 psicologia + 7 universais
-    expect(models.filter((t) => t.line === 'psychology')).toHaveLength(16);
+    expect(models).toHaveLength(24); // 17 psicologia + 7 universais
+    expect(models.filter((t) => t.line === 'psychology')).toHaveLength(17);
     for (const universalId of UNIVERSAL_IDS) {
       expect(models.some((t) => t.id === universalId), `universal ausente: ${universalId}`).toBe(true);
     }
@@ -349,7 +349,7 @@ describe('categorias sem catálogo próprio (D1: mostram universais)', () => {
   it('Psicologia e Psicopedagogia seguem com catálogo (pelo menos 15 próprios + universais)', () => {
     expect(catalogForCategory('psicologo')).toBe('psychology');
     expect(catalogForCategory('psicopedagogo')).toBe('psychopedagogy');
-    expect(getTemplatesForCategory('psicologo').filter((t) => t.line === 'psychology')).toHaveLength(16);
+    expect(getTemplatesForCategory('psicologo').filter((t) => t.line === 'psychology')).toHaveLength(17);
     expect(getTemplatesForCategory('psicopedagogo').filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 });

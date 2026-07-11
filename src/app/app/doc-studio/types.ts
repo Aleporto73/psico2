@@ -66,6 +66,7 @@ export type TemplateKey =
   | 'psychopedagogy-sala-recursos-bimestral'
   | 'psychopedagogy-sala-recursos-diario'
   | 'psychology-anamnese-infantil-adolescente'
+  | 'psychology-anamnese-adulto'
   // Universais (D1) — aparecem para todas as profissões.
   | 'universal_blank_document'
   | 'universal_attendance_statement'
