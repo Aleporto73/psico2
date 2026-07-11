@@ -41,6 +41,8 @@ export type TemplateKey =
   | 'psychology-online-protocol'
   | 'psychology-attendance-declaration'
   | 'psychology-tcle'
+  // Instrumentos (Modo Instrumento).
+  | 'psychopedagogy-eoca'
   // Universais (D1) — aparecem para todas as profissões.
   | 'universal_blank_document'
   | 'universal_attendance_statement'
@@ -139,6 +141,20 @@ export interface DocSection {
   title: string;
 }
 
+// Modo Instrumento: blocos de impressão em branco (aplicação em sessão), sem
+// ligação com DraftFields/sections. Deliberadamente paralelo ao motor de
+// campos de documento (ver nota de arquitetura no topo deste arquivo) — não
+// generalizar um motor único para os dois casos.
+export type InstrumentBlock =
+  | { type: 'instruction'; label?: string; text: string; items?: string[] }
+  | { type: 'line-field'; label: string; length?: 'short' | 'long'; width?: 'half' | 'full' }
+  | { type: 'yes-no'; label: string; withLine?: boolean }
+  | { type: 'checklist'; title?: string; items: string[]; columns?: 1 | 2; notesLabel?: string }
+  | { type: 'free-space'; label?: string; heightMm?: number }
+  // Título de seção simples (sem caixa), mesmo estilo do título do checklist —
+  // para textos curtos que não precisam de destaque de instrução.
+  | { type: 'section-title'; title: string; text?: string };
+
 export interface DocStudioTemplate {
   id: TemplateKey;
   schemaVersion: number;
@@ -165,6 +181,11 @@ export interface DocStudioTemplate {
   essentialFields?: DraftFieldKey[];
   optionalFields?: DraftFieldKey[];
   skeleton?: string;
+  // Modo Instrumento (aditivo): ausência de `mode` = 'document' (comportamento
+  // atual, inalterado). `instrumentBlocks` só é lido quando mode === 'instrument'.
+  // Modelos de instrumento mantêm sections/guidedFields como [] (nada a digitar).
+  mode?: 'document' | 'instrument';
+  instrumentBlocks?: InstrumentBlock[];
 }
 
 export interface ColorOption {

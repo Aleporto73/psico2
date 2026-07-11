@@ -31,6 +31,40 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
     setShowOptional(false);
   }, [selectedTemplate?.id]);
 
+  // Modo Instrumento: nada para digitar — faixa horizontal com aviso + ações
+  // (renderizada em DocStudioInstrumentShell, acima da folha, não numa coluna).
+  if (selectedTemplate?.mode === 'instrument') {
+    return (
+      <div className="flex flex-col gap-4 rounded-block border border-pp-hairline bg-pp-block-cream/40 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-serif italic text-pp-ink-soft text-sm">{selectedTemplate.title}</p>
+          <p className="text-sm leading-relaxed text-pp-ink">
+            Instrumento para imprimir e aplicar na sessão. Você também pode copiar e adaptar no Word.
+          </p>
+        </div>
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:shrink-0">
+          <button
+            type="button"
+            onClick={handlePrint}
+            className="inline-flex items-center justify-center gap-2 rounded-pill bg-pp-ink px-6 py-3 text-sm font-medium text-pp-canvas transition hover:bg-pp-ink-soft"
+          >
+            <Printer className="h-4 w-4" />
+            Imprimir
+          </button>
+          <button
+            type="button"
+            onClick={handleCopy}
+            aria-live="polite"
+            className="inline-flex items-center justify-center gap-1.5 px-2 py-1 text-xs font-medium text-pp-ink-soft underline-offset-4 transition hover:text-pp-ink hover:underline"
+          >
+            {copyState === 'success' ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copyState === 'success' ? 'Pronto para colar' : copyState === 'error' ? 'Falhou' : 'Copiar para Word'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Categoria sem catálogo: estado vazio premium, sem campos guiados nem ações.
   if (!selectedTemplate) {
     return (

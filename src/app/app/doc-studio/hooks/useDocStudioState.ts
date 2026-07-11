@@ -30,7 +30,7 @@ import {
 } from '../templates';
 import { getTemplatesForCategory, getTemplatesForLine } from '../template-catalog';
 import { buildHeader, getHeaderMissingItems, getProfessionalSignature } from '../lib/profile';
-import { composePlainText } from '../lib/copy';
+import { composeInstrumentText, composePlainText } from '../lib/copy';
 import { clearDraft, loadDraft, saveDraft } from '../lib/storage';
 
 function nowIso(): string {
@@ -243,8 +243,17 @@ export function useDocStudioState() {
 
   const handleCopy = useCallback(async () => {
     if (!selectedTemplate) return;
-    const lineLabel = getProfessionCategoryOption(category).title;
-    const text = composePlainText(profile, selectedTemplate, fields, showHeader, showSignature, lineLabel);
+    const text =
+      selectedTemplate.mode === 'instrument'
+        ? composeInstrumentText(profile, selectedTemplate, showHeader, showSignature)
+        : composePlainText(
+            profile,
+            selectedTemplate,
+            fields,
+            showHeader,
+            showSignature,
+            getProfessionCategoryOption(category).title,
+          );
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);

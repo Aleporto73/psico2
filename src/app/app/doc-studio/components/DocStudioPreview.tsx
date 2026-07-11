@@ -9,6 +9,7 @@
 import { Palette } from 'lucide-react';
 import type { ReactNode } from 'react';
 import type { DocStudioState } from '../hooks/useDocStudioState';
+import { DocStudioInstrumentPreview } from './DocStudioInstrumentPreview';
 
 function MetaItem({ label, value }: { label: string; value: ReactNode }) {
   return (
@@ -35,6 +36,11 @@ export function DocStudioPreview({ state }: { state: DocStudioState }) {
     loadingProfile,
     hasIncompleteSignature,
   } = state;
+
+  // Modo Instrumento: renderização paralela, sem sections/fields.
+  if (selectedTemplate?.mode === 'instrument') {
+    return <DocStudioInstrumentPreview state={state} />;
+  }
 
   // Categoria sem catálogo: prévia indisponível — não renderiza documento antigo.
   if (!selectedTemplate) {

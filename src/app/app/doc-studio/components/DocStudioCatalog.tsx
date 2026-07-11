@@ -54,7 +54,10 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
   // `professionCategories` (todas as profissões).
   const BLANK_TEMPLATE_ID = 'universal_blank_document';
   const blankTemplate = results.find((template) => template.id === BLANK_TEMPLATE_ID) ?? null;
-  const professionalResults = results.filter((template) => !template.professionCategories);
+  const instrumentResults = results.filter((template) => template.mode === 'instrument');
+  const professionalResults = results.filter(
+    (template) => !template.professionCategories && template.mode !== 'instrument',
+  );
   const generalResults = results.filter(
     (template) => template.professionCategories && template.id !== BLANK_TEMPLATE_ID,
   );
@@ -185,6 +188,32 @@ export function DocStudioCatalog({ state }: { state: DocStudioState }) {
                   </svg>
                 </summary>
                 <div className="mt-2 space-y-0.5">{generalResults.map(renderItem)}</div>
+              </details>
+            )}
+
+            {instrumentResults.length > 0 && (
+              <details className="group">
+                <summary className="flex items-center justify-between gap-2 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden rounded-lg px-1 py-1 hover:bg-pp-hairline-soft/60 transition">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-pp-ink-soft">
+                    Instrumentos de avaliação
+                  </span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className="shrink-0 text-pp-ink-soft transition-transform duration-200 group-open:rotate-180"
+                  >
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </summary>
+                <div className="mt-2 space-y-0.5">{instrumentResults.map(renderItem)}</div>
               </details>
             )}
 
