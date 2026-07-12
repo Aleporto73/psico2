@@ -117,21 +117,24 @@ export function AppShell({
     router.push('/login');
   };
 
-  const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string; badgeTone?: 'neutral'; external?: boolean }[] = [
+  const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string; badgeTone?: 'neutral' | 'pink'; external?: boolean }[] = [
     { name: 'Dashboard',        path: '/app',                  icon: <IconDashboard /> },
     { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
     { name: 'Relatório Free',   path: '/app/assistente-gpt',   icon: <IconChat />, badge: 'Incluído', badgeTone: 'neutral' },
     { name: 'Relatório Pró',    path: '/app/assistente-pro',   icon: <IconSpark />, badge: 'Novo' },
     { name: 'Psico Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
-    { name: 'Doc Studio', path: '/app/doc-studio', icon: <IconDoc />, badge: 'Novo' },
+    { name: 'Doc Studio', path: '/app/doc-studio', icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
     { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
     { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
   ];
 
   // Classe do badge do menu: neutro (borda que herda a cor do texto — legível
   // nos estados ativo/inativo, sem verde) ou destaque verde para novidades.
-  const badgeClass = (tone?: 'neutral') =>
-    tone === 'neutral' ? 'border border-current opacity-60' : 'bg-green-500 text-white';
+  // ponytail: 'pink' é temporário pro Doc Studio — reverter removendo badgeTone: 'pink' do item acima.
+  const badgeClass = (tone?: 'neutral' | 'pink') =>
+    tone === 'neutral' ? 'border border-current opacity-60'
+    : tone === 'pink'  ? 'bg-pink-500 text-white'
+    :                    'bg-green-500 text-white';
 
   // Trilho fino SÓ na ferramenta do Doc Studio (rota /app/doc-studio COM
   // acesso). Na tela de venda (sem acesso) e em todas as outras rotas a
