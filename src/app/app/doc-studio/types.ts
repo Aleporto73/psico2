@@ -40,7 +40,40 @@ export type TemplateKey =
   | 'psychology-minor-authorization'
   | 'psychology-online-protocol'
   | 'psychology-attendance-declaration'
+  | 'psychology-multiprofessional-report'
   | 'psychology-tcle'
+  // Instrumentos (Modo Instrumento).
+  | 'psychopedagogy-eoca'
+  | 'psychopedagogy-observacao-ludica'
+  | 'psychopedagogy-logico-matematico'
+  | 'psychopedagogy-roteiro-descritivo-aluno'
+  | 'psychopedagogy-levantamento-desempenho-escolar'
+  | 'psychopedagogy-capacidades-basicas'
+  | 'psychopedagogy-entrevista-inicial-professor'
+  | 'psychopedagogy-relatorio-professor'
+  | 'psychopedagogy-observacao-escolar'
+  | 'psychopedagogy-ficha-cadastro'
+  | 'psychopedagogy-coordenacao-motora-fina'
+  | 'psychopedagogy-perfil-aprendente'
+  | 'psychopedagogy-entrevista-aprendente'
+  | 'psychopedagogy-entrevista-detalhada-aluno'
+  | 'neuropsychopedagogy-eoca'
+  | 'neuropsychopedagogy-anamnese-otimizada'
+  | 'neuropsychopedagogy-entrevista-contratual'
+  | 'neuropsychopedagogy-encaminhamento'
+  | 'neuropsychopedagogy-informe-devolucao'
+  | 'neuropsychopedagogy-anamnese-detalhada'
+  | 'psychopedagogy-dados-devolutiva'
+  | 'psychopedagogy-sala-recursos-bimestral'
+  | 'psychopedagogy-sala-recursos-diario'
+  | 'psychology-anamnese-infantil-adolescente'
+  | 'psychology-anamnese-adulto'
+  | 'psychology-anamnese-bariatrica'
+  | 'psychology-anamnese-infantil-breve'
+  | 'psychology-anamnese-tcc'
+  | 'psychology-anamnese-neuropsicologica-infantil'
+  | 'psychology-anamnese-neuropsicologica-adulto'
+  | 'psychology-anamnese-psicossocial'
   // Universais (D1) — aparecem para todas as profissões.
   | 'universal_blank_document'
   | 'universal_attendance_statement'
@@ -139,6 +172,23 @@ export interface DocSection {
   title: string;
 }
 
+// Modo Instrumento: blocos de impressão em branco (aplicação em sessão), sem
+// ligação com DraftFields/sections. Deliberadamente paralelo ao motor de
+// campos de documento (ver nota de arquitetura no topo deste arquivo) — não
+// generalizar um motor único para os dois casos.
+export type InstrumentBlock =
+  | { type: 'instruction'; label?: string; text: string; items?: string[] }
+  | { type: 'line-field'; label: string; length?: 'short' | 'long'; width?: 'half' | 'full' }
+  | { type: 'yes-no'; label: string; withLine?: boolean }
+  | { type: 'checklist'; title?: string; items: string[]; columns?: 1 | 2; notesLabel?: string; notesLines?: number }
+  | { type: 'free-space'; label?: string; heightMm?: number }
+  // Título de seção simples (sem caixa), mesmo estilo do título do checklist —
+  // para textos curtos que não precisam de destaque de instrução.
+  | { type: 'section-title'; title: string; text?: string }
+  // Lista-guia: bullets descritivos (pontos a observar) sem checkbox, seguidos
+  // de linhas em branco para escrita à mão. Sem colunas — itens são frases.
+  | { type: 'guide-list'; title?: string; items: string[]; notesLabel?: string; notesLines?: number };
+
 export interface DocStudioTemplate {
   id: TemplateKey;
   schemaVersion: number;
@@ -165,6 +215,11 @@ export interface DocStudioTemplate {
   essentialFields?: DraftFieldKey[];
   optionalFields?: DraftFieldKey[];
   skeleton?: string;
+  // Modo Instrumento (aditivo): ausência de `mode` = 'document' (comportamento
+  // atual, inalterado). `instrumentBlocks` só é lido quando mode === 'instrument'.
+  // Modelos de instrumento mantêm sections/guidedFields como [] (nada a digitar).
+  mode?: 'document' | 'instrument';
+  instrumentBlocks?: InstrumentBlock[];
 }
 
 export interface ColorOption {
@@ -178,6 +233,8 @@ export interface DocStudioDraft {
   line: LineKey;
   templateKey: TemplateKey;
   fields: DraftFields;
+  sectionTitles?: Record<string, string>;
+  extraSectionsVisible?: number;
   primaryColor: string;
   fontStyle: FontStyle;
   density: Density;

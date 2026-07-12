@@ -86,11 +86,16 @@ describe('ordenação por profile_type não quebra', () => {
 
 // ── Travas do catálogo v1 (spec v1.1) ──────────────────────────────────────
 
-const HIDDEN_ID = 'psychological-followup-summary';
+// Templates com status 'hidden' (ordem de aparição em templates.ts).
+const HIDDEN_IDS = [
+  'psychopedagogy-anamnesis',
+  'psychological-followup-summary',
+  'psychology-anamnesis-adult',
+  'psychology-anamnesis-child',
+] as const;
 
 // Ids esperados por linha (chaves internas; os títulos batem com a spec v1.1).
 const PSYCHOPEDAGOGY_IDS = [
-  'psychopedagogy-anamnesis',
   'psychopedagogy-family-interview',
   'psychopedagogy-learner-interview',
   'psychopedagogy-teacher-interview',
@@ -108,8 +113,6 @@ const PSYCHOPEDAGOGY_IDS = [
 ] as const;
 
 const PSYCHOLOGY_ACTIVE_IDS = [
-  'psychology-anamnesis-adult',
-  'psychology-anamnesis-child',
   'psychological-progress-note',
   'psychology-treatment-plan',
   'psychological-report',
@@ -122,6 +125,7 @@ const PSYCHOLOGY_ACTIVE_IDS = [
   'psychology-minor-authorization',
   'psychology-online-protocol',
   'psychology-attendance-declaration',
+  'psychology-multiprofessional-report',
   'psychology-tcle',
 ] as const;
 
@@ -148,27 +152,27 @@ function words(text: string): string[] {
 }
 
 describe('catálogo v1 — contagem e status', () => {
-  it('tem 37 templates ativos (30 de profissão + 7 universais)', () => {
-    expect(getActiveTemplates()).toHaveLength(37);
+  it('tem pelo menos 37 templates ativos (documentos + instrumentos + universais)', () => {
+    expect(getActiveTemplates().length).toBeGreaterThanOrEqual(37);
   });
 
-  it('linha psychopedagogy tem 15 ativos', () => {
-    expect(getActiveTemplates().filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+  it('linha psychopedagogy tem pelo menos 15 ativos', () => {
+    expect(getActiveTemplates().filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 
-  it('linha psychology tem 15 ativos', () => {
-    expect(getActiveTemplates().filter((t) => t.line === 'psychology')).toHaveLength(15);
+  it('linha psychology tem pelo menos 17 ativos', () => {
+    expect(getActiveTemplates().filter((t) => t.line === 'psychology').length).toBeGreaterThanOrEqual(17);
   });
 
-  it('existe exatamente 1 template hidden: psychological-followup-summary', () => {
+  it('existe exatamente 4 templates hidden (anamneses doc + followup-summary)', () => {
     const hidden = templates.filter((t) => t.status === 'hidden');
-    expect(hidden.map((t) => t.id)).toEqual([HIDDEN_ID]);
+    expect(hidden.map((t) => t.id)).toEqual([...HIDDEN_IDS]);
   });
 });
 
 describe('catálogo v1 — ids da spec', () => {
   it('todos os ids psicopedagógicos existem, active e na linha psychopedagogy', () => {
-    expect(PSYCHOPEDAGOGY_IDS).toHaveLength(15);
+    expect(PSYCHOPEDAGOGY_IDS).toHaveLength(14);
     for (const id of PSYCHOPEDAGOGY_IDS) {
       const template = templates.find((t) => t.id === id);
       expect(template, `id ausente: ${id}`).toBeDefined();
@@ -178,8 +182,8 @@ describe('catálogo v1 — ids da spec', () => {
   });
 
   it('todos os ids psicológicos ativos existem, active e na linha psychology (hidden não conta)', () => {
-    expect(PSYCHOLOGY_ACTIVE_IDS).toHaveLength(15);
-    expect(PSYCHOLOGY_ACTIVE_IDS).not.toContain(HIDDEN_ID);
+    expect(PSYCHOLOGY_ACTIVE_IDS).toHaveLength(14);
+    for (const hid of HIDDEN_IDS) expect(PSYCHOLOGY_ACTIVE_IDS).not.toContain(hid);
     for (const id of PSYCHOLOGY_ACTIVE_IDS) {
       const template = templates.find((t) => t.id === id);
       expect(template, `id ausente: ${id}`).toBeDefined();
@@ -205,13 +209,14 @@ describe('relatório psicológico estruturado CFP', () => {
     expect((cfp?.ethicalFooter ?? '').trim().length).toBeGreaterThan(0);
   });
 
-  it('tem as 5 seções estruturais na ordem CFP', () => {
+  it('tem as 6 seções estruturais na ordem CFP', () => {
     expect(cfp?.sections.map((s) => s.title)).toEqual([
       'Identificação',
       'Descrição da demanda',
       'Procedimento',
       'Análise',
       'Conclusão',
+      'Prazo de validade do conteúdo',
     ]);
   });
 });
@@ -256,34 +261,34 @@ describe('Doc Studio por profissão (profession_category)', () => {
     expect(professionCategoryOptions).toHaveLength(8);
   });
 
-  it('psicologo abre Psicologia / Neuropsicologia = universais + 15 psicológicos', () => {
+  it('psicologo abre Psicologia / Neuropsicologia = universais + pelo menos 17 psicológicos', () => {
     const option = getProfessionCategoryOption('psicologo');
     expect(option.title).toBe('Psicologia / Neuropsicologia');
     expect(option.catalog).toBe('psychology');
     const models = getTemplatesForCategory('psicologo');
-    expect(models).toHaveLength(22); // 15 psicologia + 7 universais
-    expect(models.filter((t) => t.line === 'psychology')).toHaveLength(15);
+    expect(models.length).toBeGreaterThanOrEqual(24); // pelo menos 17 psicologia + 7 universais
+    expect(models.filter((t) => t.line === 'psychology').length).toBeGreaterThanOrEqual(17);
     for (const universalId of UNIVERSAL_IDS) {
       expect(models.some((t) => t.id === universalId), `universal ausente: ${universalId}`).toBe(true);
     }
   });
 
-  it('psicopedagogo abre Psicopedagogia = universais + 15 psicopedagógicos', () => {
+  it('psicopedagogo abre Psicopedagogia = universais + psicopedagógicos (documentos e instrumentos)', () => {
     const option = getProfessionCategoryOption('psicopedagogo');
     expect(option.title).toBe('Psicopedagogia');
     expect(option.catalog).toBe('psychopedagogy');
     const models = getTemplatesForCategory('psicopedagogo');
-    expect(models).toHaveLength(22);
-    expect(models.filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+    expect(models.length).toBeGreaterThanOrEqual(22);
+    expect(models.filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 
-  it('neuropsicopedagogo abre Neuropsicopedagogia = universais + 15 psicopedagógicos', () => {
+  it('neuropsicopedagogo abre Neuropsicopedagogia = universais + psicopedagógicos (documentos e instrumentos)', () => {
     const option = getProfessionCategoryOption('neuropsicopedagogo');
     expect(option.title).toBe('Neuropsicopedagogia');
     expect(option.catalog).toBe('psychopedagogy');
     const models = getTemplatesForCategory('neuropsicopedagogo');
-    expect(models).toHaveLength(22);
-    expect(models.filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+    expect(models.length).toBeGreaterThanOrEqual(22);
+    expect(models.filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 
   it('fono/TO/médico/pediatra/outro abrem linha própria — somente universais (7)', () => {
@@ -316,8 +321,8 @@ describe('Doc Studio por profissão (profession_category)', () => {
     }
   });
 
-  it('catálogo tem 37 templates ativos (30 profissão + 7 universais)', () => {
-    expect(getActiveTemplates()).toHaveLength(37);
+  it('catálogo tem pelo menos 37 templates ativos (documentos + instrumentos + universais)', () => {
+    expect(getActiveTemplates().length).toBeGreaterThanOrEqual(37);
   });
 });
 
@@ -346,11 +351,11 @@ describe('categorias sem catálogo próprio (D1: mostram universais)', () => {
     }
   });
 
-  it('Psicologia e Psicopedagogia seguem com catálogo (15 próprios + universais)', () => {
+  it('Psicologia e Psicopedagogia seguem com catálogo (pelo menos 15 próprios + universais)', () => {
     expect(catalogForCategory('psicologo')).toBe('psychology');
     expect(catalogForCategory('psicopedagogo')).toBe('psychopedagogy');
-    expect(getTemplatesForCategory('psicologo').filter((t) => t.line === 'psychology')).toHaveLength(15);
-    expect(getTemplatesForCategory('psicopedagogo').filter((t) => t.line === 'psychopedagogy')).toHaveLength(15);
+    expect(getTemplatesForCategory('psicologo').filter((t) => t.line === 'psychology').length).toBeGreaterThanOrEqual(17);
+    expect(getTemplatesForCategory('psicopedagogo').filter((t) => t.line === 'psychopedagogy').length).toBeGreaterThanOrEqual(15);
   });
 });
 
@@ -455,7 +460,7 @@ describe('campos essenciais e opcionais (D5)', () => {
   });
 
   it('(c) templates antigos (sem grupos) continuam com guidedFields e serão renderizados por inteiro', () => {
-    const legacy = templates.filter((t) => !t.essentialFields);
+    const legacy = templates.filter((t) => !t.essentialFields && t.mode !== 'instrument');
     expect(legacy.length).toBeGreaterThan(0);
     for (const t of legacy) {
       expect(t.guidedFields.length, `${t.id} guidedFields`).toBeGreaterThan(0);

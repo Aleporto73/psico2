@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { DocStudioDraft } from '../types';
 import { initialDraft } from '../templates';
 import {
+  DRAFT_SCHEMA_VERSION,
   DRAFT_STORAGE_KEY,
   clearDraft,
   loadDraft,
@@ -31,7 +32,7 @@ function createMemoryStorage(): Storage {
 }
 
 const sampleDraft: DocStudioDraft = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   line: 'psychopedagogy',
   templateKey: 'family-feedback',
   fields: { ...initialDraft, subjectName: 'Fulano' },
@@ -70,10 +71,10 @@ describe('parseStoredDraft schemaVersion', () => {
   });
 
   it('aceita o campo legado "version"', () => {
-    const legacy = JSON.stringify({ ...sampleDraft, schemaVersion: undefined, version: 1 });
+    const legacy = JSON.stringify({ ...sampleDraft, schemaVersion: undefined, version: 2 });
     const parsed = parseStoredDraft(legacy, NOW);
     expect(parsed).not.toBeNull();
-    expect(parsed?.schemaVersion).toBe(1);
+    expect(parsed?.schemaVersion).toBe(2);
   });
 
   it('retorna null para entrada inválida', () => {
@@ -98,5 +99,31 @@ describe('storage indisponível', () => {
 
   it('expõe a chave de armazenamento', () => {
     expect(DRAFT_STORAGE_KEY).toContain('doc-studio');
+  });
+});
+
+describe('schema version — regressão schemaVersion hardcoded', () => {
+  // Este teste garante que o schemaVersion gravado no JSON é sempre o valor
+  // da constante DRAFT_SCHEMA_VERSION, nunca um literal hardcoded.
+  // Motivação: bug em que useDocStudioState gravava schemaVersion:1 enquanto
+  // a guarda de leitura exigia DRAFT_SCHEMA_VERSION (2) — rascunho sumia no F5.
+  it('roundtrip completo: fields voltam idênticos após save+load', () => {
+    const storage = createMemoryStorage();
+    const draft: DocStudioDraft = { ...sampleDraft, fields: { ...initialDraft, subjectName: 'Teste' } };
+    saveDraft(draft, storage);
+
+    // Verifica que o JSON gravado usa DRAFT_SCHEMA_VERSION, não um literal.
+    const raw = JSON.parse(storage.getItem(DRAFT_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
+    expect(raw.schemaVersion).toBe(DRAFT_SCHEMA_VERSION);
+
+    // Verifica que loadDraft aceita e devolve os fields intactos.
+    const loaded = loadDraft(NOW, storage);
+    expect(loaded).not.toBeNull();
+    expect(loaded?.fields.subjectName).toBe('Teste');
+  });
+
+  it('draft com schemaVersion literal 1 é rejeitado pelo loadDraft atual', () => {
+    const buggyDraft = JSON.stringify({ ...sampleDraft, schemaVersion: 1 });
+    expect(parseStoredDraft(buggyDraft, NOW)).toBeNull();
   });
 });

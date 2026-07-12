@@ -30,8 +30,8 @@ import {
 } from '../templates';
 import { getTemplatesForCategory, getTemplatesForLine } from '../template-catalog';
 import { buildHeader, getHeaderMissingItems, getProfessionalSignature } from '../lib/profile';
-import { composePlainText } from '../lib/copy';
-import { clearDraft, loadDraft, saveDraft } from '../lib/storage';
+import { composeInstrumentText, composePlainText } from '../lib/copy';
+import { DRAFT_SCHEMA_VERSION, clearDraft, loadDraft, saveDraft } from '../lib/storage';
 
 function nowIso(): string {
   return new Date().toISOString();
@@ -45,6 +45,8 @@ export function useDocStudioState() {
   const [category, setCategory] = useState<ProfessionCategory>('psicopedagogo');
   const [templateKey, setTemplateKey] = useState<TemplateKey>('family-feedback');
   const [fields, setFields] = useState<DraftFields>(initialDraft);
+  const [sectionTitles, setSectionTitles] = useState<Record<string, string>>({});
+  const [extraSectionsVisible, setExtraSectionsVisible] = useState(0);
   const [primaryColor, setPrimaryColor] = useState(colorOptions[0].value);
   const [fontStyle, setFontStyle] = useState<FontStyle>('editorial');
   const [blackAndWhite, setBlackAndWhite] = useState(false);
@@ -68,6 +70,8 @@ export function useDocStudioState() {
         setLine(storedDraft.line);
         setTemplateKey(storedDraft.templateKey);
         setFields(storedDraft.fields);
+        if (storedDraft.sectionTitles) setSectionTitles(storedDraft.sectionTitles);
+        if (storedDraft.extraSectionsVisible) setExtraSectionsVisible(storedDraft.extraSectionsVisible);
         setPrimaryColor(storedDraft.primaryColor);
         setFontStyle(storedDraft.fontStyle);
         setBlackAndWhite(storedDraft.blackAndWhite);
@@ -109,8 +113,13 @@ export function useDocStudioState() {
       if (!isMounted) return;
 
       setProfile((data as ReportProfile | null) ?? null);
-      // Categoria reflete sempre a profissão do usuário (mesmo com rascunho restaurado).
-      const nextCategory = categoryFromProfile(data as ReportProfile | null);
+      // Categoria reflete a profissão do usuário; mas se ela não tiver catálogo
+      // próprio (fono/TO/médico/pediatra/outro — ocultas do seletor), cai em
+      // 'psicopedagogo' (visível), para o <select> nunca ficar num valor sem
+      // <option> correspondente. Não altera a função pura categoryFromProfile.
+      const resolvedCategory = categoryFromProfile(data as ReportProfile | null);
+      const nextCategory =
+        catalogForCategory(resolvedCategory) !== null ? resolvedCategory : 'psicopedagogo';
       setCategory(nextCategory);
       if (!restoredDraftRef.current) {
         const catalog = catalogForCategory(nextCategory);
@@ -164,10 +173,12 @@ export function useDocStudioState() {
 
     const saveTimer = window.setTimeout(() => {
       const draft: DocStudioDraft = {
-        schemaVersion: 1,
+        schemaVersion: DRAFT_SCHEMA_VERSION,
         line,
         templateKey: selectedTemplate?.id ?? templateKey,
         fields,
+        sectionTitles: Object.keys(sectionTitles).length > 0 ? sectionTitles : undefined,
+        extraSectionsVisible: extraSectionsVisible > 0 ? extraSectionsVisible : undefined,
         primaryColor,
         fontStyle,
         density,
@@ -189,6 +200,8 @@ export function useDocStudioState() {
     hasHydratedDraft,
     line,
     primaryColor,
+    sectionTitles,
+    extraSectionsVisible,
     selectedTemplate?.id,
     templateKey,
     showHeader,
@@ -199,13 +212,20 @@ export function useDocStudioState() {
     setFields((current) => ({ ...current, [key]: value }));
   }, []);
 
+  const updateSectionTitle = useCallback((key: string, value: string) => {
+    setSectionTitles((current) => ({ ...current, [key]: value }));
+  }, []);
+
   const updateTemplate = useCallback((nextTemplateKey: TemplateKey) => {
+    if (nextTemplateKey === templateKey) return;
     const nextTemplate = templates.find((template) => template.id === nextTemplateKey) ?? templates[0];
     setTemplateKey(nextTemplate.id);
     // Universais não têm `line`: mantém a linha atual.
     if (nextTemplate.line) setLine(nextTemplate.line);
-    setFields((current) => ({ ...current, documentPurpose: nextTemplate.defaultPurpose }));
-  }, []);
+    setFields(getDefaultFieldsForTemplate(nextTemplate));
+    setSectionTitles({});
+    setExtraSectionsVisible(0);
+  }, [templateKey]);
 
   const updateCategory = useCallback((nextCategory: ProfessionCategory) => {
     setCategory(nextCategory);
@@ -224,6 +244,8 @@ export function useDocStudioState() {
     setDraftStatus(clearDraft() ? 'cleared' : 'unavailable');
 
     setFields(selectedTemplate ? getDefaultFieldsForTemplate(selectedTemplate) : initialDraft);
+    setSectionTitles({});
+    setExtraSectionsVisible(0);
     if (selectedTemplate) {
       if (selectedTemplate.line) setLine(selectedTemplate.line);
       setTemplateKey(selectedTemplate.id);
@@ -238,8 +260,18 @@ export function useDocStudioState() {
 
   const handleCopy = useCallback(async () => {
     if (!selectedTemplate) return;
-    const lineLabel = getProfessionCategoryOption(category).title;
-    const text = composePlainText(profile, selectedTemplate, fields, showHeader, showSignature, lineLabel);
+    const text =
+      selectedTemplate.mode === 'instrument'
+        ? composeInstrumentText(profile, selectedTemplate, showHeader, showSignature)
+        : composePlainText(
+            profile,
+            selectedTemplate,
+            fields,
+            showHeader,
+            showSignature,
+            getProfessionCategoryOption(category).title,
+            sectionTitles,
+          );
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
@@ -290,6 +322,10 @@ export function useDocStudioState() {
     // campos
     fields,
     updateField,
+    sectionTitles,
+    updateSectionTitle,
+    extraSectionsVisible,
+    setExtraSectionsVisible,
     // aparência
     primaryColor,
     setPrimaryColor,
