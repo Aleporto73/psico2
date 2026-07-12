@@ -1,7 +1,5 @@
-import Link from 'next/link';
 import {
   FileText,
-  ArrowRight,
   ExternalLink,
   Files,
   PencilLine,
@@ -21,12 +19,9 @@ import { createClient } from '@/utils/supabase/server';
 // de venda do Flow (src/app/app/flow/page.tsx), sem copiar a lógica de acesso.
 
 const SLUG = 'psicoplanilhas-doc-studio';
-// Fallback quando ainda não há checkout_url: manda para o card na vitrine.
-const FALLBACK_CTA = '/app/produtos#psicoplanilhas-doc-studio';
+const CHECKOUT_FALLBACK_URL = 'https://www.payment.eng.br/checkout?product=4AGLRDAJ&price=E76AEH6L';
 
-// PLACEHOLDER temporário: reutiliza o vídeo do Flow enquanto o vídeo real do
-// Doc Studio não existe. Trocar por /videos/doc-studio-demo.mp4 quando houver.
-const DEMO_VIDEO_SRC = '/videos/flow-demo.mp4';
+const DEMO_VIDEO_SRC = '/videos/doc-studio-demo.mp4#t=2';
 
 const BENEFITS = [
   {
@@ -52,7 +47,7 @@ const BENEFITS = [
   {
     icon: FilePlus,
     title: 'Documento em branco',
-    description: 'Modelo livre pra escrever fora dos padrões.',
+    description: 'Títulos editáveis e até 6 seções. Escreva do seu jeito.',
   },
   {
     icon: Save,
@@ -68,7 +63,7 @@ const STEPS = [
   'Copie ou imprima em A4/PDF',
 ];
 
-// Sanfonas "Feito para a sua profissão". Nomes copiados VERBATIM do catálogo real
+// Sanfonas "Feito para a sua profissão". Títulos VERBATIM do catálogo real
 // (src/app/app/doc-studio/templates.ts). Só as 3 profissões com catálogo próprio;
 // Psicopedagogia e Neuropsicopedagogia compartilham o MESMO catálogo (psychopedagogy).
 // Cada sanfona lista os modelos PRÓPRIOS e depois os COMUNS. Nada inventado.
@@ -84,13 +79,12 @@ const COMMON_MODELS = [
   'TCLE simplificado',
 ];
 
-// 15 modelos da linha `psychopedagogy` (Psicopedagogia + Neuropsicopedagogia).
+// 14 modelos digitáveis da linha `psychopedagogy` (Psicopedagogia + Neuropsicopedagogia).
 const PSYCHOPEDAGOGY_MODELS = [
-  'Devolutiva psicopedagógica para família',
-  'Relatório de acompanhamento psicopedagógico',
-  'Registro de sessão psicopedagógica',
+  'Devolutiva para família',
+  'Relatório de acompanhamento',
+  'Registro de sessão',
   'Encaminhamento orientativo',
-  'Anamnese psicopedagógica inicial',
   'Entrevista com família',
   'Entrevista com aprendente',
   'Entrevista com professor/escola',
@@ -103,14 +97,13 @@ const PSYCHOPEDAGOGY_MODELS = [
   'Autorização / contrato / declaração simples',
 ];
 
-// 15 modelos ATIVOS da linha `psychology` (o 16º do catálogo é status: 'hidden').
+// 14 modelos digitáveis da linha `psychology` (4 templates têm status: 'hidden').
 const PSYCHOLOGY_MODELS = [
   'Síntese psicológica descritiva',
   'Relatório psicológico estruturado',
+  'Relatório multiprofissional',
   'Registro de evolução / acompanhamento',
   'Encaminhamento orientativo',
-  'Anamnese psicológica adulto',
-  'Anamnese psicológica infantil/adolescente',
   'Planejamento terapêutico inicial',
   'Parecer psicológico orientativo',
   'Devolutiva clínica em linguagem acessível',
@@ -118,14 +111,63 @@ const PSYCHOLOGY_MODELS = [
   'Contrato terapêutico',
   'Autorização para atendimento de menor',
   'Protocolo de atendimento online',
-  'Declaração de comparecimento / recibo',
+  'Declaração',
   'TCLE simplificado',
 ];
 
 const PROFESSION_ACCORDIONS: { title: string; own: string[] }[] = [
-  { title: 'Psicopedagogia', own: PSYCHOPEDAGOGY_MODELS },
-  { title: 'Psicologia / Neuropsicologia', own: PSYCHOLOGY_MODELS },
-  { title: 'Neuropsicopedagogia', own: PSYCHOPEDAGOGY_MODELS },
+  { title: 'Psicopedagogia · 21 modelos', own: PSYCHOPEDAGOGY_MODELS },
+  { title: 'Psicologia / Neuropsicologia · 21 modelos', own: PSYCHOLOGY_MODELS },
+  { title: 'Neuropsicopedagogia · 21 modelos', own: PSYCHOPEDAGOGY_MODELS },
+];
+
+// Instrumentos para aplicação em papel — mode: 'instrument' no catálogo.
+// Títulos VERBATIM de templates.ts.
+
+const PSYCHOPEDAGOGY_INSTRUMENTS = [
+  'EOCA — Entrevista operativa centrada na aprendizagem',
+  'Observação lúdica — roteiro de aplicação',
+  'Roteiro de observações do desempenho lógico-matemático',
+  'Roteiro descritivo inicial / anual de observação do aluno',
+  'Levantamento de desempenho escolar',
+  'Avaliação das capacidades básicas para aprendizagem',
+  'Entrevista inicial com o professor — roteiro de aplicação',
+  'Relatório do professor para intervenção psicopedagógica',
+  'Relatório de observação escolar — roteiro de aplicação',
+  'Ficha de cadastro',
+  'Avaliação da coordenação motora fina',
+  'Questionário de identificação do perfil do aprendente',
+  'Entrevista com o aprendente — roteiro de aplicação',
+  'Entrevista detalhada com o aluno',
+  'Dados para sessão devolutiva',
+  'Avaliação bimestral do aluno — Sala de Recursos',
+  'Acompanhamento diário do aluno — Sala de Recursos',
+];
+
+const PSYCHOLOGY_INSTRUMENTS = [
+  'Anamnese psicológica — infantil e adolescente',
+  'Anamnese psicológica — adulto',
+  'Anamnese psicológica — avaliação pré-cirúrgica bariátrica',
+  'Ficha de anamnese infantil — versão breve',
+  'Anamnese TCC — questionário inicial',
+  'Anamnese neuropsicológica infantil',
+  'Anamnese neuropsicológica adulto',
+  'Anamnese psicossocial',
+];
+
+const NEUROPSYCHOPEDAGOGY_INSTRUMENTS = [
+  'EOCA — Entrevista operativa centrada na aprendizagem',
+  'Anamnese neuropsicopedagógica — versão otimizada',
+  'Entrevista contratual',
+  'Ficha de encaminhamento neuropsicopedagógico',
+  'Informe de devolução neuropsicopedagógica',
+  'Anamnese neuropsicopedagógica — versão detalhada',
+];
+
+const INSTRUMENT_ACCORDIONS: { title: string; items: string[] }[] = [
+  { title: 'Psicopedagogia · 17 instrumentos', items: PSYCHOPEDAGOGY_INSTRUMENTS },
+  { title: 'Psicologia / Neuropsicologia · 8 instrumentos', items: PSYCHOLOGY_INSTRUMENTS },
+  { title: 'Neuropsicopedagogia · 6 instrumentos', items: NEUROPSYCHOPEDAGOGY_INSTRUMENTS },
 ];
 
 type LockedProduct = {
@@ -185,36 +227,22 @@ export async function DocStudioLocked() {
         </div>
 
         <p className="text-pp-ink-soft text-base leading-relaxed max-w-2xl">
-          Crie documentos profissionais direto no PsicoPlanilhas: escolha um modelo, preencha os
-          campos guiados e veja a folha pronta se montar ao lado. Sem instalar nada.
+          Crie documentos profissionais direto no PsicoPlanilhas: 35 modelos digitáveis e 31
+          instrumentos para imprimir. Escolha um modelo, preencha os campos guiados e veja a folha
+          pronta se montar ao lado. Ou comece do zero no documento em branco. Sem instalar nada.
         </p>
 
         <div>
-          {checkoutUrl ? (
-            <>
-              <a
-                href={checkoutUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
-              >
-                Comprar por {priceLabel}
-                <ExternalLink className="w-4 h-4" aria-hidden="true" />
-              </a>
-              <p className="text-xs text-pp-ink-soft mt-2">Você será levado ao checkout seguro.</p>
-            </>
-          ) : (
-            <>
-              <Link
-                href={FALLBACK_CTA}
-                className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
-              >
-                Ver formas de compra
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
-              </Link>
-              <p className="text-xs text-pp-ink-soft mt-2">O checkout estará disponível em instantes.</p>
-            </>
-          )}
+          <a
+            href={checkoutUrl ?? CHECKOUT_FALLBACK_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
+          >
+            Comprar por {priceLabel}
+            <ExternalLink className="w-4 h-4" aria-hidden="true" />
+          </a>
+          <p className="text-xs text-pp-ink-soft mt-2">Você será levado ao checkout seguro.</p>
         </div>
       </section>
 
@@ -292,6 +320,49 @@ export async function DocStudioLocked() {
                     ))}
                   </ul>
                 </div>
+              </div>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      {/* Instrumentos para aplicação em papel */}
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-medium text-pp-ink">Instrumentos para aplicação em papel</h2>
+          <p className="text-sm text-pp-ink-soft mt-1">Roteiros que você imprime em branco e preenche à mão durante a sessão. Não são digitáveis — são feitos para ir com você para o atendimento.</p>
+        </div>
+        <div className="space-y-3">
+          {INSTRUMENT_ACCORDIONS.map(({ title, items }) => (
+            <details
+              key={title}
+              name="doc-instruments"
+              className="group bg-white border border-pp-hairline rounded-xl overflow-hidden"
+            >
+              <summary className="flex items-center justify-between gap-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden px-4 py-3.5 text-pp-ink font-medium text-sm hover:bg-pp-hairline-soft transition">
+                <span>{title}</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  className="shrink-0 text-pp-ink-soft transition-transform duration-200 group-open:rotate-180"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </summary>
+              <div className="px-4 pb-4 pt-3 border-t border-pp-hairline-soft">
+                <ul className="space-y-1">
+                  {items.map((item) => (
+                    <li key={item} className="text-xs text-pp-ink-soft leading-relaxed">{item}</li>
+                  ))}
+                </ul>
               </div>
             </details>
           ))}
