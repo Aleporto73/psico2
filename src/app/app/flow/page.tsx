@@ -130,10 +130,11 @@ export default function AppFlowPage() {
         </div>
         <video
           src="/videos/flow-demo.mp4"
+          poster="/videos/flow-poster.png"
           controls
           muted
           playsInline
-          preload="metadata"
+          preload="none"
           className="w-full rounded-xl border border-pp-hairline shadow-sm"
         />
       </section>
