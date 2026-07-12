@@ -21,7 +21,7 @@ import { createClient } from '@/utils/supabase/server';
 const SLUG = 'psicoplanilhas-doc-studio';
 const CHECKOUT_FALLBACK_URL = 'https://www.payment.eng.br/checkout?product=4AGLRDAJ&price=E76AEH6L';
 
-const DEMO_VIDEO_SRC = '/videos/doc-studio-demo.mp4#t=2';
+const DEMO_VIDEO_SRC = '/videos/doc-studio-demo.mp4';
 
 const BENEFITS = [
   {
@@ -254,10 +254,11 @@ export async function DocStudioLocked() {
         </div>
         <video
           src={DEMO_VIDEO_SRC}
+          poster="/videos/doc-studio-poster.png"
           controls
           muted
           playsInline
-          preload="metadata"
+          preload="none"
           className="w-full rounded-xl border border-pp-hairline shadow-sm"
         />
       </section>
