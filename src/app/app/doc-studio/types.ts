@@ -233,6 +233,8 @@ export interface DocStudioDraft {
   line: LineKey;
   templateKey: TemplateKey;
   fields: DraftFields;
+  sectionTitles?: Record<string, string>;
+  extraSectionsVisible?: number;
   primaryColor: string;
   fontStyle: FontStyle;
   density: Density;

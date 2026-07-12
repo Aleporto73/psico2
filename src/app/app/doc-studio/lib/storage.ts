@@ -66,6 +66,11 @@ export function parseStoredDraft(rawDraft: string | null, now: string): DocStudi
       line,
       templateKey: template.id,
       fields: normalizeDraftFields(parsed.fields, defaults),
+      sectionTitles: isRecord(parsed.sectionTitles) ? (parsed.sectionTitles as Record<string, string>) : undefined,
+      extraSectionsVisible:
+        typeof parsed.extraSectionsVisible === 'number'
+          ? Math.max(0, Math.min(3, parsed.extraSectionsVisible))
+          : undefined,
       primaryColor,
       fontStyle: isFontStyle(parsed.fontStyle) ? parsed.fontStyle : 'editorial',
       density: isDensity(parsed.density) ? parsed.density : 'comfortable',

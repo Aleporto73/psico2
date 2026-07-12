@@ -15,6 +15,10 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
     activeCategory,
     fields,
     updateField,
+    sectionTitles,
+    updateSectionTitle,
+    extraSectionsVisible,
+    setExtraSectionsVisible,
     density,
     copyState,
     draftStatus,
@@ -84,6 +88,9 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
 
   // Documento em branco: título vem do campo editável (fallback quando vazio).
   const isBlankDocument = selectedTemplate.id === 'universal_blank_document';
+  const sectionsByKey = isBlankDocument
+    ? Object.fromEntries(selectedTemplate.sections.map((s) => [s.key, s]))
+    : {};
   const displayTitle = isBlankDocument
     ? fields.document_title.trim() || 'Documento em branco'
     : selectedTemplate.title;
@@ -100,21 +107,48 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
     ? selectedTemplate.guidedFields.filter((field) => !essentialKeys.has(field.key))
     : [];
 
-  const renderGuidedField = (field: GuidedField) => (
-    <div key={field.key} className="space-y-2">
-      <label htmlFor={field.key} className="text-xs font-medium text-pp-ink-soft">
-        {field.label}
-      </label>
-      <textarea
-        id={field.key}
-        value={fields[field.key]}
-        onChange={(event) => updateField(field.key, event.target.value)}
-        placeholder={field.placeholder ?? defaultFieldPlaceholders[field.key]}
-        rows={density === 'compact' ? 3 : 4}
-        className="w-full resize-y rounded-xl border border-pp-hairline bg-white px-4 py-3 text-sm leading-relaxed text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
-      />
-    </div>
-  );
+  // Para o blank: separa opcionais "normais" das 3 seções extras reveladas uma por clique.
+  // Para todos os outros templates: comportamento inalterado.
+  const BLANK_EXTRA_KEYS = new Set(['context', 'strengths', 'attentionPoints']);
+  const regularOptional = isBlankDocument
+    ? optionalGuided.filter((f) => !BLANK_EXTRA_KEYS.has(f.key))
+    : optionalGuided;
+  const extraSectionGuided = isBlankDocument
+    ? optionalGuided.filter((f) => BLANK_EXTRA_KEYS.has(f.key))
+    : [];
+
+  const renderGuidedField = (field: GuidedField) => {
+    const section = sectionsByKey[field.key];
+    return (
+      <div key={field.key} className="space-y-2">
+        {section && (
+          <>
+            <label htmlFor={`section-title-${field.key}`} className="text-xs font-medium text-pp-ink-soft">
+              Título da seção
+            </label>
+            <input
+              id={`section-title-${field.key}`}
+              value={sectionTitles[field.key] ?? ''}
+              onChange={(event) => updateSectionTitle(field.key, event.target.value)}
+              placeholder={section.title}
+              className="w-full rounded-xl border border-pp-hairline bg-white px-4 py-2.5 text-sm text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
+            />
+          </>
+        )}
+        <label htmlFor={field.key} className="text-xs font-medium text-pp-ink-soft">
+          {field.label}
+        </label>
+        <textarea
+          id={field.key}
+          value={fields[field.key]}
+          onChange={(event) => updateField(field.key, event.target.value)}
+          placeholder={field.placeholder ?? defaultFieldPlaceholders[field.key]}
+          rows={density === 'compact' ? 3 : 4}
+          className="w-full resize-y rounded-xl border border-pp-hairline bg-white px-4 py-3 text-sm leading-relaxed text-pp-ink transition focus:border-pp-ink focus:outline-none focus:ring-1 focus:ring-pp-ink/20"
+        />
+      </div>
+    );
+  };
 
   return (
     <>
@@ -223,7 +257,7 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
 
         {essentialGuided.map(renderGuidedField)}
 
-        {optionalGuided.length > 0 && (
+        {regularOptional.length > 0 && (
           <div className="space-y-5">
             <button
               type="button"
@@ -233,8 +267,20 @@ export function DocStudioFields({ state }: { state: DocStudioState }) {
             >
               {showOptional ? 'Ocultar detalhes' : 'Adicionar mais detalhes'}
             </button>
-            {showOptional && optionalGuided.map(renderGuidedField)}
+            {showOptional && regularOptional.map(renderGuidedField)}
           </div>
+        )}
+
+        {extraSectionGuided.slice(0, extraSectionsVisible).map(renderGuidedField)}
+
+        {extraSectionGuided.length > 0 && extraSectionsVisible < extraSectionGuided.length && (
+          <button
+            type="button"
+            onClick={() => setExtraSectionsVisible((n) => n + 1)}
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-pp-ink-soft underline-offset-4 transition hover:text-pp-ink hover:underline"
+          >
+            + Adicionar seção
+          </button>
         )}
       </div>
     </>

@@ -1228,19 +1228,24 @@ export const templates: DocStudioTemplate[] = [
     riskLevel: 'low',
     requiresHeader: true,
     essentialFields: ['document_title', 'subjectName', 'documentPurpose', 'observations'],
-    optionalFields: ['document_date', 'recommendations', 'nextSteps'],
+    optionalFields: ['recommendations', 'nextSteps', 'context', 'strengths', 'attentionPoints'],
     // document_title é renderizado como input de linha única (DocStudioFields), não como
     // guidedField (textarea). Fica só em essentialFields como dado.
     guidedFields: [
       { key: 'observations', label: 'Conteúdo do documento' },
-      { key: 'document_date', label: 'Data (opcional)' },
       { key: 'recommendations', label: 'Observações complementares (opcional)' },
       { key: 'nextSteps', label: 'Próximos passos (opcional)' },
+      { key: 'context', label: 'Seção adicional 1 (opcional)' },
+      { key: 'strengths', label: 'Seção adicional 2 (opcional)' },
+      { key: 'attentionPoints', label: 'Seção adicional 3 (opcional)' },
     ],
     sections: [
       { key: 'observations', title: 'Conteúdo' },
       { key: 'recommendations', title: 'Observações complementares' },
       { key: 'nextSteps', title: 'Próximos passos' },
+      { key: 'context', title: 'Seção adicional 1' },
+      { key: 'strengths', title: 'Seção adicional 2' },
+      { key: 'attentionPoints', title: 'Seção adicional 3' },
     ],
     skeleton: 'Finalidade: ___.\nConteúdo: ___.\nObservações: ___.',
     ethicalFooter:

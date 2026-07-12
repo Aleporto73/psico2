@@ -45,6 +45,8 @@ export function useDocStudioState() {
   const [category, setCategory] = useState<ProfessionCategory>('psicopedagogo');
   const [templateKey, setTemplateKey] = useState<TemplateKey>('family-feedback');
   const [fields, setFields] = useState<DraftFields>(initialDraft);
+  const [sectionTitles, setSectionTitles] = useState<Record<string, string>>({});
+  const [extraSectionsVisible, setExtraSectionsVisible] = useState(0);
   const [primaryColor, setPrimaryColor] = useState(colorOptions[0].value);
   const [fontStyle, setFontStyle] = useState<FontStyle>('editorial');
   const [blackAndWhite, setBlackAndWhite] = useState(false);
@@ -68,6 +70,8 @@ export function useDocStudioState() {
         setLine(storedDraft.line);
         setTemplateKey(storedDraft.templateKey);
         setFields(storedDraft.fields);
+        if (storedDraft.sectionTitles) setSectionTitles(storedDraft.sectionTitles);
+        if (storedDraft.extraSectionsVisible) setExtraSectionsVisible(storedDraft.extraSectionsVisible);
         setPrimaryColor(storedDraft.primaryColor);
         setFontStyle(storedDraft.fontStyle);
         setBlackAndWhite(storedDraft.blackAndWhite);
@@ -173,6 +177,8 @@ export function useDocStudioState() {
         line,
         templateKey: selectedTemplate?.id ?? templateKey,
         fields,
+        sectionTitles: Object.keys(sectionTitles).length > 0 ? sectionTitles : undefined,
+        extraSectionsVisible: extraSectionsVisible > 0 ? extraSectionsVisible : undefined,
         primaryColor,
         fontStyle,
         density,
@@ -194,6 +200,8 @@ export function useDocStudioState() {
     hasHydratedDraft,
     line,
     primaryColor,
+    sectionTitles,
+    extraSectionsVisible,
     selectedTemplate?.id,
     templateKey,
     showHeader,
@@ -204,6 +212,10 @@ export function useDocStudioState() {
     setFields((current) => ({ ...current, [key]: value }));
   }, []);
 
+  const updateSectionTitle = useCallback((key: string, value: string) => {
+    setSectionTitles((current) => ({ ...current, [key]: value }));
+  }, []);
+
   const updateTemplate = useCallback((nextTemplateKey: TemplateKey) => {
     if (nextTemplateKey === templateKey) return;
     const nextTemplate = templates.find((template) => template.id === nextTemplateKey) ?? templates[0];
@@ -211,6 +223,8 @@ export function useDocStudioState() {
     // Universais não têm `line`: mantém a linha atual.
     if (nextTemplate.line) setLine(nextTemplate.line);
     setFields(getDefaultFieldsForTemplate(nextTemplate));
+    setSectionTitles({});
+    setExtraSectionsVisible(0);
   }, [templateKey]);
 
   const updateCategory = useCallback((nextCategory: ProfessionCategory) => {
@@ -230,6 +244,8 @@ export function useDocStudioState() {
     setDraftStatus(clearDraft() ? 'cleared' : 'unavailable');
 
     setFields(selectedTemplate ? getDefaultFieldsForTemplate(selectedTemplate) : initialDraft);
+    setSectionTitles({});
+    setExtraSectionsVisible(0);
     if (selectedTemplate) {
       if (selectedTemplate.line) setLine(selectedTemplate.line);
       setTemplateKey(selectedTemplate.id);
@@ -254,6 +270,7 @@ export function useDocStudioState() {
             showHeader,
             showSignature,
             getProfessionCategoryOption(category).title,
+            sectionTitles,
           );
     try {
       if (navigator.clipboard?.writeText) {
@@ -305,6 +322,10 @@ export function useDocStudioState() {
     // campos
     fields,
     updateField,
+    sectionTitles,
+    updateSectionTitle,
+    extraSectionsVisible,
+    setExtraSectionsVisible,
     // aparência
     primaryColor,
     setPrimaryColor,

@@ -26,6 +26,7 @@ export function DocStudioPreview({ state }: { state: DocStudioState }) {
     showHeader,
     selectedTemplate,
     fields,
+    sectionTitles,
     activeCategory,
     activeColor,
     blackAndWhite,
@@ -116,7 +117,7 @@ export function DocStudioPreview({ state }: { state: DocStudioState }) {
             .map((section) => (
               <section key={section.key} className="break-inside-avoid">
                 <h3 className={`${titleFontClass} mb-2.5 border-b border-pp-hairline pb-2 text-lg text-pp-ink md:text-xl`}>
-                  {section.title}
+                  {sectionTitles?.[section.key]?.trim() || section.title}
                 </h3>
                 <p className="whitespace-pre-wrap leading-[1.8] text-pp-ink-soft">{fields[section.key]}</p>
               </section>

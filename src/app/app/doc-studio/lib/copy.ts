@@ -44,6 +44,7 @@ export function composePlainText(
   showSignature: boolean,
   // Rótulo da linha/categoria profissional ativa. Fallback: título do catálogo bruto.
   lineLabel?: string,
+  sectionTitles?: Record<string, string>,
 ): string {
   const header = getCopyHeader(profile);
   const lines: string[] = [];
@@ -67,7 +68,7 @@ export function composePlainText(
   lines.push('');
 
   template.sections.forEach((section) => {
-    appendCopySection(lines, section.title, fields[section.key]);
+    appendCopySection(lines, sectionTitles?.[section.key]?.trim() || section.title, fields[section.key]);
   });
 
   lines.push('Observação ética');
