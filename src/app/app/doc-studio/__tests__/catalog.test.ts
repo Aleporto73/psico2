@@ -86,11 +86,16 @@ describe('ordenação por profile_type não quebra', () => {
 
 // ── Travas do catálogo v1 (spec v1.1) ──────────────────────────────────────
 
-const HIDDEN_ID = 'psychological-followup-summary';
+// Templates com status 'hidden' (ordem de aparição em templates.ts).
+const HIDDEN_IDS = [
+  'psychopedagogy-anamnesis',
+  'psychological-followup-summary',
+  'psychology-anamnesis-adult',
+  'psychology-anamnesis-child',
+] as const;
 
 // Ids esperados por linha (chaves internas; os títulos batem com a spec v1.1).
 const PSYCHOPEDAGOGY_IDS = [
-  'psychopedagogy-anamnesis',
   'psychopedagogy-family-interview',
   'psychopedagogy-learner-interview',
   'psychopedagogy-teacher-interview',
@@ -108,8 +113,6 @@ const PSYCHOPEDAGOGY_IDS = [
 ] as const;
 
 const PSYCHOLOGY_ACTIVE_IDS = [
-  'psychology-anamnesis-adult',
-  'psychology-anamnesis-child',
   'psychological-progress-note',
   'psychology-treatment-plan',
   'psychological-report',
@@ -161,15 +164,15 @@ describe('catálogo v1 — contagem e status', () => {
     expect(getActiveTemplates().filter((t) => t.line === 'psychology').length).toBeGreaterThanOrEqual(17);
   });
 
-  it('existe exatamente 1 template hidden: psychological-followup-summary', () => {
+  it('existe exatamente 4 templates hidden (anamneses doc + followup-summary)', () => {
     const hidden = templates.filter((t) => t.status === 'hidden');
-    expect(hidden.map((t) => t.id)).toEqual([HIDDEN_ID]);
+    expect(hidden.map((t) => t.id)).toEqual([...HIDDEN_IDS]);
   });
 });
 
 describe('catálogo v1 — ids da spec', () => {
   it('todos os ids psicopedagógicos existem, active e na linha psychopedagogy', () => {
-    expect(PSYCHOPEDAGOGY_IDS).toHaveLength(15);
+    expect(PSYCHOPEDAGOGY_IDS).toHaveLength(14);
     for (const id of PSYCHOPEDAGOGY_IDS) {
       const template = templates.find((t) => t.id === id);
       expect(template, `id ausente: ${id}`).toBeDefined();
@@ -179,8 +182,8 @@ describe('catálogo v1 — ids da spec', () => {
   });
 
   it('todos os ids psicológicos ativos existem, active e na linha psychology (hidden não conta)', () => {
-    expect(PSYCHOLOGY_ACTIVE_IDS).toHaveLength(16);
-    expect(PSYCHOLOGY_ACTIVE_IDS).not.toContain(HIDDEN_ID);
+    expect(PSYCHOLOGY_ACTIVE_IDS).toHaveLength(14);
+    for (const hid of HIDDEN_IDS) expect(PSYCHOLOGY_ACTIVE_IDS).not.toContain(hid);
     for (const id of PSYCHOLOGY_ACTIVE_IDS) {
       const template = templates.find((t) => t.id === id);
       expect(template, `id ausente: ${id}`).toBeDefined();

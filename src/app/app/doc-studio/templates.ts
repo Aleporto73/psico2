@@ -244,7 +244,7 @@ export const templates: DocStudioTemplate[] = [
   {
     id: 'psychopedagogy-anamnesis',
     schemaVersion: 1,
-    status: 'active',
+    status: 'hidden',
     line: 'psychopedagogy',
     documentKind: 'structured_form',
     category: 'Anamnese',
@@ -830,7 +830,7 @@ export const templates: DocStudioTemplate[] = [
   {
     id: 'psychology-anamnesis-adult',
     schemaVersion: 1,
-    status: 'active',
+    status: 'hidden',
     line: 'psychology',
     documentKind: 'structured_form',
     category: 'Anamnese',
@@ -865,7 +865,7 @@ export const templates: DocStudioTemplate[] = [
   {
     id: 'psychology-anamnesis-child',
     schemaVersion: 1,
-    status: 'active',
+    status: 'hidden',
     line: 'psychology',
     documentKind: 'structured_form',
     category: 'Anamnese',
