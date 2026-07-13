@@ -117,16 +117,37 @@ export function AppShell({
     router.push('/login');
   };
 
-  const navItems: { name: string; path: string; icon: React.ReactNode; badge?: string; badgeTone?: 'neutral' | 'pink'; external?: boolean }[] = [
-    { name: 'Dashboard',        path: '/app',                  icon: <IconDashboard /> },
-    { name: 'Minhas Planilhas', path: '/app/planilhas',        icon: <IconPlanilhas /> },
-    { name: 'Relatório Free',   path: '/app/assistente-gpt',   icon: <IconChat />, badge: 'Incluído', badgeTone: 'neutral' },
-    { name: 'Relatório Pró',    path: '/app/assistente-pro',   icon: <IconSpark />, badge: 'Novo' },
-    { name: 'Psico Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
-    { name: 'Doc Studio', path: '/app/doc-studio', icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
-    { name: 'Produtos',         path: '/app/produtos',         icon: <IconProducts /> },
-    { name: 'Minha Conta',      path: '/app/minha-conta',      icon: <IconUser /> },
+  type NavItem = { name: string; path: string; icon: React.ReactNode; badge?: string; badgeTone?: 'neutral' | 'pink'; external?: boolean };
+  type NavGroup = { label?: string; labelBadge?: string; labelBadgeTone?: 'neutral' | 'pink'; separatorBefore?: boolean; items: NavItem[] };
+
+  // Nav em blocos: conta (topo) · Assistentes Free (rótulo + UM badge 'Incluído')
+  // · ferramentas 'Novo' · navegação de conta. Separador discreto entre os
+  // blocos de baixo. O colapsado (trilho Doc Studio) ignora rótulos/separadores
+  // e renderiza a lista achatada — sem alteração de comportamento.
+  const navGroups: NavGroup[] = [
+    { items: [
+      { name: 'Dashboard',        path: '/app',           icon: <IconDashboard /> },
+      { name: 'Minhas Planilhas', path: '/app/planilhas', icon: <IconPlanilhas /> },
+    ] },
+    { label: 'Assistentes free inclusos', items: [
+      { name: 'Relatório', path: '/app/assistente-gpt',    icon: <IconChat /> },
+      { name: 'ABA',       path: '/app/assistente-aba',    icon: <IconChat /> },
+      { name: 'Laudos',    path: '/app/assistente-laudos', icon: <IconChat /> },
+    ] },
+    { separatorBefore: true, items: [
+      { name: 'Relatório Pró', path: '/app/assistente-pro', icon: <IconSpark />, badge: 'Novo' },
+      { name: 'Psico Flow',    path: '/app/flow',           icon: <IconFlow />, badge: 'Novo' },
+      { name: 'Doc Studio',    path: '/app/doc-studio',     icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
+    ] },
+    { separatorBefore: true, items: [
+      { name: 'Produtos',    path: '/app/produtos',    icon: <IconProducts /> },
+      { name: 'Minha Conta', path: '/app/minha-conta', icon: <IconUser /> },
+    ] },
   ];
+
+  // Lista achatada p/ mobile e trilho colapsado; groupBadge propaga o badge do
+  // grupo para o dot do colapsado (mantém os 3 assistentes com dot).
+  const flatItems = navGroups.flatMap((g) => g.items.map((item) => ({ item, groupBadge: g.labelBadge })));
 
   // Classe do badge do menu: neutro (borda que herda a cor do texto — legível
   // nos estados ativo/inativo, sem verde) ou destaque verde para novidades.
@@ -142,6 +163,42 @@ export function AppShell({
   const collapsed =
     hasDocStudioAccess &&
     (pathname === '/app/doc-studio' || pathname.startsWith('/app/doc-studio/'));
+
+  const renderNavLink = (item: NavItem, groupBadge?: string) => {
+    const isActive = !item.external && pathname === item.path;
+    const showDot = Boolean(item.badge || groupBadge);
+    return (
+      <Link
+        key={item.path}
+        href={item.path}
+        {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+        className={
+          collapsed
+            ? `relative flex h-11 w-11 items-center justify-center text-sm font-medium transition duration-200 ${isActive ? 'bg-pp-ink text-pp-canvas rounded-2xl shadow-sm' : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-2xl'}`
+            : `w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${isActive ? 'bg-pp-ink text-pp-canvas rounded-pill' : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'}`
+        }
+        aria-current={isActive ? 'page' : undefined}
+        aria-label={collapsed ? item.name : undefined}
+        title={collapsed ? item.name : undefined}
+      >
+        <span className="shrink-0 opacity-90" aria-hidden={collapsed ? 'true' : undefined}>{item.icon}</span>
+        {collapsed ? (
+          showDot && (
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-green-500 ring-2 ring-white" aria-hidden="true" />
+          )
+        ) : (
+          <span className="flex items-center w-full gap-2">
+            <span className="flex-1 min-w-0 truncate">{item.name}</span>
+            {item.badge && (
+              <span className={`ml-auto shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${badgeClass(item.badgeTone)}`}>
+                {item.badge}
+              </span>
+            )}
+          </span>
+        )}
+      </Link>
+    );
+  };
 
   return (
     <div className="flex min-h-screen bg-pp-canvas text-pp-ink font-sans">
@@ -180,39 +237,28 @@ export function AppShell({
 
           {/* Navegação */}
           <nav className={collapsed ? 'flex flex-col items-center gap-1.5' : 'space-y-0.5'} aria-label="Navegação principal">
-            {navItems.map((item) => {
-              const isActive = !item.external && pathname === item.path;
-              return (
-                <Link
-                  key={item.path}
-                  href={item.path}
-                  {...(item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-                  className={
-                    collapsed
-                      ? `relative flex h-11 w-11 items-center justify-center text-sm font-medium transition duration-200 ${isActive ? 'bg-pp-ink text-pp-canvas rounded-2xl shadow-sm' : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-2xl'}`
-                      : `w-full flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition duration-200 ${isActive ? 'bg-pp-ink text-pp-canvas rounded-pill' : 'text-pp-ink-soft hover:bg-pp-hairline-soft hover:text-pp-ink rounded-lg'}`
-                  }
-                  aria-current={isActive ? 'page' : undefined}
-                  aria-label={collapsed ? item.name : undefined}
-                  title={collapsed ? item.name : undefined}                >
-                  <span className="shrink-0 opacity-90" aria-hidden={collapsed ? 'true' : undefined}>{item.icon}</span>
-                  {collapsed ? (
-                    item.badge && (
-                      <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-green-500 ring-2 ring-white" aria-hidden="true" />
-                    )
-                  ) : (
-                    <span className="flex items-center w-full gap-2">
-                      <span className="flex-1 min-w-0 truncate">{item.name}</span>
-                      {item.badge && (
-                        <span className={`ml-auto shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${badgeClass(item.badgeTone)}`}>
-                          {item.badge}
+            {collapsed
+              ? flatItems.map(({ item, groupBadge }) => renderNavLink(item, groupBadge))
+              : navGroups.map((group, gi) => (
+                  <div key={group.label ?? `g${gi}`}>
+                    {group.separatorBefore && <hr className="my-2 border-t border-pp-hairline" />}
+                    {group.label && (
+                      <div className="flex items-center gap-2 px-3 pt-3 pb-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-pp-ink-soft">
+                          {group.label}
                         </span>
-                      )}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
+                        {group.labelBadge && (
+                          <span className={`shrink-0 text-[9px] font-semibold px-1.5 py-0.5 rounded-full leading-none ${badgeClass(group.labelBadgeTone)}`}>
+                            {group.labelBadge}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    <div className="space-y-0.5">
+                      {group.items.map((item) => renderNavLink(item, group.labelBadge))}
+                    </div>
+                  </div>
+                ))}
           </nav>
         </div>
 
@@ -260,7 +306,7 @@ export function AppShell({
           className="md:hidden print:hidden bg-white border-b border-pp-hairline px-2 py-1.5 flex gap-0.5 overflow-x-auto"
           aria-label="Navegação mobile"
         >
-          {navItems.map((item) => {
+          {flatItems.map(({ item }) => {
             const isActive = !item.external && pathname === item.path;
             return (
               <Link
