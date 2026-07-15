@@ -130,12 +130,12 @@ export function AppShell({
       { name: 'Minhas Planilhas', path: '/app/planilhas', icon: <IconPlanilhas /> },
     ] },
     { label: 'Ferramentas incluídas', items: [
-      { name: 'Doc Studio', path: '/app/doc-studio',     icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
+      { name: 'Studio DOC', path: '/app/doc-studio',     icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
       { name: 'Relatório',  path: '/app/assistente-gpt',    icon: <IconChat /> },
       { name: 'ABA',        path: '/app/assistente-aba',    icon: <IconChat /> },
       { name: 'Laudos',     path: '/app/assistente-laudos', icon: <IconChat /> },
     ] },
-    { separatorBefore: true, items: [
+    { separatorBefore: true, label: 'Ferramentas upgrade', items: [
       { name: 'Relatório Pró', path: '/app/assistente-pro', icon: <IconSpark />, badge: 'Novo' },
       { name: 'Psico Flow',    path: '/app/flow',           icon: <IconFlow />, badge: 'Novo' },
     ] },
