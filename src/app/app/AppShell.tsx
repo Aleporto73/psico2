@@ -129,15 +129,15 @@ export function AppShell({
       { name: 'Dashboard',        path: '/app',           icon: <IconDashboard /> },
       { name: 'Minhas Planilhas', path: '/app/planilhas', icon: <IconPlanilhas /> },
     ] },
-    { label: 'Assistentes free inclusos', items: [
-      { name: 'Relatório', path: '/app/assistente-gpt',    icon: <IconChat /> },
-      { name: 'ABA',       path: '/app/assistente-aba',    icon: <IconChat /> },
-      { name: 'Laudos',    path: '/app/assistente-laudos', icon: <IconChat /> },
+    { label: 'Ferramentas incluídas', items: [
+      { name: 'Doc Studio', path: '/app/doc-studio',     icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
+      { name: 'Relatório',  path: '/app/assistente-gpt',    icon: <IconChat /> },
+      { name: 'ABA',        path: '/app/assistente-aba',    icon: <IconChat /> },
+      { name: 'Laudos',     path: '/app/assistente-laudos', icon: <IconChat /> },
     ] },
     { separatorBefore: true, items: [
       { name: 'Relatório Pró', path: '/app/assistente-pro', icon: <IconSpark />, badge: 'Novo' },
       { name: 'Psico Flow',    path: '/app/flow',           icon: <IconFlow />, badge: 'Novo' },
-      { name: 'Doc Studio',    path: '/app/doc-studio',     icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
     ] },
     { separatorBefore: true, items: [
       { name: 'Produtos',    path: '/app/produtos',    icon: <IconProducts /> },
