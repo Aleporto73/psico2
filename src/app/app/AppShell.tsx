@@ -146,7 +146,7 @@ export function AppShell({ children, hasDocStudioAccess }: { children: React.Rea
     ] },
     { separatorBefore: true, items: [
       { name: 'Produtos', path: '/app/produtos', icon: <IconProducts /> },
-      { name: 'Ajuda', path: '/app/ajuda', icon: <IconHelp /> },
+      { name: 'Quem pode aplicar?', path: '/app/ajuda', icon: <IconHelp /> },
       { name: 'Minha Conta', path: '/app/minha-conta', icon: <IconUser /> },
     ] },
   ];
