@@ -25,6 +25,12 @@ const PSYCHOLOGIST_ONLY_IDS = new Set([
   '101-wisc-iv-escala-de-inteligencia-wechsler-infantil',
 ]);
 
+const SELO_CFP = new Set([
+  '053-iep-inventario-de-estilos-parentais',
+  '058-m-chat-triagem-para-autismo-em-criancas',
+  '062-phq-9-questionario-de-saude-depressao',
+]);
+
 function normalizeText(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
@@ -39,7 +45,17 @@ function InstrumentList({ instruments, tone }: { instruments: InstrumentGuide[];
       {instruments.map((instrument) => (
         <div key={instrument.id} className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${styles.row}`}>
           <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${styles.dot}`} aria-hidden="true" />
-          <span className="text-sm leading-relaxed text-pp-ink">{instrument.name}</span>
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <span className="text-sm leading-relaxed text-pp-ink">{instrument.name}</span>
+            {SELO_CFP.has(instrument.id) && (
+              <span
+                title="Consta na lista oficial de Instrumentos Não Privativos do Psicólogo (SATEPSI)."
+                className="inline-flex rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold leading-tight text-emerald-800"
+              >
+                Declarado não privativo pelo CFP
+              </span>
+            )}
+          </span>
         </div>
       ))}
     </div>
@@ -67,7 +83,7 @@ export default function AjudaPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.12em] text-pp-ink-soft">Ajuda · aplicação dos instrumentos</p>
         <h1 className="font-serif text-4xl italic leading-tight text-pp-ink md:text-5xl">Quem pode aplicar?</h1>
         <p className="max-w-3xl text-base leading-relaxed text-pp-ink-soft md:text-lg">
-          Separação simples entre instrumentos que podem ser utilizados por psicopedagogos e testes exclusivos para psicólogos.
+          Separação por privatividade: o que a lei reserva ao psicólogo e o que não tem essa reserva.
         </p>
       </header>
 
@@ -92,8 +108,8 @@ export default function AjudaPage() {
         <details open className="overflow-hidden rounded-2xl border border-emerald-200 bg-white">
           <summary className="flex cursor-pointer list-none items-center gap-4 px-5 py-5 marker:content-none">
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-semibold text-emerald-900">Para psicopedagogos</h2>
-              <p className="mt-1 text-sm text-pp-ink-soft">Instrumentos não classificados nesta lista como privativos de psicólogos.</p>
+              <h2 className="text-lg font-semibold text-emerald-900">Não privativos do psicólogo</h2>
+              <p className="mt-1 text-sm text-pp-ink-soft">Instrumentos que não são classificados como teste psicológico. Podem ser aplicados por outros profissionais, respeitados formação e manual.</p>
             </div>
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-800">{psychopedagogues.length}</span>
             <span className="text-xl text-pp-ink-soft" aria-hidden="true">⌄</span>
@@ -106,8 +122,8 @@ export default function AjudaPage() {
         <details open className="overflow-hidden rounded-2xl border border-red-200 bg-white">
           <summary className="flex cursor-pointer list-none items-center gap-4 px-5 py-5 marker:content-none">
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg font-semibold text-red-900">Exclusivo para psicólogos</h2>
-              <p className="mt-1 text-sm text-pp-ink-soft">Testes psicológicos identificados na lista completa do SATEPSI, independentemente do parecer atual.</p>
+              <h2 className="text-lg font-semibold text-red-900">Privativos do psicólogo</h2>
+              <p className="mt-1 text-sm text-pp-ink-soft">Instrumentos classificados pelo CFP como teste psicológico. A aplicação profissional é privativa do psicólogo (Lei 4.119/62). O parecer atual não altera isso.</p>
             </div>
             <span className="rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-800">{psychologists.length}</span>
             <span className="text-xl text-pp-ink-soft" aria-hidden="true">⌄</span>
@@ -122,13 +138,16 @@ export default function AjudaPage() {
         <p className="text-sm leading-relaxed text-pp-ink-soft">
           A inclusão na área de psicopedagogos não substitui formação, manual ou limites profissionais. A lista serve apenas para indicar quais instrumentos não são exclusivos da Psicologia.
         </p>
+        <p className="mt-4 border-l-4 border-[#EF2066] bg-gray-100 px-4 py-3 text-sm leading-relaxed text-pp-ink">
+          Aplicar não é laudar. O laudo e o diagnóstico psicológico são privativos do psicólogo, qualquer que seja o instrumento.
+        </p>
         <a
           href="https://satepsi.cfp.org.br/lista_teste_completa.cfm"
           target="_blank"
           rel="noopener noreferrer"
           className="mt-4 inline-flex rounded-pill bg-pp-ink px-5 py-2.5 text-sm font-medium text-pp-canvas transition hover:bg-pp-ink-soft"
         >
-          Consultar lista completa do SATEPSI
+          Verificar parecer atual no SATEPSI
         </a>
       </footer>
     </div>
