@@ -25,6 +25,12 @@ const PSYCHOLOGIST_ONLY_IDS = new Set([
   '101-wisc-iv-escala-de-inteligencia-wechsler-infantil',
 ]);
 
+const SELO_CFP = new Set([
+  '053-iep-inventario-de-estilos-parentais',
+  '058-m-chat-triagem-para-autismo-em-criancas',
+  '062-phq-9-questionario-de-saude-depressao',
+]);
+
 function normalizeText(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
@@ -39,7 +45,17 @@ function InstrumentList({ instruments, tone }: { instruments: InstrumentGuide[];
       {instruments.map((instrument) => (
         <div key={instrument.id} className={`flex items-start gap-3 rounded-xl border px-4 py-3 ${styles.row}`}>
           <span className={`mt-2 h-2 w-2 shrink-0 rounded-full ${styles.dot}`} aria-hidden="true" />
-          <span className="text-sm leading-relaxed text-pp-ink">{instrument.name}</span>
+          <span className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+            <span className="text-sm leading-relaxed text-pp-ink">{instrument.name}</span>
+            {SELO_CFP.has(instrument.id) && (
+              <span
+                title="Consta na lista oficial de Instrumentos Não Privativos do Psicólogo (SATEPSI)."
+                className="inline-flex rounded-full border border-emerald-200 bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold leading-tight text-emerald-800"
+              >
+                Declarado não privativo pelo CFP
+              </span>
+            )}
+          </span>
         </div>
       ))}
     </div>
