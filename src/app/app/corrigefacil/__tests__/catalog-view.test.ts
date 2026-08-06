@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { InstrumentoResumo } from '@/lib/corrigefacil/api';
 import {
   acaoSugerida,
+  BASE_APLICAR,
   filtrarInstrumentos,
+  linkAplicar,
   montarCartao,
   resumoQuantidade,
   type EstadoCatalogo,
@@ -93,13 +95,40 @@ describe('catálogo do CorrigeFácil', () => {
     expect(acaoSugerida('sessao_invalida')).toBe('entrar');
   });
 
-  it('27) nenhum cartão oferece ação: a tela de aplicação ainda não existe', () => {
+  it('31) cada instrumento ganha link de aplicação', () => {
     for (const instrumento of CATALOGO) {
       const cartao = montarCartao(instrumento);
-      expect(cartao.acaoDisponivel).toBe(false);
-      // e nada no cartão parece uma rota clicável
-      expect(JSON.stringify(cartao)).not.toContain('/app/corrigefacil');
-      expect(JSON.stringify(cartao)).not.toContain('href');
+      expect(cartao.acaoDisponivel).toBe(true);
+      expect(cartao.href).toBe(`${BASE_APLICAR}/${encodeURIComponent(instrumento.code)}`);
     }
+  });
+
+  it('32) o código é codificado no link', () => {
+    expect(linkAplicar('C-TRF_1.5-5')).toBe(
+      '/app/corrigefacil/avaliar/C-TRF_1.5-5'.replace('C-TRF_1.5-5', encodeURIComponent('C-TRF_1.5-5')),
+    );
+    expect(linkAplicar('SNAP-IV-18')).toBe('/app/corrigefacil/avaliar/SNAP-IV-18');
+    // caractere que mudaria de significado na URL
+    expect(linkAplicar('A/B')).toBe('/app/corrigefacil/avaliar/A%2FB');
+  });
+
+  it('33) código vazio ou só espaço não gera link', () => {
+    expect(linkAplicar('')).toBeNull();
+    expect(linkAplicar('   ')).toBeNull();
+
+    const cartao = montarCartao(inst({ code: '  ' }));
+    expect(cartao.acaoDisponivel).toBe(false);
+    expect(cartao.href).toBeNull();
+  });
+
+  it('34) o texto de "próxima etapa" saiu do cartão', () => {
+    const cartao = montarCartao(CATALOGO[0]);
+    expect(JSON.stringify(cartao)).not.toContain('próxima etapa');
+  });
+
+  it('35) a busca continua funcionando junto com o link', () => {
+    const achados = filtrarInstrumentos(CATALOGO, 'bayley');
+    expect(achados).toHaveLength(1);
+    expect(montarCartao(achados[0]).href).toBe('/app/corrigefacil/avaliar/BAYLEY-III');
   });
 });

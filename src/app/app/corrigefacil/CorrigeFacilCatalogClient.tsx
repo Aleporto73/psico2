@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Search } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, RefreshCw, Search } from 'lucide-react';
 import { buscarCatalogo, CorrigeFacilError } from '@/lib/corrigefacil/api';
 import {
   acaoSugerida,
@@ -160,15 +161,20 @@ export function CorrigeFacilCatalogClient() {
                         {cartao.meta.join(' · ')}
                       </p>
                     )}
+                    {cartao.acaoDisponivel && cartao.href && (
+                      <Link
+                        href={cartao.href}
+                        className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-5 py-2 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition mt-1"
+                      >
+                        Aplicar
+                        <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                      </Link>
+                    )}
                   </li>
                 );
               })}
             </ul>
           )}
-
-          <p className="text-xs text-pp-ink-soft border-t border-pp-ink/10 pt-6">
-            Aplicação integrada na próxima etapa.
-          </p>
         </>
       )}
     </div>

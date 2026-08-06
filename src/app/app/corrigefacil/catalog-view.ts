@@ -14,14 +14,26 @@ export type EstadoCatalogo =
  *  Inventar "6 a 12 anos" num cartão de instrumento psicométrico seria
  *  informação clínica falsa.
  *
- *  `acaoDisponivel` é false em toda esta etapa: a tela de aplicação ainda não
- *  existe, e um botão que não leva a lugar nenhum é pior do que nenhum botão. */
+ *  `href` é null quando o código vem vazio ou só com espaço: sem código não
+ *  existe rota para onde ir, e um link quebrado é pior que nenhum. */
 export type CartaoInstrumento = {
   code: string;
   name: string;
   meta: string[];
-  acaoDisponivel: false;
+  acaoDisponivel: boolean;
+  href: string | null;
 };
+
+export const BASE_APLICAR = '/app/corrigefacil/avaliar';
+
+/** Rota de aplicação de um instrumento. O código vai percent-encoded porque
+ *  há siglas com caractere que muda de significado na URL — `C-TRF_1.5-5`,
+ *  `SNAP-IV-18`. */
+export function linkAplicar(code: string): string | null {
+  const limpo = (code ?? '').trim();
+  if (!limpo) return null;
+  return `${BASE_APLICAR}/${encodeURIComponent(limpo)}`;
+}
 
 const ROTULO_ENTRADA: Record<string, string> = {
   itens: 'resposta por item',
@@ -43,11 +55,14 @@ export function montarCartao(instrumento: InstrumentoResumo): CartaoInstrumento 
     meta.push('corrige prematuridade');
   }
 
+  const href = linkAplicar(instrumento.code);
+
   return {
     code: instrumento.code,
     name: instrumento.name,
     meta,
-    acaoDisponivel: false,
+    acaoDisponivel: href !== null,
+    href,
   };
 }
 
