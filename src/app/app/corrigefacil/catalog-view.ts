@@ -25,6 +25,7 @@ export type CartaoInstrumento = {
 };
 
 export const BASE_APLICAR = '/app/corrigefacil/avaliar';
+export const ROTA_HISTORICO = '/app/corrigefacil/avaliacoes';
 
 /** Rota de aplicação de um instrumento. O código vai percent-encoded porque
  *  há siglas com caractere que muda de significado na URL — `C-TRF_1.5-5`,

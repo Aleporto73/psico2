@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, RefreshCw, Search } from 'lucide-react';
+import { ArrowRight, History, RefreshCw, Search } from 'lucide-react';
 import { buscarCatalogo, CorrigeFacilError } from '@/lib/corrigefacil/api';
 import {
   acaoSugerida,
   filtrarInstrumentos,
   montarCartao,
   resumoQuantidade,
+  ROTA_HISTORICO,
   type EstadoCatalogo,
 } from './catalog-view';
 
@@ -18,8 +19,8 @@ import {
 // Um 403 aqui, portanto, é um desencontro entre a função do banco e a Edge —
 // e a tela diz isso em vez de fingir catálogo vazio.
 //
-// Nesta etapa NÃO existe botão de aplicar: a rota de aplicação ainda não
-// existe, e um botão morto engana mais do que a ausência dele.
+// Cada instrumento leva à sua tela de aplicação, e o cabeçalho leva ao
+// histórico — que, diferente daqui, NÃO exige direito comercial ativo.
 export function CorrigeFacilCatalogClient() {
   const [estado, setEstado] = useState<EstadoCatalogo>({ fase: 'carregando' });
   const [termo, setTermo] = useState('');
@@ -66,7 +67,7 @@ export function CorrigeFacilCatalogClient() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      <header className="space-y-2 pt-4">
+      <header className="space-y-3 pt-4">
         <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">
           CorrigeFácil
         </h1>
@@ -75,6 +76,13 @@ export function CorrigeFacilCatalogClient() {
           roda no servidor; você registra as respostas e recebe escore,
           classificação e faixa.
         </p>
+        <Link
+          href={ROTA_HISTORICO}
+          className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition"
+        >
+          <History className="w-4 h-4" aria-hidden="true" />
+          Avaliações salvas
+        </Link>
       </header>
 
       {estado.fase === 'carregando' && (
