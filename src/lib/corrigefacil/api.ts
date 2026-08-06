@@ -121,6 +121,59 @@ export type RespostaCorrecao = {
   resultados: Record<string, ResultadoEscala>;
 };
 
+/** Corpo do POST /avaliacao: o mesmo do /corrigir MAIS identificação.
+ *
+ *  `subject_label` e `subject_meta` são OPCIONAIS na Edge — ela coage para
+ *  null e {} respectivamente. A Edge RECALCULA a partir de respostas/brutos;
+ *  não existe caminho para mandar resultado pronto, e é isso que garante que
+ *  o que fica gravado saiu do servidor. */
+export type PedidoAvaliacao = PedidoCorrecao & {
+  subject_label?: string | null;
+  subject_meta?: Record<string, unknown>;
+};
+
+/** POST /avaliacao 201. */
+export type AvaliacaoCriada = {
+  assessment_id: string;
+  instrument: string;
+  norm_selector: Record<string, unknown>;
+  status: string;
+  resultados: Record<string, ResultadoEscala>;
+};
+
+/** Uma linha de GET /avaliacoes. A rota devolve um ARRAY puro, não envelope. */
+export type AvaliacaoResumo = {
+  id: string;
+  instrument_code: string;
+  subject_label: string | null;
+  subject_meta: Record<string, unknown> | null;
+  status: string;
+  completed_at: string | null;
+};
+
+/** GET /avaliacao/:id. Traz o resultado GRAVADO, nunca recalculado — é o que
+ *  faz uma norma corrigida depois não mexer em laudo já entregue.
+ *
+ *  As respostas brutas do protocolo NÃO saem aqui: `carregar` seleciona
+ *  apenas assessment_results. Quem abre um registro antigo vê o resultado,
+ *  não o que foi marcado item a item. */
+export type AvaliacaoDetalhe = {
+  assessment_id: string;
+  instrument: string;
+  status: string;
+  norm_selector: Record<string, unknown>;
+  subject_meta: Record<string, unknown>;
+  subject_label: string | null;
+  created_at: string;
+  completed_at: string | null;
+  resultados: Record<string, ResultadoEscala>;
+};
+
+/** Paginação real de GET /avaliacoes: a Edge prende `limit` em 1..100
+ *  (padrão 100) e `offset` em >= 0 (padrão 0). Valor não numérico cai no
+ *  padrão — não é erro. */
+export const LIMITE_MAXIMO = 100;
+
 /** Resposta de erro da Edge: sempre `{ error: string }`. */
 export type ErroResposta = { error?: string };
 
@@ -338,6 +391,90 @@ export async function corrigirInstrumento(
   });
 
   if (!corpo || !corpo.resultados || typeof corpo.resultados !== 'object') {
+    throw new CorrigeFacilError(
+      'resposta_invalida',
+      'A resposta do servidor veio em formato inesperado.',
+    );
+  }
+
+  return corpo;
+}
+
+/** POST /avaliacao — grava e conclui. A Edge recalcula a partir das respostas
+ *  e só então persiste; o resultado devolvido é o que ficou gravado.
+ *
+ *  Só fecha com o protocolo INTEIRO: `criarEConcluir` recusa com 422
+ *  ("protocolo incompleto") quando falta item. Não existe idempotência por
+ *  chave nesta rota — cada POST cria uma avaliação nova —, então a proteção
+ *  contra duplicidade é da tela: um envio por vez e nada automático. */
+export async function salvarAvaliacao(
+  pedido: PedidoAvaliacao,
+  opcoes: OpcoesChamada = {},
+): Promise<AvaliacaoCriada> {
+  const corpo = await chamar<AvaliacaoCriada>('/avaliacao', 'POST', {
+    ...opcoes,
+    corpo: pedido,
+  });
+
+  if (!corpo || typeof corpo.assessment_id !== 'string') {
+    throw new CorrigeFacilError(
+      'resposta_invalida',
+      'A resposta do servidor veio em formato inesperado.',
+    );
+  }
+
+  return corpo;
+}
+
+/** GET /avaliacoes — as do usuário do JWT, mais recentes primeiro.
+ *
+ *  NÃO exige direito comercial: quem perdeu o acesso continua lendo o que já
+ *  gravou. A posse é garantida na Edge pela cláusula user_id. */
+export async function listarAvaliacoes(
+  parametros: { limit?: number; offset?: number } = {},
+  opcoes: OpcoesChamada = {},
+): Promise<AvaliacaoResumo[]> {
+  const query = new URLSearchParams();
+  if (parametros.limit !== undefined) query.set('limit', String(parametros.limit));
+  if (parametros.offset !== undefined) query.set('offset', String(parametros.offset));
+
+  const sufixo = query.toString();
+  const corpo = await obter<AvaliacaoResumo[]>(
+    `/avaliacoes${sufixo ? `?${sufixo}` : ''}`,
+    opcoes,
+  );
+
+  if (!Array.isArray(corpo)) {
+    throw new CorrigeFacilError(
+      'resposta_invalida',
+      'A resposta do servidor veio em formato inesperado.',
+    );
+  }
+
+  // a ordem é a que a Edge devolveu (completed_at desc) e não é mexida aqui
+  return corpo;
+}
+
+/** GET /avaliacao/:id — o resultado GRAVADO.
+ *
+ *  Avaliação de outro usuário responde 404 igual a inexistente: a Edge não
+ *  distingue os dois casos, e é assim que a existência de um registro alheio
+ *  não vaza. */
+export async function buscarAvaliacao(
+  id: string,
+  opcoes: OpcoesChamada = {},
+): Promise<AvaliacaoDetalhe> {
+  const limpo = id?.trim();
+  if (!limpo) {
+    throw new CorrigeFacilError('nao_encontrado', 'Avaliação não informada.');
+  }
+
+  const corpo = await obter<AvaliacaoDetalhe>(
+    `/avaliacao/${encodeURIComponent(limpo)}`,
+    opcoes,
+  );
+
+  if (!corpo || typeof corpo.assessment_id !== 'string' || !corpo.resultados) {
     throw new CorrigeFacilError(
       'resposta_invalida',
       'A resposta do servidor veio em formato inesperado.',

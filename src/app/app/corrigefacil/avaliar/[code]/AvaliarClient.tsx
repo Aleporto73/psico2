@@ -1,15 +1,24 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Printer, RefreshCw } from 'lucide-react';
 import {
   buscarInstrumento,
   corrigirInstrumento,
   CorrigeFacilError,
+  salvarAvaliacao,
   type InstrumentoDetalhe,
   type RespostaCorrecao,
 } from '@/lib/corrigefacil/api';
+import {
+  identificacaoInicial,
+  montarPedidoAvaliacao,
+  podeSalvar,
+  TEXTO_ERRO_IDENTIFICACAO,
+  validarIdentificacao,
+  type IdentificacaoAvaliado,
+} from './save-model';
 import { acaoSugerida } from '../../catalog-view';
 import { montarModelo, TEXTO_BLOQUEIO, type ModeloFormulario } from './form-model';
 import {
@@ -32,12 +41,45 @@ type FaseInstrumento =
   | { fase: 'ok'; detalhe: InstrumentoDetalhe }
   | { fase: 'erro'; tipo: string; mensagem: string };
 
+export type EstadoSalvamento =
+  | { fase: 'inativo' }
+  | { fase: 'salvando' }
+  | { fase: 'salvo'; id: string }
+  | { fase: 'erro'; mensagem: string };
+
 export function AvaliarClient({ code }: { code: string }) {
   const [instrumento, setInstrumento] = useState<FaseInstrumento>({ fase: 'carregando' });
   const [estado, setEstado] = useState<EstadoFormulario>(estadoInicial);
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<RespostaCorrecao | null>(null);
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
+  const [identificacao, setIdentificacao] = useState(identificacaoInicial);
+  const [salvamento, setSalvamento] = useState<EstadoSalvamento>({ fase: 'inativo' });
+
+  // Salvar é SEMPRE por clique — nada automático depois da correção. E não
+  // considera salvo antes da confirmação da Edge: só o 201 muda a fase.
+  async function salvar() {
+    if (!modelo || !podeSalvar(identificacao, salvamento.fase === 'salvando', salvamento.fase === 'salvo')) {
+      return;
+    }
+    setSalvamento({ fase: 'salvando' });
+    try {
+      const criada = await salvarAvaliacao(
+        montarPedidoAvaliacao(modelo, estado, identificacao),
+      );
+      setSalvamento({ fase: 'salvo', id: criada.assessment_id });
+    } catch (err: unknown) {
+      // Falha NÃO apaga o resultado: o profissional pode tentar de novo sem
+      // repreencher o protocolo inteiro.
+      setSalvamento({
+        fase: 'erro',
+        mensagem:
+          err instanceof CorrigeFacilError
+            ? err.message
+            : 'Não foi possível salvar agora. Tente novamente.',
+      });
+    }
+  }
 
   const carregar = useCallback(
     (signal?: AbortSignal) => {
@@ -64,10 +106,11 @@ export function AvaliarClient({ code }: { code: string }) {
     return () => controller.abort();
   }, [carregar]);
 
-  const modelo: ModeloFormulario | null = useMemo(
-    () => (instrumento.fase === 'ok' ? montarModelo(instrumento.detalhe) : null),
-    [instrumento],
-  );
+  // Sem useMemo de propósito: o React Compiler deste projeto memoiza sozinho,
+  // e o memo manual aqui é justamente o que ele não consegue preservar.
+  // `montarModelo` é puro e barato — mapeia itens, não calcula nada.
+  const modelo: ModeloFormulario | null =
+    instrumento.fase === 'ok' ? montarModelo(instrumento.detalhe) : null;
 
   const faltando = modelo ? pendencias(modelo, estado) : [];
   const habilitado = modelo ? podeEnviar(modelo, estado, enviando) : false;
@@ -159,7 +202,14 @@ export function AvaliarClient({ code }: { code: string }) {
       ) : resultado ? (
         <ResultadoCorrecao
           resposta={resultado}
-          onCorrigirNovamente={() => setResultado(null)}
+          onCorrigirNovamente={() => {
+            setResultado(null);
+            setSalvamento({ fase: 'inativo' });
+          }}
+          identificacao={identificacao}
+          onIdentificacao={setIdentificacao}
+          salvamento={salvamento}
+          onSalvar={salvar}
         />
       ) : (
         <>
@@ -347,11 +397,25 @@ function textoPendencia(lista: ReturnType<typeof pendencias>): string {
 function ResultadoCorrecao({
   resposta,
   onCorrigirNovamente,
+  identificacao,
+  onIdentificacao,
+  salvamento,
+  onSalvar,
 }: {
   resposta: RespostaCorrecao;
   onCorrigirNovamente: () => void;
+  identificacao: IdentificacaoAvaliado;
+  onIdentificacao: (d: IdentificacaoAvaliado) => void;
+  salvamento: EstadoSalvamento;
+  onSalvar: () => void;
 }) {
   const linhas = Object.entries(resposta.resultados);
+  const erros = validarIdentificacao(identificacao);
+  const habilitado = podeSalvar(
+    identificacao,
+    salvamento.fase === 'salvando',
+    salvamento.fase === 'salvo',
+  );
 
   return (
     <section className="space-y-6">
@@ -397,6 +461,78 @@ function ResultadoCorrecao({
           </div>
         ))}
       </div>
+
+      {/* Salvar só existe DEPOIS de um resultado válido, e é sempre por
+          clique. As respostas, brutos e norm_selector já preenchidos são
+          reaproveitados — só a identificação é pedida. */}
+      {salvamento.fase === 'salvo' ? (
+        <section className="bg-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">
+          <p className="text-pp-ink text-base">Avaliação salva.</p>
+          <Link
+            href={`/app/corrigefacil/avaliacoes/${encodeURIComponent(salvamento.id)}`}
+            className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+          >
+            Abrir avaliação salva
+          </Link>
+        </section>
+      ) : (
+        <section className="bg-pp-block-lilac rounded-block p-6 space-y-4 print:hidden">
+          <p className="text-pp-ink text-sm font-medium">Salvar esta avaliação</p>
+          <div className="grid gap-3 md:grid-cols-3">
+            <label className="text-xs text-pp-ink-soft space-y-1">
+              <span className="block">Avaliado · iniciais ou código</span>
+              <input
+                type="text"
+                value={identificacao.rotulo}
+                onChange={(e) => onIdentificacao({ ...identificacao, rotulo: e.target.value })}
+                className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+              />
+            </label>
+            <label className="text-xs text-pp-ink-soft space-y-1">
+              <span className="block">Respondente (opcional)</span>
+              <input
+                type="text"
+                value={identificacao.respondente}
+                onChange={(e) =>
+                  onIdentificacao({ ...identificacao, respondente: e.target.value })
+                }
+                className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+              />
+            </label>
+            <label className="text-xs text-pp-ink-soft space-y-1">
+              <span className="block">Profissional (opcional)</span>
+              <input
+                type="text"
+                value={identificacao.profissional}
+                onChange={(e) =>
+                  onIdentificacao({ ...identificacao, profissional: e.target.value })
+                }
+                className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+              />
+            </label>
+          </div>
+
+          {salvamento.fase === 'erro' && (
+            <p className="text-sm text-pp-ink">{salvamento.mensagem}</p>
+          )}
+
+          <div className="flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={onSalvar}
+              disabled={!habilitado}
+              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {salvamento.fase === 'salvando' ? 'Salvando…' : 'Salvar avaliação'}
+            </button>
+            {erros.length > 0 && (
+              <p className="text-pp-ink-soft text-xs">
+                {erros.map((e) => TEXTO_ERRO_IDENTIFICACAO[e]).join(' · ')}
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       <div className="flex flex-wrap gap-3 print:hidden">
         <button
