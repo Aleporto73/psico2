@@ -290,7 +290,15 @@ const products = () => [
   { id: 'prod-ia', slug: 'assistente-ia-pro' },
   { id: 'prod-flow', slug: 'psicoplanilhas-flow' },
   { id: 'prod-doc-studio', slug: 'psicoplanilhas-doc-studio' },
+  { id: 'prod-corrigefacil', slug: 'corrigefacil' },
 ];
+
+// Catálogo SEM o CorrigeFácil — é o estado real de produção enquanto o
+// produto não for cadastrado. Os demais produtos continuam presentes de
+// propósito: o caso 22 precisa provar que a falha é do produto ausente, não
+// de um catálogo vazio.
+const productsSemCorrigeFacil = () =>
+  products().filter((p) => p.slug !== 'corrigefacil');
 
 type Body = { status?: string; message?: string; previous_status?: string };
 
@@ -708,5 +716,232 @@ describe('POST /api/paymentbeta/entitlement-webhook', () => {
     expect(db.tables.purchases[0].source).toBe('paymentbeta');
     // Doc Studio NUNCA usa subscriptions.
     expect(db.tables.subscriptions).toHaveLength(0);
+  });
+
+  // --- CorrigeFácil ---------------------------------------------------------
+  // Quarto produto one_time. Não tem caminho próprio: entra no MESMO
+  // upsertLifetimePurchase de vitalício, flow e doc-studio. Os casos abaixo
+  // provam que ele herda a idempotência das três camadas já existentes
+  // (delivery_id, transaction_id+event, user_id+product_id) em vez de
+  // depender de código novo.
+
+  it('18) comprador novo + corrigefacil: cria usuário, grava purchase paid (prod-corrigefacil) e envia ativação', async () => {
+    const db = new FakeDb({ products: products() });
+    const { client, createUserCalls } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const payload = vitalicioPayload({
+      entitlement: { code: 'corrigefacil' },
+      customer: { email: 'cf@cliente.com' },
+      delivery_id: 'dlv-cf',
+      transaction_id: 'tx-cf',
+    });
+
+    const res = await POST(signedRequest(payload, { deliveryId: 'dlv-cf' }));
+    const body = (await res.json()) as Body;
+
+    expect(res.status).toBe(200);
+    expect(body.status).toBe('processed');
+    expect(createUserCalls).toHaveLength(1);
+    expect(mocks.sendActivationLink).toHaveBeenCalledTimes(1);
+
+    expect(db.tables.purchases).toHaveLength(1);
+    expect(db.tables.purchases[0].product_id).toBe('prod-corrigefacil');
+    expect(db.tables.purchases[0].payment_status).toBe('paid');
+    expect(db.tables.purchases[0].source).toBe('paymentbeta');
+    expect(db.tables.purchases[0].payment_reference).toBe('tx-cf');
+    // one_time: NUNCA subscriptions.
+    expect(db.tables.subscriptions).toHaveLength(0);
+    expect(db.tables.paymentbeta_webhook_events[0].status).toBe('processed');
+  });
+
+  it('19) corrigefacil, mesmo delivery_id reenviado: duplicate_ignored e uma só purchase', async () => {
+    const db = new FakeDb({
+      products: products(),
+      profiles: [{ id: 'u-1', email: 'cf@cliente.com', activation_status: 'active', status: 'active' }],
+    });
+    const { client } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const payload = vitalicioPayload({
+      entitlement: { code: 'corrigefacil' },
+      customer: { email: 'cf@cliente.com' },
+      delivery_id: 'dlv-cf',
+      transaction_id: 'tx-cf',
+    });
+
+    const primeira = await POST(signedRequest(payload, { deliveryId: 'dlv-cf' }));
+    expect(((await primeira.json()) as Body).status).toBe('processed');
+
+    const reenvio = await POST(signedRequest(payload, { deliveryId: 'dlv-cf' }));
+    const body = (await reenvio.json()) as Body;
+
+    expect(reenvio.status).toBe(200);
+    expect(body.status).toBe('duplicate_ignored');
+    expect(body.previous_status).toBe('processed');
+    // 1ª camada de idempotência: delivery_id.
+    expect(db.tables.purchases).toHaveLength(1);
+    expect(db.tables.paymentbeta_webhook_events).toHaveLength(1);
+  });
+
+  it('20) corrigefacil, nova delivery da MESMA transação: não duplica nem troca usuário/produto', async () => {
+    const db = new FakeDb({
+      products: products(),
+      profiles: [{ id: 'u-1', email: 'cf@cliente.com', activation_status: 'active', status: 'active' }],
+    });
+    const { client } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const base = {
+      entitlement: { code: 'corrigefacil' },
+      customer: { email: 'cf@cliente.com' },
+      transaction_id: 'tx-cf',
+    };
+
+    await POST(signedRequest(vitalicioPayload({ ...base, delivery_id: 'dlv-a' }), { deliveryId: 'dlv-a' }));
+    const segunda = await POST(
+      signedRequest(vitalicioPayload({ ...base, delivery_id: 'dlv-b' }), { deliveryId: 'dlv-b' }),
+    );
+
+    expect(segunda.status).toBe(200);
+    // 2ª camada: payment_reference (transaction_id) já associado.
+    expect(db.tables.purchases).toHaveLength(1);
+    expect(db.tables.purchases[0].user_id).toBe('u-1');
+    expect(db.tables.purchases[0].product_id).toBe('prod-corrigefacil');
+    expect(db.tables.purchases[0].payment_reference).toBe('tx-cf');
+  });
+
+  it('21) corrigefacil recompra (novo transaction_id): atualiza a mesma linha e persiste a nova referência', async () => {
+    const db = new FakeDb({
+      products: products(),
+      profiles: [{ id: 'u-1', email: 'cf@cliente.com', activation_status: 'active', status: 'active' }],
+      purchases: [
+        {
+          id: 'pc-1',
+          user_id: 'u-1',
+          product_id: 'prod-corrigefacil',
+          payment_reference: 'tx-antiga',
+          payment_status: 'cancelled',
+        },
+      ],
+    });
+    const { client } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const payload = vitalicioPayload({
+      entitlement: { code: 'corrigefacil' },
+      customer: { email: 'cf@cliente.com' },
+      delivery_id: 'dlv-cf2',
+      transaction_id: 'tx-nova',
+    });
+
+    const res = await POST(signedRequest(payload, { deliveryId: 'dlv-cf2' }));
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as Body).status).toBe('processed');
+
+    // 3ª camada: user_id + product_id -> a MESMA linha é atualizada.
+    expect(db.tables.purchases).toHaveLength(1);
+    expect(db.tables.purchases[0].id).toBe('pc-1');
+    expect(db.tables.purchases[0].payment_status).toBe('paid');
+    expect(db.tables.purchases[0].payment_reference).toBe('tx-nova');
+    expect(db.tables.purchases[0].source).toBe('paymentbeta');
+  });
+
+  it('22) corrigefacil AUSENTE do catálogo: falha retryável, sem purchase órfã e sem criar o produto', async () => {
+    const db = new FakeDb({
+      products: productsSemCorrigeFacil(),
+      profiles: [{ id: 'u-1', email: 'cf@cliente.com', activation_status: 'active', status: 'active' }],
+    });
+    const { client } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const payload = vitalicioPayload({
+      entitlement: { code: 'corrigefacil' },
+      customer: { email: 'cf@cliente.com' },
+      delivery_id: 'dlv-cf3',
+      transaction_id: 'tx-cf3',
+    });
+
+    const res = await POST(signedRequest(payload, { deliveryId: 'dlv-cf3' }));
+
+    // Mesmo comportamento do caso 10: 500 retryável, nunca 200.
+    expect(res.status).toBe(500);
+    expect(db.tables.paymentbeta_webhook_events[0].status).toBe('failed');
+    // Nenhuma purchase órfã.
+    expect(db.tables.purchases).toHaveLength(0);
+    // O webhook NÃO cadastra produto: o catálogo continua sem corrigefacil.
+    expect(db.tables.products.some((p) => p.slug === 'corrigefacil')).toBe(false);
+    expect(db.tables.products).toHaveLength(productsSemCorrigeFacil().length);
+  });
+
+  it('23) entitlement parecido mas não cadastrado continua unsupported_entitlement', async () => {
+    const db = new FakeDb({ products: products() });
+    const { client, createUserCalls } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    // 'corrige-facil' com hífen NÃO é o slug suportado.
+    const res = await POST(
+      signedRequest(vitalicioPayload({ entitlement: { code: 'corrige-facil' } })),
+    );
+    const body = (await res.json()) as Body;
+
+    expect(res.status).toBe(200);
+    expect(body.status).toBe('unsupported_entitlement');
+    expect(createUserCalls).toHaveLength(0);
+    expect(db.tables.purchases).toHaveLength(0);
+  });
+
+  it('24) regressão: os quatro entitlements anteriores mantêm produto e destino', async () => {
+    const casos = [
+      { code: 'psicoplanilhas-vitalicio', produto: 'prod-vit' },
+      { code: 'psicoplanilhas-flow', produto: 'prod-flow' },
+      { code: 'psicoplanilhas-doc-studio', produto: 'prod-doc-studio' },
+    ];
+
+    for (const [i, caso] of casos.entries()) {
+      const db = new FakeDb({
+        products: products(),
+        profiles: [{ id: 'u-1', email: 'reg@x.com', activation_status: 'active', status: 'active' }],
+      });
+      const { client } = createClientMock(db);
+      mocks.clientRef.current = client;
+
+      const payload = vitalicioPayload({
+        entitlement: { code: caso.code },
+        customer: { email: 'reg@x.com' },
+        delivery_id: `dlv-reg-${i}`,
+        transaction_id: `tx-reg-${i}`,
+      });
+
+      const res = await POST(signedRequest(payload, { deliveryId: `dlv-reg-${i}` }));
+      expect(res.status, caso.code).toBe(200);
+      expect(db.tables.purchases, caso.code).toHaveLength(1);
+      expect(db.tables.purchases[0].product_id, caso.code).toBe(caso.produto);
+      expect(db.tables.subscriptions, caso.code).toHaveLength(0);
+    }
+
+    // assistente-ia-pro continua sendo o único que vai para subscriptions
+    const db = new FakeDb({
+      products: products(),
+      profiles: [{ id: 'u-1', email: 'reg@x.com', activation_status: 'active', status: 'active' }],
+    });
+    const { client } = createClientMock(db);
+    mocks.clientRef.current = client;
+
+    const res = await POST(
+      signedRequest(
+        vitalicioPayload({
+          entitlement: { code: 'assistente-ia-pro', expires_at: '2027-01-01T00:00:00.000Z' },
+          customer: { email: 'reg@x.com' },
+          delivery_id: 'dlv-reg-ia',
+          transaction_id: 'tx-reg-ia',
+        }),
+        { deliveryId: 'dlv-reg-ia' },
+      ),
+    );
+
+    expect(res.status).toBe(200);
+    expect(db.tables.subscriptions).toHaveLength(1);
+    expect(db.tables.purchases).toHaveLength(0);
   });
 });
