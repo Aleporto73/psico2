@@ -4,15 +4,17 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { ModeloFormulario } from './form-model';
 import type { EstadoFormulario } from './form-state';
 
+type DateNormFieldsProps = Readonly<{
+  modelo: ModeloFormulario;
+  estado: EstadoFormulario;
+  setEstado: Dispatch<SetStateAction<EstadoFormulario>>;
+}>;
+
 export function DateNormFields({
   modelo,
   estado,
   setEstado,
-}: {
-  modelo: ModeloFormulario;
-  estado: EstadoFormulario;
-  setEstado: Dispatch<SetStateAction<EstadoFormulario>>;
-}) {
+}: DateNormFieldsProps) {
   if (!modelo.exigeDataNascimento) return null;
 
   const atualizar = (patch: Partial<EstadoFormulario>) =>
@@ -27,7 +29,7 @@ export function DateNormFields({
         </p>
       </div>
 
-      <div className={`grid gap-3 ${modelo.suportaPrematuridade ? 'md:grid-cols-2' : 'md:grid-cols-2'}`}>
+      <div className="grid gap-3 md:grid-cols-2">
         <label className="text-xs text-pp-ink-soft space-y-1">
           <span className="block">Nascimento</span>
           <input
