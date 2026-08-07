@@ -55,7 +55,6 @@ describe('modelo do formulário', () => {
         ],
       }),
     );
-    // a API já ordena; a tela NÃO reordena
     expect(m.itens.map((i) => i.numero)).toEqual([3, 1, 2]);
   });
 
@@ -91,13 +90,15 @@ describe('modelo do formulário', () => {
     ).toBe(true);
   });
 
-  it('dimensão calculada (opcoes vazia) bloqueia em vez de mandar selector incompleto', () => {
+  it('dimensão calculada sai dos selects e não bloqueia o instrumento', () => {
     const m = montarModelo(
       detalhe({
-        dimensoes: [{ code: 'chave', label: 'Faixa etária', manual: false, opcoes: [] }],
+        requires_birthdate: true,
+        dimensoes: [{ code: 'idade', label: 'Idade', manual: false, opcoes: [] }],
       }),
     );
-    expect(m.bloqueio).toBe('norma_por_data');
+    expect(m.bloqueio).toBeNull();
+    expect(m.exigeDataNascimento).toBe(true);
     expect(m.dimensoes).toHaveLength(0);
   });
 
@@ -132,11 +133,33 @@ describe('estado, validação e payload', () => {
     const estado = { ...estadoInicial(), respostas: { 1: 0, 2: 0 } };
     expect(pendencias(m, estado)).toEqual([]);
     expect(podeEnviar(m, estado, false)).toBe(true);
-    // e chega ao payload como 0, não como ausência
     expect(montarPedido(m, estado).respostas).toEqual({ '1': 0, '2': 0 });
   });
 
-  it('26) payload segue o contrato exato do POST /corrigir', () => {
+  it('instrumento por data exige nascimento e data da avaliação', () => {
+    const md = montarModelo(detalhe({ requires_birthdate: true }));
+    const estado = { ...estadoInicial(), respostas: { 1: 0, 2: 0 } };
+    expect(pendencias(md, estado)).toContainEqual({
+      tipo: 'datas',
+      faltam: ['Nascimento', 'Data da avaliação'],
+    });
+    expect(podeEnviar(md, estado, false)).toBe(false);
+  });
+
+  it('datas preenchidas liberam o envio sem calcular idade no cliente', () => {
+    const md = montarModelo(detalhe({ requires_birthdate: true }));
+    const estado = {
+      ...estadoInicial(),
+      birthDate: '2018-02-10',
+      evaluationDate: '2026-08-07',
+      respostas: { 1: 0, 2: 0 },
+    };
+    expect(pendencias(md, estado)).toEqual([]);
+    expect(podeEnviar(md, estado, false)).toBe(true);
+    expect(montarPedido(md, estado).norm_selector).toEqual({});
+  });
+
+  it('26) payload segue o contrato do POST /corrigir', () => {
     const estado = { ...estadoInicial(), respostas: { 1: 1, 2: 3 } };
     const pedido = montarPedido(m, estado);
 
@@ -145,10 +168,18 @@ describe('estado, validação e payload', () => {
       norm_selector: {},
       respostas: { '1': 1, '2': 3 },
     });
-    // POST /corrigir não tem identificação do avaliado
     expect(pedido).not.toHaveProperty('subject_label');
     expect(pedido).not.toHaveProperty('subject_meta');
     expect(pedido).not.toHaveProperty('brutos');
+  });
+
+  it('selector resolvido pelo servidor é repassado sem transformação', () => {
+    const estado = {
+      ...estadoInicial(),
+      selector: { idade: '8' },
+      respostas: { 1: 1, 2: 3 },
+    };
+    expect(montarPedido(m, estado).norm_selector).toEqual({ idade: '8' });
   });
 
   it('26b) entry_mode bruto envia brutos por código de escala', () => {
@@ -170,7 +201,7 @@ describe('estado, validação e payload', () => {
     });
   });
 
-  it('26d) componentes incompleto (omissoes ausente) ainda pendura o envio', () => {
+  it('26d) componentes incompleto ainda pendura o envio', () => {
     const mc = montarModelo(detalhe({ entry_mode: 'componentes' }));
     const estado = { ...estadoInicial(), componentes: { TOTAL: { acertos: 1, erros: 1 } } };
     expect(pendencias(mc, estado)[0]).toEqual({ tipo: 'componentes', faltam: ['TOTAL'] });
