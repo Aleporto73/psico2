@@ -25,12 +25,24 @@ export type RespostaNormaData = {
 
 const CAMINHO = '/functions/v1/resolver-norma-data';
 
+function removerBarrasFinais(url: string): string {
+  let fim = url.length;
+  while (fim > 0 && url.codePointAt(fim - 1) === 47) fim -= 1;
+  return url.slice(0, fim);
+}
+
 function origemSupabase(): string {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!url) {
     throw new CorrigeFacilError('indisponivel', 'Configuração do Supabase ausente.');
   }
-  return url.replace(/\/+$/, '');
+  return removerBarrasFinais(url);
+}
+
+function mensagemErro(corpo: unknown): string | undefined {
+  if (!corpo || typeof corpo !== 'object' || !('error' in corpo)) return undefined;
+  const erro = (corpo as { error?: unknown }).error;
+  return typeof erro === 'string' ? erro : undefined;
 }
 
 export async function resolverNormaData(
@@ -69,11 +81,7 @@ export async function resolverNormaData(
   }
 
   if (!resposta.ok) {
-    const mensagem =
-      corpo && typeof corpo === 'object' && 'error' in corpo
-        ? String((corpo as { error?: unknown }).error ?? '')
-        : undefined;
-    throw traduzirStatus(resposta.status, mensagem);
+    throw traduzirStatus(resposta.status, mensagemErro(corpo));
   }
 
   if (

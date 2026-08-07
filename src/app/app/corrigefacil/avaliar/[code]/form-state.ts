@@ -6,11 +6,7 @@ import type { PedidoCorrecao } from '@/lib/corrigefacil/api';
 import type { RegraPrematuridade } from '@/lib/corrigefacil/date-norm-api';
 import type { ModeloFormulario } from './form-model';
 
-/** Resposta por item: número do item -> valor bruto escolhido.
- * Ausência da chave = não respondido. Zero é alternativa legítima. */
 export type RespostasItens = Record<number, number>;
-
-/** Bruto por escala. `componentes` guarda acertos/erros/omissões. */
 export type BrutosEscalas = Record<string, number>;
 export type ComponentesEscalas = Record<string, Record<string, number>>;
 
@@ -48,52 +44,61 @@ export type Pendencia =
   | { tipo: 'dimensoes'; faltam: string[] }
   | { tipo: 'datas'; faltam: string[] };
 
+function pendenciaDatas(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
+  if (!modelo.exigeDataNascimento) return [];
+  const faltam = [
+    !estado.birthDate ? 'Nascimento' : null,
+    !estado.evaluationDate ? 'Data da avaliação' : null,
+  ].filter((v): v is string => v !== null);
+  return faltam.length ? [{ tipo: 'datas', faltam }] : [];
+}
+
+function pendenciaItens(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
+  if (modelo.entryMode !== 'itens') return [];
+  const faltam = modelo.itens
+    .filter((i) => !temValor(estado.respostas[i.numero]))
+    .map((i) => i.numero);
+  return faltam.length ? [{ tipo: 'itens', faltam }] : [];
+}
+
+function pendenciaEscalas(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
+  if (modelo.entryMode !== 'bruto') return [];
+  const faltam = modelo.escalas
+    .filter((e) => !temValor(estado.brutos[e.code]))
+    .map((e) => e.code);
+  return faltam.length ? [{ tipo: 'escalas', faltam }] : [];
+}
+
+function pendenciaComponentes(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
+  if (modelo.entryMode !== 'componentes') return [];
+  const faltam = modelo.escalas
+    .filter((e) => {
+      const c = estado.componentes[e.code] ?? {};
+      return COMPONENTES.some((nome) => !temValor(c[nome]));
+    })
+    .map((e) => e.code);
+  return faltam.length ? [{ tipo: 'componentes', faltam }] : [];
+}
+
+function pendenciaDimensoes(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
+  const faltam = modelo.dimensoes
+    .filter((d) => !estado.selector[d.code])
+    .map((d) => d.label);
+  return faltam.length ? [{ tipo: 'dimensoes', faltam }] : [];
+}
+
 /** O que ainda impede o envio. Lista vazia = pronto para corrigir. */
 export function pendencias(
   modelo: ModeloFormulario,
   estado: EstadoFormulario,
 ): Pendencia[] {
-  const lista: Pendencia[] = [];
-
-  if (modelo.exigeDataNascimento) {
-    const faltam: string[] = [];
-    if (!estado.birthDate) faltam.push('Nascimento');
-    if (!estado.evaluationDate) faltam.push('Data da avaliação');
-    if (faltam.length) lista.push({ tipo: 'datas', faltam });
-  }
-
-  if (modelo.entryMode === 'itens') {
-    const faltam = modelo.itens
-      .filter((i) => !temValor(estado.respostas[i.numero]))
-      .map((i) => i.numero);
-    if (faltam.length) lista.push({ tipo: 'itens', faltam });
-  }
-
-  if (modelo.entryMode === 'bruto') {
-    const faltam = modelo.escalas
-      .filter((e) => !temValor(estado.brutos[e.code]))
-      .map((e) => e.code);
-    if (faltam.length) lista.push({ tipo: 'escalas', faltam });
-  }
-
-  if (modelo.entryMode === 'componentes') {
-    const faltam = modelo.escalas
-      .filter((e) => {
-        const c = estado.componentes[e.code] ?? {};
-        return COMPONENTES.some((nome) => !temValor(c[nome]));
-      })
-      .map((e) => e.code);
-    if (faltam.length) lista.push({ tipo: 'componentes', faltam });
-  }
-
-  const dimensoesFaltando = modelo.dimensoes
-    .filter((d) => !estado.selector[d.code])
-    .map((d) => d.label);
-  if (dimensoesFaltando.length) {
-    lista.push({ tipo: 'dimensoes', faltam: dimensoesFaltando });
-  }
-
-  return lista;
+  return [
+    ...pendenciaDatas(modelo, estado),
+    ...pendenciaItens(modelo, estado),
+    ...pendenciaEscalas(modelo, estado),
+    ...pendenciaComponentes(modelo, estado),
+    ...pendenciaDimensoes(modelo, estado),
+  ];
 }
 
 /** Zero É valor. Só `undefined`, `null` e NaN contam como vazio. */
