@@ -36,10 +36,7 @@ export type CampoDimensao = {
 };
 
 /** Por que o instrumento não pode ser aplicado nesta tela. */
-export type MotivoBloqueio =
-  | 'norma_por_data'
-  | 'modo_desconhecido'
-  | 'sem_campos';
+export type MotivoBloqueio = 'modo_desconhecido' | 'sem_campos';
 
 export type ModeloFormulario = {
   code: string;
@@ -57,15 +54,10 @@ export type ModeloFormulario = {
 
 const MODOS_CONHECIDOS = new Set(['itens', 'bruto', 'componentes']);
 
-/** Dimensões que o profissional escolhe. Lista de opções vazia = dimensão
- *  CALCULADA pelo servidor a partir de datas (a faixa etária do Bayley), não
- *  erro — e é o que esta tela ainda não sabe alimentar. */
+/** Só dimensões com opções são escolhidas pelo profissional. Dimensão sem
+ * opções é calculada a partir das datas pelo resolver server-side. */
 function escolhiveis(dimensoes: DimensaoNorma[]): DimensaoNorma[] {
   return dimensoes.filter((d) => (d.opcoes ?? []).length > 0);
-}
-
-function calculadas(dimensoes: DimensaoNorma[]): DimensaoNorma[] {
-  return dimensoes.filter((d) => (d.opcoes ?? []).length === 0);
 }
 
 export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
@@ -110,12 +102,6 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
   let bloqueio: MotivoBloqueio | null = null;
   if (!MODOS_CONHECIDOS.has(detalhe.entry_mode)) {
     bloqueio = 'modo_desconhecido';
-  } else if (calculadas(dimensoes).length > 0) {
-    // A norma depende de idade derivada de datas. Essa conta mora na tela
-    // original do CorrigeFácil e é regra do instrumento — portá-la para cá
-    // seria trazer decisão psicométrica para o frontend. Enquanto ela não
-    // vier do servidor, a tela recusa em vez de mandar selector incompleto.
-    bloqueio = 'norma_por_data';
   } else if (itens.length === 0 && escalas.length === 0) {
     bloqueio = 'sem_campos';
   }
@@ -139,9 +125,6 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
 }
 
 export const TEXTO_BLOQUEIO: Record<MotivoBloqueio, string> = {
-  norma_por_data:
-    'Este instrumento escolhe a norma a partir da idade calculada, e essa ' +
-    'etapa ainda não está disponível aqui.',
   modo_desconhecido:
     'Este instrumento usa um formato de preenchimento que esta tela ainda ' +
     'não desenha.',
