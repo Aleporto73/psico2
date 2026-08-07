@@ -11,6 +11,7 @@ import {
   type InstrumentoDetalhe,
   type RespostaCorrecao,
 } from '@/lib/corrigefacil/api';
+import { resolverNormaData } from '@/lib/corrigefacil/date-norm-api';
 import {
   identificacaoInicial,
   montarPedidoAvaliacao,
@@ -31,6 +32,7 @@ import {
   podeEnviar,
   type EstadoFormulario,
 } from './form-state';
+import { DateNormFields } from './DateNormFields';
 
 const AVISO =
   'Resultado de instrumento de rastreio/correção. Deve ser interpretado ' +
@@ -55,31 +57,6 @@ export function AvaliarClient({ code }: { code: string }) {
   const [erroEnvio, setErroEnvio] = useState<string | null>(null);
   const [identificacao, setIdentificacao] = useState(identificacaoInicial);
   const [salvamento, setSalvamento] = useState<EstadoSalvamento>({ fase: 'inativo' });
-
-  // Salvar é SEMPRE por clique — nada automático depois da correção. E não
-  // considera salvo antes da confirmação da Edge: só o 201 muda a fase.
-  async function salvar() {
-    if (!modelo || !podeSalvar(identificacao, salvamento.fase === 'salvando', salvamento.fase === 'salvo')) {
-      return;
-    }
-    setSalvamento({ fase: 'salvando' });
-    try {
-      const criada = await salvarAvaliacao(
-        montarPedidoAvaliacao(modelo, estado, identificacao),
-      );
-      setSalvamento({ fase: 'salvo', id: criada.assessment_id });
-    } catch (err: unknown) {
-      // Falha NÃO apaga o resultado: o profissional pode tentar de novo sem
-      // repreencher o protocolo inteiro.
-      setSalvamento({
-        fase: 'erro',
-        mensagem:
-          err instanceof CorrigeFacilError
-            ? err.message
-            : 'Não foi possível salvar agora. Tente novamente.',
-      });
-    }
-  }
 
   const carregar = useCallback(
     (signal?: AbortSignal) => {
@@ -106,9 +83,6 @@ export function AvaliarClient({ code }: { code: string }) {
     return () => controller.abort();
   }, [carregar]);
 
-  // Sem useMemo de propósito: o React Compiler deste projeto memoiza sozinho,
-  // e o memo manual aqui é justamente o que ele não consegue preservar.
-  // `montarModelo` é puro e barato — mapeia itens, não calcula nada.
   const modelo: ModeloFormulario | null =
     instrumento.fase === 'ok' ? montarModelo(instrumento.detalhe) : null;
 
@@ -116,11 +90,34 @@ export function AvaliarClient({ code }: { code: string }) {
   const habilitado = modelo ? podeEnviar(modelo, estado, enviando) : false;
 
   async function enviar() {
-    if (!modelo || !habilitado) return;   // trava de duplo clique
+    if (!modelo || !habilitado) return;
     setEnviando(true);
     setErroEnvio(null);
     try {
-      const resposta = await corrigirInstrumento(montarPedido(modelo, estado));
+      let estadoParaEnvio = estado;
+
+      if (modelo.exigeDataNascimento) {
+        const resolvida = await resolverNormaData({
+          instrument_code: modelo.code,
+          birth_date: estado.birthDate,
+          evaluation_date: estado.evaluationDate,
+          ...(modelo.suportaPrematuridade
+            ? {
+                prematurity_weeks: estado.prematurityWeeks,
+                prematurity_rule: estado.prematurityRule,
+              }
+            : {}),
+        });
+        estadoParaEnvio = {
+          ...estado,
+          selector: { ...estado.selector, ...resolvida.norm_selector },
+        };
+        // O mesmo selector usado na correção fica no estado para o POST
+        // /avaliacao. O resultado salvo é recalculado pela Edge com a mesma norma.
+        setEstado(estadoParaEnvio);
+      }
+
+      const resposta = await corrigirInstrumento(montarPedido(modelo, estadoParaEnvio));
       setResultado(resposta);
     } catch (err: unknown) {
       setErroEnvio(
@@ -130,6 +127,35 @@ export function AvaliarClient({ code }: { code: string }) {
       );
     } finally {
       setEnviando(false);
+    }
+  }
+
+  // Salvar é SEMPRE por clique. A Edge recalcula e só o 201 marca como salvo.
+  async function salvar() {
+    if (
+      !modelo ||
+      !podeSalvar(
+        identificacao,
+        salvamento.fase === 'salvando',
+        salvamento.fase === 'salvo',
+      )
+    ) {
+      return;
+    }
+    setSalvamento({ fase: 'salvando' });
+    try {
+      const criada = await salvarAvaliacao(
+        montarPedidoAvaliacao(modelo, estado, identificacao),
+      );
+      setSalvamento({ fase: 'salvo', id: criada.assessment_id });
+    } catch (err: unknown) {
+      setSalvamento({
+        fase: 'erro',
+        mensagem:
+          err instanceof CorrigeFacilError
+            ? err.message
+            : 'Não foi possível salvar agora. Tente novamente.',
+      });
     }
   }
 
@@ -190,8 +216,7 @@ export function AvaliarClient({ code }: { code: string }) {
           {detalhe.name}
         </h1>
         <p className="text-pp-ink-soft text-sm">
-          Preencha o protocolo e envie para correção. O cálculo é feito no
-          servidor.
+          Preencha o protocolo e envie para correção. O cálculo é feito no servidor.
         </p>
       </header>
 
@@ -213,6 +238,8 @@ export function AvaliarClient({ code }: { code: string }) {
         />
       ) : (
         <>
+          <DateNormFields modelo={m} estado={estado} setEstado={setEstado} />
+
           {m.dimensoes.length > 0 && (
             <section className="space-y-4">
               {m.dimensoes.map((d, i) => {
@@ -386,12 +413,14 @@ export function AvaliarClient({ code }: { code: string }) {
 }
 
 function textoPendencia(lista: ReturnType<typeof pendencias>): string {
-  const partes = lista.map((p) => {
-    if (p.tipo === 'itens') return `${p.faltam.length} item(ns) sem resposta`;
-    if (p.tipo === 'dimensoes') return `escolha: ${p.faltam.join(', ')}`;
-    return `preencha: ${p.faltam.join(', ')}`;
-  });
-  return partes.join(' · ');
+  return lista
+    .map((p) => {
+      if (p.tipo === 'itens') return `${p.faltam.length} item(ns) sem resposta`;
+      if (p.tipo === 'dimensoes') return `escolha: ${p.faltam.join(', ')}`;
+      if (p.tipo === 'datas') return `preencha: ${p.faltam.join(', ')}`;
+      return `preencha: ${p.faltam.join(', ')}`;
+    })
+    .join(' · ');
 }
 
 function ResultadoCorrecao({
@@ -424,9 +453,7 @@ function ResultadoCorrecao({
           <div key={escala} className="border border-pp-ink/10 rounded-block p-5 space-y-2">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <p className="text-pp-ink font-medium">{escala}</p>
-              {r.raw !== null && (
-                <p className="text-pp-ink-soft text-sm">bruto {r.raw}</p>
-              )}
+              {r.raw !== null && <p className="text-pp-ink-soft text-sm">bruto {r.raw}</p>}
             </div>
 
             {r.available ? (
@@ -437,9 +464,7 @@ function ResultadoCorrecao({
                     {r.ci95 ? ` (${r.ci95})` : ''}
                   </p>
                 )}
-                {r.percentile !== null && (
-                  <p className="text-pp-ink">percentil {r.percentile}</p>
-                )}
+                {r.percentile !== null && <p className="text-pp-ink">percentil {r.percentile}</p>}
                 {r.z !== null && <p className="text-pp-ink">z {r.z}</p>}
                 {r.classification && (
                   <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink bg-white/60 rounded-pill">
@@ -448,8 +473,6 @@ function ResultadoCorrecao({
                 )}
               </div>
             ) : (
-              // available=false nunca vira campo vazio: entra a mensagem que
-              // o servidor mandou, sem tradução nem paráfrase.
               <p className="text-pp-ink-soft text-sm">
                 {r.message ?? 'Resultado indisponível.'}
               </p>
@@ -462,9 +485,6 @@ function ResultadoCorrecao({
         ))}
       </div>
 
-      {/* Salvar só existe DEPOIS de um resultado válido, e é sempre por
-          clique. As respostas, brutos e norm_selector já preenchidos são
-          reaproveitados — só a identificação é pedida. */}
       {salvamento.fase === 'salvo' ? (
         <section className="bg-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">
           <p className="text-pp-ink text-base">Avaliação salva.</p>

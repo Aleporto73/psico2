@@ -1,15 +1,13 @@
 // Estado das respostas, validação de UX e montagem do payload. Puro.
 //
 // A validação daqui existe só para não mandar protocolo pela metade ao
-// servidor: POST /corrigir aceita respostas parciais e devolve um bruto menor
-// SEM avisar (a guarda de protocolo incompleto vive em POST /avaliacao, que
-// não é desta etapa). Quem recusa de verdade continua sendo a Edge.
+// servidor. Quem calcula idade, escolhe norma, pontua e classifica é o servidor.
 import type { PedidoCorrecao } from '@/lib/corrigefacil/api';
+import type { RegraPrematuridade } from '@/lib/corrigefacil/date-norm-api';
 import type { ModeloFormulario } from './form-model';
 
 /** Resposta por item: número do item -> valor bruto escolhido.
- *  Ausência da chave = não respondido. NUNCA usar 0 para "vazio": zero é
- *  alternativa legítima na maioria dos instrumentos. */
+ * Ausência da chave = não respondido. Zero é alternativa legítima. */
 export type RespostasItens = Record<number, number>;
 
 /** Bruto por escala. `componentes` guarda acertos/erros/omissões. */
@@ -24,17 +22,31 @@ export type EstadoFormulario = {
   brutos: BrutosEscalas;
   componentes: ComponentesEscalas;
   selector: Record<string, string>;
+  birthDate: string;
+  evaluationDate: string;
+  prematurityWeeks: number;
+  prematurityRule: RegraPrematuridade;
 };
 
 export function estadoInicial(): EstadoFormulario {
-  return { respostas: {}, brutos: {}, componentes: {}, selector: {} };
+  return {
+    respostas: {},
+    brutos: {},
+    componentes: {},
+    selector: {},
+    birthDate: '',
+    evaluationDate: '',
+    prematurityWeeks: 0,
+    prematurityRule: 'ate_24_meses',
+  };
 }
 
 export type Pendencia =
   | { tipo: 'itens'; faltam: number[] }
   | { tipo: 'escalas'; faltam: string[] }
   | { tipo: 'componentes'; faltam: string[] }
-  | { tipo: 'dimensoes'; faltam: string[] };
+  | { tipo: 'dimensoes'; faltam: string[] }
+  | { tipo: 'datas'; faltam: string[] };
 
 /** O que ainda impede o envio. Lista vazia = pronto para corrigir. */
 export function pendencias(
@@ -42,6 +54,13 @@ export function pendencias(
   estado: EstadoFormulario,
 ): Pendencia[] {
   const lista: Pendencia[] = [];
+
+  if (modelo.exigeDataNascimento) {
+    const faltam: string[] = [];
+    if (!estado.birthDate) faltam.push('Nascimento');
+    if (!estado.evaluationDate) faltam.push('Data da avaliação');
+    if (faltam.length) lista.push({ tipo: 'datas', faltam });
+  }
 
   if (modelo.entryMode === 'itens') {
     const faltam = modelo.itens
@@ -87,17 +106,13 @@ export function podeEnviar(
   estado: EstadoFormulario,
   enviando: boolean,
 ): boolean {
-  if (enviando) return false;          // trava de duplo clique
+  if (enviando) return false;
   if (modelo.bloqueio) return false;
   return pendencias(modelo, estado).length === 0;
 }
 
-/** Estado -> corpo do POST /corrigir, no contrato exato.
- *
- *  `respostas` é chaveada por NÚMERO DO ITEM em string (é o que a Edge lê em
- *  `Object.entries(respostas)`), e `brutos` por CÓDIGO DE ESCALA. Nenhum
- *  valor é transformado no caminho: o que o profissional escolheu é o que
- *  sobe. */
+/** Estado -> corpo do POST /corrigir. O norm_selector derivado de datas já
+ * chega preenchido no estado depois da chamada ao resolver server-side. */
 export function montarPedido(
   modelo: ModeloFormulario,
   estado: EstadoFormulario,
@@ -144,8 +159,7 @@ export function montarPedido(
   return pedido;
 }
 
-/** Opções válidas de uma dimensão, respeitando a árvore de combinações.
- *  Sem árvore, valem as opções da própria dimensão. */
+/** Opções válidas de uma dimensão, respeitando a árvore de combinações. */
 export function opcoesDaDimensao(
   modelo: ModeloFormulario,
   arvore: Record<string, unknown> | undefined,
