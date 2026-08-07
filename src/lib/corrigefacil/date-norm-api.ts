@@ -27,7 +27,7 @@ const CAMINHO = '/functions/v1/resolver-norma-data';
 
 function removerBarrasFinais(url: string): string {
   let fim = url.length;
-  while (fim > 0 && url.charCodeAt(fim - 1) === 47) fim -= 1;
+  while (fim > 0 && url.codePointAt(fim - 1) === 47) fim -= 1;
   return url.slice(0, fim);
 }
 
