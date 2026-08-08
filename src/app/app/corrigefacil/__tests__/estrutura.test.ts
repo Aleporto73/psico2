@@ -30,6 +30,7 @@ const HISTORICO_CLIENT = semComentarios(
   ler('app/app/corrigefacil/avaliacoes/HistoricoClient.tsx'),
 );
 const LOCKED = semComentarios(ler('app/app/corrigefacil/CorrigeFacilLocked.tsx'));
+const LAYOUT = semComentarios(ler('app/app/layout.tsx'));
 
 describe('salvamento: invariantes de tela', () => {
   it('16) o botão de salvar vive dentro do bloco de resultado', () => {
@@ -134,9 +135,33 @@ describe('navegação', () => {
     }
   });
 
-  it('40) o AppShell continua sem CorrigeFácil', () => {
-    expect(APPSHELL.toLowerCase()).not.toContain('corrigefacil');
-    expect(APPSHELL.toLowerCase()).not.toContain('corrigefácil');
+  // 40) REVISTO. A regra antiga era "o AppShell não conhece o CorrigeFácil",
+  // escrita quando o módulo ainda não estava operacional. Hoje ele está: 21
+  // instrumentos publicados e avaliações sendo salvas em produção. O item
+  // entrou no menu — mas CONDICIONADO ao direito, porque o produto comercial
+  // continua sem checkout e um item que leva a "compra indisponível" é pior
+  // que item nenhum. O que o teste trava agora é a condição.
+  it('40) o CorrigeFácil no menu depende do direito, nunca é incondicional', () => {
+    expect(APPSHELL).toContain('hasCorrigeFacilAccess');
+    // o item vive dentro do spread condicional, não solto na lista
+    const semCondicional = APPSHELL.replace(
+      /\.\.\.\(hasCorrigeFacilAccess[\s\S]*?: \[\]\),/g,
+      '',
+    );
+    expect(semCondicional).not.toContain("path: '/app/corrigefacil'");
+  });
+
+  it('40b) o direito vem do helper único, não de regra reescrita no layout', () => {
+    expect(LAYOUT).toContain('temAcessoCorrigeFacil');
+    // nada de consultar compra ou entitlement à mão
+    expect(LAYOUT).not.toContain("from('purchases')");
+    expect(LAYOUT).not.toContain('has_corrigefacil_access');
+  });
+
+  it('40c) o layout é fail-closed: erro não revela o item', () => {
+    const captura = LAYOUT.split('catch (err)')[1] ?? '';
+    expect(captura).toContain('hasCorrigeFacilAccess = false');
+    expect(captura).toContain('unstable_rethrow');
   });
 });
 

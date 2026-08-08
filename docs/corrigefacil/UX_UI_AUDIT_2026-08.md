@@ -37,10 +37,9 @@ seguem no servidor.
 | A18 | catálogo, histórico | **P3** | "nenhum resultado" sem `role="status"` | mudança silenciosa para leitor de tela | corrigido |
 | A19 | resultado salvo | **P3** | "Avaliação salva." não dizia onde ela foi parar | fechava o ciclo sem indicar o caminho de volta | corrigido: "Ela já aparece em Avaliações salvas." |
 | A20 | norma por data | **P3** | nada distinguia Bayley (com prematuridade) de DCDQ (sem) | mesma caixa, expectativas diferentes | corrigido: texto de ajuda condicional |
-| A21 | módulo inteiro | **P1** | `/app/corrigefacil` não aparece na sidebar do PsicoPlanilhas | só se chega por URL direta | **não alterado** — ver §4 |
+| A21 | módulo inteiro | **P1** | `/app/corrigefacil` não aparecia na sidebar do PsicoPlanilhas | só se chegava por URL direta, mesmo tendo direito | corrigido: item condicionado ao direito — ver §4 |
 
-**Contagem:** 21 achados — 1 P0, 8 P1, 9 P2, 3 P3. Vinte corrigidos; A21 fica
-como pendência de produto (§4).
+**Contagem:** 21 achados — 1 P0, 8 P1, 9 P2, 3 P3. **Todos corrigidos.**
 
 ## 3. Correções executadas
 
@@ -74,16 +73,55 @@ data e não foi tocado.
 **Tela de venda (A4).** O card de comparação saiu. No lugar entrou o histórico,
 que é rota real e é o que o comprador usa depois de aplicar.
 
-## 4. Decisões deliberadamente não alteradas
+## 4. A21 — CorrigeFácil na sidebar: decisão revista
 
-**A21 — CorrigeFácil fora da sidebar.** É a única P1 não corrigida, e é
-deliberado. `estrutura.test.ts` trava o `AppShell` sem o módulo (teste 40), e o
-motivo está escrito em `page.tsx`: a rota não é anunciada enquanto o produto
-não estiver operacional. Hoje, em produção, o produto `corrigefacil` está
-**inativo** e os 21 instrumentos estão carregados com `is_active = false` — quem
-chegasse pela sidebar veria a tela de venda de um produto que ainda não vende.
-Anunciar o módulo é decisão comercial, da ativação, não desta auditoria de UX.
-**Fica como pendência de produto**, não de interface.
+**A primeira versão desta auditoria manteve o módulo fora da sidebar apoiada
+numa premissa errada** — a de que os 21 instrumentos estariam com
+`is_active = false`. Eles estão **ativos**. O estado real de produção
+(`wxiyfudloyyxmnaddljx`, leitura em 2026-08-07):
+
+| objeto | estado |
+|---|---|
+| `public.instruments` | 21 registros, **21 com `is_active = true`** |
+| `public.products` slug `corrigefacil` | **`is_active = false`**, `access_url` null, `checkout_url` null |
+| `public.assessments` | **3** — há uso real |
+
+Ou seja: o módulo está **funcional** para quem tem direito (admin ou compra
+liberada), e três avaliações já foram salvas — mas a única porta de entrada era
+digitar a URL. O que está inativo é o **produto comercial**, não o catálogo.
+
+Com os fatos corretos, as três opções:
+
+| opção | efeito | veredito |
+|---|---|---|
+| A) mostrar para todos | quem não tem direito cai em `CorrigeFacilLocked`, que hoje exibe "Disponibilização em preparação" — sem `checkout_url` não há o que comprar. Item de menu que leva a um beco. | **recusada** |
+| B) mostrar só para quem tem direito | quem usa ganha descoberta persistente; quem não tem direito não vê item nenhum | **adotada** |
+| C) continuar fora | mantém o problema para quem já usa o módulo em produção | **recusada** |
+
+**Por que B não acopla mal.** O `AppLayout` já resolvia um direito no servidor
+para decidir a sidebar (`has_doc_studio_access`); resolver um segundo é o mesmo
+padrão, não um novo. A regra não é reescrita: o layout chama
+`temAcessoCorrigeFacil`, o mesmo helper das páginas, e a decisão continua em
+`has_corrigefacil_access` no banco. As duas resoluções vão em `Promise.all`,
+então não somam latência em série. `authenticated` tem EXECUTE na função
+(ACL: `postgres | service_role | authenticated`), então a chamada funciona com a
+sessão do usuário; `anon` não tem, e continua sem.
+
+**Aparecer no menu não é autorização.** O gate real segue no Server Component de
+cada rota (`page.tsx` do catálogo e da aplicação). Esconder o item é cosmético e
+é fail-closed: erro na resolução deixa `hasCorrigeFacilAccess = false`.
+
+**Onde ficou.** No grupo "Ferramentas upgrade", ao lado dos outros add-ons
+pagos. Os vizinhos aparecem para todos porque têm checkout; quando o
+`corrigefacil` tiver o dele, basta remover a condição — está comentado no
+código.
+
+O teste 40 do `estrutura.test.ts` foi revisto: ele travava "o AppShell não
+conhece o CorrigeFácil", regra escrita quando o módulo não estava operacional.
+Agora trava a **condição** — o item não pode aparecer incondicionalmente, o
+direito tem de vir do helper único e o caminho de erro tem de ser fail-closed.
+
+## 4b. Decisões deliberadamente não alteradas
 
 **Cálculo no cliente.** Nenhum. Idade, norma, escore, percentil e classificação
 continuam no servidor. A única conta nova é `respondidos / total`.
@@ -166,8 +204,10 @@ travada por `sonar-regression.test.ts`, intocado.
 
 ## 7. Pendências reais
 
-1. **A21 — anunciar o módulo na sidebar.** Depende da ativação comercial do
-   produto `corrigefacil` e da publicação dos instrumentos. Decisão de produto.
+1. **Ativação comercial do produto `corrigefacil`.** O produto segue
+   `is_active = false`, sem `access_url` e sem `checkout_url`. Enquanto isso,
+   ninguém compra o módulo — só admin e direito concedido usam. Quando ativar,
+   remover a condição do item de menu (uma linha, comentada no `AppShell`).
 2. **Comparação entre aplicações.** Não implementada; saiu da tela de venda até
    que seja.
 3. **Sem teste de DOM.** O Vitest deste repositório roda em `node`: as provas de
