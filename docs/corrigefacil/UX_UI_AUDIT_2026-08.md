@@ -39,6 +39,9 @@ seguem no servidor.
 | A20 | norma por data | **P3** | nada distinguia Bayley (com prematuridade) de DCDQ (sem) | mesma caixa, expectativas diferentes | corrigido: texto de ajuda condicional |
 | A21 | módulo inteiro | **P1** | `/app/corrigefacil` não aparece na sidebar do PsicoPlanilhas | só se chega por URL direta | **não alterado** — ver §4 |
 
+**Contagem:** 21 achados — 1 P0, 8 P1, 9 P2, 3 P3. Vinte corrigidos; A21 fica
+como pendência de produto (§4).
+
 ## 3. Correções executadas
 
 **Navegação (A1).** `nav-model.ts` (puro) + `CorrigeFacilNav.tsx` (componente
