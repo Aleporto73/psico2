@@ -52,7 +52,7 @@ export function DomainProfileChart({
                   <div
                     role="img"
                     aria-label={descreverPonto(p, metrica)}
-                    className="relative h-5 rounded-pill bg-pp-ink/[0.06] border border-pp-ink/10"
+                    className="relative h-5 rounded-pill bg-pp-ink/[0.05] border border-pp-hairline"
                   >
                     <div
                       className="absolute inset-y-[3px] left-0 bg-pp-ink/70 rounded-pill"

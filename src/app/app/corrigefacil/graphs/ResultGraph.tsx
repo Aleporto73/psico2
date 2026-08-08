@@ -53,8 +53,14 @@ export function ResultGraph({
   if (visiveis.length === 0) return null;
 
   return (
-    <section className="border border-pp-ink/10 rounded-block p-5 space-y-6">
-      <h2 className="text-pp-ink text-sm font-medium">Representação visual</h2>
+    <section className="border border-pp-hairline bg-white/40 rounded-block p-6 sm:p-7 space-y-6">
+      {/* zona A · cabeçalho */}
+      <header className="space-y-1">
+        <h2 className="text-pp-ink text-sm font-medium">Representação visual</h2>
+        <p className="text-pp-ink-soft text-xs">
+          A posição do resultado dentro das faixas do instrumento.
+        </p>
+      </header>
 
       {visiveis.map((modelo, i) => (
         <div key={`${modelo.familia}-${i}`} className="space-y-4">
@@ -92,7 +98,9 @@ export function ResultGraph({
         </div>
       ))}
 
-      <p className="text-pp-ink-soft text-xs">
+      {/* nota auxiliar: conteúdo correto, peso visual mínimo — ela não
+          pode disputar leitura com o resultado nem com a régua */}
+      <p className="text-pp-ink-soft/80 text-[11px] leading-relaxed pt-2 border-t border-pp-hairline-soft">
         O gráfico repete, em forma visual, os valores da tabela acima. Ele
         não acrescenta informação nova nem substitui a leitura do
         resultado.

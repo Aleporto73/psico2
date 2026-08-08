@@ -20,19 +20,20 @@ import {
   type PontoEscala,
 } from './graph-model';
 import type { Metrica } from './graph-config';
-import { AvisoAmbiguo, Indisponivel } from './parts';
+import { AvisoAmbiguo, Indisponivel, LegendaFaixas } from './parts';
 
 function Regua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
   const range = p.range;
   if (!range) return null;
   const pos = posicao(p.valor, range);
 
-  const ic = p.ci95 ? ` (${p.ci95})` : '';
   const valor =
     p.valor !== null
-      ? `${rotuloDaMetrica(metrica)} ${p.valor}${ic}`
+      ? `${rotuloDaMetrica(metrica)} ${p.valor}`
       : 'sem valor para posicionar';
-  const legenda = p.classificacao ? `${valor} · ${p.classificacao}` : valor;
+  const legenda = p.classificacao
+    ? `Resultado: ${valor} · ${p.classificacao}`
+    : `Resultado: ${valor}`;
 
   const descricao =
     descreverPonto(p, metrica) +
@@ -41,7 +42,7 @@ function Regua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
       : '');
 
   return (
-    <figure className="space-y-2">
+    <figure className="space-y-3">
       <div
         role="img"
         aria-label={descricao}
@@ -80,20 +81,12 @@ function Regua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
         <span>{range.max}</span>
       </div>
 
-      {p.segmentos.length > 0 && (
-        <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-pp-ink-soft">
-          {p.segmentos.map((seg, i) => (
-            <li key={`leg-${seg.rotulo}-${i}`} className={seg.atual ? 'text-pp-ink font-medium' : ''}>
-              {descreverSegmento(seg)}
-              {seg.atual ? ' ·' : ''}
-            </li>
-          ))}
-        </ul>
-      )}
+      <LegendaFaixas segmentos={p.segmentos} />
 
-      <figcaption className="text-xs text-pp-ink-soft">
-        {legenda}
-      </figcaption>
+      {/* curto de propósito: escore e classificação por extenso já estão
+          no card de resultado, acima. Aqui basta ancorar a leitura da
+          régua. */}
+      <figcaption className="text-[11px] text-pp-ink-soft">{legenda}</figcaption>
     </figure>
   );
 }

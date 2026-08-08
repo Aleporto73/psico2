@@ -526,29 +526,76 @@ function ResultadoCorrecao({
   );
 
   return (
-    <section className="space-y-6">
-      <div className="space-y-3">
+    <section className="space-y-8">
+      {/* O resultado é o principal elemento da tela: respiro maior, valor
+          em corpo grande e a classificação como chip. O chip é lilás
+          porque é o pastel neutro do produto — destaque de leitura, não
+          indicação de gravidade. */}
+      <div className="space-y-4">
         {linhas.map(([escala, r]) => (
-          <div key={escala} className="border border-pp-ink/10 rounded-block p-5 space-y-2">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <p className="text-pp-ink font-medium">{escala}</p>
-              {r.raw !== null && <p className="text-pp-ink-soft text-sm">bruto {r.raw}</p>}
+          <article
+            key={escala}
+            className="border border-pp-hairline bg-white/40 rounded-block p-6 sm:p-7 space-y-5"
+          >
+            <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <h3 className="text-pp-ink text-base font-medium">{escala}</h3>
+              {r.raw !== null && (
+                <p className="text-pp-ink-soft text-xs">bruto {r.raw}</p>
+              )}
             </div>
 
             {r.available ? (
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-                {r.score !== null && (
-                  <p className="text-pp-ink">
-                    escore <span className="font-medium">{r.score}</span>
-                    {r.ci95 ? ` (${r.ci95})` : ''}
-                  </p>
-                )}
-                {r.percentile !== null && <p className="text-pp-ink">percentil {r.percentile}</p>}
-                {r.z !== null && <p className="text-pp-ink">z {r.z}</p>}
+              <div className="space-y-5">
+                <div className="flex flex-wrap gap-x-10 gap-y-4">
+                  {r.score !== null && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+                        escore
+                      </p>
+                      <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
+                        {r.score}
+                        {r.ci95 && (
+                          <span className="text-pp-ink-soft text-sm font-normal">
+                            {' '}
+                            ({r.ci95})
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {r.percentile !== null && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+                        percentil
+                      </p>
+                      <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
+                        {r.percentile}
+                      </p>
+                    </div>
+                  )}
+                  {r.z !== null && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+                        z
+                      </p>
+                      <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
+                        {r.z}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 {r.classification && (
-                  <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink bg-white/60 rounded-pill">
-                    {r.classification}
-                  </span>
+                  <div className="space-y-1.5">
+                    <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+                      classificação
+                    </p>
+                    {/* break-words: classificação longa não estoura o card
+                        no celular */}
+                    <span className="inline-block max-w-full break-words bg-pp-block-lilac text-pp-ink px-4 py-2 rounded-pill text-sm font-medium">
+                      {r.classification}
+                    </span>
+                  </div>
                 )}
               </div>
             ) : (
@@ -560,7 +607,7 @@ function ResultadoCorrecao({
             {r.flags.length > 0 && (
               <p className="text-pp-ink-soft text-xs">revisar: {r.flags.join(', ')}</p>
             )}
-          </div>
+          </article>
         ))}
       </div>
 
@@ -570,8 +617,10 @@ function ResultadoCorrecao({
           simplesmente não aparece. */}
       <ResultGraph detalhe={detalhe} resposta={resposta} />
 
+      <hr className="border-pp-hairline-soft" />
+
       {salvamento.fase === 'salvo' ? (
-        <section className="bg-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">
+        <section className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">
           <output className="block text-pp-ink text-base">
             Avaliação salva. Ela já aparece em Avaliações salvas.
           </output>
@@ -583,8 +632,13 @@ function ResultadoCorrecao({
           </Link>
         </section>
       ) : (
-        <section className="bg-pp-block-lilac rounded-block p-6 space-y-4 print:hidden">
-          <p className="text-pp-ink text-sm font-medium">Salvar esta avaliação</p>
+        <section className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-4 print:hidden">
+          {/* ação operacional: fica abaixo do resultado na hierarquia, e
+              por isso o lilás entra lavado, com o título em corpo menor
+              que o de "Representação visual" */}
+          <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+            Salvar esta avaliação
+          </p>
           <div className="grid gap-3 md:grid-cols-3">
             <label className="text-xs text-pp-ink-soft space-y-1">
               {/* O único obrigatório dos três, e até aqui nada dizia isso: o
@@ -599,7 +653,7 @@ function ResultadoCorrecao({
                 aria-required="true"
                 value={identificacao.rotulo}
                 onChange={(e) => onIdentificacao({ ...identificacao, rotulo: e.target.value })}
-                className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+                className="w-full rounded-pill border border-pp-hairline bg-white px-4 py-2 text-sm text-pp-ink"
               />
             </label>
             <label className="text-xs text-pp-ink-soft space-y-1">
@@ -610,7 +664,7 @@ function ResultadoCorrecao({
                 onChange={(e) =>
                   onIdentificacao({ ...identificacao, respondente: e.target.value })
                 }
-                className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+                className="w-full rounded-pill border border-pp-hairline bg-white px-4 py-2 text-sm text-pp-ink"
               />
             </label>
             <label className="text-xs text-pp-ink-soft space-y-1">
@@ -621,7 +675,7 @@ function ResultadoCorrecao({
                 onChange={(e) =>
                   onIdentificacao({ ...identificacao, profissional: e.target.value })
                 }
-                className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+                className="w-full rounded-pill border border-pp-hairline bg-white px-4 py-2 text-sm text-pp-ink"
               />
             </label>
           </div>
@@ -650,25 +704,29 @@ function ResultadoCorrecao({
         </section>
       )}
 
-      <div className="flex flex-wrap gap-3 print:hidden">
+      {/* Ações secundárias: nenhuma delas disputa atenção com o
+          resultado. "Corrigir novamente" saiu de botão cheio para
+          contorno — ela reinicia a leitura, não a conclui. */}
+      <div className="flex flex-wrap gap-3 pt-2 print:hidden">
         <button
           type="button"
           onClick={onCorrigirNovamente}
-          className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+          className="inline-flex items-center gap-2 border border-pp-hairline text-pp-ink px-5 py-2.5 rounded-pill text-sm hover:border-pp-ink/30 transition"
         >
+          <RefreshCw className="w-4 h-4" aria-hidden="true" />
           Corrigir novamente
         </button>
         <button
           type="button"
           onClick={() => window.print()}
-          className="inline-flex items-center gap-2 border border-pp-ink/15 text-pp-ink px-6 py-3 rounded-pill text-sm font-medium hover:border-pp-ink/40 transition"
+          className="inline-flex items-center gap-2 border border-pp-hairline text-pp-ink px-5 py-2.5 rounded-pill text-sm hover:border-pp-ink/30 transition"
         >
           <Printer className="w-4 h-4" aria-hidden="true" />
           Imprimir
         </button>
         <Link
           href="/app/corrigefacil"
-          className="inline-flex items-center gap-2 border border-pp-ink/15 text-pp-ink px-6 py-3 rounded-pill text-sm font-medium hover:border-pp-ink/40 transition"
+          className="inline-flex items-center gap-2 text-pp-ink-soft px-5 py-2.5 rounded-pill text-sm hover:text-pp-ink transition"
         >
           Voltar ao catálogo
         </Link>
