@@ -69,7 +69,11 @@ export function ResultGraph({
           ) : (
             <>
               {modelo.familia === 'score_band' && (
-                <ScoreBandChart blocos={modelo.blocos} metrica={modelo.metrica} />
+                <ScoreBandChart
+                  blocos={modelo.blocos}
+                  metrica={modelo.metrica}
+                  instrumento={detalhe.code}
+                />
               )}
               {modelo.familia === 'standardized_profile' && (
                 <StandardizedProfileChart
@@ -87,6 +91,7 @@ export function ResultGraph({
                 <CategoricalProfileChart
                   blocos={modelo.blocos}
                   metrica={modelo.metrica}
+                  instrumento={detalhe.code}
                 />
               )}
             </>
@@ -98,9 +103,11 @@ export function ResultGraph({
         </div>
       ))}
 
-      {/* nota auxiliar: conteúdo correto, peso visual mínimo — ela não
-          pode disputar leitura com o resultado nem com a régua */}
-      <p className="text-pp-ink-soft/80 text-[11px] leading-relaxed pt-2 border-t border-pp-hairline-soft">
+      {/* Fora da tela, mantida para leitor de tela: quem navega por áudio
+          não tem como perceber "de relance" que o gráfico é releitura da
+          tabela, e é justamente essa a informação. Visualmente a relação
+          já é óbvia pela proximidade. */}
+      <p className="sr-only">
         O gráfico repete, em forma visual, os valores da tabela acima. Ele
         não acrescenta informação nova nem substitui a leitura do
         resultado.

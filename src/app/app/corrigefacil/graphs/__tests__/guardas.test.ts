@@ -77,6 +77,40 @@ describe('17/18 · o que não pode ter voltado', () => {
   });
 });
 
+describe('rótulo curto da legenda', () => {
+  const parts = readFileSync(join(DIR, 'parts.tsx'), 'utf8');
+
+  it('encurta por tabela EXATA, nunca por heurística', () => {
+    // os três rótulos do CES-D, escritos por extenso: é correspondência
+    // exata, então rótulo que não casar aparece inteiro
+    expect(parts).toContain("'BAIXA probabilidade de depressão': 'BAIXA'");
+    expect(parts).toContain("'Probabilidade MODERADA de depressão': 'MODERADA'");
+    expect(parts).toContain("'ALTA probabilidade de depressão': 'ALTA'");
+
+    // nada de cortar string, pegar maiúsculas ou dividir no espaço —
+    // acertaria no CES-D e erraria calado em outro instrumento
+    expect(parts).not.toMatch(/\.slice\(/);
+    expect(parts).not.toMatch(/\.substring\(/);
+    expect(parts).not.toMatch(/\.split\(/);
+    expect(parts).not.toMatch(/toUpperCase\(/);
+    expect(parts).not.toMatch(/match\(/);
+  });
+
+  it('o rótulo completo continua acessível', () => {
+    // sr-only com o rótulo do servidor onde a tela mostra a forma curta
+    expect(parts).toContain('className="sr-only">{seg.rotulo}');
+    // e a descrição da régua continua montada a partir do rótulo inteiro
+    const band = readFileSync(join(DIR, 'ScoreBandChart.tsx'), 'utf8');
+    expect(band).toContain('descreverSegmento');
+  });
+
+  it('o encurtamento é escopado por instrumento', () => {
+    // sem instrumento, ou instrumento fora da tabela, nada é encurtado
+    expect(parts).toContain('if (!instrumento) return rotulo;');
+    expect(parts).toContain('ROTULO_CURTO[instrumento]?.[rotulo] ?? rotulo');
+  });
+});
+
 describe('20 · o resultado textual continua na tela', () => {
   const tela = readFileSync(TELA, 'utf8');
 

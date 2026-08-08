@@ -21,36 +21,75 @@ function intervalo(seg: Segmento): string {
   return `${seg.de}–${seg.ate}`;
 }
 
+/** Rótulo curto para a LEGENDA, por instrumento e por CORRESPONDÊNCIA
+ *  EXATA do rótulo completo.
+ *
+ *  Existe porque as três faixas do CES-D repetem "probabilidade de
+ *  depressão" e, lado a lado nos chips, a repetição esconde a única coisa
+ *  que as distingue. Aqui só se encurta o que APARECE: `classification`
+ *  não muda, o modelo não muda, e o rótulo completo continua indo para o
+ *  leitor de tela e para a descrição da régua.
+ *
+ *  É tabela exata, de propósito. Uma heurística — "pegue a palavra em
+ *  maiúsculas", "corte no primeiro espaço" — acertaria aqui e erraria em
+ *  instrumentos cujo rótulo não tem essa forma, e erraria calada. Rótulo
+ *  que não casar exatamente aparece inteiro. */
+const ROTULO_CURTO: Record<string, Record<string, string>> = {
+  'CES-D': {
+    'BAIXA probabilidade de depressão': 'BAIXA',
+    'Probabilidade MODERADA de depressão': 'MODERADA',
+    'ALTA probabilidade de depressão': 'ALTA',
+  },
+};
+
+function curto(rotulo: string, instrumento?: string): string {
+  if (!instrumento) return rotulo;
+  return ROTULO_CURTO[instrumento]?.[rotulo] ?? rotulo;
+}
+
 /** Legenda das faixas, em chips. A faixa atual ganha o lilás do produto:
  *  é destaque de leitura, não semântica de gravidade — a mesma marca vale
  *  para "Risco Baixo" e para "Risco Alto". */
-export function LegendaFaixas({ segmentos }: Readonly<{ segmentos: Segmento[] }>) {
+export function LegendaFaixas({
+  segmentos,
+  instrumento,
+}: Readonly<{ segmentos: Segmento[]; instrumento?: string }>) {
   if (segmentos.length === 0) return null;
   return (
     <ul className="flex flex-wrap gap-2">
-      {segmentos.map((seg, i) => (
-        <li
-          key={`${seg.rotulo}-${i}`}
-          className={[
-            'rounded-block px-3 py-1.5 border leading-tight',
-            seg.atual
-              ? 'bg-pp-block-lilac border-pp-block-lilac'
-              : 'border-pp-hairline',
-          ].join(' ')}
-        >
-          <span
+      {segmentos.map((seg, i) => {
+        const compacto = curto(seg.rotulo, instrumento);
+        return (
+          <li
+            key={`${seg.rotulo}-${i}`}
             className={[
-              'block text-[11px]',
-              seg.atual ? 'text-pp-ink font-medium' : 'text-pp-ink-soft',
+              'rounded-block px-3 py-1.5 border leading-tight',
+              seg.atual
+                ? 'bg-pp-block-lilac border-pp-block-lilac'
+                : 'border-pp-hairline',
             ].join(' ')}
           >
-            {seg.rotulo}
-          </span>
-          <span className="block text-[11px] text-pp-ink-soft tabular-nums">
-            {intervalo(seg)}
-          </span>
-        </li>
-      ))}
+            {/* Só onde a tela mostra a forma curta é que o rótulo
+                completo entra em sr-only — senão o leitor de tela ouviria
+                o mesmo texto duas vezes. */}
+            {compacto !== seg.rotulo && (
+              <span className="sr-only">{seg.rotulo}</span>
+            )}
+            <span
+              aria-hidden={compacto !== seg.rotulo}
+              className={[
+                'block text-[11px]',
+                seg.atual ? 'text-pp-ink font-medium' : 'text-pp-ink-soft',
+              ].join(' ')}
+            >
+              {compacto}
+            </span>
+            <span className="block text-[11px] text-pp-ink-soft tabular-nums">
+              {intervalo(seg)}
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
