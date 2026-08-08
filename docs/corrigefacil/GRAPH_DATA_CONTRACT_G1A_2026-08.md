@@ -232,10 +232,21 @@ ordenação a manter. O conteúdo é pequeno e fechado.
   "basis": "score",             // "score" | "percentile" | "z" | "classification"
                                 // QUAL CAMPO DE ResultadoEscala o renderer lê
   "segments": [                 // a régua JÁ RESOLVIDA para a norma aplicada
-    { "from": 15,   "to": 46,   "label": "…", "ordinal": 0 },
-    { "from": 47,   "to": null, "label": "…", "ordinal": 1 }
+    { "from": 15, "to": 46, "label": "…", "ordinal": 0 },
+    { "from": 47, "to": 75, "label": "…", "ordinal": 1 }
   ]
 }
+```
+
+O exemplo acima é o **DCDQ factual**, na faixa etária resolvida: `15..46` e
+`47..75`, **ambos fechados**. Não use este instrumento para ilustrar faixa
+aberta — os dois segmentos dele têm teto.
+
+Faixa aberta é outro caso, e o exemplo é separado de propósito:
+
+```jsonc
+// segmento aberto para cima — a forma real das 7 faixas do BAYLEY-III
+{ "from": 70, "to": null, "label": "…", "ordinal": 2 }
 ```
 
 **`basis` nomeia o campo do resultado, não a métrica normativa.** Os quatro
@@ -281,7 +292,7 @@ desenhar" — família C, seja com `basis: "percentile"` (BPA-2, EPQ-J) ou
 
 | campo | guardar | por quê |
 |---|---|---|
-| `basis` | **sim** | é `BASIS[score_type]`, já computado pelo motor; sem ele o gráfico não sabe qual número posicionar |
+| `basis` | **sim** | é o **nome do campo de `ResultadoEscala` que o renderer deve usar** — `score`, `percentile`, `z` ou `classification` em v1. Sem ele o renderer não sabe o que ler. **Não é `BASIS[score_type]`**: aquele é vocabulário interno do motor, usa `percentil` em português e não contempla `classification`. Converter o vocabulário normativo interno no do contrato é responsabilidade do servidor |
 | min/max da régua | **não** (opcional, recomendado omitir) | é **domínio visual**, não contexto normativo. Não é histórico, e nenhuma fonte normativa o produz com segurança — §5.2 |
 | bands / cutoffs | **sim, como `segments`** | é a régua inteira. ScoreBandChart precisa dela, não só do nome da faixa atual |
 | `scale_code` | **não** | `resultados` já é um mapa indexado pelo código da escala |
