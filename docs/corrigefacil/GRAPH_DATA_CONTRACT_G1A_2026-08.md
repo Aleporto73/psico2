@@ -66,13 +66,40 @@ faixa, nenhum corte, nenhum limite de escala.
 
 Medido no banco, instrumento a instrumento:
 
-| família | origem da `classification` | instrumentos |
-|---|---|---|
-| **A** — `classification_bands` | a faixa é uma linha própria, presa à escala ou global | BAYLEY-III, C-TRF, CES-D, CHECK-DIS, CONFIAS, DASS-21, ERA-A, ERA-F, PHQ-9, QA-ADULTO, SCARED-C, SDQ-POR, SNAP-IV-18, SNAP-IV-26, TDF, TRACO-ANSIEDADE, TRILHAS_PRE |
-| **B** — `norm_entries.classification` | a classificação vem na própria linha de norma | BPA-2, DCDQ, EPQ-J, ETPC |
-| **C** — não precisa de faixa para o gráfico | a métrica é autoexplicativa (percentil 0–100) | BPA-2, EPQ-J *(também em B: têm classificação em linha, mas o gráfico aprovado em G0 não usa corte)* |
+A classificação tem duas origens no acervo, mas o que importa para o snapshot é
+**o que o gráfico precisa**, e isso dá **três** famílias — não duas:
 
-`classification_bands` vazio em **BPA-2, DCDQ, EPQ-J e ETPC** — os quatro de B.
+| família | o que o gráfico precisa | `basis` | `segments` | instrumentos |
+|---|---|---|---|---|
+| **A — banda declarada** | a régua vem de `classification_bands` | `score` \| `z` | os segmentos daquela escala | BAYLEY-III, C-TRF, CES-D, CHECK-DIS, CONFIAS, DASS-21, ERA-A, ERA-F, PHQ-9, QA-ADULTO, SCARED-C, SDQ-POR, SNAP-IV-18, SNAP-IV-26, TDF, TRACO-ANSIEDADE, TRILHAS_PRE |
+| **B — banda derivada da norma** | a régua **não existe** como banda e precisa ser **reduzida a segmentos numéricos** a partir de `norm_entries.classification` | `score` | corridas contíguas colapsadas | **DCDQ** |
+| **C — autocontida** | **nenhuma régua**: o próprio campo do resultado basta | `percentile` ou `classification` | `[]` | BPA-2, EPQ-J *(percentil)* · **ETPC** *(classificação)* |
+
+`classification_bands` está **vazio** em BPA-2, DCDQ, EPQ-J e ETPC. Mas só o
+**DCDQ** precisa que a norma vire régua numérica — os outros três têm gráfico
+aprovado em G0 que **não usa corte**.
+
+**ETPC não é família B numérica.** Ele tem `classification` em `norm_entries`,
+mas:
+
+- `score_type = quartil`, que **não está no mapa `BASIS` numérico do motor**;
+- G0 proíbe tratar 25/50/75 como eixo contínuo — são marcadores ordinais, e
+  altura proporcional diria "três vezes mais" entre categorias vizinhas;
+- o componente aprovado é **CategoricalProfileChart**;
+- a informação visual necessária **já é a `classification` congelada** em
+  `ResultadoEscala`.
+
+Portanto:
+
+```jsonc
+// ETPC — as quatro escalas
+{ "v": 1, "basis": "classification", "segments": [] }
+```
+
+O renderer usa **exclusivamente** `ResultadoEscala.classification`. Não cria
+cutoff, não cria faixa numérica, não transforma 25/50/75 em altura proporcional
+e não consulta `norm_entries`. O contrato continua uniforme — mesmo envelope,
+mesmo `v: 1` — sem inventar régua onde não há.
 
 ---
 
@@ -202,14 +229,43 @@ ordenação a manter. O conteúdo é pequeno e fechado.
 {
   "v": 1,                       // versão do formato; sem isto, mudança futura
                                 // reinterpreta silenciosamente linha antiga
-  "basis": "score",             // "score" | "percentil" | "z"
-                                // QUAL campo do ResultadoEscala o gráfico posiciona
+  "basis": "score",             // "score" | "percentile" | "z" | "classification"
+                                // QUAL CAMPO DE ResultadoEscala o renderer lê
   "segments": [                 // a régua JÁ RESOLVIDA para a norma aplicada
-    { "from": 15, "to": 46, "label": "…", "ordinal": 0 },
-    { "from": 47, "to": 75, "label": "…", "ordinal": 1 }
+    { "from": 15,   "to": 46,   "label": "…", "ordinal": 0 },
+    { "from": 47,   "to": null, "label": "…", "ordinal": 1 }
   ]
 }
 ```
+
+**`basis` nomeia o campo do resultado, não a métrica normativa.** Os quatro
+valores são exatamente nomes de `ResultadoEscala`: `score`, `percentile`, `z` e
+`classification`. O renderer lê `resultado[visual_context.basis]` e pronto — não
+existe tabela de tradução no cliente.
+
+Isso obriga **o servidor** a normalizar: `classification_bands.basis` usa
+`'percentil'` (nomenclatura normativa, em português) e o campo do resultado é
+`percentile`. **A conversão `percentil` → `percentile` é responsabilidade do
+motor**, na montagem do snapshot. O frontend nunca traduz nomenclatura
+normativa — mesma razão pela qual ele não traduz `escore_t` em nada: não é
+função dele saber o vocabulário do acervo.
+
+**`from` e `to` aceitam `null`** — faixa aberta é fato do acervo, não exceção. As
+7 faixas do BAYLEY-III têm `max_value` nulo; CONFIAS e C-TRF também têm abertas.
+
+```
+segments: Array<{
+  from: number | null,   // null = aberto para baixo
+  to:   number | null,   // null = aberto para cima
+  label: string,
+  ordinal: number
+}>
+```
+
+`null` **nunca** vira zero, **nunca** vira sentinela, **nunca** define display
+range e **nunca** é substituído pelo frontend. Um segmento aberto é desenhado
+aberto — a seta que sai do eixo é a representação honesta. A ordenação continua
+por `ordinal`, que é a ordem de avaliação do motor em `faixaDe()`.
 
 **`range` saiu do conjunto obrigatório.** Ele é opcional e a recomendação é
 **omiti-lo**. A auditoria que levou a isso está em §5.2 — é a correção mais
@@ -218,7 +274,8 @@ importante desta revisão, e não é cosmética: a versão anterior admitia deri
 fontes produzem eixo errado**.
 
 `segments` vazio é válido e significa "métrica autoexplicativa, sem corte a
-desenhar" — famílias C (percentil).
+desenhar" — família C, seja com `basis: "percentile"` (BPA-2, EPQ-J) ou
+`basis: "classification"` (ETPC).
 
 **5. Deve guardar?**
 
@@ -251,6 +308,11 @@ conversão, nenhuma média/DP, nenhum id normativo.
 **8. Avaliações anteriores à migration** → `visual_context` nulo. Política em §11.
 
 ### 5.2 `range` — dois conceitos que não podem se misturar
+
+> **Apontamento P1 resolvido no commit `8dd71b5`, e esta decisão está fechada:**
+> `range` é opcional; `raw_min`/`raw_max` é proibido em métrica transformada;
+> extremos de banda são proibidos como display range; **DISPLAY RANGE** e
+> **SEGMENTS** são conceitos separados. Não reabrir.
 
 **SEGMENTS** e **DISPLAY RANGE** são coisas diferentes, e tratá-los como um só
 campo foi o erro da versão anterior:
@@ -376,7 +438,8 @@ Mas "inteira" quer dizer **da escala em questão**, nunca do instrumento inteiro
   aplicáveis àquela `basis`. **CONFIAS tem faixas em duas bases (`z` e
   `percentual_acerto`) e só as de `z` entram** — as de `percentual_acerto` são
   de tarefa e G0 já as excluiu;
-- família C → `segments: []`.
+- família C → `segments: []`, com `basis` apontando ao campo que basta:
+  `percentile` em BPA-2 e EPQ-J, `classification` em ETPC.
 
 Nada de `severity`, `instrument_id`, `scale_id` ou ids: `from`, `to`, `label`,
 `ordinal`.
@@ -444,7 +507,8 @@ de G0), uma de CES-D e uma de DCDQ.
 | situação | comportamento |
 |---|---|
 | gráfico depende de faixa (famílias A e B) | **sem gráfico.** A tabela de resultados atual permanece, íntegra |
-| gráfico não depende de faixa (família C — perfil percentílico) | **gráfico permitido.** A régua é o eixo 0–100 da própria métrica, não dado normativo — não há banda histórica a falsificar |
+| família C · percentil (BPA-2, EPQ-J) | **gráfico permitido.** A régua é o eixo 0–100 da própria métrica, não dado normativo — não há banda histórica a falsificar |
+| família C · classificação (**ETPC**) | **gráfico permitido.** O CategoricalProfileChart lê apenas `ResultadoEscala.classification`, que **já está congelada** na linha de resultado desde sempre. Não há reconstrução normativa a fazer, nem antes nem depois da migration — o snapshot, quando existir, só torna explícito o que já era verdade |
 | DCDQ | continua PENDENTE de qualquer modo |
 
 **Proibido**: usar banda atual e apresentá-la como histórica. **Também proibido**:
@@ -579,7 +643,17 @@ Nenhuma migration em `psico2`.
 4. família B: linhas contíguas de mesma `classification` colapsam num segmento —
    DCDQ, 61 linhas → 2 segmentos, fronteira em 47;
 5. família B com buraco de norma: **não** inventar fronteira sobre o vazio;
-6. família C: percentil produz `segments: []`, nunca `null` por engano;
+6. família C · percentil: BPA-2 e EPQ-J produzem `basis: "percentile"` e
+   `segments: []`, nunca `null` por engano;
+6b. **família C · ETPC**: produz `basis: "classification"` e `segments: []`, e
+   **nunca** consulta `norm_entries` nem gera segmento numérico de quartil. O
+   teste falha se aparecer qualquer `from`/`to` com 25, 50 ou 75;
+6c. **`basis` normalizado**: nenhum snapshot sai com `"percentil"` — a conversão
+   para `"percentile"` acontece no servidor. O teste varre os 21 e exige que
+   `basis` seja sempre um nome de campo de `ResultadoEscala`;
+6d. **faixa aberta sobrevive como `null`**: BAYLEY-III (7 faixas com
+   `max_value` nulo), CONFIAS e C-TRF produzem `to: null` — **nunca** 0, nunca
+   349, nunca 999, nunca qualquer sentinela;
 7. `available=false` não produz contexto quantitativo;
 8. o contexto **não** repete `score`, `percentile`, `z`, `classification`, `ci95`;
 9. **vazamento**: nenhum id normativo, nenhum `raw_min/raw_max` de linha, nenhuma
@@ -602,8 +676,9 @@ Nenhuma migration em `psico2`.
 
 **Cliente (`psico2`, Vitest node)**
 
-15. o tipo aceita `visual_context` ausente (legado) e presente, e `range`
-    ausente em qualquer caso;
+15. o tipo aceita `visual_context` ausente (legado) e presente, `range` ausente
+    em qualquer caso, e `from`/`to` nulos; `basis` é uma união fechada dos
+    **nomes de campo** de `ResultadoEscala` — `"percentil"` não compila;
 16. nenhuma função pura de gráfico deriva corte, faixa, classificação **ou
     domínio de eixo a partir de dado normativo** — a trava equivalente à do
     `form-model.ts`, que já proíbe pontuar no cliente.
