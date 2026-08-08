@@ -106,6 +106,23 @@ function temValor(v: number | undefined): boolean {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+/** O intervalo de entrada da escala, em uma frase — ou null quando o catálogo
+ *  não declara limite nenhum.
+ *
+ *  Vive aqui, e não na tela, porque a alternativa era um ternário aninhado no
+ *  meio do JSX. `bruto_min`/`bruto_max` são limites de ENTRADA declarados no
+ *  catálogo; nada a ver com `raw_min`/`raw_max` de linha de norma, que não
+ *  chegam ao browser. */
+export function textoIntervaloBruto(
+  min: number | null,
+  max: number | null,
+): string | null {
+  if (min !== null && max !== null) return `bruto de ${min} a ${max}`;
+  if (min !== null) return `bruto mínimo ${min}`;
+  if (max !== null) return `bruto máximo ${max}`;
+  return null;
+}
+
 /** Quantos números de item a mensagem de pendência cita antes de resumir.
  *  Em C-TRF (100 itens) listar tudo faria uma parede de números. */
 const ITENS_CITADOS = 6;

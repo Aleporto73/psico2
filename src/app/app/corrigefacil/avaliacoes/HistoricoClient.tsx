@@ -17,6 +17,7 @@ import {
   montarLinhas,
   resumoQuantidadeHistorico,
   type EstadoHistorico,
+  type LinhaHistorico,
 } from './historico-view';
 
 export function HistoricoClient() {
@@ -121,48 +122,68 @@ export function HistoricoClient() {
             )}
           </div>
 
-          {estado.avaliacoes.length === 0 ? (
-            <section className="bg-pp-block-lilac rounded-block p-8">
-              <p className="text-pp-ink text-base">Nenhuma avaliação salva ainda.</p>
-              <p className="text-pp-ink-soft text-sm mt-2">
-                Aplique um instrumento pelo catálogo e salve o resultado para
-                que ele apareça aqui.
-              </p>
-            </section>
-          ) : visiveis.length === 0 ? (
-            <p className="text-pp-ink-soft text-sm" role="status">
-              Nenhuma avaliação corresponde a “{termo}”.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {visiveis.map((linha) => (
-                <li
-                  key={linha.id}
-                  className="border border-pp-ink/10 rounded-block p-4 flex flex-wrap items-center justify-between gap-3"
-                >
-                  <div className="space-y-1">
-                    <p className="text-pp-ink font-medium">{linha.rotulo}</p>
-                    <p className="text-pp-ink-soft text-xs">
-                      <span className="font-mono">{linha.instrumento}</span>
-                      {linha.respondente ? ` · ${linha.respondente}` : ''}
-                      {` · ${formatarData(linha.data)}`}
-                    </p>
-                  </div>
-                  {linha.href && (
-                    <Link
-                      href={linha.href}
-                      className="inline-flex items-center gap-2 border border-pp-ink/15 text-pp-ink px-5 py-2 rounded-pill text-sm font-medium hover:border-pp-ink/40 transition"
-                    >
-                      Abrir
-                      <ArrowRight className="w-4 h-4" aria-hidden="true" />
-                    </Link>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+          <Lista total={estado.avaliacoes.length} visiveis={visiveis} termo={termo} />
         </>
       )}
     </div>
+  );
+}
+
+/** Os três estados da lista, com retorno antecipado em vez de ternário
+ *  aninhado: "nunca salvou nada" e "a busca não achou" são situações
+ *  diferentes e merecem textos diferentes. */
+function Lista({
+  total,
+  visiveis,
+  termo,
+}: Readonly<{ total: number; visiveis: LinhaHistorico[]; termo: string }>) {
+  if (total === 0) {
+    return (
+      <section className="bg-pp-block-lilac rounded-block p-8">
+        <p className="text-pp-ink text-base">Nenhuma avaliação salva ainda.</p>
+        <p className="text-pp-ink-soft text-sm mt-2">
+          Aplique um instrumento pelo catálogo e salve o resultado para que ele
+          apareça aqui.
+        </p>
+      </section>
+    );
+  }
+
+  if (visiveis.length === 0) {
+    return (
+      <p className="text-pp-ink-soft text-sm" role="status">
+        Nenhuma avaliação corresponde a “{termo}”.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="space-y-2">
+      {visiveis.map((linha) => (
+        <li
+          key={linha.id}
+          className="border border-pp-ink/10 rounded-block p-4 flex flex-wrap items-center justify-between gap-3"
+        >
+          <div className="space-y-1">
+            <p className="text-pp-ink font-medium">{linha.rotulo}</p>
+            <p className="text-pp-ink-soft text-xs">
+              <span className="font-mono">{linha.instrumento}</span>
+              {linha.respondente ? ` · ${linha.respondente}` : ''}
+              {` · ${formatarData(linha.data)}`}
+            </p>
+          </div>
+          {linha.href && (
+            <Link
+              href={linha.href}
+              aria-label={`Abrir avaliação de ${linha.rotulo}`}
+              className="inline-flex items-center gap-2 border border-pp-ink/15 text-pp-ink px-5 py-2 rounded-pill text-sm font-medium hover:border-pp-ink/40 transition"
+            >
+              Abrir
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          )}
+        </li>
+      ))}
+    </ul>
   );
 }

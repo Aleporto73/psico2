@@ -32,6 +32,7 @@ import {
   pendencias,
   podeEnviar,
   progresso,
+  textoIntervaloBruto,
   textoPendencia,
   type EstadoFormulario,
 } from './form-state';
@@ -378,13 +379,9 @@ export function AvaliarClient({ code }: { code: string }) {
                     {e.nome} <span className="text-pp-ink-soft">({e.code})</span>
                     {/* O intervalo aceito vem do catálogo. Dizê-lo evita o
                         vaivém de digitar, enviar e receber recusa. */}
-                    {(e.min !== null || e.max !== null) && (
+                    {textoIntervaloBruto(e.min, e.max) && (
                       <span className="block text-pp-ink-soft text-xs mt-0.5">
-                        {e.min !== null && e.max !== null
-                          ? `bruto de ${e.min} a ${e.max}`
-                          : e.min !== null
-                            ? `bruto mínimo ${e.min}`
-                            : `bruto máximo ${e.max}`}
+                        {textoIntervaloBruto(e.min, e.max)}
                       </span>
                     )}
                   </span>

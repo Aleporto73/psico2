@@ -5,6 +5,7 @@ import {
   estadoInicial,
   podeEnviar,
   progresso,
+  textoIntervaloBruto,
   textoPendencia,
   type EstadoFormulario,
 } from '../form-state';
@@ -136,6 +137,27 @@ describe('texto de pendência', () => {
       { tipo: 'dimensoes', faltam: ['Grupo normativo'] },
     ]);
     expect(texto).toBe('preencha: Nascimento · escolha: Grupo normativo');
+  });
+});
+
+describe('intervalo de entrada da escala', () => {
+  it('diz os dois limites quando existem', () => {
+    expect(textoIntervaloBruto(0, 27)).toBe('bruto de 0 a 27');
+    expect(textoIntervaloBruto(39, 195)).toBe('bruto de 39 a 195');
+  });
+
+  it('diz só o limite que existe', () => {
+    expect(textoIntervaloBruto(1, null)).toBe('bruto mínimo 1');
+    expect(textoIntervaloBruto(null, 60)).toBe('bruto máximo 60');
+  });
+
+  it('sem limite declarado não inventa frase', () => {
+    expect(textoIntervaloBruto(null, null)).toBeNull();
+  });
+
+  it('zero é limite válido, não ausência', () => {
+    expect(textoIntervaloBruto(0, null)).toBe('bruto mínimo 0');
+    expect(textoIntervaloBruto(null, 0)).toBe('bruto máximo 0');
   });
 });
 
