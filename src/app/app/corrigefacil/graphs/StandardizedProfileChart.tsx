@@ -14,9 +14,9 @@ import {
   posicao,
   rotuloDaMetrica,
   type BlocoModelo,
+  type PontoEscala,
 } from './graph-model';
 import type { Metrica } from './graph-config';
-import type { PontoEscala } from './graph-model';
 import { AvisoAmbiguo, Excedente, Indisponivel } from './parts';
 
 function Barra({
