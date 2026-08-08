@@ -129,7 +129,7 @@ type NavGroup = {
   items: NavItem[];
 };
 
-export function AppShell({ children, hasDocStudioAccess, hasCorrigeFacilAccess = false }: { children: React.ReactNode; hasDocStudioAccess: boolean; hasCorrigeFacilAccess?: boolean }) {
+export function AppShell({ children, hasDocStudioAccess, hasCorrigeFacilAccess = false }: Readonly<{ children: React.ReactNode; hasDocStudioAccess: boolean; hasCorrigeFacilAccess?: boolean }>) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
