@@ -15,6 +15,13 @@ export type CampoItem = {
   /** número do item — é a chave que a Edge espera em `respostas` */
   numero: number;
   texto: string;
+  /** true quando o banco NÃO tem enunciado para este item.
+   *
+   *  Há instrumentos assim de propósito (C-TRF, ERA-F, ERA-A, EPQ-J, ETPC,
+   *  CONFIAS): o enunciado não foi licenciado para o produto. Nada é
+   *  inventado aqui — o campo só diz à tela que ela deve se apoiar no número
+   *  do item, que é como o profissional acompanha pelo caderno impresso. */
+  semEnunciado: boolean;
   opcoes: OpcaoResposta[];
   grupo: string | null;
 };
@@ -75,14 +82,18 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
   // `escalas` já sai `order by ordinal`. Não reordenamos nada.
   const itens: CampoItem[] =
     detalhe.entry_mode === 'itens'
-      ? (detalhe.itens ?? []).map((it) => ({
-          tipo: 'item' as const,
-          numero: it.numero,
-          texto: it.texto ?? `Item ${it.numero}`,
-          // item com conjunto próprio usa a lista DELE; sem conjunto, a global
-          opcoes: it.opcoes ?? detalhe.opcoes_resposta ?? [],
-          grupo: grupoDoItem.get(it.numero) ?? null,
-        }))
+      ? (detalhe.itens ?? []).map((it) => {
+          const enunciado = (it.texto ?? '').trim();
+          return {
+            tipo: 'item' as const,
+            numero: it.numero,
+            texto: enunciado || `Item ${it.numero}`,
+            semEnunciado: enunciado === '',
+            // item com conjunto próprio usa a lista DELE; sem conjunto, a global
+            opcoes: it.opcoes ?? detalhe.opcoes_resposta ?? [],
+            grupo: grupoDoItem.get(it.numero) ?? null,
+          };
+        })
       : [];
 
   // Escala composta é DERIVADA das primárias: não se digita bruto dela.

@@ -2,7 +2,7 @@
 
 import type { Dispatch, SetStateAction } from 'react';
 import type { ModeloFormulario } from './form-model';
-import type { EstadoFormulario } from './form-state';
+import { erroOrdemDatas, type EstadoFormulario } from './form-state';
 
 type DateNormFieldsProps = Readonly<{
   modelo: ModeloFormulario;
@@ -20,12 +20,17 @@ export function DateNormFields({
   const atualizar = (patch: Partial<EstadoFormulario>) =>
     setEstado((s) => ({ ...s, ...patch, selector: {} }));
 
+  const erroDatas = erroOrdemDatas(estado);
+
   return (
     <section className="bg-pp-block-lilac rounded-block p-6 space-y-4">
       <div>
         <p className="text-pp-ink text-sm font-medium">Idade para seleção da norma</p>
         <p className="text-pp-ink-soft text-xs mt-1">
           A idade normativa é calculada no servidor a partir das datas abaixo.
+          {modelo.suportaPrematuridade
+            ? ' Informe também as semanas de prematuridade, quando houver: elas mudam a idade corrigida.'
+            : ' Este instrumento usa a idade cronológica, sem correção de prematuridade.'}
         </p>
       </div>
 
@@ -36,6 +41,8 @@ export function DateNormFields({
             type="date"
             value={estado.birthDate}
             onChange={(e) => atualizar({ birthDate: e.target.value })}
+            aria-invalid={erroDatas !== null}
+            aria-describedby={erroDatas ? 'erro-datas' : undefined}
             className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
           />
         </label>
@@ -46,6 +53,8 @@ export function DateNormFields({
             type="date"
             value={estado.evaluationDate}
             onChange={(e) => atualizar({ evaluationDate: e.target.value })}
+            aria-invalid={erroDatas !== null}
+            aria-describedby={erroDatas ? 'erro-datas' : undefined}
             className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
           />
         </label>
@@ -65,6 +74,7 @@ export function DateNormFields({
                 }
                 className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
               />
+              <span className="block text-[11px]">0 quando nasceu a termo.</span>
             </label>
 
             <label className="text-xs text-pp-ink-soft space-y-1">
@@ -86,6 +96,12 @@ export function DateNormFields({
           </>
         )}
       </div>
+
+      {erroDatas && (
+        <p id="erro-datas" role="alert" className="text-sm text-pp-ink">
+          {erroDatas}
+        </p>
+      )}
     </section>
   );
 }

@@ -106,6 +106,77 @@ function temValor(v: number | undefined): boolean {
   return typeof v === 'number' && Number.isFinite(v);
 }
 
+/** O intervalo de entrada da escala, em uma frase — ou null quando o catálogo
+ *  não declara limite nenhum.
+ *
+ *  Vive aqui, e não na tela, porque a alternativa era um ternário aninhado no
+ *  meio do JSX. `bruto_min`/`bruto_max` são limites de ENTRADA declarados no
+ *  catálogo; nada a ver com `raw_min`/`raw_max` de linha de norma, que não
+ *  chegam ao browser. */
+export function textoIntervaloBruto(
+  min: number | null,
+  max: number | null,
+): string | null {
+  if (min !== null && max !== null) return `bruto de ${min} a ${max}`;
+  if (min !== null) return `bruto mínimo ${min}`;
+  if (max !== null) return `bruto máximo ${max}`;
+  return null;
+}
+
+/** Quantos números de item a mensagem de pendência cita antes de resumir.
+ *  Em C-TRF (100 itens) listar tudo faria uma parede de números. */
+const ITENS_CITADOS = 6;
+
+/** O que falta, em uma frase. Vive aqui, e não na tela, para ser testável sem
+ *  DOM — e porque é a mesma frase em qualquer lugar que precise dela.
+ *
+ *  Cita os primeiros números: "12 itens sem resposta" manda procurar; "12
+ *  itens sem resposta: 3, 7, 9…" diz por onde começar. */
+export function textoPendencia(lista: Pendencia[]): string {
+  return lista
+    .map((p) => {
+      if (p.tipo === 'itens') {
+        const citados = p.faltam.slice(0, ITENS_CITADOS).join(', ');
+        const reticencia = p.faltam.length > ITENS_CITADOS ? '…' : '';
+        const plural = p.faltam.length === 1 ? 'item' : 'itens';
+        return `${p.faltam.length} ${plural} sem resposta: ${citados}${reticencia}`;
+      }
+      if (p.tipo === 'dimensoes') return `escolha: ${p.faltam.join(', ')}`;
+      return `preencha: ${p.faltam.join(', ')}`;
+    })
+    .join(' · ');
+}
+
+/** Quanto do protocolo já foi respondido. Só faz sentido em `entry_mode
+ *  itens`; nos demais devolve null e a tela não mostra contador.
+ *
+ *  Existe porque protocolos longos (C-TRF tem 100 itens, ERA-A 75, CONFIAS
+ *  70) não davam nenhum sinal de quanto faltava até a rolagem chegar ao fim.
+ *  É contagem de preenchimento, não escore: nada aqui pontua. */
+export function progresso(
+  modelo: ModeloFormulario,
+  estado: EstadoFormulario,
+): { respondidos: number; total: number } | null {
+  if (modelo.entryMode !== 'itens' || modelo.itens.length === 0) return null;
+  const respondidos = modelo.itens.filter((i) =>
+    temValor(estado.respostas[i.numero]),
+  ).length;
+  return { respondidos, total: modelo.itens.length };
+}
+
+/** Data de nascimento posterior à data da avaliação.
+ *
+ *  É a única checagem de data feita no cliente, e ela NÃO calcula idade: só
+ *  compara duas strings `yyyy-mm-dd`, que são ordenáveis lexicograficamente.
+ *  Quem calcula idade e escolhe norma continua sendo o servidor. Serve para
+ *  o profissional ver o engano antes de a requisição sair. */
+export function erroOrdemDatas(estado: EstadoFormulario): string | null {
+  const { birthDate, evaluationDate } = estado;
+  if (!birthDate || !evaluationDate) return null;
+  if (birthDate <= evaluationDate) return null;
+  return 'A data de nascimento é posterior à data da avaliação.';
+}
+
 export function podeEnviar(
   modelo: ModeloFormulario,
   estado: EstadoFormulario,
@@ -113,6 +184,7 @@ export function podeEnviar(
 ): boolean {
   if (enviando) return false;
   if (modelo.bloqueio) return false;
+  if (modelo.exigeDataNascimento && erroOrdemDatas(estado) !== null) return false;
   return pendencias(modelo, estado).length === 0;
 }
 

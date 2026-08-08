@@ -91,6 +91,17 @@ function IconDoc() {
   );
 }
 
+function IconChecklist() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 4H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-2" />
+      <rect x="9" y="2" width="6" height="4" rx="1" />
+      <polyline points="9 12 11 14 15 10" />
+      <line x1="9" y1="18" x2="15" y2="18" />
+    </svg>
+  );
+}
+
 function IconLogout() {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -118,7 +129,7 @@ type NavGroup = {
   items: NavItem[];
 };
 
-export function AppShell({ children, hasDocStudioAccess }: { children: React.ReactNode; hasDocStudioAccess: boolean }) {
+export function AppShell({ children, hasDocStudioAccess, hasCorrigeFacilAccess = false }: Readonly<{ children: React.ReactNode; hasDocStudioAccess: boolean; hasCorrigeFacilAccess?: boolean }>) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -143,6 +154,14 @@ export function AppShell({ children, hasDocStudioAccess }: { children: React.Rea
     { separatorBefore: true, label: 'Ferramentas upgrade', items: [
       { name: 'Relatório Pró', path: '/app/assistente-pro', icon: <IconSpark />, badge: 'Novo' },
       { name: 'Psico Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
+      // CorrigeFácil aparece SÓ para quem já tem direito. Os vizinhos deste
+      // grupo aparecem para todos porque têm página de venda com checkout; o
+      // produto `corrigefacil` ainda não tem, e um item que leva a "compra
+      // indisponível" é pior que item nenhum. Quando o checkout existir,
+      // basta remover a condição.
+      ...(hasCorrigeFacilAccess
+        ? [{ name: 'CorrigeFácil', path: '/app/corrigefacil', icon: <IconChecklist />, badge: 'Novo' as const }]
+        : []),
     ] },
     { separatorBefore: true, items: [
       { name: 'Produtos', path: '/app/produtos', icon: <IconProducts /> },

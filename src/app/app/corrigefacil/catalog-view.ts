@@ -81,8 +81,11 @@ export function filtrarInstrumentos(
   );
 }
 
-function normalizar(texto: string): string {
-  return texto
+/** Sem acento e sem caixa, para busca local. Exportada porque o histórico
+ *  filtra pela MESMA regra — duas normalizações diferentes no mesmo módulo
+ *  fariam a busca se comportar de um jeito no catálogo e de outro na lista. */
+export function normalizar(texto: string): string {
+  return (texto ?? '')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
     .trim()

@@ -2,16 +2,16 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, History, RefreshCw, Search } from 'lucide-react';
+import { ArrowRight, RefreshCw, Search } from 'lucide-react';
 import { buscarCatalogo, CorrigeFacilError } from '@/lib/corrigefacil/api';
 import {
   acaoSugerida,
   filtrarInstrumentos,
   montarCartao,
   resumoQuantidade,
-  ROTA_HISTORICO,
   type EstadoCatalogo,
 } from './catalog-view';
+import { CorrigeFacilNav } from './CorrigeFacilNav';
 
 // Catálogo dos instrumentos publicados, lido da Edge com o JWT do usuário.
 //
@@ -66,7 +66,10 @@ export function CorrigeFacilCatalogClient() {
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    // max-w-5xl e a terceira coluna em `lg`: são 21 instrumentos, e em duas
+    // colunas estreitas a lista rolava muito enquanto sobrava canvas vazio
+    // dos lados no desktop.
+    <div className="max-w-5xl mx-auto space-y-8">
       <header className="space-y-3 pt-4">
         <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">
           CorrigeFácil
@@ -76,19 +79,14 @@ export function CorrigeFacilCatalogClient() {
           roda no servidor; você registra as respostas e recebe escore,
           classificação e faixa.
         </p>
-        <Link
-          href={ROTA_HISTORICO}
-          className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition"
-        >
-          <History className="w-4 h-4" aria-hidden="true" />
-          Avaliações salvas
-        </Link>
       </header>
 
+      <CorrigeFacilNav />
+
       {estado.fase === 'carregando' && (
-        <p className="text-pp-ink-soft text-sm" role="status">
+        <output className="block text-pp-ink-soft text-sm">
           Carregando instrumentos…
-        </p>
+        </output>
       )}
 
       {estado.fase === 'erro' && (
@@ -119,7 +117,7 @@ export function CorrigeFacilCatalogClient() {
               {resumoQuantidade(estado.instrumentos.length)}
             </p>
             {estado.instrumentos.length > 0 && (
-              <label className="relative">
+              <label className="relative w-full sm:w-auto">
                 <span className="sr-only">Buscar por código ou nome</span>
                 <Search
                   className="w-4 h-4 text-pp-ink-soft absolute left-3 top-1/2 -translate-y-1/2"
@@ -130,7 +128,7 @@ export function CorrigeFacilCatalogClient() {
                   value={termo}
                   onChange={(e) => setTermo(e.target.value)}
                   placeholder="Buscar por código ou nome"
-                  className="pl-9 pr-4 py-2 rounded-pill border border-pp-ink/15 bg-white/60 text-sm text-pp-ink placeholder:text-pp-ink-soft focus:outline-none focus:border-pp-ink/40 w-64"
+                  className="pl-9 pr-4 py-2 rounded-pill border border-pp-ink/15 bg-white/60 text-sm text-pp-ink placeholder:text-pp-ink-soft focus:outline-none focus:border-pp-ink/40 w-full sm:w-64"
                 />
               </label>
             )}
@@ -146,19 +144,24 @@ export function CorrigeFacilCatalogClient() {
               </p>
             </section>
           ) : visiveis.length === 0 ? (
-            <p className="text-pp-ink-soft text-sm">
+            <output className="block text-pp-ink-soft text-sm">
               Nenhum instrumento corresponde a “{termo}”.
-            </p>
+            </output>
           ) : (
-            <ul className="grid gap-3 md:grid-cols-2">
+            // `items-stretch` + `flex-col` no cartão + `mt-auto` no CTA: com
+            // nomes de comprimento diferente (de "TDF" a "CHECK-Dis —
+            // Instrumento para Identificação dos Sinais de Risco para a
+            // Dislexia") os botões Aplicar ficavam em alturas diferentes na
+            // mesma linha da grade. Agora o CTA senta no rodapé do cartão.
+            <ul className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 items-stretch">
               {visiveis.map((instrumento) => {
                 const cartao = montarCartao(instrumento);
                 return (
                   <li
                     key={cartao.code}
-                    className="border border-pp-ink/10 rounded-block p-5 space-y-2"
+                    className="border border-pp-ink/10 rounded-block p-5 flex flex-col gap-2 h-full"
                   >
-                    <p className="font-mono text-xs tracking-wide text-pp-ink bg-white/60 inline-block px-2 py-0.5 rounded">
+                    <p className="font-mono text-xs tracking-wide text-pp-ink bg-white/60 self-start px-2 py-0.5 rounded">
                       {cartao.code}
                     </p>
                     <h2 className="text-pp-ink font-medium leading-snug">
@@ -172,7 +175,8 @@ export function CorrigeFacilCatalogClient() {
                     {cartao.acaoDisponivel && cartao.href && (
                       <Link
                         href={cartao.href}
-                        className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-5 py-2 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition mt-1"
+                        aria-label={`Aplicar ${cartao.name}`}
+                        className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-5 py-2 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition mt-auto self-start"
                       >
                         Aplicar
                         <ArrowRight className="w-4 h-4" aria-hidden="true" />

@@ -9,6 +9,7 @@ import {
   type AvaliacaoDetalhe,
 } from '@/lib/corrigefacil/api';
 import { acaoSugerida } from '../../catalog-view';
+import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { formatarData } from '../historico-view';
 
 const AVISO =
@@ -48,23 +49,28 @@ export function DetalheClient({ id }: { id: string }) {
     return () => controller.abort();
   }, [executar]);
 
+  // A barra de seções dá a orientação global; o link abaixo dela é o retorno
+  // de UM nível, que o detalhe precisa por estar mais fundo que as duas abas.
   const voltar = (
-    <Link
-      href="/app/corrigefacil/avaliacoes"
-      className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition print:hidden"
-    >
-      <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-      Voltar ao histórico
-    </Link>
+    <div className="space-y-4 print:hidden">
+      <CorrigeFacilNav />
+      <Link
+        href="/app/corrigefacil/avaliacoes"
+        className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition"
+      >
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+        Voltar ao histórico
+      </Link>
+    </div>
   );
 
   if (estado.fase === 'carregando') {
     return (
       <div className="max-w-3xl mx-auto space-y-6 pt-4">
         {voltar}
-        <p className="text-pp-ink-soft text-sm" role="status">
+        <output className="block text-pp-ink-soft text-sm">
           Carregando avaliação…
-        </p>
+        </output>
       </div>
     );
   }
