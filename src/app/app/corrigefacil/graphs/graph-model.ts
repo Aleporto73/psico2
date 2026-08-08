@@ -146,15 +146,21 @@ function excedenteDe(
 }
 
 /** Quais escalas entram neste bloco, respeitando a decisão do registro.
- *  `excetoEscalas` toma o catálogo como fonte da lista e remove o que o
- *  contrato excluiu. */
+ *
+ *  As duas formas são FAIL-CLOSED: ou a lista é explícita, ou o `kind`
+ *  aprovado é explícito. Não existe caminho em que uma escala nova do
+ *  catálogo entre num gráfico sozinha — se o bloco não declarar nada,
+ *  não entra ninguém. */
 function escalasDoBloco(
   bloco: Bloco,
   escalasCatalogo: EscalaInstrumento[],
 ): string[] {
   if (bloco.escalas) return bloco.escalas;
-  const fora = new Set(bloco.excetoEscalas ?? []);
-  return escalasCatalogo.map((e) => e.code).filter((c) => !fora.has(c));
+  if (bloco.apenasKind) {
+    const aceitos = new Set(bloco.apenasKind);
+    return escalasCatalogo.filter((e) => aceitos.has(e.kind)).map((e) => e.code);
+  }
+  return [];
 }
 
 /** Monta o modelo inteiro. Escala configurada que não veio no resultado

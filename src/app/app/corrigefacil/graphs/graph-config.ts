@@ -58,13 +58,16 @@ export type Bloco = {
   titulo?: string;
   /** Lista explícita, quando os códigos são curtos e estáveis. */
   escalas?: string[];
-  /** Alternativa a `escalas`: entram todas as escalas do catálogo MENOS
-   *  estas. Usado onde o código da escala é um nome longo e acentuado
-   *  (os fatores de ERA-A/ERA-F) — repetir esses nomes aqui criaria uma
-   *  segunda fonte de verdade que quebra no dia em que a fonte mudar uma
-   *  vírgula. O que é decisão de contrato é a EXCLUSÃO, e é ela que fica
-   *  escrita. */
-  excetoEscalas?: string[];
+  /** Alternativa a `escalas`, para instrumentos cujos códigos de escala
+   *  são nomes longos e acentuados (os fatores de ERA-A/ERA-F): entram
+   *  as escalas do catálogo cujo `kind` está nesta lista.
+   *
+   *  É FAIL-CLOSED de propósito. A versão anterior dizia "todas menos o
+   *  Escore Geral", e com ela uma escala nova no catálogo entraria
+   *  sozinha no gráfico, sem passar por G0. Selecionando por `kind`, só
+   *  entra o que pertence ao tipo aprovado: uma escala futura de
+   *  qualquer outro tipo fica de fora até alguém decidir o contrário. */
+  apenasKind?: string[];
   /** Só nas famílias em que cada escala tem régua própria (small
    *  multiples). Ausente = o bloco inteiro compartilha `range`. */
   rangePorEscala?: Record<string, DisplayRange>;
@@ -86,7 +89,16 @@ export type ConfigGrafico = {
 };
 
 export type EntradaRegistro =
-  | { status: 'aprovado'; config: ConfigGrafico }
+  | {
+      status: 'aprovado';
+      config: ConfigGrafico;
+      /** Gráficos ADICIONAIS aprovados para o mesmo instrumento. Existe
+       *  porque G0 aprovou, para o SCARED-C, "CategoricalProfileChart +
+       *  band para o TOTAL": são duas representações distintas, não uma
+       *  com escala a mais. Pôr o TOTAL em `excluidas` perderia uma
+       *  visualização que o contrato aprovou. */
+      complementos?: ConfigGrafico[];
+    }
   | { status: 'pendente'; motivo: string };
 
 /** Domínio matemático do percentil: não depende de norma nenhuma. */
@@ -307,7 +319,7 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
     config: {
       familia: 'standardized_profile',
       metrica: 'percentile',
-      blocos: [{ excetoEscalas: ['Escore Geral'] }],
+      blocos: [{ apenasKind: ['primaria'] }],
       direcao: 'ascendente_sinalizador',
       tom: 'semantico_por_faixa',
       range: PERCENTIL,
@@ -325,7 +337,7 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
     config: {
       familia: 'standardized_profile',
       metrica: 'percentile',
-      blocos: [{ excetoEscalas: ['Escore Geral'] }],
+      blocos: [{ apenasKind: ['primaria'] }],
       direcao: 'ascendente_sinalizador',
       tom: 'semantico_por_faixa',
       range: PERCENTIL,
@@ -466,17 +478,24 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
       ],
       direcao: 'ascendente_sinalizador',
       tom: 'semantico_por_faixa',
-      excluidas: [
-        {
-          escala: 'TOTAL',
-          motivo:
-            'G0 aprova band próprio para o TOTAL, mas nem G0 nem G1A ' +
-            'declaram o domínio visual dele — somar os tetos das ' +
-            'subescalas seria inferência. Fica fora até o range ser ' +
-            'declarado; o resultado textual do TOTAL continua inteiro.',
-        },
-      ],
     },
+    // G0: "CategoricalProfileChart (small multiples) + ScoreBandChart
+    // para o TOTAL". O TOTAL é uma representação APROVADA e por isso
+    // está no registro — o que falta é só o domínio visual dele, que nem
+    // G0 nem G1A declararam. Somar os tetos das subescalas (26+18+16+14+8)
+    // seria inferência nossa, e G1A §5.2 é explícito em que extremos
+    // observados não viram convenção de eixo. Sem `range`, o modelo
+    // bloqueia o desenho e diz por quê; o resultado textual do TOTAL
+    // continua inteiro na tabela.
+    complementos: [
+      {
+        familia: 'score_band',
+        metrica: 'score',
+        blocos: [{ titulo: 'Total', escalas: ['TOTAL'] }],
+        direcao: 'ascendente_sinalizador',
+        tom: 'semantico_por_faixa',
+      },
+    ],
   },
 
   'SNAP-IV-18': {

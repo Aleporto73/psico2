@@ -16,15 +16,48 @@ import {
   type BlocoModelo,
 } from './graph-model';
 import type { Metrica } from './graph-config';
+import type { PontoEscala } from './graph-model';
 import { AvisoAmbiguo, Excedente, Indisponivel } from './parts';
+
+function Barra({
+  p, pos, ancora, metrica,
+}: Readonly<{
+  p: PontoEscala; pos: number; ancora: number; metrica: Metrica;
+}>) {
+  return (
+    <div
+      role="img"
+      aria-label={descreverPonto(p, metrica)}
+      className="relative h-5 rounded-pill bg-pp-ink/[0.06] border border-pp-ink/10"
+    >
+      {ancora > 0 && (
+        <div
+          className="absolute inset-y-0 w-px bg-pp-ink/25"
+          style={{ left: `${ancora * 100}%` }}
+        />
+      )}
+      <div
+        className="absolute inset-y-[3px] bg-pp-ink/70 rounded-pill"
+        style={{
+          left: `${Math.min(ancora, pos) * 100}%`,
+          width: `${Math.abs(pos - ancora) * 100}%`,
+        }}
+      />
+      <div
+        className="absolute inset-y-0 w-[3px] bg-pp-ink rounded-full"
+        style={{ left: `calc(${pos * 100}% - 1.5px)` }}
+      />
+    </div>
+  );
+}
 
 export function StandardizedProfileChart({
   blocos,
   metrica,
-}: {
+}: Readonly<{
   blocos: BlocoModelo[];
   metrica: Metrica;
-}) {
+}>) {
   return (
     <div className="space-y-8">
       {blocos.map((b, bi) => {
@@ -43,6 +76,22 @@ export function StandardizedProfileChart({
             <div className="space-y-3">
               {b.pontos.map((p) => {
                 const pos = posicao(p.valor, range);
+                // extraído do JSX: um encadeamento de ternários aqui
+                // esconde justamente o caso "disponível mas sem valor",
+                // que é o que NÃO pode virar barra zero
+                let corpo;
+                if (!p.disponivel) {
+                  corpo = <Indisponivel mensagem={p.mensagem} />;
+                } else if (pos !== null && range) {
+                  corpo = <Barra p={p} pos={pos} ancora={ancora} metrica={metrica} />;
+                } else {
+                  corpo = (
+                    <p className="text-pp-ink-soft text-xs">
+                      sem {rotuloDaMetrica(metrica)} para esta escala — não
+                      recebe barra
+                    </p>
+                  );
+                }
                 return (
                   <div key={p.escala} className="space-y-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -55,38 +104,7 @@ export function StandardizedProfileChart({
                       </p>
                     </div>
 
-                    {p.disponivel && pos !== null && range ? (
-                      <div
-                        role="img"
-                        aria-label={descreverPonto(p, metrica)}
-                        className="relative h-5 rounded-pill bg-pp-ink/[0.06] border border-pp-ink/10"
-                      >
-                        {ancora > 0 && (
-                          <div
-                            className="absolute inset-y-0 w-px bg-pp-ink/25"
-                            style={{ left: `${ancora * 100}%` }}
-                          />
-                        )}
-                        <div
-                          className="absolute inset-y-[3px] bg-pp-ink/70 rounded-pill"
-                          style={{
-                            left: `${Math.min(ancora, pos) * 100}%`,
-                            width: `${Math.abs(pos - ancora) * 100}%`,
-                          }}
-                        />
-                        <div
-                          className="absolute inset-y-0 w-[3px] bg-pp-ink rounded-full"
-                          style={{ left: `calc(${pos * 100}% - 1.5px)` }}
-                        />
-                      </div>
-                    ) : p.disponivel ? (
-                      <p className="text-pp-ink-soft text-xs">
-                        sem {rotuloDaMetrica(metrica)} para esta escala — não
-                        recebe barra
-                      </p>
-                    ) : (
-                      <Indisponivel mensagem={p.mensagem} />
-                    )}
+                    {corpo}
 
                     <div className="flex flex-wrap gap-3">
                       {p.excedente && <Excedente lado={p.excedente} />}

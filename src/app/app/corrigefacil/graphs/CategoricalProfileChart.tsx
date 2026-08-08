@@ -37,9 +37,17 @@ import { AvisoAmbiguo, Indisponivel } from './parts';
 /** ETPC: a categoria que o servidor nomeou, em degraus ordinais neutros.
  *  A posição na sequência sai da ORDEM das faixas daquela escala, não de
  *  transformar 25/50/75 em tamanho. */
-function Categoria({ p }: { p: PontoEscala }) {
+function Categoria({ p }: Readonly<{ p: PontoEscala }>) {
   const rotulos = p.segmentos.map((s) => s.rotulo);
-  const lista = rotulos.length > 0 ? rotulos : p.classificacao ? [p.classificacao] : [];
+  let lista: string[];
+  if (rotulos.length > 0) {
+    lista = rotulos;
+  } else if (p.classificacao) {
+    // sem faixas publicadas, mostra só a categoria que o servidor nomeou
+    lista = [p.classificacao];
+  } else {
+    lista = [];
+  }
 
   return (
     <div
@@ -69,7 +77,7 @@ function Categoria({ p }: { p: PontoEscala }) {
 
 /** Mini régua: mesma ideia do ScoreBand, no tamanho de um small
  *  multiple, com o eixo DAQUELA escala. */
-function MiniRegua({ p, metrica }: { p: PontoEscala; metrica: Metrica }) {
+function MiniRegua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
   const range = p.range;
   if (!range) return null;
   const pos = posicao(p.valor, range);
@@ -119,10 +127,10 @@ function MiniRegua({ p, metrica }: { p: PontoEscala; metrica: Metrica }) {
 export function CategoricalProfileChart({
   blocos,
   metrica,
-}: {
+}: Readonly<{
   blocos: BlocoModelo[];
   metrica: Metrica;
-}) {
+}>) {
   return (
     <div className="space-y-6">
       {blocos.map((b, bi) => (

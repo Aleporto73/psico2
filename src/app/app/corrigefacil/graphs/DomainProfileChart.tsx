@@ -7,12 +7,15 @@
 //      mesmo eixo da composta 40..160 seriam erro de categoria;
 //   2. IC95 é OPCIONAL e varia DENTRO do instrumento. O domínio
 //      Adaptativo não tem IC95 publicado em nenhuma linha, enquanto os
-//      outros quatro têm em todas. O gráfico convive com quatro barras
-//      de erro e uma sem — e não desenha a quinta.
+//      outros quatro têm em todas.
 //
-// O IC95 chega como TEXTO do acervo. Ele é exibido como texto: converter
-// para extremos numéricos no cliente seria interpretar formato de dado
-// normativo, e isso é trabalho do servidor.
+// COMO O IC95 APARECE HOJE: como TEXTO, ao lado do escore — e só onde o
+// servidor o enviou. NÃO existe barra de erro desenhada, e não é
+// esquecimento. O `ci95` chega como string de intervalo e nenhum
+// documento do contrato garante essa serialização; G1A §10 diz
+// explicitamente que, se extremos numéricos forem necessários, quem os
+// fornece é o servidor, em campo próprio. Fazer o parser aqui a partir
+// do formato observado seria transformar amostra em contrato.
 // =====================================================================
 
 import {
@@ -27,10 +30,10 @@ import { AvisoAmbiguo, Indisponivel } from './parts';
 export function DomainProfileChart({
   blocos,
   metrica,
-}: {
+}: Readonly<{
   blocos: BlocoModelo[];
   metrica: Metrica;
-}) {
+}>) {
   return (
     <div className="space-y-6">
       {blocos.map((b, bi) => {
@@ -41,6 +44,34 @@ export function DomainProfileChart({
 
             {b.pontos.map((p) => {
               const pos = posicao(p.valor, range);
+              let corpo;
+              if (!p.disponivel) {
+                corpo = <Indisponivel mensagem={p.mensagem} />;
+              } else if (pos !== null && range) {
+                corpo = (
+                  <div
+                    role="img"
+                    aria-label={descreverPonto(p, metrica)}
+                    className="relative h-5 rounded-pill bg-pp-ink/[0.06] border border-pp-ink/10"
+                  >
+                    <div
+                      className="absolute inset-y-[3px] left-0 bg-pp-ink/70 rounded-pill"
+                      style={{ width: `${pos * 100}%` }}
+                    />
+                    <div
+                      className="absolute inset-y-0 w-[3px] bg-pp-ink rounded-full"
+                      style={{ left: `calc(${pos * 100}% - 1.5px)` }}
+                    />
+                  </div>
+                );
+              } else {
+                corpo = (
+                  <p className="text-pp-ink-soft text-xs">
+                    sem {rotuloDaMetrica(metrica)} para este domínio — não
+                    recebe barra
+                  </p>
+                );
+              }
               return (
                 <div key={p.escala} className="space-y-1">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -55,29 +86,7 @@ export function DomainProfileChart({
                     </p>
                   </div>
 
-                  {p.disponivel && pos !== null && range ? (
-                    <div
-                      role="img"
-                      aria-label={descreverPonto(p, metrica)}
-                      className="relative h-5 rounded-pill bg-pp-ink/[0.06] border border-pp-ink/10"
-                    >
-                      <div
-                        className="absolute inset-y-[3px] left-0 bg-pp-ink/70 rounded-pill"
-                        style={{ width: `${pos * 100}%` }}
-                      />
-                      <div
-                        className="absolute inset-y-0 w-[3px] bg-pp-ink rounded-full"
-                        style={{ left: `calc(${pos * 100}% - 1.5px)` }}
-                      />
-                    </div>
-                  ) : p.disponivel ? (
-                    <p className="text-pp-ink-soft text-xs">
-                      sem {rotuloDaMetrica(metrica)} para este domínio — não
-                      recebe barra
-                    </p>
-                  ) : (
-                    <Indisponivel mensagem={p.mensagem} />
-                  )}
+                  {corpo}
 
                   {p.ambiguo && <AvisoAmbiguo />}
                 </div>

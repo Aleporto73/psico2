@@ -97,10 +97,13 @@ describe('escalas incluídas e excluídas', () => {
     expect(excluidasDe('EPQ-J')).toContain('S');
   });
 
-  it('9 · ERA-A e ERA-F excluem o Escore Geral', () => {
+  it('9 · ERA-A e ERA-F selecionam por kind (fail-closed)', () => {
     for (const code of ['ERA-A', 'ERA-F']) {
-      // a inclusão é por exclusão: entram os fatores do catálogo
-      expect(cfg(code).blocos[0].excetoEscalas, code).toEqual(['Escore Geral']);
+      // FAIL-CLOSED: só entra quem é do tipo aprovado. A versão anterior
+      // dizia "todas menos o Escore Geral", e assim uma escala nova
+      // entraria sozinha no gráfico sem passar por G0.
+      expect(cfg(code).blocos[0].apenasKind, code).toEqual(['primaria']);
+      expect(cfg(code).blocos[0].escalas, code).toBeUndefined();
       expect(excluidasDe(code), code).toContain('Escore Geral');
     }
   });
@@ -150,6 +153,34 @@ describe('réguas independentes', () => {
     expect(sc.PANICO.max).toBe(26);
     expect(sc.ESCOLAR.max).toBe(8);
     expect(cfg('SCARED-C').range).toBeUndefined();
+  });
+
+  it('12c · SCARED-C: as 5 subescalas E o band do TOTAL', () => {
+    const e = configDoInstrumento('SCARED-C');
+    if (e?.status !== 'aprovado') throw new Error('SCARED-C deveria estar aprovado');
+
+    // as cinco entram como small multiples categóricos
+    expect(e.config.familia).toBe('categorical_profile');
+    expect(e.config.blocos[0].escalas).toEqual([
+      'PANICO', 'GENERALIZADA', 'SEPARACAO', 'SOCIAL', 'ESCOLAR',
+    ]);
+
+    // o TOTAL é uma representação APROVADA: fica no registro como
+    // ScoreBand, não em `excluidas`. Este teste falha se alguém
+    // simplesmente removê-lo de novo.
+    expect(e.complementos, 'TOTAL sumiu do contrato').toHaveLength(1);
+    const total = e.complementos![0];
+    expect(total.familia).toBe('score_band');
+    expect(total.blocos[0].escalas).toEqual(['TOTAL']);
+
+    // e continua SEM range inventado: nem G0 nem G1A declararam o
+    // domínio, e somar os tetos das subescalas seria inferência
+    expect(total.range, 'range do TOTAL foi inventado').toBeUndefined();
+    expect(total.blocos[0].rangePorEscala).toBeUndefined();
+    expect(JSON.stringify(total)).not.toContain('82');
+
+    // TOTAL não pode estar listado como excluído
+    expect(excluidasDe('SCARED-C')).not.toContain('TOTAL');
   });
 
   it('13 · CHECK-DIS fica marcado como direção invertida', () => {

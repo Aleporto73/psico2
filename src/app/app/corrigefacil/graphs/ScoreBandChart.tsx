@@ -22,10 +22,17 @@ import {
 import type { Metrica } from './graph-config';
 import { AvisoAmbiguo, Indisponivel } from './parts';
 
-function Regua({ p, metrica }: { p: PontoEscala; metrica: Metrica }) {
+function Regua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
   const range = p.range;
   if (!range) return null;
   const pos = posicao(p.valor, range);
+
+  const ic = p.ci95 ? ` (${p.ci95})` : '';
+  const valor =
+    p.valor !== null
+      ? `${rotuloDaMetrica(metrica)} ${p.valor}${ic}`
+      : 'sem valor para posicionar';
+  const legenda = p.classificacao ? `${valor} · ${p.classificacao}` : valor;
 
   const descricao =
     descreverPonto(p, metrica) +
@@ -85,10 +92,7 @@ function Regua({ p, metrica }: { p: PontoEscala; metrica: Metrica }) {
       )}
 
       <figcaption className="text-xs text-pp-ink-soft">
-        {p.valor !== null
-          ? `${rotuloDaMetrica(metrica)} ${p.valor}${p.ci95 ? ` (${p.ci95})` : ''}`
-          : 'sem valor para posicionar'}
-        {p.classificacao ? ` · ${p.classificacao}` : ''}
+        {legenda}
       </figcaption>
     </figure>
   );
@@ -97,10 +101,10 @@ function Regua({ p, metrica }: { p: PontoEscala; metrica: Metrica }) {
 export function ScoreBandChart({
   blocos,
   metrica,
-}: {
+}: Readonly<{
   blocos: BlocoModelo[];
   metrica: Metrica;
-}) {
+}>) {
   return (
     <div className="space-y-6">
       {blocos.map((b, bi) => (

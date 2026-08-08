@@ -29,8 +29,8 @@ function resultado(p: Partial<ResultadoEscala> = {}): ResultadoEscala {
   };
 }
 
-const escala = (code: string): EscalaInstrumento => ({
-  code, name: code, kind: 'primaria', description: null,
+const escala = (code: string, kind = 'primaria'): EscalaInstrumento => ({
+  code, name: code, kind, description: null,
   bruto_min: null, bruto_max: null,
 });
 
@@ -166,21 +166,79 @@ describe('estados', () => {
 });
 
 describe('montagem por instrumento', () => {
-  it('ERA: inclusão por exclusão pega os fatores do catálogo', () => {
+  it('ERA: entram os 4 fatores primários; o Escore Geral não', () => {
+    for (const code of ['ERA-A', 'ERA-F']) {
+      const catalogo = [
+        escala('Fator 1'), escala('Fator 2'),
+        escala('Fator 3'), escala('Fator 4'),
+        escala('Escore Geral', 'composta'),
+      ];
+      const resultados = Object.fromEntries(
+        catalogo.map((e) => [e.code, resultado({ percentile: 50 })]),
+      );
+      const m = montarModelo(cfg(code), resultados, [], catalogo);
+      const codes = m.blocos[0].pontos.map((p) => p.escala);
+      expect(codes, code).toHaveLength(4);
+      expect(codes, code).not.toContain('Escore Geral');
+    }
+  });
+
+  it('ERA é FAIL-CLOSED: escala nova de outro kind não entra sozinha', () => {
+    // é a propriedade, não a contagem: uma escala futura acrescentada ao
+    // catálogo NÃO pode aparecer no gráfico sem passar por G0
     const catalogo = [
-      escala('Comunicação Social'),
-      escala('Interação Social'),
-      escala('Sensibilidade Sensorial'),
-      escala('Padrões Restritos e Repetitivos'),
-      escala('Escore Geral'),
+      escala('Fator 1'), escala('Fator 2'),
+      escala('Fator 3'), escala('Fator 4'),
+      escala('Escore Geral', 'composta'),
+      escala('Escala Nova de Validade', 'validade'),
+      escala('Escala Nova Composta', 'composta'),
     ];
     const resultados = Object.fromEntries(
       catalogo.map((e) => [e.code, resultado({ percentile: 50 })]),
     );
     const m = montarModelo(cfg('ERA-A'), resultados, [], catalogo);
     const codes = m.blocos[0].pontos.map((p) => p.escala);
-    expect(codes).toHaveLength(4);
+
+    expect(codes).toEqual(['Fator 1', 'Fator 2', 'Fator 3', 'Fator 4']);
+    expect(codes).not.toContain('Escala Nova de Validade');
+    expect(codes).not.toContain('Escala Nova Composta');
     expect(codes).not.toContain('Escore Geral');
+  });
+
+  it('bloco sem escalas nem kind declarado não inclui ninguém', () => {
+    // a outra metade do fail-closed: omissão não é permissão
+    const m = montarModelo(
+      {
+        familia: 'score_band', metrica: 'score',
+        blocos: [{}], direcao: 'ascendente_favoravel', tom: 'neutro',
+        range: { min: 0, max: 10 },
+      },
+      { QUALQUER: resultado({ score: 5 }) },
+      [],
+      [escala('QUALQUER')],
+    );
+    expect(m.blocos[0].pontos).toHaveLength(0);
+  });
+
+  it('SCARED-C: 5 small multiples e o TOTAL bloqueado sem range', () => {
+    const e = configDoInstrumento('SCARED-C');
+    if (e?.status !== 'aprovado') throw new Error('SCARED-C');
+    const subs = ['PANICO', 'GENERALIZADA', 'SEPARACAO', 'SOCIAL', 'ESCOLAR'];
+    const catalogo = [...subs, 'TOTAL'].map((c) => escala(c));
+    const resultados = Object.fromEntries(
+      catalogo.map((x) => [x.code, resultado({ score: 5 })]),
+    );
+
+    const mSubs = montarModelo(e.config, resultados, [], catalogo);
+    expect(mSubs.blocos[0].pontos.map((p) => p.escala)).toEqual(subs);
+    expect(mSubs.bloqueio).toBeUndefined();
+
+    const mTotal = montarModelo(e.complementos![0], resultados, [], catalogo);
+    expect(mTotal.familia).toBe('score_band');
+    expect(mTotal.blocos[0].pontos.map((p) => p.escala)).toEqual(['TOTAL']);
+    // aprovado, porém sem eixo — e o motivo é dito, não é erro de cálculo
+    expect(mTotal.bloqueio).toBeTruthy();
+    expect(mTotal.blocos[0].pontos[0].range).toBeUndefined();
   });
 
   it('BAYLEY: IC95 só aparece onde veio', () => {
@@ -198,7 +256,7 @@ describe('montagem por instrumento', () => {
         }),
       ]),
     );
-    const m = montarModelo(cfg('BAYLEY-III'), resultados, [], doms.map(escala));
+    const m = montarModelo(cfg('BAYLEY-III'), resultados, [], doms.map((c) => escala(c)));
     const adapt = m.blocos[0].pontos.find((p) => p.escala === 'DOM_Adaptativo');
     expect(adapt?.ci95).toBeNull();
     expect(m.blocos[0].pontos.filter((p) => p.ci95 !== null)).toHaveLength(4);
@@ -209,7 +267,7 @@ describe('montagem por instrumento', () => {
     const resultados = Object.fromEntries(
       codes.map((c) => [c, resultado({ score: 60 })]),
     );
-    const m = montarModelo(cfg('C-TRF_1.5-5'), resultados, [], codes.map(escala));
+    const m = montarModelo(cfg('C-TRF_1.5-5'), resultados, [], codes.map((c) => escala(c)));
     expect(m.blocos).toHaveLength(2);
     expect(m.blocos[0].pontos.map((p) => p.escala)).toEqual([
       'I', 'II', 'III', 'IV', 'V', 'VI',
@@ -237,7 +295,7 @@ describe('montagem por instrumento', () => {
       const resultados = Object.fromEntries(
         codes.map((x) => [x, resultado({ score: 100 })]),
       );
-      const m = montarModelo(c, resultados, [], codes.map(escala));
+      const m = montarModelo(c, resultados, [], codes.map((c) => escala(c)));
       expect(m.bloqueio, code).toBeTruthy();
     }
   });
@@ -247,7 +305,7 @@ describe('montagem por instrumento', () => {
     const resultados = Object.fromEntries(
       codes.map((c) => [c, resultado({ score: 75, classification: 'Quartil superior' })]),
     );
-    const m = montarModelo(cfg('ETPC'), resultados, [], codes.map(escala));
+    const m = montarModelo(cfg('ETPC'), resultados, [], codes.map((c) => escala(c)));
     expect(m.bloqueio).toBeUndefined();
     // e o número do quartil não vira posição
     expect(m.blocos[0].pontos[0].valor).toBeNull();
