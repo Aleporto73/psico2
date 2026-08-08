@@ -200,9 +200,9 @@ export function AvaliarClient({ code }: { code: string }) {
     return (
       <div className="max-w-3xl mx-auto space-y-6 pt-4">
         {voltar}
-        <p className="text-pp-ink-soft text-sm" role="status">
+        <output className="block text-pp-ink-soft text-sm">
           Carregando instrumento…
-        </p>
+        </output>
       </div>
     );
   }
@@ -476,9 +476,9 @@ export function AvaliarClient({ code }: { code: string }) {
               </button>
 
               {prog && (
-                <p className="text-pp-ink-soft text-sm tabular-nums" role="status">
+                <output className="block text-pp-ink-soft text-sm tabular-nums">
                   {prog.respondidos} de {prog.total} respondidos
-                </p>
+                </output>
               )}
 
               {faltando.length > 0 && (
@@ -562,9 +562,9 @@ function ResultadoCorrecao({
 
       {salvamento.fase === 'salvo' ? (
         <section className="bg-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">
-          <p className="text-pp-ink text-base" role="status">
+          <output className="block text-pp-ink text-base">
             Avaliação salva. Ela já aparece em Avaliações salvas.
-          </p>
+          </output>
           <Link
             href={`/app/corrigefacil/avaliacoes/${encodeURIComponent(salvamento.id)}`}
             className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"

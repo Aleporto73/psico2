@@ -68,9 +68,9 @@ export function DetalheClient({ id }: { id: string }) {
     return (
       <div className="max-w-3xl mx-auto space-y-6 pt-4">
         {voltar}
-        <p className="text-pp-ink-soft text-sm" role="status">
+        <output className="block text-pp-ink-soft text-sm">
           Carregando avaliação…
-        </p>
+        </output>
       </div>
     );
   }

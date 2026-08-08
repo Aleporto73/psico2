@@ -84,9 +84,9 @@ export function CorrigeFacilCatalogClient() {
       <CorrigeFacilNav />
 
       {estado.fase === 'carregando' && (
-        <p className="text-pp-ink-soft text-sm" role="status">
+        <output className="block text-pp-ink-soft text-sm">
           Carregando instrumentos…
-        </p>
+        </output>
       )}
 
       {estado.fase === 'erro' && (
@@ -144,9 +144,9 @@ export function CorrigeFacilCatalogClient() {
               </p>
             </section>
           ) : visiveis.length === 0 ? (
-            <p className="text-pp-ink-soft text-sm" role="status">
+            <output className="block text-pp-ink-soft text-sm">
               Nenhum instrumento corresponde a “{termo}”.
-            </p>
+            </output>
           ) : (
             // `items-stretch` + `flex-col` no cartão + `mt-auto` no CTA: com
             // nomes de comprimento diferente (de "TDF" a "CHECK-Dis —

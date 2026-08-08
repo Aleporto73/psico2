@@ -72,9 +72,9 @@ export function HistoricoClient() {
       </header>
 
       {estado.fase === 'carregando' && (
-        <p className="text-pp-ink-soft text-sm" role="status">
+        <output className="block text-pp-ink-soft text-sm">
           Carregando avaliações…
-        </p>
+        </output>
       )}
 
       {estado.fase === 'erro' && (
@@ -151,9 +151,9 @@ function Lista({
 
   if (visiveis.length === 0) {
     return (
-      <p className="text-pp-ink-soft text-sm" role="status">
+      <output className="block text-pp-ink-soft text-sm">
         Nenhuma avaliação corresponde a “{termo}”.
-      </p>
+      </output>
     );
   }
 
