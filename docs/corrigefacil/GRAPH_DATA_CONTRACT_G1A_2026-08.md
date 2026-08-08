@@ -204,13 +204,18 @@ ordenação a manter. O conteúdo é pequeno e fechado.
                                 // reinterpreta silenciosamente linha antiga
   "basis": "score",             // "score" | "percentil" | "z"
                                 // QUAL campo do ResultadoEscala o gráfico posiciona
-  "range": { "min": 15, "max": 75 },   // extensão da régua; null quando não fechada
   "segments": [                 // a régua JÁ RESOLVIDA para a norma aplicada
     { "from": 15, "to": 46, "label": "…", "ordinal": 0 },
     { "from": 47, "to": 75, "label": "…", "ordinal": 1 }
   ]
 }
 ```
+
+**`range` saiu do conjunto obrigatório.** Ele é opcional e a recomendação é
+**omiti-lo**. A auditoria que levou a isso está em §5.2 — é a correção mais
+importante desta revisão, e não é cosmética: a versão anterior admitia derivar
+`range` de `scales.raw_min/raw_max` ou dos extremos das faixas, e **as duas
+fontes produzem eixo errado**.
 
 `segments` vazio é válido e significa "métrica autoexplicativa, sem corte a
 desenhar" — famílias C (percentil).
@@ -220,7 +225,7 @@ desenhar" — famílias C (percentil).
 | campo | guardar | por quê |
 |---|---|---|
 | `basis` | **sim** | é `BASIS[score_type]`, já computado pelo motor; sem ele o gráfico não sabe qual número posicionar |
-| min/max da régua | **sim** | define a extensão do eixo; hoje vem de `scales.raw_min/raw_max` ou dos extremos das faixas, e nenhum dos dois chega ao histórico |
+| min/max da régua | **não** (opcional, recomendado omitir) | é **domínio visual**, não contexto normativo. Não é histórico, e nenhuma fonte normativa o produz com segurança — §5.2 |
 | bands / cutoffs | **sim, como `segments`** | é a régua inteira. ScoreBandChart precisa dela, não só do nome da faixa atual |
 | `scale_code` | **não** | `resultados` já é um mapa indexado pelo código da escala |
 | metric value | **não** | é `score`/`percentile`/`z`, já em `ResultadoEscala` |
@@ -245,7 +250,84 @@ conversão, nenhuma média/DP, nenhum id normativo.
 
 **8. Avaliações anteriores à migration** → `visual_context` nulo. Política em §11.
 
-### 5.2 Onde o snapshot é produzido
+### 5.2 `range` — dois conceitos que não podem se misturar
+
+**SEGMENTS** e **DISPLAY RANGE** são coisas diferentes, e tratá-los como um só
+campo foi o erro da versão anterior:
+
+| conceito | o que é | natureza | onde vive |
+|---|---|---|---|
+| **SEGMENTS** | as fronteiras de classificação da norma **efetivamente aplicada** | **dado normativo histórico** | congelado no snapshot |
+| **DISPLAY RANGE** | a extensão do eixo da métrica plotada | **convenção visual** | contrato estático (G0) |
+
+`basis` declara a **métrica graficada** — `score`, `percentil` ou `z`.
+`scales.raw_min/raw_max` descreve a **métrica bruta**. Quando a métrica plotada é
+transformada, as duas não têm relação alguma.
+
+**Auditoria das fontes candidatas** (lida do banco, escala a escala):
+
+| instrumento · escala | `basis` | raw | métrica plotada (real) | extremos das faixas |
+|---|---|---|---|---|
+| TDF · TOTAL | score (pontuação padrão) | 0..23 | **0..229** | 0..**349** |
+| TRILHAS_PRE · A-CON | score (pontuação padrão) | 1..4 | **66..122** | 1..**999** |
+| TRILHAS_PRE · B-SEQ | score (pontuação padrão) | 1..10 | **83..183** | 1..**999** |
+| C-TRF · I | score (T) | 0..14 | **50..100** | **65..69** + 1 aberta |
+| BAYLEY-III · subteste | score (escalonada) | 0..91 | **1..19** | 0..**null** (7 abertas) |
+| CONFIAS · Sílaba | z | 0..40 | **sem `norm_entries.score`** | −1..1 (4 abertas) |
+| CES-D · TOTAL | score (= bruto) | 0..60 | **0..60** | **0..60** |
+| DASS-21 · cada escala | score (= bruto) | 0..42 | **0..42** | **0..42** |
+| SCARED-C · PANICO | score (= bruto) | 0..26 | **0..26** | **0..26** |
+
+O que isso prova, fonte por fonte:
+
+1. **`scales.raw_min/raw_max` é PROIBIDO** quando a métrica plotada não é o
+   próprio bruto. Um eixo 1..4 para um resultado de 122 não é impreciso — é
+   absurdo.
+2. **Extremos de `classification_bands` também não servem.** `349` no TDF e
+   `999` no TRILHAS são **sentinelas técnicas** da regra normativa, não teto de
+   escala; e no C-TRF as faixas só cobrem a região clínica (65+), de modo que o
+   eixo começaria em 65 e o resultado 50 cairia fora dele. No BAYLEY as sete
+   faixas são **abertas** (`max_value` nulo em todas) e não têm teto nenhum.
+3. **`min/max` de `norm_entries.score` também não serve** como regra geral: no
+   CONFIAS é **nulo** (o z vem de `norm_stats`, não há linha de conversão), e no
+   TDF traz 229, que é o mesmo artefato de sentinela.
+4. **Onde `basis=score` é de fato o bruto, a coincidência é PROVADA**, não
+   assumida pelo nome: nos quatro instrumentos `escore_bruto` medidos, raw,
+   score e faixas coincidem exatamente, e nenhuma faixa é aberta.
+
+**Regra final:**
+
+> `range`, quando presente, **tem de estar na mesma métrica declarada por
+> `basis`**. É **proibido** derivá-lo de `scales.raw_min/raw_max` quando `basis`
+> representa métrica transformada (pontuação padrão, escore T, composta, z), e é
+> **proibido** derivá-lo de extremos de faixa em qualquer família.
+
+**Decisão: `range` é opcional, e a recomendação é omiti-lo** — alternativa (B) da
+questão. Justificativa por família:
+
+| família | domínio visual | de onde vem | precisa de `range` no snapshot? |
+|---|---|---|---|
+| percentil | 0..100 | **matemático**, independe de norma | **não** |
+| z | **sem domínio fechado** | convenção visual explícita de G0 (ex.: −3..+3) **com comportamento de overflow declarado**; nunca inventar teto | **não** |
+| escore_bruto (score = bruto) | o próprio intervalo da escala | **já implícito nos `segments` congelados** — eles cobrem o domínio inteiro, sem faixa aberta (provado acima) | **não** |
+| pontuação padrão · escore T · composta | convenção da métrica (BAYLEY comprovadamente 40..160 nos domínios) | contrato estático G0, por instrumento e `basis` | **não** |
+| quartil (ETPC) | não há eixo contínuo | — | **não** |
+
+Em nenhuma família o domínio visual precisa ser congelado. É a solução com
+**menor duplicação** — nada que já esteja em `segments` ou em G0 se repete — e
+**menor risco de reinterpretar avaliação antiga**.
+
+**Por que omitir o domínio visual não viola I1.** Mudar a extensão do eixo altera
+o *enquadramento*, não a *interpretação*: a posição do resultado **em relação aos
+segmentos congelados** permanece idêntica, porque os segmentos estão no snapshot.
+Reenquadrar não reclassifica. O que violaria I1 seria mover as fronteiras — e
+elas são exatamente o que fica congelado.
+
+Se G1B concluir que precisa de `range` em algum caso específico, ele é aceito
+**desde que na métrica de `basis`** e com a fonte declarada explicitamente no
+código. O campo fica no formato como opcional para não exigir `v: 2` depois.
+
+### 5.3 Onde o snapshot é produzido
 
 Em `criarEConcluir()`, **na mesma transação** que grava `assessment_results`, a
 partir do que o motor já resolveu. Em `POST /corrigir` (que não grava) a mesma
@@ -374,9 +456,15 @@ avaliação, e não há como: as tabelas não têm coluna temporal (§3.3). Um b
 "provavelmente correto" é exatamente a representação histórica dependente do
 presente que I1 proíbe.
 
-Impacto prático: **2 registros** perdem gráfico (Bayley e CES-D) e continuam com
-a tabela. O acervo legado é pequeno o bastante para que a política honesta custe
-quase nada — e essa janela se fecha rápido.
+**Impacto prático, sem ambiguidade.** São **3 avaliações legadas** —
+BAYLEY-III, CES-D e DCDQ. Destas, **apenas 2 perdem um gráfico que G0 havia
+aprovado**: BAYLEY-III (DomainProfileChart) e CES-D (ScoreBandChart). **O DCDQ
+não representa uma terceira perda**, porque ele já estava PENDENTE em G0 e nunca
+teve gráfico aprovado a perder. As duas que perdem continuam com a tabela de
+resultados íntegra.
+
+O acervo legado é pequeno o bastante para que a política honesta custe quase
+nada — e essa janela se fecha rápido.
 
 Quando `visual_context` for nulo, a tela deve dizer que o gráfico não está
 disponível para aquele registro, sem culpar o dado nem sugerir defeito.
@@ -496,22 +584,29 @@ Nenhuma migration em `psico2`.
 8. o contexto **não** repete `score`, `percentile`, `z`, `classification`, `ci95`;
 9. **vazamento**: nenhum id normativo, nenhum `raw_min/raw_max` de linha, nenhuma
    média/DP no payload — sentinela igual à existente;
-10. C-TRF: escala do bloco de síndromes traz 3 segmentos, **nunca** as 27 faixas.
+10. C-TRF: escala do bloco de síndromes traz 3 segmentos, **nunca** as 27 faixas;
+11. **`range`**: se o snapshot trouxer `range`, ele está na métrica de `basis`.
+    A trava direta — o teste falha se `range` de TDF, TRILHAS_PRE, C-TRF,
+    BAYLEY-III ou CONFIAS coincidir com `scales.raw_min/raw_max`, e falha se
+    coincidir com extremos de faixa (as sentinelas 349 e 999). É o teste que
+    impede a regressão corrigida nesta revisão.
 
 **Contrato entre as três rotas**
 
-11. `POST /corrigir` e `POST /avaliacao` produzem contexto **idêntico** para a
+12. `POST /corrigir` e `POST /avaliacao` produzem contexto **idêntico** para a
     mesma entrada;
-12. `GET /avaliacao/:id` devolve o **gravado**, e não um recálculo — o teste
+13. `GET /avaliacao/:id` devolve o **gravado**, e não um recálculo — o teste
     altera a banda depois de salvar e prova que o snapshot não mudou. **É o teste
     que prova I1**, e é o mais importante da lista;
-13. legado: `visual_context` nulo atravessa as três rotas sem quebrar.
+14. legado: `visual_context` nulo atravessa as três rotas sem quebrar.
 
 **Cliente (`psico2`, Vitest node)**
 
-14. o tipo aceita `visual_context` ausente (legado) e presente;
-15. nenhuma função pura de gráfico deriva corte, faixa ou classificação — a
-    trava equivalente à do `form-model.ts`, que já proíbe pontuar no cliente.
+15. o tipo aceita `visual_context` ausente (legado) e presente, e `range`
+    ausente em qualquer caso;
+16. nenhuma função pura de gráfico deriva corte, faixa, classificação **ou
+    domínio de eixo a partir de dado normativo** — a trava equivalente à do
+    `form-model.ts`, que já proíbe pontuar no cliente.
 
 ---
 
@@ -520,7 +615,8 @@ Nenhuma migration em `psico2`.
 | pergunta | resposta |
 |---|---|
 | **HISTÓRICO FICA CONGELADO — COMO?** | snapshot visual mínimo persistido por linha de resultado, na mesma transação que grava o resultado. Resultado e régua congelam juntos; norma futura não os alcança |
-| **DCDQ É DESBLOQUEADO — COMO?** | o servidor resolve a idade, resolve a faixa etária, colapsa as linhas daquele conjunto em 2 segmentos e congela. O cliente recebe a régua **desta** avaliação, nunca a tabela nem a regra |
+| **DCDQ — CONTRATO PARA DESBLOQUEIO** | **DEFINIDO. Desbloqueável em G1B — não desbloqueado agora.** O servidor resolve a idade, resolve a faixa etária, colapsa as linhas daquele conjunto em 2 segmentos e congela. O cliente recebe a régua **desta** avaliação, nunca a tabela nem a regra. **G1A não desbloqueia produção: em produção o DCDQ segue PENDENTE até G1B implementar o contrato** |
+| **`range`** | **opcional, recomendado omitir.** Quando presente, obrigatoriamente na métrica de `basis`; proibido derivar de `scales.raw_min/raw_max` em métrica transformada e proibido derivar de extremos de faixa — §5.2 |
 | **NORMA COMPLETA VAI AO BROWSER** | **NÃO** — e vai **menos** que hoje: só as faixas da escala em questão, não as do instrumento |
 | **FRONTEND CALCULA CORTE** | **NÃO** — recebe `segments` prontos |
 | **AVAILABLE FALSE** | definido — §8 |
