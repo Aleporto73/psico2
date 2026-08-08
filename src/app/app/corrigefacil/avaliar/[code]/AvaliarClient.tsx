@@ -12,6 +12,7 @@ import {
   type RespostaCorrecao,
 } from '@/lib/corrigefacil/api';
 import { resolverNormaData } from '@/lib/corrigefacil/date-norm-api';
+import { ResultGraph } from '../../graphs/ResultGraph';
 import {
   identificacaoInicial,
   montarPedidoAvaliacao,
@@ -256,6 +257,7 @@ export function AvaliarClient({ code }: { code: string }) {
       ) : resultado ? (
         <ResultadoCorrecao
           resposta={resultado}
+          detalhe={detalhe}
           onCorrigirNovamente={() => {
             setResultado(null);
             setSalvamento({ fase: 'inativo' });
@@ -500,6 +502,7 @@ export function AvaliarClient({ code }: { code: string }) {
 
 function ResultadoCorrecao({
   resposta,
+  detalhe,
   onCorrigirNovamente,
   identificacao,
   onIdentificacao,
@@ -507,6 +510,7 @@ function ResultadoCorrecao({
   onSalvar,
 }: {
   resposta: RespostaCorrecao;
+  detalhe: InstrumentoDetalhe;
   onCorrigirNovamente: () => void;
   identificacao: IdentificacaoAvaliado;
   onIdentificacao: (d: IdentificacaoAvaliado) => void;
@@ -559,6 +563,12 @@ function ResultadoCorrecao({
           </div>
         ))}
       </div>
+
+      {/* Entre o resultado textual e o salvamento. A tabela acima
+          permanece intacta: o gráfico acompanha a leitura, não a
+          substitui — e há instrumento sem gráfico aprovado, onde ele
+          simplesmente não aparece. */}
+      <ResultGraph detalhe={detalhe} resposta={resposta} />
 
       {salvamento.fase === 'salvo' ? (
         <section className="bg-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">
