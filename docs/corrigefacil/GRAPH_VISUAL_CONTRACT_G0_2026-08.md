@@ -380,54 +380,127 @@ magnitude.** O piso é 39 (39 itens valendo 1 no mínimo) e não 0.
 
 ---
 
-## 2. Cor — classificação, sem paleta
+## 2. Cor — três propriedades independentes, sem paleta
 
-Nenhuma cor é definida aqui. Cada instrumento recebe apenas a **classe** de cor
-que lhe é permitida.
+Nenhuma cor é definida aqui. A versão anterior desta seção usava uma "classe"
+única por instrumento, e quatro instrumentos (BAYLEY-III, TDF, TRILHAS_PRE,
+ETPC) apareciam ao mesmo tempo como neutros **e** ordinais — o que tornava a
+palavra "classe" ambígua. Ela não era ambígua por acidente: são **três coisas
+diferentes**, e um instrumento tem um valor em cada uma.
 
-| classe | quando | instrumentos |
-|---|---|---|
-| **neutra** | direção não é gravidade, ou a leitura é multidimensional | ETPC, EPQ-J, CONFIAS, BAYLEY-III, TRILHAS_PRE, TDF, C-TRF (bloco de síndromes), BPA-2 |
-| **ordinal** | há ordem declarada nas faixas, sem polo moral | BAYLEY-III (7 faixas), TRILHAS_PRE, TDF, ETPC |
-| **semântica autorizada** | a fonte declara faixa de risco/indício explícita | CES-D, PHQ-9, DASS-21, SCARED-C, SNAP-IV-18/26, QA-ADULTO, TRACO-ANSIEDADE, SDQ-POR (TOTAL), ERA-A, ERA-F, C-TRF (INT/EXT/TOT) |
+### 2.1 As três propriedades
 
-**Proibições de cor, já nesta fase:**
+**TOM VISUAL** — de onde a semântica pode vir.
 
-- **CHECK-DIS e DCDQ têm direção invertida.** Qualquer regra "valor alto = cor
-  de alerta" inverte a leitura clínica dos dois. Cor por magnitude é proibida
-  globalmente; a cor sai da **faixa**, nunca do número.
-- **SDQ-POR/PRO** não pode receber a cor das escalas de dificuldade.
-- **EPQ-J/S** é validade — cor semântica de gravidade é proibida.
-- Nenhum verde/amarelo/vermelho é assumido: "média" no Bayley não é "bom", é
-  média.
+| valor | significado |
+|---|---|
+| `neutro` | nenhuma carga de valor. A cor distingue escalas, não julga resultado |
+| `semantico_por_faixa` | a semântica pode vir **da faixa/classificação que o servidor devolveu**, e de nada mais |
+
+**ORDINALIDADE** — se as categorias têm ordem declarada.
+
+| valor | significado |
+|---|---|
+| `ordinal` | as faixas/categorias têm ordem declarada na fonte (podem receber intensidade visual crescente) |
+| `nao_ordinal` | não há ordem entre as categorias |
+
+**DIREÇÃO** — em que extremo do eixo está a leitura favorável.
+
+| valor | significado |
+|---|---|
+| `maior_melhor` | leitura favorável no extremo alto |
+| `maior_risco` | leitura desfavorável no extremo alto |
+| `especifica_por_escala` | a direção **muda entre escalas do mesmo instrumento** |
+| `nao_avaliativa` | não existe extremo favorável — traço, não desempenho |
+
+**Nota sobre `menor_melhor`.** A especificação de entrada listava
+`lower_better`. Ele é geometricamente idêntico a `maior_risco` — o extremo
+favorável é o baixo nos dois — e manter dois nomes para o mesmo eixo
+reintroduziria a ambiguidade que esta seção existe para eliminar. Ficou um
+nome só. Os casos que tentariam usá-lo (CHECK-DIS e DCDQ) estão marcados
+`maior_melhor` com a inversão dita em voz alta.
+
+### 2.2 A regra fundamental
+
+`semantico_por_faixa` **NÃO** significa "valor alto = vermelho, valor baixo =
+verde".
+
+Significa: a semântica visual pode vir **somente da faixa/classificação já
+determinada pelo instrumento**, nunca da magnitude numérica isolada. O gráfico
+lê o rótulo que o servidor mandou e colore por ele. Um mesmo número em duas
+escalas do DASS-21 cai em faixas diferentes e portanto recebe cores diferentes —
+é a faixa que manda, não a altura da barra.
+
+Corolário que vale para os 21: **cor derivada de magnitude é proibida**, mesmo
+onde a direção parece "óbvia".
+
+### 2.3 Matriz de cor
+
+| instrumento | tom_visual | ordinalidade | direção | observação obrigatória |
+|---|---|---|---|---|
+| BAYLEY-III | `neutro` | `ordinal` | `maior_melhor` | as 7 faixas têm ordem, mas **"Média" não é "bom" e "Abaixo da média" não é "ruim"** — é posição na amostra normativa. Verde/vermelho automático é proibido |
+| BPA-2 | `neutro` | `ordinal` | `maior_melhor` | percentil de desempenho atencional; percentil **NULL** abaixo do primeiro corte não recebe cor nenhuma |
+| C-TRF_1.5-5 · bloco I–VI | `semantico_por_faixa` | `ordinal` | `maior_risco` | cortes 65/70, próprios do bloco |
+| C-TRF_1.5-5 · bloco INT/EXT/TOT | `semantico_por_faixa` | `ordinal` | `maior_risco` | cortes 60/64 — **outra régua**, não reaproveitar a do bloco de síndromes |
+| CES-D | `semantico_por_faixa` | `ordinal` | `maior_risco` | — |
+| **CHECK-DIS** | `semantico_por_faixa` | `ordinal` | **`maior_melhor`** | **invertido em relação aos instrumentos de risco usuais.** As faixas dizem risco ("Risco Alto" 39–78, "Risco Moderado" 79–112, "Risco Baixo" 113–195), mas **maior escore = MENOR risco**. ScoreBandChart aprovado; a semântica sai **exclusivamente da faixa recebida**. Qualquer regra por magnitude pinta o melhor resultado como o pior |
+| CONFIAS | `neutro` | `ordinal` | `maior_melhor` | faixas em `basis z`; as faixas em `percentual_acerto` são de tarefa e não entram |
+| DASS-21 | `semantico_por_faixa` | `ordinal` | `maior_risco` | **a faixa é por escala.** O mesmo escore recebe cor diferente em Depressão, Ansiedade e Estresse — e é assim que tem de ser |
+| **DCDQ** | **não se aplica** | **não se aplica** | **não se aplica** | **PENDENTE.** Sem componente aprovado, não há regra de cor a definir. O corte não chega ao cliente (R1) e a direção é invertida. **Nenhuma cor, nenhum gráfico** — definir cor aqui seria desbloquear por via oblíqua |
+| EPQ-J | `neutro` | `ordinal` | `nao_avaliativa` | percentil tem ordem, mas P/E/N são **traços**: não há polo bom. **S fica fora do perfil** e, mesmo fora, é `neutro`/`nao_avaliativa` — validade **não recebe cor clínica de gravidade** |
+| ERA-A | `semantico_por_faixa` | `ordinal` | `maior_risco` | 2 faixas globais (≤59 / ≥60) |
+| ERA-F | `semantico_por_faixa` | `ordinal` | `maior_risco` | idem; fatores homônimos aos de ERA-A **não** são comparáveis entre instrumentos |
+| ETPC | `neutro` | `ordinal` | `nao_avaliativa` | **o quartil é ordinal** (Q25 < Q50 < Q75) e ainda assim o visual é **neutro**: traço de personalidade não representa bom/ruim. É o caso que mostra que ordinalidade e tom são eixos independentes |
+| PHQ-9 | `semantico_por_faixa` | `ordinal` | `maior_risco` | 5 faixas |
+| QA-ADULTO | `semantico_por_faixa` | `ordinal` | `maior_risco` | — |
+| SCARED-C | `semantico_por_faixa` | `ordinal` | `maior_risco` | corte próprio por subescala; a cor sai da faixa daquela escala, nunca da altura comparada |
+| **SDQ-POR** | `semantico_por_faixa` (só TOTAL) | `ordinal` | **`especifica_por_escala`** | **TOTAL** pode ter semântica por faixa (`maior_risco`). **PRO continua fora do gráfico** e é `maior_melhor` — direção **oposta**. **Nunca aplicar a direção nem a cor do TOTAL a PRO.** EMO/CON/HIP/PAR não têm faixa: sem faixa, sem cor semântica |
+| SNAP-IV-18 | `semantico_por_faixa` | `ordinal` | `maior_risco` | 2 faixas por escala, corte próprio |
+| SNAP-IV-26 | `semantico_por_faixa` | `ordinal` | `maior_risco` | TOD corta em 4 e as outras em 6 — a cor sai da faixa da escala |
+| TDF | `neutro` | `ordinal` | `maior_melhor` | desempenho; `available=false` não recebe cor |
+| TRACO-ANSIEDADE | `semantico_por_faixa` | `ordinal` | `maior_risco` | — |
+| TRILHAS_PRE | `neutro` | `ordinal` | `maior_melhor` | 5 faixas globais valendo para os 4 subtestes |
+
+### 2.4 Proibições que sobrevivem a qualquer paleta
+
+- **Cor por magnitude é proibida nos 21.** A cor sai da faixa recebida. CHECK-DIS
+  é a prova viva: lá o escore alto é o bom resultado.
+- **`nao_avaliativa` nunca recebe cor de gravidade** — ETPC e EPQ-J (P/E/N).
+- **EPQ-J/S** é validade de protocolo, não traço nem gravidade.
+- **SDQ-POR/PRO** nunca recebe a cor nem a direção das escalas de dificuldade.
+- **DCDQ não tem regra de cor** enquanto estiver PENDENTE.
+- Nenhum verde/amarelo/vermelho é assumido em lugar nenhum: no Bayley, "Média"
+  é média — não é "bom".
+- Escala sem faixa (subescalas do SDQ-POR) e resultado com `available=false` não
+  recebem cor semântica: não há faixa de onde tirá-la.
 
 ---
 
 ## 3. Matriz-resumo
 
-| Instrumento | Componente | Métrica | Escalas no gráfico | Status |
-|---|---|---|---|---|
-| BAYLEY-III | DomainProfileChart | composta 40–160 | 5 domínios (16 subtestes fora) | **APROVADO** |
-| BPA-2 | StandardizedProfileChart | percentil | AA, AC, AD (AG fora) | **APROVADO** |
-| C-TRF_1.5-5 | StandardizedProfileChart ×2 | escore T | bloco I–VI; bloco INT/EXT/TOT | **APROVADO** |
-| CES-D | ScoreBandChart | score (=bruto) 0–60 | TOTAL | **APROVADO** |
-| CHECK-DIS | ScoreBandChart | score 39–195 (invertida) | TOTAL | **APROVADO** |
-| CONFIAS | StandardizedProfileChart | z | Sílaba, Fonema (Total à parte) | **APROVADO** |
-| DASS-21 | CategoricalProfileChart | score por escala | DEP, ANS, EST | **APROVADO** |
-| DCDQ | — | score 15–75 (invertida) | — | **PENDENTE** (R1) |
-| EPQ-J | StandardizedProfileChart | percentil | P, E, N (S fora) | **APROVADO** |
-| ERA-A | StandardizedProfileChart | percentil | 4 fatores (Geral fora) | **APROVADO** |
-| ERA-F | StandardizedProfileChart | percentil | 4 fatores (Geral fora) | **APROVADO** |
-| ETPC | CategoricalProfileChart | classificação de quartil | 4 fatores | **APROVADO** |
-| PHQ-9 | ScoreBandChart | score 0–27 | TOTAL | **APROVADO** |
-| QA-ADULTO | ScoreBandChart | score 0–50 | TOTAL | **APROVADO** |
-| SCARED-C | CategoricalProfileChart + band | score por escala | 5 subescalas + TOTAL | **APROVADO** |
-| SDQ-POR | ScoreBandChart | score 0–40 | TOTAL (5 subescalas fora) | **APROVADO** |
-| SNAP-IV-18 | CategoricalProfileChart | contagem por escala | DES, HIP | **APROVADO** |
-| SNAP-IV-26 | CategoricalProfileChart | contagem por escala | DES, HIP, TOD | **APROVADO** |
-| TDF | ScoreBandChart | pontuação padrão | escala única | **APROVADO** |
-| TRACO-ANSIEDADE | ScoreBandChart | score 0–102 | TOTAL | **APROVADO** |
-| TRILHAS_PRE | StandardizedProfileChart | pontuação padrão | 4 subtestes | **APROVADO** |
+| Instrumento | Componente | Métrica | Escalas no gráfico | tom_visual | ordinalidade | direção | Status |
+|---|---|---|---|---|---|---|---|
+| BAYLEY-III | DomainProfileChart | composta 40–160 | 5 domínios (16 subtestes fora) | `neutro` | `ordinal` | `maior_melhor` | **APROVADO** |
+| BPA-2 | StandardizedProfileChart | percentil | AA, AC, AD (AG fora) | `neutro` | `ordinal` | `maior_melhor` | **APROVADO** |
+| C-TRF_1.5-5 | StandardizedProfileChart ×2 | escore T | bloco I–VI; bloco INT/EXT/TOT | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| CES-D | ScoreBandChart | score (=bruto) 0–60 | TOTAL | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| CHECK-DIS | ScoreBandChart | score 39–195 | TOTAL | `semantico_por_faixa` | `ordinal` | **`maior_melhor`** (invertido) | **APROVADO** |
+| CONFIAS | StandardizedProfileChart | z | Sílaba, Fonema (Total à parte) | `neutro` | `ordinal` | `maior_melhor` | **APROVADO** |
+| DASS-21 | CategoricalProfileChart | score por escala | DEP, ANS, EST | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| DCDQ | — | score 15–75 (invertida) | — | **n/a** | **n/a** | **n/a** | **PENDENTE** (R1) |
+| EPQ-J | StandardizedProfileChart | percentil | P, E, N (S fora) | `neutro` | `ordinal` | `nao_avaliativa` | **APROVADO** |
+| ERA-A | StandardizedProfileChart | percentil | 4 fatores (Geral fora) | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| ERA-F | StandardizedProfileChart | percentil | 4 fatores (Geral fora) | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| ETPC | CategoricalProfileChart | classificação de quartil | 4 fatores | `neutro` | `ordinal` | `nao_avaliativa` | **APROVADO** |
+| PHQ-9 | ScoreBandChart | score 0–27 | TOTAL | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| QA-ADULTO | ScoreBandChart | score 0–50 | TOTAL | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| SCARED-C | CategoricalProfileChart + band | score por escala | 5 subescalas + TOTAL | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| SDQ-POR | ScoreBandChart | score 0–40 | TOTAL (5 subescalas fora) | `semantico_por_faixa` (só TOTAL) | `ordinal` | **`especifica_por_escala`** | **APROVADO** |
+| SNAP-IV-18 | CategoricalProfileChart | contagem por escala | DES, HIP | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| SNAP-IV-26 | CategoricalProfileChart | contagem por escala | DES, HIP, TOD | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| TDF | ScoreBandChart | pontuação padrão | escala única | `neutro` | `ordinal` | `maior_melhor` | **APROVADO** |
+| TRACO-ANSIEDADE | ScoreBandChart | score 0–102 | TOTAL | `semantico_por_faixa` | `ordinal` | `maior_risco` | **APROVADO** |
+| TRILHAS_PRE | StandardizedProfileChart | pontuação padrão | 4 subtestes | `neutro` | `ordinal` | `maior_melhor` | **APROVADO** |
 
 **Contagem: 21/21 classificados** — 7 ScoreBandChart, 7 StandardizedProfileChart,
 1 DomainProfileChart, 5 CategoricalProfileChart, 1 PENDENTE, 0 SEM GRÁFICO.
