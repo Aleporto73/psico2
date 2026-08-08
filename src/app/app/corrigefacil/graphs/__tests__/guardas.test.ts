@@ -81,10 +81,20 @@ describe('20 · o resultado textual continua na tela', () => {
   const tela = readFileSync(TELA, 'utf8');
 
   it('o card textual por escala não foi removido', () => {
-    expect(tela).toContain('escore ');
-    expect(tela).toContain('percentil ');
+    // as EXPRESSÕES de valor, não os rótulos: é o que prova que o dado
+    // chega à tela, e não muda quando o layout muda
+    expect(tela).toContain('{r.score}');
+    expect(tela).toContain('{r.percentile}');
+    expect(tela).toContain('{r.z}');
+    expect(tela).toContain('{r.ci95}');
     expect(tela).toContain('{r.classification}');
+    expect(tela).toContain('{r.raw}');
     expect(tela).toContain("{r.message ?? 'Resultado indisponível.'}");
+    expect(tela).toContain('{r.flags.join');
+    // e os rótulos continuam nomeando cada número
+    for (const rotulo of ['escore', 'percentil', 'classificação']) {
+      expect(tela, rotulo).toContain(rotulo);
+    }
   });
 
   it('o gráfico entra ENTRE o resultado e o salvamento', () => {

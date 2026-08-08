@@ -32,7 +32,7 @@ import {
   type PontoEscala,
 } from './graph-model';
 import type { Metrica } from './graph-config';
-import { AvisoAmbiguo, Indisponivel } from './parts';
+import { AvisoAmbiguo, Indisponivel, LegendaFaixas } from './parts';
 
 /** ETPC: a categoria que o servidor nomeou, em degraus ordinais neutros.
  *  A posição na sequência sai da ORDEM das faixas daquela escala, não de
@@ -64,7 +64,7 @@ function Categoria({ p }: Readonly<{ p: PontoEscala }>) {
               'px-3 py-1 rounded-pill text-xs border',
               atual
                 ? 'bg-pp-block-lilac border-pp-ink/30 text-pp-ink font-medium'
-                : 'border-pp-ink/10 text-pp-ink-soft',
+                : 'border-pp-hairline text-pp-ink-soft',
             ].join(' ')}
           >
             {r}
@@ -120,6 +120,7 @@ function MiniRegua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }
         <span>{range.min}</span>
         <span>{range.max}</span>
       </div>
+      <LegendaFaixas segmentos={p.segmentos} />
     </div>
   );
 }
@@ -143,7 +144,7 @@ export function CategoricalProfileChart({
             {b.pontos.map((p) => (
               <figure
                 key={p.escala}
-                className="border border-pp-ink/10 rounded-block p-4 space-y-2"
+                className="border border-pp-hairline rounded-block p-4 space-y-2"
               >
                 <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="text-pp-ink text-sm font-medium">{p.nome}</span>
