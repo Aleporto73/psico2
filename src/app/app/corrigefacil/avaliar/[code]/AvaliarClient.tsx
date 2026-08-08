@@ -21,6 +21,7 @@ import {
   type IdentificacaoAvaliado,
 } from './save-model';
 import { acaoSugerida } from '../../catalog-view';
+import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { montarModelo, TEXTO_BLOQUEIO, type ModeloFormulario } from './form-model';
 import {
   COMPONENTES,
@@ -30,9 +31,29 @@ import {
   opcoesDaDimensao,
   pendencias,
   podeEnviar,
+  progresso,
+  textoPendencia,
   type EstadoFormulario,
 } from './form-state';
 import { DateNormFields } from './DateNormFields';
+
+/** Rótulo humano dos componentes. As CHAVES (`omissoes`) são contrato do
+ *  payload e não mudam; só o que aparece na tela ganha acento. */
+const ROTULO_COMPONENTE: Record<string, string> = {
+  acertos: 'Acertos',
+  erros: 'Erros',
+  omissoes: 'Omissões',
+};
+
+/** A partir de quantos itens o protocolo ganha barra de ação fixa.
+ *
+ *  Não é enfeite: em 8 dos 21 instrumentos publicados o protocolo passa
+ *  disso (DCDQ 15, CES-D 20, SNAP-IV-26 26, TRAÇO 34, ERA-F 34, SCARED-C 41,
+ *  EPQ-J 60, CONFIAS 70, ERA-A 75, C-TRF 100). Sem a barra, quem responde o
+ *  último item precisa rolar até o fim para achar o botão e não vê quanto
+ *  falta enquanto responde. Abaixo do limite a página inteira cabe na tela e
+ *  a barra só ocuparia espaço. */
+const LIMITE_BARRA_FIXA = 15;
 
 const AVISO =
   'Resultado de instrumento de rastreio/correção. Deve ser interpretado ' +
@@ -159,14 +180,19 @@ export function AvaliarClient({ code }: { code: string }) {
     }
   }
 
+  // Barra de seções + retorno de um nível. A aba "Instrumentos" fica marcada
+  // durante toda a aplicação: quem está no meio do protocolo vê onde está.
   const voltar = (
-    <Link
-      href="/app/corrigefacil"
-      className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition"
-    >
-      <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-      Voltar ao catálogo
-    </Link>
+    <div className="space-y-4">
+      <CorrigeFacilNav />
+      <Link
+        href="/app/corrigefacil"
+        className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition"
+      >
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+        Voltar ao catálogo
+      </Link>
+    </div>
   );
 
   if (instrumento.fase === 'carregando') {
@@ -203,6 +229,8 @@ export function AvaliarClient({ code }: { code: string }) {
 
   const detalhe = instrumento.detalhe;
   const m = modelo!;
+  const prog = progresso(m, estado);
+  const barraFixa = (prog?.total ?? 0) >= LIMITE_BARRA_FIXA;
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 pt-4">
@@ -272,49 +300,70 @@ export function AvaliarClient({ code }: { code: string }) {
 
           {m.entryMode === 'itens' && (
             <ol className="space-y-3">
-              {m.itens.map((item) => (
-                <li
-                  key={item.numero}
-                  className="border border-pp-ink/10 rounded-block p-4 space-y-3"
-                >
-                  <p className="text-pp-ink text-sm">
-                    <span className="text-pp-ink-soft mr-2">{item.numero}.</span>
-                    {item.texto}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {item.opcoes.map((o) => {
-                      const marcado = estado.respostas[item.numero] === o.value;
-                      return (
-                        <button
-                          key={`${item.numero}-${o.label}-${String(o.value)}`}
-                          type="button"
-                          aria-pressed={marcado}
-                          disabled={o.value === null}
-                          onClick={() =>
-                            setEstado((s) => {
-                              const respostas = { ...s.respostas };
-                              if (o.value === null) return s;
-                              if (respostas[item.numero] === o.value) {
-                                delete respostas[item.numero];
-                              } else {
-                                respostas[item.numero] = o.value;
-                              }
-                              return { ...s, respostas };
-                            })
-                          }
-                          className={`px-3 py-1.5 rounded-pill text-sm border transition ${
-                            marcado
-                              ? 'bg-pp-ink text-pp-canvas border-pp-ink'
-                              : 'bg-white/60 text-pp-ink border-pp-ink/15 hover:border-pp-ink/40'
-                          }`}
-                        >
-                          {o.label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </li>
-              ))}
+              {m.itens.map((item) => {
+                const respondido = estado.respostas[item.numero] !== undefined;
+                return (
+                  <li
+                    key={item.numero}
+                    className={`border rounded-block p-4 space-y-3 transition-colors ${
+                      respondido ? 'border-pp-ink/25' : 'border-pp-ink/10'
+                    }`}
+                  >
+                    <p id={`item-${item.numero}`} className="text-pp-ink text-sm">
+                      <span className="text-pp-ink-soft mr-2 tabular-nums">
+                        {item.numero}.
+                      </span>
+                      {/* Sem enunciado no banco, o número É o enunciado: some
+                          o "Item 12" redundante ao lado do "12." e fica a
+                          referência ao caderno impresso. */}
+                      {item.semEnunciado ? (
+                        <span className="text-pp-ink-soft italic">
+                          sem enunciado neste instrumento
+                        </span>
+                      ) : (
+                        item.texto
+                      )}
+                    </p>
+                    <div
+                      role="radiogroup"
+                      aria-labelledby={`item-${item.numero}`}
+                      className="flex flex-wrap gap-2"
+                    >
+                      {item.opcoes.map((o) => {
+                        const marcado = estado.respostas[item.numero] === o.value;
+                        return (
+                          <button
+                            key={`${item.numero}-${o.label}-${String(o.value)}`}
+                            type="button"
+                            role="radio"
+                            aria-checked={marcado}
+                            disabled={o.value === null}
+                            onClick={() =>
+                              setEstado((s) => {
+                                const respostas = { ...s.respostas };
+                                if (o.value === null) return s;
+                                if (respostas[item.numero] === o.value) {
+                                  delete respostas[item.numero];
+                                } else {
+                                  respostas[item.numero] = o.value;
+                                }
+                                return { ...s, respostas };
+                              })
+                            }
+                            className={`px-3 py-2 min-h-11 rounded-pill text-sm border transition disabled:opacity-40 disabled:cursor-not-allowed ${
+                              marcado
+                                ? 'bg-pp-ink text-pp-canvas border-pp-ink'
+                                : 'bg-white/60 text-pp-ink border-pp-ink/15 hover:border-pp-ink/40'
+                            }`}
+                          >
+                            {o.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </li>
+                );
+              })}
             </ol>
           )}
 
@@ -323,10 +372,21 @@ export function AvaliarClient({ code }: { code: string }) {
               {m.escalas.map((e) => (
                 <label
                   key={e.code}
-                  className="flex items-center justify-between gap-4 border border-pp-ink/10 rounded-block p-4"
+                  className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border border-pp-ink/10 rounded-block p-4"
                 >
                   <span className="text-pp-ink text-sm">
                     {e.nome} <span className="text-pp-ink-soft">({e.code})</span>
+                    {/* O intervalo aceito vem do catálogo. Dizê-lo evita o
+                        vaivém de digitar, enviar e receber recusa. */}
+                    {(e.min !== null || e.max !== null) && (
+                      <span className="block text-pp-ink-soft text-xs mt-0.5">
+                        {e.min !== null && e.max !== null
+                          ? `bruto de ${e.min} a ${e.max}`
+                          : e.min !== null
+                            ? `bruto mínimo ${e.min}`
+                            : `bruto máximo ${e.max}`}
+                      </span>
+                    )}
                   </span>
                   <input
                     type="number"
@@ -353,16 +413,20 @@ export function AvaliarClient({ code }: { code: string }) {
             <div className="space-y-3">
               {m.escalas.map((e) => (
                 <div key={e.code} className="border border-pp-ink/10 rounded-block p-4 space-y-3">
-                  <p className="text-pp-ink text-sm">
-                    {e.nome} <span className="text-pp-ink-soft">({e.code})</span>
+                  <p className="text-pp-ink text-sm font-medium">
+                    {e.nome} <span className="text-pp-ink-soft font-normal">({e.code})</span>
                   </p>
                   <div className="flex flex-wrap gap-4">
                     {COMPONENTES.map((nome) => (
                       <label key={nome} className="text-xs text-pp-ink-soft space-y-1">
-                        <span className="block capitalize">{nome}</span>
+                        {/* `capitalize` sobre a chave crua imprimia "Omissoes".
+                            A chave é contrato do payload; o rótulo é da tela. */}
+                        <span className="block">{ROTULO_COMPONENTE[nome] ?? nome}</span>
                         <input
                           type="number"
                           inputMode="numeric"
+                          min={0}
+                          step={1}
                           value={estado.componentes[e.code]?.[nome] ?? ''}
                           onChange={(ev) =>
                             setEstado((s) => {
@@ -386,21 +450,46 @@ export function AvaliarClient({ code }: { code: string }) {
           )}
 
           {erroEnvio && (
-            <p className="text-sm text-pp-ink bg-pp-block-lilac rounded-block p-4">{erroEnvio}</p>
+            <p
+              role="alert"
+              className="text-sm text-pp-ink bg-pp-block-lilac rounded-block p-4"
+            >
+              {erroEnvio}
+            </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-4 border-t border-pp-ink/10 pt-6">
-            <button
-              type="button"
-              onClick={enviar}
-              disabled={!habilitado}
-              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {enviando ? 'Corrigindo…' : 'Corrigir'}
-            </button>
-            {faltando.length > 0 && (
-              <p className="text-pp-ink-soft text-sm">{textoPendencia(faltando)}</p>
-            )}
+          {/* Em protocolo longo a barra acompanha a rolagem; em protocolo
+              curto ela é só o rodapé de sempre. O conteúdo é idêntico nos
+              dois casos — muda o posicionamento, não a ação. */}
+          <div
+            className={
+              barraFixa
+                ? 'sticky bottom-0 -mx-4 px-4 py-4 bg-pp-canvas/95 backdrop-blur border-t border-pp-ink/10'
+                : 'border-t border-pp-ink/10 pt-6'
+            }
+          >
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <button
+                type="button"
+                onClick={enviar}
+                disabled={!habilitado}
+                className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {enviando ? 'Corrigindo…' : 'Corrigir'}
+              </button>
+
+              {prog && (
+                <p className="text-pp-ink-soft text-sm tabular-nums" role="status">
+                  {prog.respondidos} de {prog.total} respondidos
+                </p>
+              )}
+
+              {faltando.length > 0 && (
+                <p className="text-pp-ink-soft text-sm w-full sm:w-auto">
+                  {textoPendencia(faltando)}
+                </p>
+              )}
+            </div>
           </div>
         </>
       )}
@@ -410,17 +499,6 @@ export function AvaliarClient({ code }: { code: string }) {
       </p>
     </div>
   );
-}
-
-function textoPendencia(lista: ReturnType<typeof pendencias>): string {
-  return lista
-    .map((p) => {
-      if (p.tipo === 'itens') return `${p.faltam.length} item(ns) sem resposta`;
-      if (p.tipo === 'dimensoes') return `escolha: ${p.faltam.join(', ')}`;
-      if (p.tipo === 'datas') return `preencha: ${p.faltam.join(', ')}`;
-      return `preencha: ${p.faltam.join(', ')}`;
-    })
-    .join(' · ');
 }
 
 function ResultadoCorrecao({
@@ -487,7 +565,9 @@ function ResultadoCorrecao({
 
       {salvamento.fase === 'salvo' ? (
         <section className="bg-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">
-          <p className="text-pp-ink text-base">Avaliação salva.</p>
+          <p className="text-pp-ink text-base" role="status">
+            Avaliação salva. Ela já aparece em Avaliações salvas.
+          </p>
           <Link
             href={`/app/corrigefacil/avaliacoes/${encodeURIComponent(salvamento.id)}`}
             className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
@@ -500,9 +580,16 @@ function ResultadoCorrecao({
           <p className="text-pp-ink text-sm font-medium">Salvar esta avaliação</p>
           <div className="grid gap-3 md:grid-cols-3">
             <label className="text-xs text-pp-ink-soft space-y-1">
-              <span className="block">Avaliado · iniciais ou código</span>
+              {/* O único obrigatório dos três, e até aqui nada dizia isso: o
+                  botão ficava desabilitado sem explicar qual campo faltava. */}
+              <span className="block">
+                Avaliado · iniciais ou código{' '}
+                <span className="text-pp-ink">(obrigatório)</span>
+              </span>
               <input
                 type="text"
+                required
+                aria-required="true"
                 value={identificacao.rotulo}
                 onChange={(e) => onIdentificacao({ ...identificacao, rotulo: e.target.value })}
                 className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
@@ -533,7 +620,9 @@ function ResultadoCorrecao({
           </div>
 
           {salvamento.fase === 'erro' && (
-            <p className="text-sm text-pp-ink">{salvamento.mensagem}</p>
+            <p role="alert" className="text-sm text-pp-ink">
+              {salvamento.mensagem}
+            </p>
           )}
 
           <div className="flex flex-wrap items-center gap-4">

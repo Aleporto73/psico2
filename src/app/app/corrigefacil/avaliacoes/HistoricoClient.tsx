@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, RefreshCw } from 'lucide-react';
+import { ArrowRight, RefreshCw, Search } from 'lucide-react';
 import {
   CorrigeFacilError,
   listarAvaliacoes,
@@ -10,7 +10,9 @@ import {
   type AvaliacaoResumo,
 } from '@/lib/corrigefacil/api';
 import { acaoSugerida } from '../catalog-view';
+import { CorrigeFacilNav } from '../CorrigeFacilNav';
 import {
+  filtrarLinhas,
   formatarData,
   montarLinhas,
   resumoQuantidadeHistorico,
@@ -19,6 +21,7 @@ import {
 
 export function HistoricoClient() {
   const [estado, setEstado] = useState<EstadoHistorico>({ fase: 'carregando' });
+  const [termo, setTermo] = useState('');
 
   const executar = useCallback((signal?: AbortSignal) => {
     listarAvaliacoes({ limit: LIMITE_MAXIMO, offset: 0 }, { signal })
@@ -47,15 +50,15 @@ export function HistoricoClient() {
     executar();
   }, [executar]);
 
+  const linhas = useMemo(
+    () => (estado.fase === 'ok' ? montarLinhas(estado.avaliacoes) : []),
+    [estado],
+  );
+  const visiveis = useMemo(() => filtrarLinhas(linhas, termo), [linhas, termo]);
+
   return (
     <div className="max-w-4xl mx-auto space-y-8 pt-4">
-      <Link
-        href="/app/corrigefacil"
-        className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition"
-      >
-        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-        Voltar ao catálogo
-      </Link>
+      <CorrigeFacilNav />
 
       <header className="space-y-2">
         <h1 className="font-serif italic text-3xl md:text-4xl text-pp-ink leading-tight">
@@ -96,9 +99,27 @@ export function HistoricoClient() {
 
       {estado.fase === 'ok' && (
         <>
-          <p className="text-pp-ink-soft text-sm">
-            {resumoQuantidadeHistorico(estado.avaliacoes.length)}
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-pp-ink-soft text-sm">
+              {resumoQuantidadeHistorico(estado.avaliacoes.length)}
+            </p>
+            {estado.avaliacoes.length > 0 && (
+              <label className="relative w-full sm:w-auto">
+                <span className="sr-only">Buscar por avaliado ou instrumento</span>
+                <Search
+                  className="w-4 h-4 text-pp-ink-soft absolute left-3 top-1/2 -translate-y-1/2"
+                  aria-hidden="true"
+                />
+                <input
+                  type="search"
+                  value={termo}
+                  onChange={(e) => setTermo(e.target.value)}
+                  placeholder="Buscar por avaliado ou instrumento"
+                  className="pl-9 pr-4 py-2 rounded-pill border border-pp-ink/15 bg-white/60 text-sm text-pp-ink placeholder:text-pp-ink-soft focus:outline-none focus:border-pp-ink/40 w-full sm:w-72"
+                />
+              </label>
+            )}
+          </div>
 
           {estado.avaliacoes.length === 0 ? (
             <section className="bg-pp-block-lilac rounded-block p-8">
@@ -108,9 +129,13 @@ export function HistoricoClient() {
                 que ele apareça aqui.
               </p>
             </section>
+          ) : visiveis.length === 0 ? (
+            <p className="text-pp-ink-soft text-sm" role="status">
+              Nenhuma avaliação corresponde a “{termo}”.
+            </p>
           ) : (
             <ul className="space-y-2">
-              {montarLinhas(estado.avaliacoes).map((linha) => (
+              {visiveis.map((linha) => (
                 <li
                   key={linha.id}
                   className="border border-pp-ink/10 rounded-block p-4 flex flex-wrap items-center justify-between gap-3"
