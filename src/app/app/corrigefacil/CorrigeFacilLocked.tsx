@@ -1,4 +1,4 @@
-import { ClipboardCheck, ExternalLink, GitCompare, ListChecks } from 'lucide-react';
+import { ClipboardCheck, ExternalLink, History, ListChecks } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import {
   montarVisaoBloqueada,
@@ -31,12 +31,16 @@ const RECURSOS = [
       'O resultado é congelado na conclusão. Reabrir uma avaliação antiga ' +
       'mostra o que foi gravado, não um recálculo.',
   },
+  // A comparação entre aplicações NÃO está implementada e por isso saiu
+  // daqui: a tela de venda não pode prometer uma tela que não existe. No
+  // lugar entrou o histórico, que existe e é o que o comprador de fato usa
+  // depois de aplicar. Quando a comparação for entregue, volta.
   {
-    icone: GitCompare,
-    titulo: 'Comparação entre aplicações',
+    icone: History,
+    titulo: 'Histórico das aplicações',
     texto:
-      'Duas avaliações do mesmo instrumento lado a lado, com a diferença ' +
-      'entre elas.',
+      'Cada avaliação salva fica na sua lista, com o avaliado, o instrumento ' +
+      'e a data — e reabre com o resultado que foi gravado.',
   },
 ];
 

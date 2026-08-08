@@ -1,5 +1,6 @@
 // Modelo de exibição do histórico. Puro, testável sem DOM.
 import type { AvaliacaoResumo, CorrigeFacilErroTipo } from '@/lib/corrigefacil/api';
+import { normalizar } from '../catalog-view';
 
 export type EstadoHistorico =
   | { fase: 'carregando' }
@@ -71,4 +72,22 @@ export function resumoQuantidadeHistorico(total: number): string {
   if (total === 0) return 'Nenhuma avaliação salva';
   if (total === 1) return '1 avaliação salva';
   return `${total} avaliações salvas`;
+}
+
+/** Busca local por identificação do avaliado ou código do instrumento.
+ *
+ *  Existe porque a listagem devolve até `LIMITE_MAXIMO` (100) registros numa
+ *  lista sem cortes: com um punhado de avaliações a rolagem resolve, com
+ *  dezenas ela deixa de resolver. Filtra o que a linha JÁ mostra — rótulo,
+ *  instrumento e respondente — e nada além disso: a listagem não traz
+ *  resultado, e não é aqui que ele vai aparecer. */
+export function filtrarLinhas(linhas: LinhaHistorico[], termo: string): LinhaHistorico[] {
+  const alvo = normalizar(termo);
+  if (!alvo) return linhas;
+  return linhas.filter(
+    (l) =>
+      normalizar(l.rotulo).includes(alvo) ||
+      normalizar(l.instrumento).includes(alvo) ||
+      normalizar(l.respondente ?? '').includes(alvo),
+  );
 }
