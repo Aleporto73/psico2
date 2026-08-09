@@ -173,11 +173,16 @@ describe('réguas independentes', () => {
     expect(total.familia).toBe('score_band');
     expect(total.blocos[0].escalas).toEqual(['TOTAL']);
 
-    // e continua SEM range inventado: nem G0 nem G1A declararam o
-    // domínio, e somar os tetos das subescalas seria inferência
-    expect(total.range, 'range do TOTAL foi inventado').toBeUndefined();
+    // domínio DECLARADO em G0: 0..82. O que autoriza este range e não os
+    // de TDF/TRILHAS/C-TRF é que aqui `score` É o bruto por identidade
+    // explícita no loader, então raw_max está na métrica plotada. Não é
+    // soma dos tetos das subescalas.
+    expect(total.range, 'o TOTAL perdeu o domínio declarado em G0').toEqual({
+      min: 0,
+      max: 82,
+    });
+    // a régua é do bloco inteiro (uma escala só), não por escala
     expect(total.blocos[0].rangePorEscala).toBeUndefined();
-    expect(JSON.stringify(total)).not.toContain('82');
 
     // TOTAL não pode estar listado como excluído
     expect(excluidasDe('SCARED-C')).not.toContain('TOTAL');

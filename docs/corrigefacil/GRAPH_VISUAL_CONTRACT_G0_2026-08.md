@@ -300,7 +300,21 @@ magnitude.** O piso é 39 (39 itens valendo 1 no mínimo) e não 0.
 | cortes / faixas | S / S — 13 faixas presas à escala (2 por subescala, 3 no TOTAL) |
 | componente | **CategoricalProfileChart** (small multiples) + ScoreBandChart para o TOTAL |
 | risco | os `raw_max` são **26, 18, 16, 14, 8** e cada um tem corte próprio. Um 8 em ESCOLAR é o teto da escala; um 8 em PANICO é menos de um terço. Barras de mesma altura significam coisas opostas |
+| **display range do TOTAL** | **0..82** |
 | decisão G0 | **APROVADO como categórico**; TOTAL em band chart próprio |
+
+**DISPLAY RANGE TOTAL = 0..82.** O TOTAL usa **escore bruto**, e neste
+instrumento `score` **é** o bruto por identidade explícita — não por coincidência
+de nome: `engine/loader.py` materializa o TOTAL com `_identidade("TOTAL", 82)`,
+uma linha por ponto de 0 a 82 com `score = raw`. Logo `raw_max = 82`
+(`data/scared_c.json` · `instrument.total.max_raw`) **está na mesma métrica que o
+gráfico plota**, e a proibição de G1A §5.2 — que recai sobre usar
+`raw_min`/`raw_max` em métrica **transformada** — não se aplica aqui.
+
+O domínio não foi somado dos tetos das subescalas. Ele é declarado no campo
+`max_raw` e confirmado por dois artefatos independentes: as 83 linhas de norma de
+0 a 82, e as `total_bands` `0–24 / 25–30 / 31–82`, contíguas e **fechadas nas duas
+pontas**. É o mesmo caso que G1A §5.2 item 4 chama de coincidência **provada**.
 
 ---
 

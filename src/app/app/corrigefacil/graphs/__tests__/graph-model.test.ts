@@ -229,7 +229,7 @@ describe('montagem por instrumento', () => {
     expect(m.blocos[0].pontos).toHaveLength(0);
   });
 
-  it('SCARED-C: 5 small multiples e o TOTAL bloqueado sem range', () => {
+  it('SCARED-C: 5 small multiples e o TOTAL desenhando em 0..82', () => {
     const e = configDoInstrumento('SCARED-C');
     if (e?.status !== 'aprovado') throw new Error('SCARED-C');
     const subs = ['PANICO', 'GENERALIZADA', 'SEPARACAO', 'SOCIAL', 'ESCOLAR'];
@@ -245,9 +245,13 @@ describe('montagem por instrumento', () => {
     const mTotal = montarModelo(e.complementos![0], resultados, [], catalogo);
     expect(mTotal.familia).toBe('score_band');
     expect(mTotal.blocos[0].pontos.map((p) => p.escala)).toEqual(['TOTAL']);
-    // aprovado, porém sem eixo — e o motivo é dito, não é erro de cálculo
-    expect(mTotal.bloqueio).toBeTruthy();
-    expect(mTotal.blocos[0].pontos[0].range).toBeUndefined();
+    // domínio declarado em G0: o TOTAL desenha, e o eixo é o do escore
+    // bruto (score = raw por identidade), não a soma dos tetos das cinco
+    expect(mTotal.bloqueio).toBeUndefined();
+    expect(mTotal.blocos[0].range).toEqual({ min: 0, max: 82 });
+    expect(mTotal.blocos[0].pontos[0].range).toEqual({ min: 0, max: 82 });
+    // e um escore dentro do domínio não é excedente
+    expect(mTotal.blocos[0].pontos[0].excedente).toBeNull();
   });
 
   it('BAYLEY: IC95 só aparece onde veio', () => {

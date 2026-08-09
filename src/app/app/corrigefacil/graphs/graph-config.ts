@@ -481,12 +481,7 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
     },
     // G0: "CategoricalProfileChart (small multiples) + ScoreBandChart
     // para o TOTAL". O TOTAL é uma representação APROVADA e por isso
-    // está no registro — o que falta é só o domínio visual dele, que nem
-    // G0 nem G1A declararam. Somar os tetos das subescalas (26+18+16+14+8)
-    // seria inferência nossa, e G1A §5.2 é explícito em que extremos
-    // observados não viram convenção de eixo. Sem `range`, o modelo
-    // bloqueia o desenho e diz por quê; o resultado textual do TOTAL
-    // continua inteiro na tabela.
+    // está no registro.
     complementos: [
       {
         familia: 'score_band',
@@ -494,6 +489,14 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
         blocos: [{ titulo: 'Total', escalas: ['TOTAL'] }],
         direcao: 'ascendente_sinalizador',
         tom: 'semantico_por_faixa',
+        // 0..82 declarado em G0. NÃO é a soma dos tetos das subescalas:
+        // aqui `score` É o bruto por identidade explícita — o loader
+        // materializa o TOTAL com _identidade("TOTAL", 82), score = raw
+        // em cada uma das 83 linhas. Por isso o raw_max declarado
+        // (scared_c.json · instrument.total.max_raw) está na MESMA
+        // métrica que este gráfico plota, e a proibição de G1A §5.2 —
+        // que recai sobre métrica transformada — não alcança este caso.
+        range: { min: 0, max: 82 },
       },
     ],
   },
