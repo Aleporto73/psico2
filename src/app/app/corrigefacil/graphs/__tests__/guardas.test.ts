@@ -162,12 +162,34 @@ describe('o gráfico sobrevive à impressão', () => {
   });
 
   it('os chips da legenda têm todos a mesma largura e altura', () => {
+    const legenda = trecho(parts, 'LegendaFaixas');
+
     // grid de colunas iguais: no flex-wrap cada chip media pelo próprio
     // texto, e a régua parecia irregular sem que os dados fossem
-    expect(parts).toContain('grid-cols-[repeat(auto-fit,minmax(7rem,1fr))]');
-    expect(parts, 'a legenda voltou ao flex-wrap').not.toContain(
-      '<ul className="flex flex-wrap gap-2">',
-    );
+    expect(legenda).toMatch(/grid-cols-\[repeat\(auto-fit,minmax\([\d.]+rem,1fr\)\)\]/);
+    expect(legenda, 'a legenda voltou ao flex-wrap').not.toContain('flex flex-wrap');
+
+    // o PISO da coluna é o que decide quantas cabem por linha. Acima de
+    // 6rem as cinco faixas do DASS-21 deixam de caber numa linha só no
+    // cartão de largura inteira — por isso o teto é aqui, e não no olho.
+    const piso = /minmax\(([\d.]+)rem,1fr\)/.exec(legenda);
+    expect(piso, 'piso da coluna não encontrado').not.toBeNull();
+    expect(Number(piso![1]), 'piso alto demais para 5 faixas').toBeLessThanOrEqual(6);
+
+    // no papel a caixa é mais estreita: piso menor ainda
+    const noPapel = /print:grid-cols-\[repeat\(auto-fit,minmax\(([\d.]+)rem,1fr\)\)\]/
+      .exec(legenda);
+    expect(noPapel, 'sem piso próprio para impressão').not.toBeNull();
+    expect(Number(noPapel![1])).toBeLessThanOrEqual(5);
+  });
+
+  it('o conteúdo do chip é centralizado nos dois eixos', () => {
+    const legenda = trecho(parts, 'LegendaFaixas');
+    expect(legenda).toContain('items-center');
+    expect(legenda).toContain('justify-center');
+    expect(legenda).toContain('text-center');
+    // e o rótulo longo quebra DENTRO da caixa, sem estourar
+    expect(legenda).toContain('break-words');
   });
 
   it('cartões e réguas não são partidos entre páginas', () => {
