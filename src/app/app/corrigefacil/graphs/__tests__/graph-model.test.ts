@@ -360,8 +360,81 @@ describe('montagem por instrumento', () => {
     expect(posicao(p.valor, p.range)).toBeNull();
   });
 
+  it('TRILHAS_PRE: as quatro no MESMO eixo 40..160, com excedente', () => {
+    const janela = { min: 40, max: 160, overflow: true };
+    const codes = ['A-SEQ', 'A-CON', 'B-SEQ', 'B-CON'];
+
+    const m = montarModelo(
+      cfg('TRILHAS_PRE'),
+      {
+        'A-SEQ': resultado({ score: 100 }),
+        // 66 é o piso das tabelas (A-CON, idade 6, bruto 1): dentro da janela
+        'A-CON': resultado({ score: 66 }),
+        // 183 é o teto das tabelas (B-SEQ, idade 4, bruto 10): FORA dela
+        'B-SEQ': resultado({ score: 183 }),
+        'B-CON': resultado({ score: 125 }),
+      },
+      [],
+      codes.map((c) => escala(c)),
+    );
+
+    expect(m.bloqueio).toBeUndefined();
+    expect(m.blocos).toHaveLength(1);
+    expect(m.blocos[0].pontos.map((p) => p.escala)).toEqual(codes);
+    // UM eixo para as quatro
+    expect(m.blocos[0].range).toEqual(janela);
+    for (const p of m.blocos[0].pontos) {
+      expect(p.range, p.escala).toEqual(janela);
+    }
+
+    const [aseq, acon, bseq, bcon] = m.blocos[0].pontos;
+
+    expect(aseq.valor).toBe(100);
+    expect(aseq.excedente).toBeNull();
+
+    expect(acon.valor).toBe(66);
+    expect(acon.excedente).toBeNull();
+
+    // o valor NÃO vira 160
+    expect(bseq.valor).toBe(183);
+    expect(bseq.excedente).toBe('acima');
+    expect(posicao(183, janela)).toBe(1);
+
+    expect(bcon.valor).toBe(125);
+    expect(bcon.excedente).toBeNull();
+  });
+
+  it('TRILHAS_PRE: escala sem norma não ganha barra inventada', () => {
+    // bruto 0 e bruto acima do teto ficam sem linha de norma
+    const m = montarModelo(
+      cfg('TRILHAS_PRE'),
+      {
+        'A-SEQ': resultado({ score: 92 }),
+        'A-CON': resultado({
+          score: 98,
+          available: false,
+          message: 'não há norma publicada para esta idade neste domínio',
+        }),
+        'B-SEQ': resultado({ score: 108 }),
+        'B-CON': resultado({ score: 94 }),
+      },
+      [],
+      ['A-SEQ', 'A-CON', 'B-SEQ', 'B-CON'].map((c) => escala(c)),
+    );
+
+    const acon = m.blocos[0].pontos.find((p) => p.escala === 'A-CON')!;
+    expect(acon.disponivel).toBe(false);
+    expect(acon.valor).toBeNull();
+    expect(acon.excedente).toBeNull();
+    expect(posicao(acon.valor, acon.range)).toBeNull();
+    // e as outras três continuam desenhando normalmente
+    expect(
+      m.blocos[0].pontos.filter((p) => p.valor !== null).map((p) => p.escala),
+    ).toEqual(['A-SEQ', 'B-SEQ', 'B-CON']);
+  });
+
   it('sem domínio declarado, o modelo bloqueia em vez de inventar eixo', () => {
-    for (const code of ['TRILHAS_PRE', 'C-TRF_1.5-5']) {
+    for (const code of ['C-TRF_1.5-5']) {
       const c = cfg(code);
       const codes = c.blocos.flatMap((b) => b.escalas ?? []);
       const resultados = Object.fromEntries(

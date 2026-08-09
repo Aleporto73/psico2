@@ -366,10 +366,20 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
       blocos: [{ escalas: ['A-SEQ', 'A-CON', 'B-SEQ', 'B-CON'] }],
       direcao: 'ascendente_favoravel',
       tom: 'neutro',
-      // range AUSENTE: pontuação padrão sem domínio declarado. É o caso
-      // mais ilustrativo de G1A §5.2 — os brutos vão de 1..4 a 1..10 e a
-      // métrica plotada vai a 122; plotar o bruto seria absurdo, e os
-      // extremos de faixa trazem a sentinela 999.
+      // JANELA VISUAL declarada em G0 — não é domínio normativo. É a
+      // mesma convenção usada para pontuação padrão centrada em 100
+      // (trilhas.json declara score_mean 100 e NÃO declara DP).
+      //
+      // Uma janela só, no `range` do instrumento e não em
+      // `rangePorEscala`: as quatro estão na mesma métrica e partilham as
+      // mesmas 5 faixas globais, e é isso que as torna comparáveis.
+      // Réguas separadas destruiriam a comparação.
+      //
+      // Nada aqui vem dos dados: nem do bruto (1..4 a 1..10), nem dos
+      // extremos de faixa (1 e 999 são sentinelas), nem dos escores
+      // observados. `overflow` é obrigatório porque B-SEQ chega a 183 na
+      // idade 4 — esse valor continua inteiro e aparece como excedente.
+      range: { min: 40, max: 160, overflow: true },
     },
   },
 

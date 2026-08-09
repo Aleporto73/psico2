@@ -225,10 +225,26 @@ describe('domínio visual', () => {
     expect(cfg('TDF').direcao).toBe('ascendente_favoravel');
   });
 
+  it('TRILHAS_PRE declara 40..160 COM excedente, UMA janela para as quatro', () => {
+    const c = cfg('TRILHAS_PRE');
+    expect(c.range).toEqual({ min: 40, max: 160, overflow: true });
+    // mesma janela do TDF: é uma convenção única de pontuação padrão
+    expect(c.range).toEqual(cfg('TDF').range);
+    // e NÃO por escala — régua separada destruiria a comparação que é o
+    // motivo do gráfico existir
+    expect(c.blocos).toHaveLength(1);
+    expect(c.blocos[0].rangePorEscala).toBeUndefined();
+    expect(c.blocos[0].escalas).toEqual(['A-SEQ', 'A-CON', 'B-SEQ', 'B-CON']);
+    expect(c.familia).toBe('standardized_profile');
+    expect(c.metrica).toBe('score');
+    expect(c.direcao).toBe('ascendente_favoravel');
+    expect(c.tom).toBe('neutro');
+  });
+
   it('sem domínio declarado, o range fica AUSENTE em vez de inventado', () => {
-    // seguem abertos: nem G0 nem G1A fecharam pontuação padrão do TRILHAS
-    // nem o escore T do C-TRF
-    for (const code of ['TRILHAS_PRE', 'C-TRF_1.5-5']) {
+    // segue aberto: G0 não fechou o escore T do C-TRF, e as faixas dele
+    // são abertas nas duas pontas
+    for (const code of ['C-TRF_1.5-5']) {
       expect(cfg(code).range, code).toBeUndefined();
       expect(cfg(code).blocos.some((b) => b.rangePorEscala), code).toBe(false);
     }

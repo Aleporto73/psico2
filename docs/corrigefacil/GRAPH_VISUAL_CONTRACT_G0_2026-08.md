@@ -417,8 +417,38 @@ O que a janela **não** faz:
 | cortes / faixas | S / S — 5 faixas **globais**, valendo para as quatro |
 | componente | **StandardizedProfileChart** |
 | escalas incluídas | as quatro |
+| **display window** | **40..160**, com excedente — **a mesma para as quatro** |
 | risco | comparar bruto seria absurdo (um 4 é teto em A-CON e 40% em B-SEQ). É a padronização — e o fato de as 5 faixas serem globais — que torna as quatro comparáveis. A tabela tem buracos: bruto 0 e acima do teto ficam sem norma, e `available=false` não desenha |
 | decisão G0 | **APROVADO** |
+
+**DISPLAY WINDOW = 40..160, `overflow` — CONVENÇÃO VISUAL FIXA, não domínio
+normativo.**
+
+**Uma janela só para as quatro escalas.** A-SEQ, A-CON, B-SEQ e B-CON estão na
+**mesma métrica padronizada** e partilham as **mesmas 5 faixas globais** — é
+exatamente isso que as torna comparáveis, e é o que autoriza o eixo comum. Não
+há `rangePorEscala` aqui: réguas separadas destruiriam a comparação que o
+gráfico existe para permitir.
+
+A janela é a **mesma convenção já adotada para pontuação padrão centrada em
+100** neste contrato. `data/trilhas.json` declara `score_mean: 100` e **não
+declara DP** — 40..160 é decisão de contrato visual, tomada para manter uma
+única convenção entre os instrumentos de pontuação padrão, e **não** um
+intervalo normativo do teste.
+
+O que a janela **não** faz:
+
+- **não é domínio normativo** e não pode ser citada como intervalo do TRILHAS;
+- **não vem dos extremos das faixas.** O `1` e o `999` das
+  `classification_bands` são **sentinelas técnicas**, não limites de eixo;
+- **não vem do bruto.** Os `raw_min`/`raw_max` são 1–5, 1–4, 1–10 e 1–9: o
+  bruto **nunca** entra neste eixo;
+- **não vem dos extremos observados** nas tabelas de conversão;
+- **não trunca valor.** Escore fora da janela continua **verdadeiro** e é
+  marcado como **excedente**. O acervo produz esses casos: **B-SEQ chega a
+  183** na idade 4. O 183 continua 183 — só a posição encosta na borda;
+- **não muda `available=false`**: bruto 0 e bruto acima do teto ficam sem
+  norma, e aí não há ponto quantitativo nenhum.
 
 ---
 
