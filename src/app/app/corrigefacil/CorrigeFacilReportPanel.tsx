@@ -251,9 +251,9 @@ export function CorrigeFacilReportPanel({
   const actionLabel = reports.length > 0 ? 'Gerar outro relatório' : 'Gerar relatório';
 
   return (
-    <section className="space-y-5 print:hidden">
+    <section className="space-y-5">
       {reports.length > 0 && (
-        <div className="border border-pp-hairline rounded-block p-5 space-y-3">
+        <div className="border border-pp-hairline rounded-block p-5 space-y-3 print:hidden">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
               <p className="text-pp-ink text-sm font-medium">Relatórios desta avaliação</p>
@@ -286,10 +286,10 @@ export function CorrigeFacilReportPanel({
       )}
 
       {reportsLoading && (
-        <output className="block text-sm text-pp-ink-soft">Carregando relatórios…</output>
+        <output className="block text-sm text-pp-ink-soft print:hidden">Carregando relatórios…</output>
       )}
 
-      <div className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-4">
+      <div className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-4 print:hidden">
         <div className="space-y-1">
           <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">Relatório Pró</p>
           <p className="text-pp-ink text-base font-medium">
@@ -413,7 +413,7 @@ export function CorrigeFacilReportPanel({
               <p className="text-pp-ink font-medium">{reportTypeLabel(selectedReport.report_type)}</p>
               <p className="text-xs text-pp-ink-soft mt-1">{formatDate(selectedReport.created_at)}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 print:hidden">
               <button
                 type="button"
                 onClick={copyReport}
