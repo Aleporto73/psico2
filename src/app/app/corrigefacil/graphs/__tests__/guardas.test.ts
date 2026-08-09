@@ -254,6 +254,21 @@ describe('rótulo curto da legenda', () => {
   });
 });
 
+describe('excedente é dito, nunca truncado em silêncio', () => {
+  it('os dois gráficos com eixo numérico marcam o excedente', () => {
+    // `posicao()` prende o marcador na borda do eixo. Isso é desenho, e
+    // só é honesto porque a marca de excedente aparece ao lado. Um
+    // gráfico que recebe range mas não renderiza <Excedente> esconde
+    // exatamente o caso extremo — foi o que aconteceu com o ScoreBand
+    // até o TDF, primeiro instrumento de eixo ABERTO nessa família.
+    for (const nome of ['ScoreBandChart.tsx', 'StandardizedProfileChart.tsx']) {
+      const texto = readFileSync(join(DIR, nome), 'utf8');
+      expect(texto, nome).toContain('p.excedente');
+      expect(texto, nome).toContain('<Excedente');
+    }
+  });
+});
+
 describe('20 · o resultado textual continua na tela', () => {
   const tela = readFileSync(TELA, 'utf8');
 

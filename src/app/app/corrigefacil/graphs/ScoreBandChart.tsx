@@ -19,7 +19,7 @@ import {
   type PontoEscala,
 } from './graph-model';
 import type { Metrica } from './graph-config';
-import { AvisoAmbiguo, FaixasDaRegua, Indisponivel, LegendaFaixas, MarcadorResultado } from './parts';
+import { AvisoAmbiguo, Excedente, FaixasDaRegua, Indisponivel, LegendaFaixas, MarcadorResultado } from './parts';
 
 function Regua({
   p,
@@ -93,6 +93,11 @@ export function ScoreBandChart({
               {p.disponivel ? (
                 <>
                   <Regua p={p} metrica={metrica} instrumento={instrumento} />
+                  {/* `posicao` prende o marcador na borda; sem esta marca o
+                      leitor não saberia que o valor a ultrapassou. Só dispara
+                      em métrica de extremos abertos — nas escalas cujo eixo
+                      cobre o domínio inteiro, `excedente` é sempre null. */}
+                  {p.excedente && <Excedente lado={p.excedente} />}
                   {p.ambiguo && <AvisoAmbiguo />}
                 </>
               ) : (

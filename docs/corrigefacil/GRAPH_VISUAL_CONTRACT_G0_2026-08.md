@@ -369,8 +369,36 @@ pontas**. É o mesmo caso que G1A §5.2 item 4 chama de coincidência **provada*
 | métrica NÃO graficável | bruto |
 | cortes / faixas | S / S — 5 faixas **globais** |
 | componente | **ScoreBandChart** |
+| **display window** | **40..160**, com excedente |
 | risco | há idade sem norma publicada (cobertura irregular): `available=false` é estado legítimo e o gráfico **não pode** desenhar nada nesse caso |
 | decisão G0 | **APROVADO** |
+
+**DISPLAY WINDOW = 40..160 — CONVENÇÃO VISUAL FIXA, não domínio normativo.**
+
+A pontuação padrão do TDF tem **extremos abertos**: a primeira faixa é
+"MUITO BAIXA" abaixo de 70 e a última é "MUITO ALTA" de 130 para cima. Não
+existe teto nem piso psicométrico, e esta janela **não inventa um**. Ela é a
+extensão do eixo desenhado, e nada mais.
+
+A janela é centrada em **100**, que é o centro declarado da métrica
+(`data/tdf.json` · `score_mean`), com meia-largura de 60 — os ±4 DP da
+convenção de pontuação padrão (DP 15). **O arquivo-fonte não declara DP**: 15 é
+a convenção adotada aqui para desenhar, e é por isso que este número é
+registrado como decisão de G0 e não como fato do acervo.
+
+O que a janela **não** faz:
+
+- **não é domínio normativo** e não pode ser citada como intervalo do teste;
+- **não redefine as `classification_bands`** — elas continuam vindo do
+  servidor, inclusive a "MUITO ALTA" que se estende além de 160;
+- **não altera pontuação, norma nem classificação**;
+- **não trunca valor**. Escore < 40 ou > 160 continua **verdadeiro**, aparece
+  por extenso e é marcado como **excedente**. O acervo produz esses casos de
+  fato: as tabelas de conversão do TDF chegam a 229. Prender o marcador na
+  borda **sem dizer** que o valor a ultrapassou seria esconder exatamente o
+  caso extremo;
+- **não muda `available=false`**: idade sem norma continua sem ponto
+  quantitativo, com a mensagem do servidor no lugar do gráfico.
 
 ---
 
