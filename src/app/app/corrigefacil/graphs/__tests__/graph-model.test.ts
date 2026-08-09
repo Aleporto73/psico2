@@ -433,16 +433,101 @@ describe('montagem por instrumento', () => {
     ).toEqual(['A-SEQ', 'B-SEQ', 'B-CON']);
   });
 
-  it('sem domínio declarado, o modelo bloqueia em vez de inventar eixo', () => {
-    for (const code of ['C-TRF_1.5-5']) {
-      const c = cfg(code);
-      const codes = c.blocos.flatMap((b) => b.escalas ?? []);
-      const resultados = Object.fromEntries(
-        codes.map((x) => [x, resultado({ score: 100 })]),
-      );
-      const m = montarModelo(c, resultados, [], codes.map((c) => escala(c)));
-      expect(m.bloqueio, code).toBeTruthy();
+  it('C-TRF: os DOIS blocos no mesmo eixo 29..100', () => {
+    const eixo = { min: 29, max: 100 };
+    const c = cfg('C-TRF_1.5-5');
+    const codes = c.blocos.flatMap((b) => b.escalas ?? []);
+
+    const m = montarModelo(
+      c,
+      {
+        // síndromes: piso 50 no acervo, e o corte clínico em 70
+        I: resultado({ score: 50 }),
+        II: resultado({ score: 70 }),
+        III: resultado({ score: 65 }),
+        IV: resultado({ score: 100 }),
+        V: resultado({ score: 58 }),
+        VI: resultado({ score: 82 }),
+        // bandas largas: descem ABAIXO de 50 — é o que 50..100 quebraria
+        INT: resultado({ score: 34 }),
+        EXT: resultado({ score: 36 }),
+        TOT: resultado({ score: 29 }),
+      },
+      [],
+      codes.map((x) => escala(x)),
+    );
+
+    expect(m.bloqueio).toBeUndefined();
+    expect(m.blocos).toHaveLength(2);
+    expect(m.blocos[0].pontos.map((p) => p.escala)).toEqual([
+      'I', 'II', 'III', 'IV', 'V', 'VI',
+    ]);
+    expect(m.blocos[1].pontos.map((p) => p.escala)).toEqual(['INT', 'EXT', 'TOT']);
+    // mesmo eixo nos dois blocos
+    expect(m.blocos[0].range).toEqual(eixo);
+    expect(m.blocos[1].range).toEqual(eixo);
+
+    // nenhum valor transformado, e nada excedente: as tabelas cabem no eixo
+    const todos = [...m.blocos[0].pontos, ...m.blocos[1].pontos];
+    expect(todos.map((p) => p.valor)).toEqual([
+      50, 70, 65, 100, 58, 82, 34, 36, 29,
+    ]);
+    for (const p of todos) {
+      expect(p.excedente, p.escala).toBeNull();
     }
+
+    // as pontas do eixo são exatamente as pontas do acervo
+    expect(posicao(29, eixo)).toBe(0);
+    expect(posicao(100, eixo)).toBe(1);
+    // e um piso em 50 teria empurrado INT/EXT/TOT para fora
+    for (const fora of [34, 36, 29]) {
+      expect(fora).toBeLessThan(50);
+    }
+  });
+
+  it('C-TRF: escala sem norma não ganha barra inventada', () => {
+    const c = cfg('C-TRF_1.5-5');
+    const codes = c.blocos.flatMap((b) => b.escalas ?? []);
+    const resultados = Object.fromEntries(
+      codes.map((x) => [x, resultado({ score: 60 })]),
+    );
+    resultados.TOT = resultado({
+      score: 60,
+      available: false,
+      message: 'não há norma publicada para esta idade neste domínio',
+    });
+
+    const m = montarModelo(c, resultados, [], codes.map((x) => escala(x)));
+    const tot = m.blocos[1].pontos.find((p) => p.escala === 'TOT')!;
+    expect(tot.disponivel).toBe(false);
+    expect(tot.valor).toBeNull();
+    expect(tot.excedente).toBeNull();
+    expect(posicao(tot.valor, tot.range)).toBeNull();
+    // INT e EXT continuam desenhando
+    expect(
+      m.blocos[1].pontos.filter((p) => p.valor !== null).map((p) => p.escala),
+    ).toEqual(['INT', 'EXT']);
+  });
+
+  it('sem domínio declarado, o modelo bloqueia em vez de inventar eixo', () => {
+    // Nenhum dos 21 exercita mais este caminho — os quatro que faltavam
+    // ganharam eixo. A guarda fail-closed continua viva com config
+    // sintética: é ela que impede um instrumento futuro de nascer
+    // desenhando um eixo derivado dos dados.
+    const semEixo: ConfigGrafico = {
+      familia: 'score_band',
+      metrica: 'score',
+      blocos: [{ escalas: ['TOTAL'] }],
+      direcao: 'ascendente_sinalizador',
+      tom: 'semantico_por_faixa',
+    };
+    const m = montarModelo(
+      semEixo, { TOTAL: resultado({ score: 100 }) }, [], [escala('TOTAL')],
+    );
+    expect(m.bloqueio).toBeTruthy();
+    expect(m.blocos[0].range).toBeUndefined();
+    // e o valor continua no modelo: bloquear o eixo não apaga o resultado
+    expect(m.blocos[0].pontos[0].valor).toBe(100);
   });
 
   it('ETPC não bloqueia: a classificação basta, sem eixo', () => {

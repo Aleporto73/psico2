@@ -130,8 +130,44 @@ percentil como ausentes sem quebrar, e nunca desenhar barra de erro inventada.
 | componente | **StandardizedProfileChart em DOIS blocos** |
 | escalas incluídas | bloco 1: I, II, III, IV, V, VI · bloco 2: INT, EXT, TOT |
 | escalas excluídas | nenhuma |
+| **display range** | **29..100** — o mesmo eixo nos dois blocos |
 | risco | os cortes das síndromes são 65/70 e os das bandas largas 60/64; uma linha de corte única sobre as 9 classificaria errado metade |
 | decisão G0 | **APROVADO**, obrigatoriamente separado nos dois blocos |
+
+**DISPLAY RANGE = 29..100 — o domínio efetivamente coberto pelas tabelas
+normativas implementadas neste acervo.**
+
+**Não é declaração de domínio universal do C-TRF nem do sistema ASEBA.** É o
+intervalo que as nove tabelas `norms_T` deste acervo produzem, medido linha a
+linha.
+
+**50..100 seria incorreto para o instrumento inteiro.** As seis síndromes têm
+piso **50** — mas as bandas largas descem abaixo disso, e um eixo começando em
+50 jogaria resultados reais para fora do gráfico:
+
+| bloco | escala | raw | T |
+|---|---|---|---|
+| síndromes | I, II, III, IV, V, VI | 0..14 a 0..50 | **50..100** |
+| bandas largas | INT | 0..64 | **34..100** |
+| bandas largas | EXT | 0..68 | **36..100** |
+| bandas largas | **TOT** | 0..200 | **29..100** |
+
+O piso global é o **29** do TOT; o teto é **100** nas nove. Por isso 29..100
+cobre as nove tabelas — e nenhum resultado pode cair fora dele: as tabelas são
+**completas e contíguas** (todo bruto de 0 a `max_raw` tem linha, em M e F), de
+modo que todo T produzível já está dentro da janela. É por isso que este eixo
+**não precisa de `overflow`**, ao contrário do TDF e do TRILHAS_PRE, cuja
+métrica tem extremos abertos.
+
+O que este eixo **não** faz:
+
+- **não usa bruto.** Os `raw_max` vão de 14 a 200 e nunca entram no eixo; o que
+  se plota é o **escore T já calculado pelo servidor**;
+- **não converte bruto em T no cliente**, e **não recalcula classificação** — a
+  classificação continua sendo a que o servidor devolveu;
+- **não junta os nove num bloco só.** O eixo é comum porque a métrica é a
+  mesma; os **cortes não são** — 65/70 nas síndromes, 60/64 nas bandas largas.
+  Os dois blocos continuam obrigatórios.
 
 ---
 
