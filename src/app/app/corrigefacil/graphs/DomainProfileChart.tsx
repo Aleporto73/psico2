@@ -58,8 +58,12 @@ export function DomainProfileChart({
                       className="absolute inset-y-[3px] left-0 bg-pp-ink/70 rounded-pill"
                       style={{ width: `${pos * 100}%` }}
                     />
+                    {/* MARCADOR DO RESULTADO · borda, não fundo: com "background graphics"
+                        desligado ao imprimir, background-color não é pintado e o marcador
+                        sumia do PDF. A geometria é a mesma — border-box com largura 0
+                        pinta de `left` a `left + 3px`. */}
                     <div
-                      className="absolute inset-y-0 w-[3px] bg-pp-ink rounded-full"
+                      className="absolute inset-y-0 w-0 border-l-[3px] border-pp-ink"
                       style={{ left: `calc(${pos * 100}% - 1.5px)` }}
                     />
                   </div>

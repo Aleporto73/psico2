@@ -77,6 +77,32 @@ describe('17/18 · o que não pode ter voltado', () => {
   });
 });
 
+describe('marcador do resultado sobrevive à impressão', () => {
+  const GRAFICOS = [
+    'ScoreBandChart.tsx', 'StandardizedProfileChart.tsx',
+    'DomainProfileChart.tsx', 'CategoricalProfileChart.tsx',
+  ];
+
+  it('os quatro desenham o marcador com BORDA, não com fundo', () => {
+    for (const nome of GRAFICOS) {
+      const texto = readFileSync(join(DIR, nome), 'utf8');
+      // borda é pintada mesmo com "background graphics" desligado; o
+      // fundo não, e era assim que o marcador sumia do PDF
+      expect(texto, nome).toContain('border-l-[3px] border-pp-ink');
+      expect(texto, `${nome}: marcador voltou a depender de fundo`)
+        .not.toMatch(/w-\[3px\] bg-pp-ink/);
+    }
+  });
+
+  it('a posição do marcador continua saindo do mesmo cálculo', () => {
+    for (const nome of GRAFICOS) {
+      const texto = readFileSync(join(DIR, nome), 'utf8');
+      // mesmo `left` de antes: a correção é de pintura, não de geometria
+      expect(texto, nome).toContain('calc(${pos * 100}% - 1.5px)');
+    }
+  });
+});
+
 describe('rótulo curto da legenda', () => {
   const parts = readFileSync(join(DIR, 'parts.tsx'), 'utf8');
 

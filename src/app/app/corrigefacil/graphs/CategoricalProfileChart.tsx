@@ -114,8 +114,15 @@ function MiniRegua({
           );
         })}
         {pos !== null && (
+          // MARCADOR DO RESULTADO · borda, não fundo. Com "background graphics"
+          // desligado — padrão de muitos navegadores ao imprimir —
+          // background-color não é pintado, e o marcador sumia do PDF justamente
+          // no elemento que diz onde o resultado caiu. Borda é pintada de
+          // qualquer jeito. A geometria é a mesma: box-sizing border-box com
+          // largura 0 faz a borda de 3px ocupar de `left` a `left + 3px`, que é
+          // o intervalo que o fundo de 3px ocupava.
           <div
-            className="absolute inset-y-0 w-[3px] bg-pp-ink rounded-full"
+            className="absolute inset-y-0 w-0 border-l-[3px] border-pp-ink"
             style={{ left: `calc(${pos * 100}% - 1.5px)` }}
           />
         )}
