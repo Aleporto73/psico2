@@ -43,10 +43,9 @@ describe('cobertura', () => {
     expect([...CODIGOS_DOS_21].sort()).toEqual([...OS_21].sort());
   });
 
-  it('2 · os 20 aprovados têm família, métrica e ao menos um bloco', () => {
-    const aprovados = OS_21.filter((c) => c !== 'DCDQ');
-    expect(aprovados).toHaveLength(20);
-    for (const code of aprovados) {
+  it('2 · os 21 aprovados têm família, métrica e ao menos um bloco', () => {
+    expect(OS_21).toHaveLength(21);
+    for (const code of OS_21) {
       const c = cfg(code);
       expect(c.familia, code).toBeTruthy();
       expect(c.metrica, code).toBeTruthy();
@@ -54,10 +53,32 @@ describe('cobertura', () => {
     }
   });
 
-  it('3 · DCDQ continua pendente e sem configuração de gráfico', () => {
+  it('3 · DCDQ é régua de POSIÇÃO: aprovado, e sem nenhum corte', () => {
     const e = configDoInstrumento('DCDQ');
-    expect(e?.status).toBe('pendente');
-    expect(JSON.stringify(e)).not.toContain('familia');
+    expect(e?.status).toBe('aprovado');
+
+    const c = cfg('DCDQ');
+    expect(c.familia).toBe('score_band');
+    expect(c.metrica).toBe('score');
+    expect(c.blocos).toHaveLength(1);
+    expect(c.blocos[0].escalas).toEqual(['TOTAL']);
+    // 15..75 é domínio REAL: score = bruto por identidade no loader
+    expect(c.range).toEqual({ min: 15, max: 75 });
+    // pontuação alta é o resultado favorável
+    expect(c.direcao).toBe('ascendente_favoravel');
+    // sem faixa recebida não há de onde tirar cor
+    expect(c.tom).toBe('neutro');
+    // nada de banda, régua por escala ou excedente
+    expect(c.blocos[0].rangePorEscala).toBeUndefined();
+    expect(c.range?.overflow).toBeUndefined();
+    // e a nota diz ao profissional o que a régua NÃO mostra
+    expect(c.nota).toMatch(/corte etário não é desenhado/i);
+
+    // o corte etário NUNCA entra no cliente
+    const texto = JSON.stringify(c);
+    for (const corte of ['47', '56', '58']) {
+      expect(texto, `corte ${corte} vazou para o registro`).not.toContain(corte);
+    }
   });
 });
 
