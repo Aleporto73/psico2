@@ -19,6 +19,16 @@ describe('CorrigeFácil → Relatório Pró — UX V1', () => {
     expect(panel).not.toContain('imageDataUrl');
   });
 
+  it('salva a avaliação antes de verificar o acesso ao Relatório Pró', () => {
+    const openStart = panel.indexOf('async function openGenerator()');
+    const openEnd = panel.indexOf('async function generateReport()', openStart);
+    const trecho = panel.slice(openStart, openEnd);
+    expect(trecho.indexOf('await resolveAssessment()')).toBeGreaterThan(-1);
+    expect(trecho.indexOf("fetch('/api/assistant/generate'")).toBeGreaterThan(
+      trecho.indexOf('await resolveAssessment()'),
+    );
+  });
+
   it('mantém os quatro destinos aprovados e observação opcional', () => {
     expect(panel).toContain("value: 'family'");
     expect(panel).toContain("value: 'school'");
