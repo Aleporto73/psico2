@@ -580,18 +580,36 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
   },
 
   // -------------------------------------------------------------------
-  // PENDENTE
+  // SCORE BAND SEM BANDA · o caso em que a régua é só posição
   // -------------------------------------------------------------------
 
   DCDQ: {
-    status: 'pendente',
-    // O corte muda com a faixa etária, mora em norm_entries e NÃO chega
-    // ao cliente: o browser recebe o valor e o rótulo, sem a linha.
-    // Desenhar a banda exigiria o frontend adivinhar o corte da idade
-    // aplicada — que é exatamente o que o princípio central proíbe.
-    motivo:
-      'o corte aplicado depende da faixa etária e não é enviado ao ' +
-      'cliente; desenhar a régua exigiria inferir o corte',
+    status: 'aprovado',
+    config: {
+      familia: 'score_band',
+      metrica: 'score',
+      blocos: [{ escalas: ['TOTAL'] }],
+      // pontuação ALTA é o resultado favorável — invertido em relação
+      // aos instrumentos de risco usuais
+      direcao: 'ascendente_favoravel',
+      // `neutro` não é escolha estética: sem faixa recebida não existe
+      // de onde tirar semântica, e cor por magnitude é proibida nos 21
+      tom: 'neutro',
+      // 15..75 é o domínio REAL do escore, não convenção: aqui `score` é
+      // o bruto por identidade explícita — o loader emite, por faixa
+      // etária, uma linha por bruto de 15 a 75 com score = raw. O piso
+      // 15 são os 15 itens valendo 1 no mínimo.
+      range: { min: 15, max: 75 },
+      // O corte etário (47/56/58) mora em norm_entries e NÃO chega ao
+      // cliente. Este gráfico não tenta desenhá-lo: mostra só a POSIÇÃO
+      // do escore, sem banda e sem linha. A classificação continua sendo
+      // a que o servidor mandou, em texto, ao lado da régua — que é o
+      // que ela sempre foi.
+      nota:
+        'A régua mostra somente a posição do escore total. O corte ' +
+        'etário não é desenhado; a classificação exibida é a recebida ' +
+        'do servidor.',
+    },
   },
 };
 

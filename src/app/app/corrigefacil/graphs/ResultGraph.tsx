@@ -6,8 +6,9 @@
 // não faz nenhuma chamada de rede — o `InstrumentoDetalhe` já está em
 // memória na tela de correção, com as `faixas_classificacao` dele.
 //
-// Instrumento sem gráfico aprovado (DCDQ) não renderiza nada: a tabela
-// textual acima continua sendo o resultado completo.
+// Instrumento sem gráfico aprovado no registro não renderiza nada: a
+// tabela textual acima continua sendo o resultado completo. Hoje os 21
+// têm representação — o caminho segue vivo para o que vier depois.
 // =====================================================================
 
 import type {
@@ -58,7 +59,7 @@ export function ResultGraph({
       <header className="space-y-1">
         <h2 className="text-pp-ink text-sm font-medium">Representação visual</h2>
         <p className="text-pp-ink-soft text-xs">
-          A posição do resultado dentro das faixas do instrumento.
+          A posição ou categoria do resultado na escala do instrumento.
         </p>
       </header>
 

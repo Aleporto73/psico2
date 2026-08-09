@@ -254,9 +254,38 @@ magnitude.** O piso é 39 (39 itens valendo 1 no mínimo) e não 0.
 | raw / score / percentile / z / ci95 / classification | S / S / N / N / N / S |
 | métrica graficável | score |
 | cortes / faixas | **N / N** — `classification_bands` vazio (0 linhas) |
-| componente | — |
+| componente | **ScoreBandChart sem banda** — só a posição do escore |
+| **display range** | **15..75** |
 | risco | o corte muda com a idade (47 / 56 / 58) e mora em `norm_entries`, uma linha por bruto dentro de cada faixa etária. O cliente **não recebe** esse corte: recebe só o valor e o rótulo. Desenhar banda exigiria o frontend adivinhar o corte da faixa etária aplicada — exatamente o que o princípio central proíbe. A direção ainda é **invertida** (maior = melhor) |
-| decisão G0 | **PENDENTE** — bloqueado por contrato (R1), não por psicometria. Vira ScoreBandChart no dia em que a Edge devolver o corte aplicado |
+| decisão G0 | **APROVADO** — posição do escore no domínio 15..75, **sem corte visual** |
+
+**DISPLAY RANGE = 15..75 — domínio real do escore, não convenção.**
+
+Neste instrumento `score` **é** o bruto por identidade explícita: `load_dcdq`
+emite, para cada faixa etária, uma linha por bruto de 15 a 75 com **score = raw**
+(`engine/loader.py` · `norm_entries`, `(…, r, r, r, …)`). Logo os
+`raw_min`/`raw_max` declarados — 15 e 75 — **estão na mesma métrica que o
+gráfico plota**, e 15..75 é o domínio do próprio escore. O piso 15 não é
+arbitrário: são os 15 itens valendo 1 no mínimo.
+
+**O gráfico não desenha corte, e isso é o ponto.** A régua mostra **apenas a
+posição** do escore total:
+
+- **nenhuma banda, nenhuma linha de corte, `segments` vazio**;
+- **47, 56 e 58 não existem no frontend** — nem como número, nem como fronteira;
+- o cliente **não calcula idade**, **não escolhe faixa etária**, **não infere
+  cutoff** e **não recalcula classificação**;
+- a **classificação exibida é exatamente a que o servidor devolveu**, texto
+  pronto, ao lado da régua.
+
+Por isso o tom é `neutro`: sem faixa disponível no cliente, **não há de onde
+tirar semântica de cor** — e derivá-la da magnitude é proibido nos 21 (§2.4). A
+direção continua `ascendente_favoravel`, com a inversão dita em voz alta:
+**pontuação alta é o resultado favorável**.
+
+Se um dia o servidor passar a enviar o corte da norma resolvida, uma linha de
+corte poderá ser avaliada **separadamente**. Não faz parte desta decisão, e o
+gráfico acima **não depende disso** para existir.
 
 ---
 
@@ -571,7 +600,7 @@ onde a direção parece "óbvia".
 | **CHECK-DIS** | `semantico_por_faixa` | `ordinal` | **`ascendente_favoravel`** | **invertido em relação aos instrumentos de risco usuais.** As faixas dizem risco ("Risco Alto" 39–78, "Risco Moderado" 79–112, "Risco Baixo" 113–195), mas **maior escore = MENOR risco**. ScoreBandChart aprovado; a semântica sai **exclusivamente da faixa recebida**. Qualquer regra por magnitude pinta o melhor resultado como o pior |
 | CONFIAS | `neutro` | `ordinal` | `ascendente_favoravel` | faixas em `basis z`; as faixas em `percentual_acerto` são de tarefa e não entram |
 | DASS-21 | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **a faixa é por escala.** O mesmo escore recebe cor diferente em Depressão, Ansiedade e Estresse — e é assim que tem de ser |
-| **DCDQ** | **não se aplica** | **não se aplica** | **não se aplica** | **PENDENTE.** Sem componente aprovado, não há regra de cor a definir. O corte não chega ao cliente (R1) e a direção é invertida. **Nenhuma cor, nenhum gráfico** — definir cor aqui seria desbloquear por via oblíqua |
+| **DCDQ** | `neutro` | `nao_ordinal` | **`ascendente_favoravel`** | **invertido em relação aos instrumentos de risco usuais: pontuação alta é o resultado favorável.** O corte não chega ao cliente (R1), então o gráfico **não desenha faixa nenhuma** — e sem faixa não há de onde tirar cor semântica. `neutro` aqui não é preferência estética: é a consequência de não haver régua. Cor por magnitude continua proibida |
 | EPQ-J | `neutro` | `ordinal` | `nao_avaliativa` | percentil tem ordem, mas P/E/N são **traços**: não há polo bom. **S fica fora do perfil** e, mesmo fora, é `neutro`/`nao_avaliativa` — validade **não recebe cor clínica de gravidade** |
 | ERA-A | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | 2 faixas globais (≤59 / ≥60) |
 | ERA-F | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | idem; fatores homônimos aos de ERA-A **não** são comparáveis entre instrumentos |
@@ -599,7 +628,8 @@ onde a direção parece "óbvia".
 - **`nao_avaliativa` nunca recebe cor de gravidade** — ETPC e EPQ-J (P/E/N).
 - **EPQ-J/S** é validade de protocolo, não traço nem gravidade.
 - **SDQ-POR/PRO** nunca recebe a cor nem a direção das escalas de dificuldade.
-- **DCDQ não tem regra de cor** enquanto estiver PENDENTE.
+- **DCDQ não recebe cor semântica**: o gráfico dele não tem faixa, e cor só pode
+  sair de faixa recebida. O corte etário (47/56/58) **nunca** vai ao frontend.
 - Nenhum verde/amarelo/vermelho é assumido em lugar nenhum: no Bayley, "Média"
   é média — não é "bom".
 - Escala sem faixa (subescalas do SDQ-POR) e resultado com `available=false` não
@@ -618,7 +648,7 @@ onde a direção parece "óbvia".
 | CHECK-DIS | ScoreBandChart | score 39–195 | TOTAL | `semantico_por_faixa` | `ordinal` | **`ascendente_favoravel`** (invertido) | **APROVADO** |
 | CONFIAS | StandardizedProfileChart | z | Sílaba, Fonema (Total à parte) | `neutro` | `ordinal` | `ascendente_favoravel` | **APROVADO** |
 | DASS-21 | CategoricalProfileChart | score por escala | DEP, ANS, EST | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
-| DCDQ | — | score 15–75 (invertida) | — | **n/a** | **n/a** | **n/a** | **PENDENTE** (R1) |
+| DCDQ | ScoreBandChart **sem banda** | score 15–75 (invertida) | TOTAL | `neutro` | `nao_ordinal` | `ascendente_favoravel` | **APROVADO** |
 | EPQ-J | StandardizedProfileChart | percentil | P, E, N (S fora) | `neutro` | `ordinal` | `nao_avaliativa` | **APROVADO** |
 | ERA-A | StandardizedProfileChart | percentil | 4 fatores (Geral fora) | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
 | ERA-F | StandardizedProfileChart | percentil | 4 fatores (Geral fora) | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
@@ -633,18 +663,23 @@ onde a direção parece "óbvia".
 | TRACO-ANSIEDADE | ScoreBandChart | score 0–102 | TOTAL | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
 | TRILHAS_PRE | StandardizedProfileChart | pontuação padrão | 4 subtestes | `neutro` | `ordinal` | `ascendente_favoravel` | **APROVADO** |
 
-**Contagem: 21/21 classificados** — 7 ScoreBandChart, 7 StandardizedProfileChart,
-1 DomainProfileChart, 5 CategoricalProfileChart, 1 PENDENTE, 0 SEM GRÁFICO.
+**Contagem: 21/21 classificados** — 8 ScoreBandChart, 7 StandardizedProfileChart,
+1 DomainProfileChart, 5 CategoricalProfileChart, 0 PENDENTE, 0 SEM GRÁFICO.
 
 ---
 
 ## NÃO AUTORIZADOS PARA IMPLEMENTAÇÃO
 
-**DCDQ — PENDENTE.** Único instrumento sem componente aprovado. O corte muda
-com a faixa etária, mora em `norm_entries` e **não chega ao cliente**: o browser
-recebe o valor e o rótulo, sem a linha. Desenhar a banda exigiria o frontend
-inferir o corte da idade aplicada, que é criar interpretação. Desbloqueio: a
-Edge passar a devolver o corte da norma resolvida. Decisão de G1, não de G0.
+**Nenhum instrumento fica sem representação.** O DCDQ era o único PENDENTE e
+saiu: ele não precisava da Edge para existir — precisava **parar de tentar
+desenhar o corte**. A régua sem banda representa a posição do escore em 15..75 e
+deixa a classificação ser o que sempre foi, texto pronto do servidor. O corte
+etário continua fora do cliente, e continua proibido lá.
+
+**O que segue proibido no DCDQ:** desenhar 47/56/58, calcular idade, escolher
+faixa etária, inferir cutoff ou recalcular classificação. Uma linha de corte só
+volta à mesa se o servidor passar a enviar o corte da norma resolvida — e aí
+como decisão nova, não como retomada desta.
 
 **Bloqueios transversais que G1 tem de resolver antes de qualquer código:**
 

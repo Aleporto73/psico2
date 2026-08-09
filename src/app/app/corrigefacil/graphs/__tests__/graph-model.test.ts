@@ -509,6 +509,93 @@ describe('montagem por instrumento', () => {
     ).toEqual(['INT', 'EXT']);
   });
 
+  it('DCDQ: só posição em 15..75, sem nenhum segmento', () => {
+    const eixo = { min: 15, max: 75 };
+    // os DOIS rótulos possíveis são strings PRONTAS do servidor. O
+    // frontend não sabe a que escore correspondem — e não pode saber.
+    const ABAIXO =
+      'Indicação ou suspeita de Transtorno de Desenvolvimento da Coordenação';
+    const ACIMA =
+      'Provavelmente não há Transtorno de Desenvolvimento da Coordenação';
+
+    // DCDQ não tem classification_bands: faixas SEMPRE vazio
+    const monta = (score: number, classification: string) =>
+      montarModelo(
+        cfg('DCDQ'),
+        { TOTAL: resultado({ raw: score, score, classification }) },
+        [],
+        [escala('TOTAL')],
+      );
+
+    const piso = monta(15, ABAIXO);
+    expect(piso.bloqueio).toBeUndefined();
+    expect(piso.blocos[0].range).toEqual(eixo);
+    expect(piso.blocos[0].pontos[0].valor).toBe(15);
+    expect(posicao(15, eixo)).toBe(0);
+    expect(piso.blocos[0].pontos[0].segmentos).toEqual([]);
+    // a classificação atravessa intacta, sem ser recalculada
+    expect(piso.blocos[0].pontos[0].classificacao).toBe(ABAIXO);
+
+    const meio = monta(45, ABAIXO);
+    expect(meio.blocos[0].pontos[0].valor).toBe(45);
+    expect(posicao(45, eixo)).toBe(0.5);
+    expect(meio.blocos[0].pontos[0].segmentos).toEqual([]);
+
+    const teto = monta(75, ACIMA);
+    expect(teto.blocos[0].pontos[0].valor).toBe(75);
+    expect(posicao(75, eixo)).toBe(1);
+    expect(teto.blocos[0].pontos[0].segmentos).toEqual([]);
+    expect(teto.blocos[0].pontos[0].classificacao).toBe(ACIMA);
+
+    // o mesmo escore com o OUTRO rótulo continua sendo o que o servidor
+    // disse: é a prova de que o frontend não deriva classificação do
+    // número. 56 tem rótulos opostos conforme a faixa etária, e o modelo
+    // não tem como saber qual — nem tenta.
+    expect(monta(56, ABAIXO).blocos[0].pontos[0].classificacao).toBe(ABAIXO);
+    expect(monta(56, ACIMA).blocos[0].pontos[0].classificacao).toBe(ACIMA);
+  });
+
+  it('DCDQ: nenhum corte etário aparece no modelo', () => {
+    const m = montarModelo(
+      cfg('DCDQ'),
+      { TOTAL: resultado({ raw: 50, score: 50, classification: 'qualquer' }) },
+      [],
+      [escala('TOTAL')],
+    );
+    const texto = JSON.stringify(m);
+    // 47/56/58 não podem existir como fronteira em lugar nenhum
+    for (const seg of m.blocos[0].pontos[0].segmentos) {
+      expect([seg.de, seg.ate]).not.toContain(47);
+      expect([seg.de, seg.ate]).not.toContain(56);
+      expect([seg.de, seg.ate]).not.toContain(58);
+    }
+    expect(m.blocos[0].pontos[0].segmentos).toHaveLength(0);
+    for (const corte of ['47', '56', '58']) {
+      expect(texto, `corte ${corte} vazou para o modelo`).not.toContain(corte);
+    }
+  });
+
+  it('DCDQ: sem norma não ganha marcador inventado', () => {
+    const m = montarModelo(
+      cfg('DCDQ'),
+      {
+        TOTAL: resultado({
+          raw: 40,
+          score: 40,
+          available: false,
+          message: 'não há norma publicada para esta idade neste domínio',
+        }),
+      },
+      [],
+      [escala('TOTAL')],
+    );
+    const p = m.blocos[0].pontos[0];
+    expect(p.disponivel).toBe(false);
+    expect(p.valor).toBeNull();
+    expect(posicao(p.valor, p.range)).toBeNull();
+    expect(p.segmentos).toEqual([]);
+  });
+
   it('sem domínio declarado, o modelo bloqueia em vez de inventar eixo', () => {
     // Nenhum dos 21 exercita mais este caminho — os quatro que faltavam
     // ganharam eixo. A guarda fail-closed continua viva com config
