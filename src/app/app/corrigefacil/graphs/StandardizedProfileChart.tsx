@@ -17,7 +17,7 @@ import {
   type PontoEscala,
 } from './graph-model';
 import type { Metrica } from './graph-config';
-import { AvisoAmbiguo, Excedente, Indisponivel } from './parts';
+import { AvisoAmbiguo, Excedente, Indisponivel, MarcadorResultado } from './parts';
 
 function Barra({
   p, pos, ancora, metrica,
@@ -28,7 +28,7 @@ function Barra({
     <div
       role="img"
       aria-label={descreverPonto(p, metrica)}
-      className="relative h-5 rounded-pill bg-pp-ink/[0.05] border border-pp-hairline"
+      className="relative h-5 rounded-pill bg-pp-ink/[0.05] border border-pp-hairline print:border-pp-ink"
     >
       {ancora > 0 && (
         <div
@@ -37,20 +37,13 @@ function Barra({
         />
       )}
       <div
-        className="absolute inset-y-[3px] bg-pp-ink/70 rounded-pill"
+        className="absolute inset-y-[3px] bg-pp-ink/70 rounded-pill print:border print:border-pp-ink"
         style={{
           left: `${Math.min(ancora, pos) * 100}%`,
           width: `${Math.abs(pos - ancora) * 100}%`,
         }}
       />
-      {/* MARCADOR DO RESULTADO · borda, não fundo: com "background graphics"
-          desligado ao imprimir, background-color não é pintado e o marcador
-          sumia do PDF. A geometria é a mesma — border-box com largura 0
-          pinta de `left` a `left + 3px`. */}
-      <div
-        className="absolute inset-y-0 w-0 border-l-[3px] border-pp-ink"
-        style={{ left: `calc(${pos * 100}% - 1.5px)` }}
-      />
+      <MarcadorResultado pos={pos} />
     </div>
   );
 }

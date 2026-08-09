@@ -6,7 +6,83 @@
 // tentação de improvisar (desenhar zero, pintar de vermelho) é maior.
 // =====================================================================
 
-import { AVISO_AMBIGUO, type Segmento } from './graph-model';
+import { faixaEmFracao, AVISO_AMBIGUO, type Segmento } from './graph-model';
+import type { DisplayRange } from './graph-config';
+
+// ---------------------------------------------------------------------
+// IMPRESSÃO · por que quase tudo aqui tem um par `print:`
+//
+// Ao imprimir com "background graphics" desligado — padrão de muitos
+// navegadores — o browser não pinta background-color. Um gráfico que
+// dependa só de fundo sai do PDF como uma moldura vazia: some o
+// marcador, somem as faixas, some o destaque da faixa atual.
+//
+// A regra deste arquivo é: tudo que precisa ser LIDO no papel existe
+// também como BORDA, que é pintada de qualquer jeito. O fundo continua
+// sendo o que faz o desenho bonito na tela; a borda é o que faz ele
+// sobreviver à impressora. Nenhuma classe `print:` altera a tela.
+// ---------------------------------------------------------------------
+
+/** O marcador vertical do resultado — onde ele caiu na régua.
+ *
+ *  Mora aqui, e não repetido nas quatro famílias, porque é a peça em que
+ *  um detalhe silencioso estraga tudo: se a geometria divergir entre os
+ *  gráficos, o mesmo escore aparece em pontos diferentes.
+ *
+ *  BORDA, não fundo: `background-color` não é pintado na impressão sem
+ *  background graphics, e era assim que o marcador sumia do PDF. A
+ *  geometria é a de sempre — `box-sizing: border-box` com largura 0 faz a
+ *  borda de 3px ocupar de `left` a `left + 3px`, exatamente o intervalo
+ *  que um fundo de 3px ocuparia. */
+export function MarcadorResultado({ pos }: Readonly<{ pos: number }>) {
+  return (
+    <div
+      className="absolute inset-y-0 w-0 border-l-[3px] border-pp-ink"
+      style={{ left: `calc(${pos * 100}% - 1.5px)` }}
+    />
+  );
+}
+
+/** As faixas da régua, lado a lado. Compartilhada pelo ScoreBand e pelo
+ *  small multiple do Categorical — as duas desenham a mesma coisa em
+ *  tamanhos diferentes.
+ *
+ *  A faixa ATUAL é a que o servidor nomeou. Na tela ela ganha o lilás; no
+ *  papel, uma moldura — porque o lilás é fundo e não seria pintado. Em
+ *  nenhum dos dois a marca carrega gravidade: é a mesma para "Risco
+ *  Baixo" e para "Risco Alto". */
+export function FaixasDaRegua({
+  segmentos,
+  range,
+}: Readonly<{ segmentos: Segmento[]; range: DisplayRange }>) {
+  return (
+    <>
+      {segmentos.map((seg, i) => {
+        const f = faixaEmFracao(seg, range);
+        if (!f) return null;
+        return (
+          <div
+            key={`${seg.rotulo}-${i}`}
+            className={[
+              // a divisória entre faixas já é borda: sobrevive ao papel,
+              // e no print fica em tinta cheia para não sumir no claro
+              'absolute inset-y-0 border-r border-pp-ink/15 last:border-r-0',
+              'print:border-pp-ink',
+              i % 2 === 0 ? 'bg-pp-ink/[0.04]' : 'bg-pp-ink/[0.09]',
+              seg.atual
+                ? 'bg-pp-block-lilac print:border-2 print:border-pp-ink'
+                : '',
+            ].join(' ')}
+            style={{
+              left: `${f.inicio * 100}%`,
+              width: `${(f.fim - f.inicio) * 100}%`,
+            }}
+          />
+        );
+      })}
+    </>
+  );
+}
 
 /** O intervalo de uma faixa, só o número. Fica separado do rótulo porque
  *  a legenda os empilha — rótulo em cima, intervalo embaixo — e assim ela
