@@ -127,12 +127,22 @@ export function CategoricalProfileChart({
           {b.titulo && <p className="text-pp-ink text-sm font-medium">{b.titulo}</p>}
 
           {/* small multiples: cada escala é um cartão próprio, e é o
-              cartão que impede a leitura "uma barra maior que a outra" */}
-          <div className="grid gap-4 sm:grid-cols-2">
+              cartão que impede a leitura "uma barra maior que a outra".
+
+              UM POR LINHA, e não dois lado a lado. Em duas colunas dentro
+              da coluna de leitura o cartão ficava com ~340px, e aí a
+              legenda não cabia: as cinco faixas do DASS-21 — "Normal" a
+              "Extremamente severo" — quebravam em duas fileiras
+              espremidas. O que o cartão precisa mostrar é a régua INTEIRA
+              de uma vez; largura cheia é o que permite isso, na tela e no
+              papel. */}
+          <div className="grid gap-5">
             {b.pontos.map((p) => (
               <figure
                 key={p.escala}
-                className="border border-pp-hairline rounded-block p-4 space-y-2"
+                // no papel, um cartão não deve ser partido entre páginas:
+                // meia régua não se lê
+                className="border border-pp-hairline rounded-block p-5 space-y-3 print:break-inside-avoid"
               >
                 <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="text-pp-ink text-sm font-medium">{p.nome}</span>

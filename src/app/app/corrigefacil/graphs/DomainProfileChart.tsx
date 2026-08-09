@@ -70,7 +70,7 @@ export function DomainProfileChart({
                 );
               }
               return (
-                <div key={p.escala} className="space-y-1">
+                <div key={p.escala} className="space-y-1 print:break-inside-avoid">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <p className="text-pp-ink text-sm">{p.nome}</p>
                     <p className="text-pp-ink-soft text-xs">

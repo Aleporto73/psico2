@@ -132,7 +132,16 @@ export function LegendaFaixas({
 }: Readonly<{ segmentos: Segmento[]; instrumento?: string }>) {
   if (segmentos.length === 0) return null;
   return (
-    <ul className="flex flex-wrap gap-2">
+    // GRID, não flex-wrap. Com `auto-fit` + `minmax(…, 1fr)` todas as
+    // colunas saem com a MESMA largura, e o grid estica os itens até a
+    // MESMA altura. No flex-wrap cada chip media pelo próprio texto, e
+    // "Normal" ficava do tamanho de um selo ao lado de "Extremamente
+    // severo": a régua parecia irregular sem que os dados fossem.
+    //
+    // 7rem é o piso. Enquanto couberem lado a lado — e no card de largura
+    // inteira cabem —, as faixas ficam na MESMA linha; onde não couberem
+    // (celular), quebram continuando iguais entre si. Vale igual no papel.
+    <ul className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(7rem,1fr))]">
       {segmentos.map((seg, i) => {
         const compacto = curto(seg.rotulo, instrumento);
         return (
@@ -140,9 +149,12 @@ export function LegendaFaixas({
             key={`${seg.rotulo}-${i}`}
             className={[
               'rounded-block px-3 py-1.5 border leading-tight',
+              // coluna: rótulo em cima, intervalo colado embaixo, para os
+              // intervalos alinharem entre chips de alturas diferentes
+              'flex flex-col justify-between',
               seg.atual
-                ? 'bg-pp-block-lilac border-pp-block-lilac'
-                : 'border-pp-hairline',
+                ? 'bg-pp-block-lilac border-pp-block-lilac print:border-2 print:border-pp-ink'
+                : 'border-pp-hairline print:border-pp-ink/40',
             ].join(' ')}
           >
             {/* Só onde a tela mostra a forma curta é que o rótulo

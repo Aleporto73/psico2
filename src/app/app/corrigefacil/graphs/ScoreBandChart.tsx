@@ -45,7 +45,7 @@ function Regua({
       : '');
 
   return (
-    <figure className="space-y-3">
+    <figure className="space-y-3 print:break-inside-avoid">
       <div
         role="img"
         aria-label={descricao}
@@ -88,7 +88,7 @@ export function ScoreBandChart({
         <div key={b.titulo ?? bi} className="space-y-5">
           {b.titulo && <p className="text-pp-ink text-sm font-medium">{b.titulo}</p>}
           {b.pontos.map((p) => (
-            <div key={p.escala} className="space-y-2">
+            <div key={p.escala} className="space-y-2 print:break-inside-avoid">
               <p className="text-pp-ink text-sm font-medium">{p.nome}</p>
               {p.disponivel ? (
                 <>

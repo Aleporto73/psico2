@@ -119,6 +119,41 @@ describe('o gráfico sobrevive à impressão', () => {
     expect(cat).toMatch(/bg-pp-block-lilac[^']*print:border-2 print:border-pp-ink/);
   });
 
+  it('a legenda também sobrevive ao papel', () => {
+    // ESTE teste nasceu de um furo real: as variantes `print:` tinham
+    // sido aplicadas à régua e NÃO aos chips da legenda, porque o script
+    // que as escreveu abortou no meio e ninguém reconferiu. No papel a
+    // faixa atual da legenda ficava com fundo lilás (não pintado) e borda
+    // lilás (quase branca) — indistinguível das outras.
+    expect(parts).toMatch(
+      /seg\.atual[\s\S]{0,200}bg-pp-block-lilac border-pp-block-lilac print:border-2 print:border-pp-ink/,
+    );
+    expect(parts).toMatch(/border-pp-hairline print:border-pp-ink\/40/);
+  });
+
+  it('os chips da legenda têm todos a mesma largura e altura', () => {
+    // grid de colunas iguais: no flex-wrap cada chip media pelo próprio
+    // texto, e a régua parecia irregular sem que os dados fossem
+    expect(parts).toContain('grid-cols-[repeat(auto-fit,minmax(7rem,1fr))]');
+    expect(parts, 'a legenda voltou ao flex-wrap').not.toContain(
+      '<ul className="flex flex-wrap gap-2">',
+    );
+  });
+
+  it('cartões e réguas não são partidos entre páginas', () => {
+    for (const nome of GRAFICOS) {
+      const texto = readFileSync(join(DIR, nome), 'utf8');
+      expect(texto, nome).toContain('print:break-inside-avoid');
+    }
+  });
+
+  it('um cartão por linha nos small multiples', () => {
+    // duas colunas dentro da coluna de leitura davam ~340px por cartão, e
+    // a legenda do DASS-21 não cabia numa linha
+    const cat = readFileSync(join(DIR, 'CategoricalProfileChart.tsx'), 'utf8');
+    expect(cat, 'voltaram as duas colunas').not.toContain('sm:grid-cols-2');
+  });
+
   it('nenhuma classe print: altera a tela', () => {
     // `print:` só entra em @media print — a garantia é ela nunca aparecer
     // sem o prefixo numa classe que valha para os dois meios
