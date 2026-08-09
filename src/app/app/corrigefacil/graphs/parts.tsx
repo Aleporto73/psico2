@@ -64,14 +64,20 @@ export function FaixasDaRegua({
           <div
             key={`${seg.rotulo}-${i}`}
             className={[
-              // a divisória entre faixas já é borda: sobrevive ao papel,
-              // e no print fica em tinta cheia para não sumir no claro
+              // A divisória entre faixas já é borda, então sobrevive ao
+              // papel. No print ela fica DISCRETA de propósito: em tinta
+              // cheia competia com o marcador, e a régua virava um monte
+              // de linhas do mesmo peso.
               'absolute inset-y-0 border-r border-pp-ink/15 last:border-r-0',
-              'print:border-pp-ink',
+              'print:border-pp-ink/30',
               i % 2 === 0 ? 'bg-pp-ink/[0.04]' : 'bg-pp-ink/[0.09]',
-              seg.atual
-                ? 'bg-pp-block-lilac print:border-2 print:border-pp-ink'
-                : '',
+              // A faixa atual recebe o lilás, que na tela basta e no papel
+              // some — e é para sumir mesmo. No print ela NÃO ganha
+              // moldura: uma caixa dentro da barra criava uma quarta
+              // linha disputando atenção com o marcador. Quem comunica a
+              // faixa atingida é o CHIP da legenda, esse sim com borda
+              // forte. RÉGUA mostra POSIÇÃO; CHIP mostra FAIXA.
+              seg.atual ? 'bg-pp-block-lilac' : '',
             ].join(' ')}
             style={{
               left: `${f.inicio * 100}%`,

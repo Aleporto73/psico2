@@ -103,11 +103,19 @@ describe('o gráfico sobrevive à impressão', () => {
     }
   });
 
-  it('nada essencial depende só de background-color', () => {
-    // faixas: a divisória e o destaque da faixa atual existem como borda
-    expect(parts).toContain('print:border-pp-ink');
-    expect(parts).toMatch(/seg\.atual[\s\S]{0,120}print:border-2 print:border-pp-ink/);
+  /** O corpo de uma função exportada de parts.tsx. As asserções sobre
+   *  impressão precisam ser POR PEÇA: a régua e a legenda usam ambas
+   *  `seg.atual`, e uma regex solta no arquivo inteiro passava a valer
+   *  pela peça errada. */
+  function trecho(fonte: string, nome: string): string {
+    const i = fonte.indexOf(`export function ${nome}`);
+    expect(i, `${nome} não encontrada`).toBeGreaterThan(-1);
+    const resto = fonte.slice(i + 1);
+    const fim = resto.indexOf('\nexport function ');
+    return fim === -1 ? resto : resto.slice(0, fim);
+  }
 
+  it('nada essencial depende só de background-color', () => {
     // barras dos perfis: o preenchimento é fundo, então ganha contorno
     for (const nome of ['StandardizedProfileChart.tsx', 'DomainProfileChart.tsx']) {
       const texto = readFileSync(join(DIR, nome), 'utf8');
@@ -117,6 +125,28 @@ describe('o gráfico sobrevive à impressão', () => {
     // ETPC: a categoria atual é fundo lilás na tela, moldura no papel
     const cat = readFileSync(join(DIR, 'CategoricalProfileChart.tsx'), 'utf8');
     expect(cat).toMatch(/bg-pp-block-lilac[^']*print:border-2 print:border-pp-ink/);
+  });
+
+  it('no papel, o marcador é a única linha forte da régua', () => {
+    const regua = trecho(parts, 'FaixasDaRegua');
+    const marcador = trecho(parts, 'MarcadorResultado');
+    const legenda = trecho(parts, 'LegendaFaixas');
+
+    // 1 · divisória entre faixas: existe, mas DISCRETA no papel
+    expect(regua).toContain('print:border-pp-ink/30');
+
+    // 2 · a faixa atual NÃO ganha moldura dentro da barra — era a quarta
+    // linha competindo com o marcador
+    expect(regua, 'voltou a caixa dentro da barra').not.toContain('print:border-2');
+    expect(regua, 'divisória voltou a tinta cheia').not.toMatch(
+      /print:border-pp-ink(?![\w/-])/,
+    );
+
+    // 3 · o marcador é o traço forte, em tinta cheia
+    expect(marcador).toContain('border-l-[3px] border-pp-ink');
+
+    // 4 · e quem comunica a faixa atingida é o CHIP, com borda forte
+    expect(legenda).toContain('print:border-2 print:border-pp-ink');
   });
 
   it('a legenda também sobrevive ao papel', () => {
