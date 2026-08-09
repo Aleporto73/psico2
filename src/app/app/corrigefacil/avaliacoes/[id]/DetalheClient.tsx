@@ -10,6 +10,7 @@ import {
 } from '@/lib/corrigefacil/api';
 import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
+import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { formatarData } from '../historico-view';
 
 const AVISO =
@@ -49,8 +50,6 @@ export function DetalheClient({ id }: { id: string }) {
     return () => controller.abort();
   }, [executar]);
 
-  // A barra de seções dá a orientação global; o link abaixo dela é o retorno
-  // de UM nível, que o detalhe precisa por estar mais fundo que as duas abas.
   const voltar = (
     <div className="space-y-4 print:hidden">
       <CorrigeFacilNav />
@@ -76,8 +75,6 @@ export function DetalheClient({ id }: { id: string }) {
   }
 
   if (estado.fase === 'erro') {
-    // 404 cobre inexistente E avaliação de outro usuário. A mensagem é a
-    // mesma nos dois casos, de propósito: não confirmar que o registro existe.
     return (
       <div className="max-w-3xl mx-auto space-y-6 pt-4">
         {voltar}
@@ -163,6 +160,8 @@ export function DetalheClient({ id }: { id: string }) {
           </div>
         ))}
       </section>
+
+      <CorrigeFacilReportPanel assessmentId={d.assessment_id} />
 
       <div className="flex flex-wrap gap-3 print:hidden">
         <button
