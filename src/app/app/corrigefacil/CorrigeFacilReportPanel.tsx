@@ -130,6 +130,13 @@ export function CorrigeFacilReportPanel({
     setMessage(null);
     setAccess('checking');
     try {
+      const id = await resolveAssessment();
+      if (!id) {
+        setAccess('idle');
+        setMessage('Não foi possível salvar a avaliação antes de abrir o Relatório Pró.');
+        return;
+      }
+
       const response = await fetch('/api/assistant/generate', { method: 'GET' });
       if (response.status === 403) {
         setAccess('inactive');
@@ -395,7 +402,7 @@ export function CorrigeFacilReportPanel({
             className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-50"
           >
             <Sparkles className="w-4 h-4" aria-hidden="true" />
-            {access === 'checking' ? 'Verificando acesso…' : actionLabel}
+            {access === 'checking' ? 'Salvando e verificando acesso…' : actionLabel}
           </button>
         )}
 
