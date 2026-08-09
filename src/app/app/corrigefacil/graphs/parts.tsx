@@ -147,17 +147,33 @@ export function LegendaFaixas({
     // 7rem é o piso. Enquanto couberem lado a lado — e no card de largura
     // inteira cabem —, as faixas ficam na MESMA linha; onde não couberem
     // (celular), quebram continuando iguais entre si. Vale igual no papel.
-    <ul className="grid gap-2 grid-cols-[repeat(auto-fit,minmax(7rem,1fr))]">
+    <ul
+      className={[
+        'grid gap-1.5',
+        // o piso da coluna é o que decide quantas cabem por linha. 6rem
+        // deixa as CINCO faixas do DASS-21 na mesma linha dentro do
+        // cartão de largura inteira, e ainda dá folga para
+        // "Extremamente severo" caber sem quebrar.
+        'grid-cols-[repeat(auto-fit,minmax(6rem,1fr))]',
+        // no papel a caixa útil é mais estreita que a da tela; o piso
+        // menor garante que cinco faixas continuem numa linha só
+        'print:grid-cols-[repeat(auto-fit,minmax(4.5rem,1fr))]',
+      ].join(' ')}
+    >
       {segmentos.map((seg, i) => {
         const compacto = curto(seg.rotulo, instrumento);
         return (
           <li
             key={`${seg.rotulo}-${i}`}
             className={[
-              'rounded-block px-3 py-1.5 border leading-tight',
-              // coluna: rótulo em cima, intervalo colado embaixo, para os
-              // intervalos alinharem entre chips de alturas diferentes
-              'flex flex-col justify-between',
+              'rounded-block border px-2 py-1 leading-tight',
+              // centralizado nos DOIS eixos: o grid já dá a todos os
+              // chips a mesma altura, então centrar verticalmente faz o
+              // par rótulo/intervalo ficar no meio da caixa mesmo quando
+              // um rótulo ocupa duas linhas e os vizinhos, uma.
+              'flex flex-col items-center justify-center text-center',
+              // palavra longa não estoura a caixa; ela quebra dentro dela
+              'break-words',
               seg.atual
                 ? 'bg-pp-block-lilac border-pp-block-lilac print:border-2 print:border-pp-ink'
                 : 'border-pp-hairline print:border-pp-ink/40',
@@ -172,13 +188,13 @@ export function LegendaFaixas({
             <span
               aria-hidden={compacto !== seg.rotulo}
               className={[
-                'block text-[11px]',
+                'block text-[10px]',
                 seg.atual ? 'text-pp-ink font-medium' : 'text-pp-ink-soft',
               ].join(' ')}
             >
               {compacto}
             </span>
-            <span className="block text-[11px] text-pp-ink-soft tabular-nums">
+            <span className="block text-[10px] text-pp-ink-soft tabular-nums">
               {intervalo(seg)}
             </span>
           </li>
