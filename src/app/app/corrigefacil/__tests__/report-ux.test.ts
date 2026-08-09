@@ -60,4 +60,9 @@ describe('CorrigeFácil → Relatório Pró — UX V1', () => {
     expect(panel).toContain('Gerar outro relatório');
     expect(panel).toContain('Copiar relatório');
   });
+
+  it('mantém somente a impressão do relatório no detalhe salvo', () => {
+    expect(panel).toContain('onClick={() => window.print()}');
+    expect(detalhe).not.toContain('onClick={() => window.print()}');
+  });
 });
