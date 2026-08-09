@@ -23,6 +23,7 @@ import {
 } from './save-model';
 import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
+import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { montarModelo, TEXTO_BLOQUEIO, type ModeloFormulario } from './form-model';
 import {
   COMPONENTES,
@@ -147,17 +148,18 @@ export function AvaliarClient({ code }: { code: string }) {
     }
   }
 
-  async function salvar() {
+  async function salvar(): Promise<string | null> {
+    if (salvamento.fase === 'salvo') return salvamento.id;
     if (
       !modelo ||
       !podeSalvar(
         identificacao,
         modelo.exigeDataNascimento,
         salvamento.fase === 'salvando',
-        salvamento.fase === 'salvo',
+        false,
       )
     ) {
-      return;
+      return null;
     }
     setSalvamento({ fase: 'salvando' });
     try {
@@ -165,6 +167,7 @@ export function AvaliarClient({ code }: { code: string }) {
         montarPedidoAvaliacao(modelo, estado, identificacao),
       );
       setSalvamento({ fase: 'salvo', id: criada.assessment_id });
+      return criada.assessment_id;
     } catch (err: unknown) {
       setSalvamento({
         fase: 'erro',
@@ -173,6 +176,7 @@ export function AvaliarClient({ code }: { code: string }) {
             ? err.message
             : 'Não foi possível salvar agora. Tente novamente.',
       });
+      return null;
     }
   }
 
@@ -587,7 +591,7 @@ function ResultadoCorrecao({
   onCorrigirNovamente: () => void;
   identificacao: IdentificacaoAvaliado;
   salvamento: EstadoSalvamento;
-  onSalvar: () => void;
+  onSalvar: () => Promise<string | null>;
 }) {
   const linhas = Object.entries(resposta.resultados);
   const habilitado = podeSalvar(
@@ -681,6 +685,11 @@ function ResultadoCorrecao({
 
       <hr className="border-pp-hairline-soft" />
 
+      <CorrigeFacilReportPanel
+        assessmentId={salvamento.fase === 'salvo' ? salvamento.id : null}
+        ensureAssessmentId={onSalvar}
+      />
+
       {salvamento.fase === 'salvo' ? (
         <section className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">
           <output className="block text-pp-ink text-base">
@@ -694,9 +703,9 @@ function ResultadoCorrecao({
           </Link>
         </section>
       ) : (
-        <section className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-4 print:hidden">
+        <section className="bg-white/30 border border-pp-hairline rounded-block p-6 space-y-4 print:hidden">
           <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-            Salvar esta avaliação
+            Salvar sem relatório
           </p>
           <p className="text-sm text-pp-ink">
             {identificacao.nome.trim()}
@@ -710,11 +719,11 @@ function ResultadoCorrecao({
 
           <button
             type="button"
-            onClick={onSalvar}
+            onClick={() => void onSalvar()}
             disabled={!habilitado}
-            className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 border border-pp-ink/20 text-pp-ink px-6 py-3 rounded-pill text-sm font-medium hover:border-pp-ink/45 transition disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {salvamento.fase === 'salvando' ? 'Salvando…' : 'Salvar avaliação'}
+            {salvamento.fase === 'salvando' ? 'Salvando…' : 'Salvar sem relatório'}
           </button>
         </section>
       )}
