@@ -280,8 +280,8 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
       // piso global é o 29 do TOT; o teto é 100 nas nove.
       //
       // Sem `overflow` de propósito: as tabelas são completas e
-      // contíguas (todo bruto de 0 a max_raw tem linha, em M e F), então
-      // todo T produzível já cai dentro da janela. Diferente do TDF e do
+      // contíguas (cada bruto de 0 a max_raw tem linha, em M e F), então
+      // cada T produzível já cai dentro da janela. Diferente do TDF e do
       // TRILHAS_PRE, cuja métrica tem extremos abertos.
       //
       // O eixo é comum aos dois blocos porque a MÉTRICA é a mesma; os
