@@ -214,9 +214,21 @@ describe('domínio visual', () => {
     expect(cfg('BAYLEY-III').range).toEqual({ min: 40, max: 160 });
   });
 
+  it('TDF declara a janela 40..160 COM excedente', () => {
+    // JANELA VISUAL, não domínio normativo: a pontuação padrão do TDF tem
+    // extremos abertos ("<70" e "130+"), então `overflow` é obrigatório —
+    // sem ele um escore de 229, que as tabelas produzem, ficaria preso na
+    // borda sem que ninguém soubesse.
+    expect(cfg('TDF').range).toEqual({ min: 40, max: 160, overflow: true });
+    expect(cfg('TDF').familia).toBe('score_band');
+    expect(cfg('TDF').metrica).toBe('score');
+    expect(cfg('TDF').direcao).toBe('ascendente_favoravel');
+  });
+
   it('sem domínio declarado, o range fica AUSENTE em vez de inventado', () => {
-    // são os casos que G0/G1A não fecharam: pontuação padrão e escore T
-    for (const code of ['TDF', 'TRILHAS_PRE', 'C-TRF_1.5-5']) {
+    // seguem abertos: nem G0 nem G1A fecharam pontuação padrão do TRILHAS
+    // nem o escore T do C-TRF
+    for (const code of ['TRILHAS_PRE', 'C-TRF_1.5-5']) {
       expect(cfg(code).range, code).toBeUndefined();
       expect(cfg(code).blocos.some((b) => b.rangePorEscala), code).toBe(false);
     }

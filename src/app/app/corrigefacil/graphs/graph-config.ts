@@ -203,10 +203,18 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
       blocos: [{ escalas: ['TOTAL'] }],
       direcao: 'ascendente_favoravel',
       tom: 'neutro',
-      // range AUSENTE de propósito: a métrica é pontuação padrão e nem G0
-      // nem G1A declararam domínio visual para ela. G1A §5.2 mediu bruto
-      // 0..23 contra métrica plotada 0..229 e extremos de faixa até 349
-      // (sentinela técnica) — as três fontes divergem, e nenhuma serve.
+      // JANELA VISUAL declarada em G0 — não é domínio normativo. A
+      // pontuação padrão do TDF tem extremos ABERTOS (faixa inferior
+      // "<70", superior "130+"), então nenhuma fonte fecha o intervalo e
+      // esta janela não finge fechá-lo: é centrada em 100 (score_mean do
+      // arquivo-fonte) com meia-largura de 60, os ±4 DP da convenção de
+      // pontuação padrão.
+      //
+      // `overflow` é obrigatório aqui. As tabelas de conversão chegam a
+      // 229 e a faixa "MUITO ALTA" segue além de 160: valor fora da
+      // janela é VERDADEIRO, continua inteiro no modelo e aparece como
+      // excedente. Prender na borda em silêncio esconderia o extremo.
+      range: { min: 40, max: 160, overflow: true },
     },
   },
 

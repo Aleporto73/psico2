@@ -301,8 +301,67 @@ describe('montagem por instrumento', () => {
     expect(m.blocos[0].pontos[1].excedente).toBeNull();
   });
 
+  it('TDF: desenha em 40..160 e marca excedente sem truncar o valor', () => {
+    const janela = { min: 40, max: 160, overflow: true };
+    const catalogo = [escala('TOTAL')];
+
+    // dentro da janela: sem excedente
+    const dentro = montarModelo(
+      cfg('TDF'), { TOTAL: resultado({ score: 100 }) }, [], catalogo,
+    );
+    expect(dentro.bloqueio).toBeUndefined();
+    expect(dentro.blocos[0].range).toEqual(janela);
+    expect(dentro.blocos[0].pontos[0].valor).toBe(100);
+    expect(dentro.blocos[0].pontos[0].excedente).toBeNull();
+
+    // abaixo e acima: o VALOR continua exato, só a posição encosta na borda
+    const abaixo = montarModelo(
+      cfg('TDF'), { TOTAL: resultado({ score: 30 }) }, [], catalogo,
+    );
+    expect(abaixo.blocos[0].pontos[0].excedente).toBe('abaixo');
+    expect(abaixo.blocos[0].pontos[0].valor).toBe(30);
+
+    const acima = montarModelo(
+      cfg('TDF'), { TOTAL: resultado({ score: 170 }) }, [], catalogo,
+    );
+    expect(acima.blocos[0].pontos[0].excedente).toBe('acima');
+    expect(acima.blocos[0].pontos[0].valor).toBe(170);
+
+    // 229 é alcançável nas tabelas de conversão do TDF: continua inteiro
+    const extremo = montarModelo(
+      cfg('TDF'), { TOTAL: resultado({ score: 229 }) }, [], catalogo,
+    );
+    expect(extremo.blocos[0].pontos[0].valor).toBe(229);
+    expect(extremo.blocos[0].pontos[0].excedente).toBe('acima');
+
+    // a posição é presa à borda, mas isso é desenho — não toca o valor
+    expect(posicao(229, janela)).toBe(1);
+    expect(posicao(30, janela)).toBe(0);
+  });
+
+  it('TDF: idade sem norma continua sem ponto quantitativo', () => {
+    // a janela NÃO cria valor onde o servidor disse que não há norma
+    const m = montarModelo(
+      cfg('TDF'),
+      {
+        TOTAL: resultado({
+          score: 100,
+          available: false,
+          message: 'não há norma publicada para esta idade neste domínio',
+        }),
+      },
+      [],
+      [escala('TOTAL')],
+    );
+    const p = m.blocos[0].pontos[0];
+    expect(p.disponivel).toBe(false);
+    expect(p.valor).toBeNull();
+    expect(p.excedente).toBeNull();
+    expect(posicao(p.valor, p.range)).toBeNull();
+  });
+
   it('sem domínio declarado, o modelo bloqueia em vez de inventar eixo', () => {
-    for (const code of ['TDF', 'TRILHAS_PRE', 'C-TRF_1.5-5']) {
+    for (const code of ['TRILHAS_PRE', 'C-TRF_1.5-5']) {
       const c = cfg(code);
       const codes = c.blocos.flatMap((b) => b.escalas ?? []);
       const resultados = Object.fromEntries(
