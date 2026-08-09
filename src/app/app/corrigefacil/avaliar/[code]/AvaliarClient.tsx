@@ -535,7 +535,7 @@ function ResultadoCorrecao({
         {linhas.map(([escala, r]) => (
           <article
             key={escala}
-            className="border border-pp-hairline bg-white/40 rounded-block p-6 sm:p-7 space-y-5"
+            className="border border-pp-hairline bg-pp-block-lilac/15 rounded-block p-6 sm:p-7 space-y-5"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h3 className="text-pp-ink text-base font-medium">{escala}</h3>

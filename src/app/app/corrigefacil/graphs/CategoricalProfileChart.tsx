@@ -77,7 +77,11 @@ function Categoria({ p }: Readonly<{ p: PontoEscala }>) {
 
 /** Mini régua: mesma ideia do ScoreBand, no tamanho de um small
  *  multiple, com o eixo DAQUELA escala. */
-function MiniRegua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
+function MiniRegua({
+  p,
+  metrica,
+  instrumento,
+}: Readonly<{ p: PontoEscala; metrica: Metrica; instrumento?: string }>) {
   const range = p.range;
   if (!range) return null;
   const pos = posicao(p.valor, range);
@@ -120,7 +124,7 @@ function MiniRegua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }
         <span>{range.min}</span>
         <span>{range.max}</span>
       </div>
-      <LegendaFaixas segmentos={p.segmentos} />
+      <LegendaFaixas segmentos={p.segmentos} instrumento={instrumento} />
     </div>
   );
 }
@@ -128,9 +132,11 @@ function MiniRegua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }
 export function CategoricalProfileChart({
   blocos,
   metrica,
+  instrumento,
 }: Readonly<{
   blocos: BlocoModelo[];
   metrica: Metrica;
+  instrumento?: string;
 }>) {
   return (
     <div className="space-y-6">
@@ -160,7 +166,7 @@ export function CategoricalProfileChart({
                     {metrica === 'classification' ? (
                       <Categoria p={p} />
                     ) : (
-                      <MiniRegua p={p} metrica={metrica} />
+                      <MiniRegua p={p} metrica={metrica} instrumento={instrumento} />
                     )}
                     {p.classificacao && metrica !== 'classification' && (
                       <p className="text-pp-ink text-xs">{p.classificacao}</p>

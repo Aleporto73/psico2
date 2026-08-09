@@ -22,7 +22,11 @@ import {
 import type { Metrica } from './graph-config';
 import { AvisoAmbiguo, Indisponivel, LegendaFaixas } from './parts';
 
-function Regua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
+function Regua({
+  p,
+  metrica,
+  instrumento,
+}: Readonly<{ p: PontoEscala; metrica: Metrica; instrumento?: string }>) {
   const range = p.range;
   if (!range) return null;
   const pos = posicao(p.valor, range);
@@ -81,7 +85,7 @@ function Regua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
         <span>{range.max}</span>
       </div>
 
-      <LegendaFaixas segmentos={p.segmentos} />
+      <LegendaFaixas segmentos={p.segmentos} instrumento={instrumento} />
 
       {/* curto de propósito: escore e classificação por extenso já estão
           no card de resultado, acima. Aqui basta ancorar a leitura da
@@ -94,9 +98,11 @@ function Regua({ p, metrica }: Readonly<{ p: PontoEscala; metrica: Metrica }>) {
 export function ScoreBandChart({
   blocos,
   metrica,
+  instrumento,
 }: Readonly<{
   blocos: BlocoModelo[];
   metrica: Metrica;
+  instrumento?: string;
 }>) {
   return (
     <div className="space-y-6">
@@ -108,7 +114,7 @@ export function ScoreBandChart({
               <p className="text-pp-ink text-sm font-medium">{p.nome}</p>
               {p.disponivel ? (
                 <>
-                  <Regua p={p} metrica={metrica} />
+                  <Regua p={p} metrica={metrica} instrumento={instrumento} />
                   {p.ambiguo && <AvisoAmbiguo />}
                 </>
               ) : (
