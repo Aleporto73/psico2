@@ -62,7 +62,6 @@ type InstrumentData = {
 type ScaleData = {
   code?: string;
   name?: string;
-  kind?: string;
   ordinal?: number;
 };
 
@@ -118,10 +117,8 @@ export function formatClosedResults(rows: ResultRow[]): string {
       const scale = oneRelation<ScaleData>(row.scales);
       const name = scale?.name?.trim() || scale?.code?.trim() || 'Escala';
       const code = scale?.code?.trim();
-      const kind = scale?.kind?.trim();
       const lines = [`${name}${code && code !== name ? ` (${code})` : ''}`];
 
-      if (kind) lines.push(`- tipo: ${kind}`);
       const raw = cleanScalar(row.raw);
       const score = cleanScalar(row.score);
       const percentile = cleanScalar(row.percentile);
@@ -282,7 +279,7 @@ export async function generateCorrigeFacilReport(args: {
   const { data: resultRows, error: resultsError } = await supabase
     .from('assessment_results')
     .select(
-      'raw, score, percentile, z_score, classification, ci95, available, message, flags, scales!inner(code, name, kind, ordinal)',
+      'raw, score, percentile, z_score, classification, ci95, available, message, flags, scales!inner(code, name, ordinal)',
     )
     .eq('assessment_id', assessmentId);
 

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Printer, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import {
   buscarAvaliacao,
   CorrigeFacilError,
@@ -162,17 +162,6 @@ export function DetalheClient({ id }: { id: string }) {
       </section>
 
       <CorrigeFacilReportPanel assessmentId={d.assessment_id} />
-
-      <div className="flex flex-wrap gap-3 print:hidden">
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 border border-pp-ink/15 text-pp-ink px-6 py-3 rounded-pill text-sm font-medium hover:border-pp-ink/40 transition"
-        >
-          <Printer className="w-4 h-4" aria-hidden="true" />
-          Imprimir
-        </button>
-      </div>
 
       <p className="text-xs text-pp-ink-soft leading-relaxed border-t border-pp-ink/10 pt-6">
         {AVISO}

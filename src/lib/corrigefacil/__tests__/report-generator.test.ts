@@ -21,7 +21,7 @@ describe('CorrigeFácil report generator', () => {
     ).toBe('1 ano, 7 meses e 12 dias (idade corrigida)');
   });
 
-  it('formata somente resultados persistidos sem incluir flags opacas', () => {
+  it('formata somente resultados persistidos sem incluir metadados internos', () => {
     const texto = formatClosedResults([
       {
         raw: 22,
@@ -47,6 +47,8 @@ describe('CorrigeFácil report generator', () => {
     expect(texto).toContain('- percentil: 95');
     expect(texto).toContain('- classificação: Elevado');
     expect(texto).not.toContain('internal_norm_row_42');
+    expect(texto).not.toContain('- tipo:');
+    expect(texto).not.toContain('domain');
   });
 
   it('trava recálculo, corte, norma e diagnóstico no prompt CorrigeFácil', () => {
