@@ -241,13 +241,21 @@ describe('domínio visual', () => {
     expect(c.tom).toBe('neutro');
   });
 
-  it('sem domínio declarado, o range fica AUSENTE em vez de inventado', () => {
-    // segue aberto: G0 não fechou o escore T do C-TRF, e as faixas dele
-    // são abertas nas duas pontas
-    for (const code of ['C-TRF_1.5-5']) {
-      expect(cfg(code).range, code).toBeUndefined();
-      expect(cfg(code).blocos.some((b) => b.rangePorEscala), code).toBe(false);
-    }
+  it('C-TRF declara 29..100, um eixo para os DOIS blocos', () => {
+    const c = cfg('C-TRF_1.5-5');
+    // domínio das 9 tabelas deste acervo, NÃO domínio universal do ASEBA.
+    // 50 é o piso das SÍNDROMES; as bandas largas descem a 34/36/29, e um
+    // eixo em 50..100 jogaria resultados reais para fora do gráfico.
+    expect(c.range).toEqual({ min: 29, max: 100 });
+    // sem overflow: as tabelas são completas, todo T produzível cai dentro
+    expect(c.range?.overflow).toBeUndefined();
+    // o eixo é comum, mas os CORTES não: os blocos seguem separados
+    expect(c.blocos).toHaveLength(2);
+    expect(c.blocos[0].rangePorEscala).toBeUndefined();
+    expect(c.blocos[1].rangePorEscala).toBeUndefined();
+    expect(c.metrica).toBe('score');
+    expect(c.direcao).toBe('ascendente_sinalizador');
+    expect(c.tom).toBe('semantico_por_faixa');
   });
 });
 

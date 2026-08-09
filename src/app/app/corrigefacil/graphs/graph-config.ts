@@ -271,11 +271,23 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
       ],
       direcao: 'ascendente_sinalizador',
       tom: 'semantico_por_faixa',
-      // range AUSENTE: a métrica é escore T e G0 não declarou domínio
-      // visual para ela. G1A §5.2 mediu 50..100 na escala I, mas isso é
-      // observação do acervo, não convenção declarada — e as faixas
-      // cobrem só a região clínica (65+), então usá-las como eixo faria
-      // um resultado 50 cair fora do gráfico.
+      // Domínio coberto pelas 9 tabelas norms_T deste acervo — NÃO é
+      // domínio universal do C-TRF/ASEBA.
+      //
+      // 50..100 estaria errado para o instrumento inteiro: é o piso das
+      // SÍNDROMES, mas as bandas largas descem abaixo (INT 34, EXT 36,
+      // TOT 29) e um eixo em 50 jogaria resultados reais para fora. O
+      // piso global é o 29 do TOT; o teto é 100 nas nove.
+      //
+      // Sem `overflow` de propósito: as tabelas são completas e
+      // contíguas (cada bruto de 0 a max_raw tem linha, em M e F), então
+      // cada T produzível já cai dentro da janela. Diferente do TDF e do
+      // TRILHAS_PRE, cuja métrica tem extremos abertos.
+      //
+      // O eixo é comum aos dois blocos porque a MÉTRICA é a mesma; os
+      // CORTES não são (65/70 contra 60/64), e é por isso que os blocos
+      // continuam separados acima.
+      range: { min: 29, max: 100 },
     },
   },
 
