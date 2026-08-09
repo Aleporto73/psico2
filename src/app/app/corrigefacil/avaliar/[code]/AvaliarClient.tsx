@@ -39,22 +39,12 @@ import {
 } from './form-state';
 import { DateNormFields } from './DateNormFields';
 
-/** Rótulo humano dos componentes. As CHAVES (`omissoes`) são contrato do
- *  payload e não mudam; só o que aparece na tela ganha acento. */
 const ROTULO_COMPONENTE: Record<string, string> = {
   acertos: 'Acertos',
   erros: 'Erros',
   omissoes: 'Omissões',
 };
 
-/** A partir de quantos itens o protocolo ganha barra de ação fixa.
- *
- *  Não é enfeite: em 8 dos 21 instrumentos publicados o protocolo passa
- *  disso (DCDQ 15, CES-D 20, SNAP-IV-26 26, TRAÇO 34, ERA-F 34, SCARED-C 41,
- *  EPQ-J 60, CONFIAS 70, ERA-A 75, C-TRF 100). Sem a barra, quem responde o
- *  último item precisa rolar até o fim para achar o botão e não vê quanto
- *  falta enquanto responde. Abaixo do limite a página inteira cabe na tela e
- *  a barra só ocuparia espaço. */
 const LIMITE_BARRA_FIXA = 15;
 
 const AVISO =
@@ -110,7 +100,12 @@ export function AvaliarClient({ code }: { code: string }) {
     instrumento.fase === 'ok' ? montarModelo(instrumento.detalhe) : null;
 
   const faltando = modelo ? pendencias(modelo, estado) : [];
-  const habilitado = modelo ? podeEnviar(modelo, estado, enviando) : false;
+  const errosIdentificacao = modelo
+    ? validarIdentificacao(identificacao, modelo.exigeDataNascimento)
+    : [];
+  const habilitado = modelo
+    ? podeEnviar(modelo, estado, enviando) && errosIdentificacao.length === 0
+    : false;
 
   async function enviar() {
     if (!modelo || !habilitado) return;
@@ -135,9 +130,8 @@ export function AvaliarClient({ code }: { code: string }) {
           ...estado,
           selector: { ...estado.selector, ...resolvida.norm_selector },
         };
-        // O mesmo selector usado na correção fica no estado para o POST
-        // /avaliacao. O resultado salvo é recalculado pela Edge com a mesma norma.
         setEstado(estadoParaEnvio);
+        setIdentificacao((atual) => ({ ...atual, idadeCalculada: resolvida.age }));
       }
 
       const resposta = await corrigirInstrumento(montarPedido(modelo, estadoParaEnvio));
@@ -153,12 +147,12 @@ export function AvaliarClient({ code }: { code: string }) {
     }
   }
 
-  // Salvar é SEMPRE por clique. A Edge recalcula e só o 201 marca como salvo.
   async function salvar() {
     if (
       !modelo ||
       !podeSalvar(
         identificacao,
+        modelo.exigeDataNascimento,
         salvamento.fase === 'salvando',
         salvamento.fase === 'salvo',
       )
@@ -182,8 +176,6 @@ export function AvaliarClient({ code }: { code: string }) {
     }
   }
 
-  // Barra de seções + retorno de um nível. A aba "Instrumentos" fica marcada
-  // durante toda a aplicação: quem está no meio do protocolo vê onde está.
   const voltar = (
     <div className="space-y-4">
       <CorrigeFacilNav />
@@ -263,12 +255,18 @@ export function AvaliarClient({ code }: { code: string }) {
             setSalvamento({ fase: 'inativo' });
           }}
           identificacao={identificacao}
-          onIdentificacao={setIdentificacao}
           salvamento={salvamento}
           onSalvar={salvar}
         />
       ) : (
         <>
+          <IdentificacaoFields
+            modelo={m}
+            identificacao={identificacao}
+            onIdentificacao={setIdentificacao}
+            erros={errosIdentificacao}
+          />
+
           <DateNormFields modelo={m} estado={estado} setEstado={setEstado} />
 
           {m.dimensoes.length > 0 && (
@@ -316,9 +314,6 @@ export function AvaliarClient({ code }: { code: string }) {
                       <span className="text-pp-ink-soft mr-2 tabular-nums">
                         {item.numero}.
                       </span>
-                      {/* Sem enunciado no banco, o número É o enunciado: some
-                          o "Item 12" redundante ao lado do "12." e fica a
-                          referência ao caderno impresso. */}
                       {item.semEnunciado ? (
                         <span className="text-pp-ink-soft italic">
                           sem enunciado neste instrumento
@@ -379,8 +374,6 @@ export function AvaliarClient({ code }: { code: string }) {
                 >
                   <span className="text-pp-ink text-sm">
                     {e.nome} <span className="text-pp-ink-soft">({e.code})</span>
-                    {/* O intervalo aceito vem do catálogo. Dizê-lo evita o
-                        vaivém de digitar, enviar e receber recusa. */}
                     {textoIntervaloBruto(e.min, e.max) && (
                       <span className="block text-pp-ink-soft text-xs mt-0.5">
                         {textoIntervaloBruto(e.min, e.max)}
@@ -418,8 +411,6 @@ export function AvaliarClient({ code }: { code: string }) {
                   <div className="flex flex-wrap gap-4">
                     {COMPONENTES.map((nome) => (
                       <label key={nome} className="text-xs text-pp-ink-soft space-y-1">
-                        {/* `capitalize` sobre a chave crua imprimia "Omissoes".
-                            A chave é contrato do payload; o rótulo é da tela. */}
                         <span className="block">{ROTULO_COMPONENTE[nome] ?? nome}</span>
                         <input
                           type="number"
@@ -457,9 +448,6 @@ export function AvaliarClient({ code }: { code: string }) {
             </p>
           )}
 
-          {/* Em protocolo longo a barra acompanha a rolagem; em protocolo
-              curto ela é só o rodapé de sempre. O conteúdo é idêntico nos
-              dois casos — muda o posicionamento, não a ação. */}
           <div
             className={
               barraFixa
@@ -500,12 +488,97 @@ export function AvaliarClient({ code }: { code: string }) {
   );
 }
 
+function IdentificacaoFields({
+  modelo,
+  identificacao,
+  onIdentificacao,
+  erros,
+}: {
+  modelo: ModeloFormulario;
+  identificacao: IdentificacaoAvaliado;
+  onIdentificacao: (d: IdentificacaoAvaliado) => void;
+  erros: ReturnType<typeof validarIdentificacao>;
+}) {
+  return (
+    <section className="bg-pp-block-lilac rounded-block p-6 space-y-4">
+      <div>
+        <p className="text-pp-ink text-sm font-medium">Identificação do avaliado</p>
+        <p className="text-pp-ink-soft text-xs mt-1">
+          Nome e idade acompanham a avaliação salva e deixam o resultado pronto para o Relatório Pró.
+        </p>
+      </div>
+
+      <div className={`grid gap-3 ${modelo.exigeDataNascimento ? 'md:grid-cols-2' : 'md:grid-cols-3'}`}>
+        <label className="text-xs text-pp-ink-soft space-y-1">
+          <span className="block">
+            Nome do avaliado <span className="text-pp-ink">(obrigatório)</span>
+          </span>
+          <input
+            type="text"
+            required
+            aria-required="true"
+            value={identificacao.nome}
+            onChange={(e) => onIdentificacao({ ...identificacao, nome: e.target.value })}
+            className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+          />
+        </label>
+
+        {!modelo.exigeDataNascimento && (
+          <label className="text-xs text-pp-ink-soft space-y-1">
+            <span className="block">
+              Idade <span className="text-pp-ink">(obrigatória)</span>
+            </span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={130}
+              step={1}
+              required
+              aria-required="true"
+              value={identificacao.idadeAnos}
+              onChange={(e) =>
+                onIdentificacao({ ...identificacao, idadeAnos: e.target.value })
+              }
+              className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+            />
+            <span className="block text-[11px]">Anos completos.</span>
+          </label>
+        )}
+
+        <label className="text-xs text-pp-ink-soft space-y-1">
+          <span className="block">Respondente (opcional)</span>
+          <input
+            type="text"
+            value={identificacao.respondente}
+            onChange={(e) =>
+              onIdentificacao({ ...identificacao, respondente: e.target.value })
+            }
+            className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+          />
+        </label>
+      </div>
+
+      {modelo.exigeDataNascimento && (
+        <p className="text-pp-ink-soft text-xs">
+          A idade será calculada pelo servidor a partir das datas informadas abaixo.
+        </p>
+      )}
+
+      {erros.length > 0 && (
+        <p className="text-pp-ink-soft text-xs">
+          {erros.map((e) => TEXTO_ERRO_IDENTIFICACAO[e]).join(' · ')}
+        </p>
+      )}
+    </section>
+  );
+}
+
 function ResultadoCorrecao({
   resposta,
   detalhe,
   onCorrigirNovamente,
   identificacao,
-  onIdentificacao,
   salvamento,
   onSalvar,
 }: {
@@ -513,24 +586,19 @@ function ResultadoCorrecao({
   detalhe: InstrumentoDetalhe;
   onCorrigirNovamente: () => void;
   identificacao: IdentificacaoAvaliado;
-  onIdentificacao: (d: IdentificacaoAvaliado) => void;
   salvamento: EstadoSalvamento;
   onSalvar: () => void;
 }) {
   const linhas = Object.entries(resposta.resultados);
-  const erros = validarIdentificacao(identificacao);
   const habilitado = podeSalvar(
     identificacao,
+    detalhe.requires_birthdate,
     salvamento.fase === 'salvando',
     salvamento.fase === 'salvo',
   );
 
   return (
     <section className="space-y-8">
-      {/* O resultado é o principal elemento da tela: respiro maior, valor
-          em corpo grande e a classificação como chip. O chip é lilás
-          porque é o pastel neutro do produto — destaque de leitura, não
-          indicação de gravidade. */}
       <div className="space-y-4">
         {linhas.map(([escala, r]) => (
           <article
@@ -590,8 +658,6 @@ function ResultadoCorrecao({
                     <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
                       classificação
                     </p>
-                    {/* break-words: classificação longa não estoura o card
-                        no celular */}
                     <span className="inline-block max-w-full break-words bg-pp-block-lilac text-pp-ink px-4 py-2 rounded-pill text-sm font-medium print:border print:border-pp-ink">
                       {r.classification}
                     </span>
@@ -611,10 +677,6 @@ function ResultadoCorrecao({
         ))}
       </div>
 
-      {/* Entre o resultado textual e o salvamento. A tabela acima
-          permanece intacta: o gráfico acompanha a leitura, não a
-          substitui — e há instrumento sem gráfico aprovado, onde ele
-          simplesmente não aparece. */}
       <ResultGraph detalhe={detalhe} resposta={resposta} />
 
       <hr className="border-pp-hairline-soft" />
@@ -633,52 +695,12 @@ function ResultadoCorrecao({
         </section>
       ) : (
         <section className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-4 print:hidden">
-          {/* ação operacional: fica abaixo do resultado na hierarquia, e
-              por isso o lilás entra lavado, com o título em corpo menor
-              que o de "Representação visual" */}
           <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
             Salvar esta avaliação
           </p>
-          <div className="grid gap-3 md:grid-cols-3">
-            <label className="text-xs text-pp-ink-soft space-y-1">
-              {/* O único obrigatório dos três, e até aqui nada dizia isso: o
-                  botão ficava desabilitado sem explicar qual campo faltava. */}
-              <span className="block">
-                Avaliado · iniciais ou código{' '}
-                <span className="text-pp-ink">(obrigatório)</span>
-              </span>
-              <input
-                type="text"
-                required
-                aria-required="true"
-                value={identificacao.rotulo}
-                onChange={(e) => onIdentificacao({ ...identificacao, rotulo: e.target.value })}
-                className="w-full rounded-pill border border-pp-hairline bg-white px-4 py-2 text-sm text-pp-ink"
-              />
-            </label>
-            <label className="text-xs text-pp-ink-soft space-y-1">
-              <span className="block">Respondente (opcional)</span>
-              <input
-                type="text"
-                value={identificacao.respondente}
-                onChange={(e) =>
-                  onIdentificacao({ ...identificacao, respondente: e.target.value })
-                }
-                className="w-full rounded-pill border border-pp-hairline bg-white px-4 py-2 text-sm text-pp-ink"
-              />
-            </label>
-            <label className="text-xs text-pp-ink-soft space-y-1">
-              <span className="block">Profissional (opcional)</span>
-              <input
-                type="text"
-                value={identificacao.profissional}
-                onChange={(e) =>
-                  onIdentificacao({ ...identificacao, profissional: e.target.value })
-                }
-                className="w-full rounded-pill border border-pp-hairline bg-white px-4 py-2 text-sm text-pp-ink"
-              />
-            </label>
-          </div>
+          <p className="text-sm text-pp-ink">
+            {identificacao.nome.trim()}
+          </p>
 
           {salvamento.fase === 'erro' && (
             <p role="alert" className="text-sm text-pp-ink">
@@ -686,27 +708,17 @@ function ResultadoCorrecao({
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-4">
-            <button
-              type="button"
-              onClick={onSalvar}
-              disabled={!habilitado}
-              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {salvamento.fase === 'salvando' ? 'Salvando…' : 'Salvar avaliação'}
-            </button>
-            {erros.length > 0 && (
-              <p className="text-pp-ink-soft text-xs">
-                {erros.map((e) => TEXTO_ERRO_IDENTIFICACAO[e]).join(' · ')}
-              </p>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={onSalvar}
+            disabled={!habilitado}
+            className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {salvamento.fase === 'salvando' ? 'Salvando…' : 'Salvar avaliação'}
+          </button>
         </section>
       )}
 
-      {/* Ações secundárias: nenhuma delas disputa atenção com o
-          resultado. "Corrigir novamente" saiu de botão cheio para
-          contorno — ela reinicia a leitura, não a conclui. */}
       <div className="flex flex-wrap gap-3 pt-2 print:hidden">
         <button
           type="button"

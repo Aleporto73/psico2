@@ -32,61 +32,92 @@ const detalhe: InstrumentoDetalhe = {
 
 const modelo = montarModelo(detalhe);
 const preenchido = { ...estadoInicial(), respostas: { 1: 0, 2: 3 } };
-const identificado = { rotulo: 'A.B.C.', respondente: 'Auto-relato', profissional: '' };
+const identificado = {
+  nome: 'Ana Beatriz Costa',
+  idadeAnos: '8',
+  idadeCalculada: null,
+  respondente: 'Mãe',
+};
 
 describe('salvamento da avaliação', () => {
-  it('19) rótulo vazio bloqueia o salvamento', () => {
-    expect(validarIdentificacao(identificacaoInicial())).toEqual(['rotulo_vazio']);
-    expect(validarIdentificacao({ ...identificado, rotulo: '   ' })).toEqual(['rotulo_vazio']);
-    expect(podeSalvar(identificacaoInicial(), false, false)).toBe(false);
+  it('nome e idade vazios bloqueiam a identificação manual', () => {
+    expect(validarIdentificacao(identificacaoInicial(), false)).toEqual([
+      'nome_vazio',
+      'idade_vazia',
+    ]);
+    expect(podeSalvar(identificacaoInicial(), false, false, false)).toBe(false);
   });
 
-  it('17) identificação válida libera o salvamento', () => {
-    expect(validarIdentificacao(identificado)).toEqual([]);
-    expect(podeSalvar(identificado, false, false)).toBe(true);
+  it('idade manual inválida é recusada', () => {
+    expect(validarIdentificacao({ ...identificado, idadeAnos: '-1' }, false)).toEqual([
+      'idade_invalida',
+    ]);
+    expect(validarIdentificacao({ ...identificado, idadeAnos: '8.5' }, false)).toEqual([
+      'idade_invalida',
+    ]);
   });
 
-  it('18) o payload reaproveita respostas e norm_selector já preenchidos', () => {
+  it('identificação válida libera o salvamento', () => {
+    expect(validarIdentificacao(identificado, false)).toEqual([]);
+    expect(podeSalvar(identificado, false, false, false)).toBe(true);
+  });
+
+  it('payload usa nome como subject_label e guarda só anos quando idade é manual', () => {
     const pedido = montarPedidoAvaliacao(modelo, preenchido, identificado);
 
     expect(pedido.instrument_code).toBe('PHQ-9');
     expect(pedido.respostas).toEqual({ '1': 0, '2': 3 });
     expect(pedido.norm_selector).toEqual({});
-    expect(pedido.subject_label).toBe('A.B.C.');
-    expect(pedido.subject_meta).toEqual({ respondent_name: 'Auto-relato' });
+    expect(pedido.subject_label).toBe('Ana Beatriz Costa');
+    expect(pedido.subject_meta).toEqual({
+      respondent_name: 'Mãe',
+      age_at_evaluation: { years: 8 },
+    });
   });
 
-  it('20) o zero continua preservado no salvamento', () => {
+  it('zero continua preservado no salvamento', () => {
     const pedido = montarPedidoAvaliacao(modelo, preenchido, identificado);
     expect(pedido.respostas!['1']).toBe(0);
   });
 
-  it('21) duplo envio é bloqueado enquanto salva e depois de salvo', () => {
-    expect(podeSalvar(identificado, true, false)).toBe(false);   // salvando
-    expect(podeSalvar(identificado, false, true)).toBe(false);   // já salvo
+  it('duplo envio é bloqueado enquanto salva e depois de salvo', () => {
+    expect(podeSalvar(identificado, false, true, false)).toBe(false);
+    expect(podeSalvar(identificado, false, false, true)).toBe(false);
   });
 
-  it('campo opcional em branco não vira string vazia no subject_meta', () => {
-    const pedido = montarPedidoAvaliacao(modelo, preenchido, {
-      rotulo: 'X',
-      respondente: '   ',
-      profissional: '',
-    });
-    expect(pedido.subject_meta).toEqual({});
-  });
-
-  it('profissional preenchido entra no subject_meta', () => {
+  it('respondente em branco não vira string vazia no subject_meta', () => {
     const pedido = montarPedidoAvaliacao(modelo, preenchido, {
       ...identificado,
-      profissional: 'Dra. Ana',
+      respondente: '   ',
     });
+    expect(pedido.subject_meta).toEqual({ age_at_evaluation: { years: 8 } });
+  });
+
+  it('instrumento por data não exige idade manual, mas só salva após idade calculada', () => {
+    const modeloData = montarModelo({
+      ...detalhe,
+      code: 'DCDQ',
+      requires_birthdate: true,
+    });
+    const semCalculo = { ...identificado, idadeAnos: '', idadeCalculada: null };
+
+    expect(validarIdentificacao(semCalculo, true)).toEqual([]);
+    expect(podeSalvar(semCalculo, true, false, false)).toBe(false);
+
+    const comCalculo = {
+      ...semCalculo,
+      idadeCalculada: { years: 8, months: 4, days: 12, corrected: false },
+    };
+    expect(podeSalvar(comCalculo, true, false, false)).toBe(true);
+
+    const pedido = montarPedidoAvaliacao(modeloData, preenchido, comCalculo);
     expect(pedido.subject_meta).toEqual({
-      respondent_name: 'Auto-relato',
-      profissional: 'Dra. Ana',
+      respondent_name: 'Mãe',
+      age_at_evaluation: { years: 8, months: 4, days: 12, corrected: false },
     });
   });
 
-  it('25) o módulo não persiste nada localmente nem calcula escore', () => {
+  it('o módulo não persiste nada localmente nem calcula escore', () => {
     const serial = JSON.stringify(montarPedidoAvaliacao(modelo, preenchido, identificado));
     for (const proibido of ['score', 'classification', 'percentile', 'localStorage']) {
       expect(serial.toLowerCase()).not.toContain(proibido.toLowerCase());
