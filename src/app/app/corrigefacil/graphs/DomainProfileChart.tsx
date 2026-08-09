@@ -25,7 +25,7 @@ import {
   type BlocoModelo,
 } from './graph-model';
 import type { Metrica } from './graph-config';
-import { AvisoAmbiguo, Indisponivel } from './parts';
+import { AvisoAmbiguo, Indisponivel, MarcadorResultado } from './parts';
 
 export function DomainProfileChart({
   blocos,
@@ -52,16 +52,13 @@ export function DomainProfileChart({
                   <div
                     role="img"
                     aria-label={descreverPonto(p, metrica)}
-                    className="relative h-5 rounded-pill bg-pp-ink/[0.05] border border-pp-hairline"
+                    className="relative h-5 rounded-pill bg-pp-ink/[0.05] border border-pp-hairline print:border-pp-ink"
                   >
                     <div
-                      className="absolute inset-y-[3px] left-0 bg-pp-ink/70 rounded-pill"
+                      className="absolute inset-y-[3px] left-0 bg-pp-ink/70 rounded-pill print:border print:border-pp-ink"
                       style={{ width: `${pos * 100}%` }}
                     />
-                    <div
-                      className="absolute inset-y-0 w-[3px] bg-pp-ink rounded-full"
-                      style={{ left: `calc(${pos * 100}% - 1.5px)` }}
-                    />
+                    <MarcadorResultado pos={pos} />
                   </div>
                 );
               } else {

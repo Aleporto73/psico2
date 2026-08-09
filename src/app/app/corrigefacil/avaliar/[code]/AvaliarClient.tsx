@@ -592,7 +592,7 @@ function ResultadoCorrecao({
                     </p>
                     {/* break-words: classificação longa não estoura o card
                         no celular */}
-                    <span className="inline-block max-w-full break-words bg-pp-block-lilac text-pp-ink px-4 py-2 rounded-pill text-sm font-medium">
+                    <span className="inline-block max-w-full break-words bg-pp-block-lilac text-pp-ink px-4 py-2 rounded-pill text-sm font-medium print:border print:border-pp-ink">
                       {r.classification}
                     </span>
                   </div>

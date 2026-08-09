@@ -13,14 +13,13 @@
 import {
   descreverPonto,
   descreverSegmento,
-  faixaEmFracao,
   posicao,
   rotuloDaMetrica,
   type BlocoModelo,
   type PontoEscala,
 } from './graph-model';
 import type { Metrica } from './graph-config';
-import { AvisoAmbiguo, Indisponivel, LegendaFaixas } from './parts';
+import { AvisoAmbiguo, FaixasDaRegua, Indisponivel, LegendaFaixas, MarcadorResultado } from './parts';
 
 function Regua({
   p,
@@ -50,33 +49,12 @@ function Regua({
       <div
         role="img"
         aria-label={descricao}
-        className="relative h-9 rounded-pill overflow-hidden border border-pp-ink/15"
+        className="relative h-9 rounded-pill overflow-hidden border border-pp-ink/15 print:border-pp-ink"
       >
-        {p.segmentos.map((seg, i) => {
-          const f = faixaEmFracao(seg, range);
-          if (!f) return null;
-          return (
-            <div
-              key={`${seg.rotulo}-${i}`}
-              className={[
-                'absolute inset-y-0 border-r border-pp-ink/15 last:border-r-0',
-                // intensidade alternada só para separar faixas vizinhas;
-                // não é escala de gravidade
-                i % 2 === 0 ? 'bg-pp-ink/[0.04]' : 'bg-pp-ink/[0.09]',
-                seg.atual ? 'bg-pp-block-lilac' : '',
-              ].join(' ')}
-              style={{ left: `${f.inicio * 100}%`, width: `${(f.fim - f.inicio) * 100}%` }}
-            />
-          );
-        })}
+        <FaixasDaRegua segmentos={p.segmentos} range={range} />
 
         {pos !== null && (
-          // marcador do resultado: traço cheio, alto contraste, sem cor
-          // com significado
-          <div
-            className="absolute inset-y-0 w-[3px] bg-pp-ink rounded-full"
-            style={{ left: `calc(${pos * 100}% - 1.5px)` }}
-          />
+          <MarcadorResultado pos={pos} />
         )}
       </div>
 

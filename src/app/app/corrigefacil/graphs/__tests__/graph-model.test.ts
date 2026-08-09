@@ -54,6 +54,15 @@ describe('leitura de campo', () => {
     expect(valorDaMetrica(resultado({ score: 75 }), 'classification')).toBeNull();
   });
 
+  it('CES-D escore 25 cai no mesmo ponto de sempre', () => {
+    // a correção do marcador para impressão é de PINTURA, não de
+    // geometria: esta fração é a que o `left` usa, e não pode mudar
+    const c = cfg('CES-D');
+    expect(c.range).toEqual({ min: 0, max: 60 });
+    expect(posicao(25, c.range)).toBeCloseTo(25 / 60, 10);
+    expect(posicao(25, c.range)).toBeCloseTo(0.4166666667, 9);
+  });
+
   it('posição é regra de três simples, sem extrapolar o eixo', () => {
     const r = { min: 0, max: 60 };
     expect(posicao(0, r)).toBe(0);

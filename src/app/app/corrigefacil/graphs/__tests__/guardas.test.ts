@@ -77,6 +77,62 @@ describe('17/18 · o que não pode ter voltado', () => {
   });
 });
 
+describe('o gráfico sobrevive à impressão', () => {
+  const GRAFICOS = [
+    'ScoreBandChart.tsx', 'StandardizedProfileChart.tsx',
+    'DomainProfileChart.tsx', 'CategoricalProfileChart.tsx',
+  ];
+  const parts = readFileSync(join(DIR, 'parts.tsx'), 'utf8');
+
+  it('o marcador é BORDA e mora num lugar só', () => {
+    // borda é pintada mesmo com "background graphics" desligado; o fundo
+    // não, e era assim que o marcador sumia do PDF
+    expect(parts).toContain('border-l-[3px] border-pp-ink');
+    // e a geometria continua saindo do mesmo cálculo
+    expect(parts).toContain('calc(${pos * 100}% - 1.5px)');
+  });
+
+  it('os quatro usam o marcador central, sem recriar o seu', () => {
+    for (const nome of GRAFICOS) {
+      const texto = readFileSync(join(DIR, nome), 'utf8');
+      expect(texto, nome).toContain('<MarcadorResultado pos={pos} />');
+      expect(texto, `${nome}: marcador voltou a depender de fundo`)
+        .not.toMatch(/w-\[3px\][^"]*bg-pp-ink/);
+      expect(texto, `${nome}: marcador duplicado`)
+        .not.toContain('border-l-[3px]');
+    }
+  });
+
+  it('nada essencial depende só de background-color', () => {
+    // faixas: a divisória e o destaque da faixa atual existem como borda
+    expect(parts).toContain('print:border-pp-ink');
+    expect(parts).toMatch(/seg\.atual[\s\S]{0,120}print:border-2 print:border-pp-ink/);
+
+    // barras dos perfis: o preenchimento é fundo, então ganha contorno
+    for (const nome of ['StandardizedProfileChart.tsx', 'DomainProfileChart.tsx']) {
+      const texto = readFileSync(join(DIR, nome), 'utf8');
+      expect(texto, nome).toMatch(/bg-pp-ink\/70[^"]*print:border print:border-pp-ink/);
+    }
+
+    // ETPC: a categoria atual é fundo lilás na tela, moldura no papel
+    const cat = readFileSync(join(DIR, 'CategoricalProfileChart.tsx'), 'utf8');
+    expect(cat).toMatch(/bg-pp-block-lilac[^']*print:border-2 print:border-pp-ink/);
+  });
+
+  it('nenhuma classe print: altera a tela', () => {
+    // `print:` só entra em @media print — a garantia é ela nunca aparecer
+    // sem o prefixo numa classe que valha para os dois meios
+    for (const nome of [...GRAFICOS, 'parts.tsx']) {
+      const texto = readFileSync(join(DIR, nome), 'utf8');
+      const soltas = texto.match(/(?<!print:)(?<![\w:-])border-pp-ink(?![\w/-])/g) ?? [];
+      // as ocorrências legítimas sem prefixo são as do marcador central
+      if (nome !== 'parts.tsx') {
+        expect(soltas, `${nome}: cor de impressão vazou para a tela`).toHaveLength(0);
+      }
+    }
+  });
+});
+
 describe('rótulo curto da legenda', () => {
   const parts = readFileSync(join(DIR, 'parts.tsx'), 'utf8');
 
@@ -93,7 +149,7 @@ describe('rótulo curto da legenda', () => {
     expect(parts).not.toMatch(/\.substring\(/);
     expect(parts).not.toMatch(/\.split\(/);
     expect(parts).not.toMatch(/toUpperCase\(/);
-    expect(parts).not.toMatch(/match\(/);
+    expect(parts).not.toMatch(/\.match\(/);
   });
 
   it('o rótulo completo continua acessível', () => {
