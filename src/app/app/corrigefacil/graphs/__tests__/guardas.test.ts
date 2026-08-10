@@ -292,7 +292,7 @@ describe('20 · o resultado textual continua na tela', () => {
   it('o gráfico entra ENTRE o resultado e o salvamento', () => {
     const iResultado = tela.indexOf('{r.flags.length > 0');
     const iGrafico = tela.indexOf('<ResultGraph');
-    const iSalvar = tela.indexOf('Salvar esta avaliação');
+    const iSalvar = tela.indexOf('Salvar sem relatório');
     expect(iResultado).toBeGreaterThan(-1);
     expect(iGrafico).toBeGreaterThan(iResultado);
     expect(iSalvar).toBeGreaterThan(iGrafico);
