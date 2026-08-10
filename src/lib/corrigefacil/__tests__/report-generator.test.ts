@@ -3,6 +3,7 @@ import {
   buildCorrigeFacilSystemPrompt,
   formatAgeAtEvaluation,
   formatClosedResults,
+  professionalText,
 } from '../report-generator';
 
 describe('CorrigeFácil report generator', () => {
@@ -49,6 +50,52 @@ describe('CorrigeFácil report generator', () => {
     expect(texto).not.toContain('internal_norm_row_42');
     expect(texto).not.toContain('- tipo:');
     expect(texto).not.toContain('domain');
+  });
+
+  it('manda profissão flexionada e sigla ao prompt, nunca o código do banco', () => {
+    const texto = professionalText({
+      display_name: 'Ana Souza',
+      gender: 'F',
+      profession_category: 'psicologo',
+      credential_type: 'crp',
+      credential_number: '06/12345',
+    });
+
+    expect(texto).toContain('Profissão: Psicóloga');
+    expect(texto).toContain('Registro/credencial: CRP 06/12345');
+    expect(texto).not.toContain('psicologo');
+    expect(texto).not.toContain('crp 06/12345');
+  });
+
+  it('sem gênero usa a forma neutra e não quebra o bloco', () => {
+    const texto = professionalText({
+      display_name: 'Alex Lima',
+      profession_category: 'fonoaudiologo',
+      credential_type: 'crfa',
+      credential_number: '1234',
+    });
+
+    expect(texto).toContain('Nome: Alex Lima');
+    expect(texto).toContain('Profissão: Fonoaudiólogo(a)');
+    expect(texto).toContain('Registro/credencial: CRFa 1234');
+  });
+
+  it('categoria sem rótulo publicável omite a linha em vez de vazar o código', () => {
+    const texto = professionalText({
+      display_name: 'Chris Reis',
+      profession_category: 'outro',
+      credential_type: 'nao_informado',
+      credential_number: null,
+    });
+
+    expect(texto).toBe('Nome: Chris Reis');
+    expect(texto).not.toContain('Profissão:');
+    expect(texto).not.toContain('outro');
+    expect(texto).not.toContain('nao_informado');
+  });
+
+  it('perfil ausente continua declarado como ausente', () => {
+    expect(professionalText(null)).toBe('Perfil profissional: não incluído.');
   });
 
   it('trava recálculo, corte, norma e diagnóstico no prompt CorrigeFácil', () => {
