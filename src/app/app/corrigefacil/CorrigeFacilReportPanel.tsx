@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Copy, Printer, Sparkles } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -279,13 +280,27 @@ export function CorrigeFacilReportPanel({
                   <p className="text-sm text-pp-ink">{reportTypeLabel(report.report_type)}</p>
                   <p className="text-xs text-pp-ink-soft">{formatDate(report.created_at)}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedReport(report)}
-                  className="rounded-pill border border-pp-ink/15 px-4 py-2 text-sm text-pp-ink hover:border-pp-ink/40 transition"
-                >
-                  Ver
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedReport(report)}
+                    className="rounded-pill border border-pp-ink/15 px-4 py-2 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+                  >
+                    Ver
+                  </button>
+                  {/* Documento composto (cabeçalho, identificação, tabela e
+                      narrativa). Só existe com os DOIS ids: sem `report.id`
+                      não há rota, e o relatório continua legível no `Ver`
+                      acima — que segue sendo o caminho inline de sempre. */}
+                  {report.id && resolvedAssessmentId && (
+                    <Link
+                      href={`/app/corrigefacil/avaliacoes/${encodeURIComponent(resolvedAssessmentId)}/relatorios/${encodeURIComponent(report.id)}`}
+                      className="rounded-pill border border-pp-ink/15 px-4 py-2 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+                    >
+                      Abrir relatório completo
+                    </Link>
+                  )}
+                </div>
               </div>
             ))}
           </div>
