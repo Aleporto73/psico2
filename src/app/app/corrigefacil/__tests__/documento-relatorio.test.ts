@@ -288,10 +288,12 @@ describe('documento profissional — impressão A4 (Bloco 7B)', () => {
   });
 });
 
-describe('documento profissional — o que é do próximo bloco', () => {
-  it('não desenha gráfico neste bloco', () => {
+describe('documento profissional — travas permanentes', () => {
+  // O gráfico entrou no 7C, mas por COMPOSIÇÃO: o documento monta a ilha, e
+  // é ela que fala com o registro visual. Nenhum renderizador é importado
+  // aqui, e nenhuma régua é desenhada fora dos componentes aprovados.
+  it('o documento não importa renderizador nem registro gráfico', () => {
     for (const proibido of [
-      'ResultGraph',
       'graph-model',
       'graph-config',
       'ScoreBandChart',
@@ -311,16 +313,151 @@ describe('documento profissional — o que é do próximo bloco', () => {
   });
 });
 
-describe('painel — a porta de entrada não substitui o que existia', () => {
-  it('mantém Ver, Copiar e imprimir', () => {
-    expect(painel).toContain('Ver');
-    expect(painel).toContain('Copiar relatório');
-    expect(painel).toContain('window.print()');
+describe('painel — um relatório canônico (Bloco 7C)', () => {
+  const painelCodigo = semComentarios(painel);
+
+  it('a lista oferece UM único caminho de visualização', () => {
+    expect(painel).toContain('Abrir relatório');
+    expect(painel).toContain('/relatorios/${encodeURIComponent(report.id)}');
+    expect(painel).toContain('report.id && resolvedAssessmentId &&');
   });
 
-  it('o link do documento só existe com report.id e avaliação resolvida', () => {
-    expect(painel).toContain('report.id && resolvedAssessmentId &&');
-    expect(painel).toContain('Abrir relatório completo');
-    expect(painel).toContain('/relatorios/${encodeURIComponent(report.id)}');
+  // A duplicidade era o problema: dois botões abrindo representações
+  // diferentes do MESMO relatório, com layouts e conteúdos distintos.
+  it('não sobrou o CTA paralelo nem o rótulo antigo', () => {
+    expect(painelCodigo).not.toContain('Abrir relatório completo');
+    expect(painelCodigo).not.toContain('>Ver<');
+    expect(painelCodigo).not.toContain('setSelectedReport');
+    expect(painelCodigo).not.toContain('selectedReport');
+  });
+
+  it('não renderiza mais narrativa inline', () => {
+    expect(painelCodigo).not.toContain('ReactMarkdown');
+    expect(painelCodigo).not.toContain('remarkGfm');
+    expect(painelCodigo).not.toContain('window.print()');
+    expect(painelCodigo).not.toContain('Copiar relatório');
+  });
+
+  it('a lista deixou de carregar o texto que não exibe mais', () => {
+    expect(painelCodigo).toContain("select('id, title, report_type, created_at')");
+    expect(painelCodigo).not.toContain("select('id, title, report_type, output_text, created_at')");
+  });
+
+  // Abrir é navegação: o POST que gerou já gravou e já cobrou a unidade.
+  it('após gerar, navega para a rota canônica sem novo POST', () => {
+    expect(painelCodigo).toContain('router.push');
+    expect(painelCodigo).toContain('/relatorios/${encodeURIComponent(report.id)}');
+    const posts = painelCodigo.match(/method:\s*'POST'/g) ?? [];
+    expect(posts).toHaveLength(1);
+  });
+
+  it('sem report.id não inventa rota', () => {
+    const gerar = painelCodigo.slice(
+      painelCodigo.indexOf('async function generateReport()'),
+      painelCodigo.indexOf('async function goToCheckout()'),
+    );
+    expect(gerar).toContain('if (report.id) {');
+  });
+
+  it('preserva geração, cota, checkout, destinos e observações', () => {
+    expect(painel).toContain('monthly_count');
+    expect(painel).toContain('CHECKOUT_URL_IA_PRO');
+    expect(painel).toContain("value: 'family'");
+    expect(painel).toContain("value: 'internal'");
+    expect(painel).toContain('additionalNotes');
+    expect(painel).toContain('Relatórios desta avaliação');
+  });
+});
+
+describe('documento — gráfico do CorrigeFácil (Bloco 7C)', () => {
+  const ilha = source(`${ROTA}/ReportGraphIsland.tsx`);
+  const ilhaCodigo = semComentarios(ilha);
+  const coerencia = source('src/lib/report/graph-coherence.ts');
+
+  it('o documento monta o gráfico entre a tabela e a narrativa', () => {
+    expect(documento).toContain('<ReportGraphIsland avaliacao={avaliacao} />');
+    const iTabela = documento.indexOf('montarLinhas(avaliacao.resultados)');
+    const iGrafico = documento.indexOf('<ReportGraphIsland');
+    const iNarrativa = documento.indexOf('{relatorio.output_text}');
+    expect(iGrafico).toBeGreaterThan(iTabela);
+    expect(iNarrativa).toBeGreaterThan(iGrafico);
+  });
+
+  it('reutiliza o ResultGraph aprovado, sem um quinto gráfico', () => {
+    expect(ilhaCodigo).toContain('ResultGraph');
+    for (const renderizador of [
+      'ScoreBandChart',
+      'StandardizedProfileChart',
+      'DomainProfileChart',
+      'CategoricalProfileChart',
+      'parts',
+    ]) {
+      expect(ilhaCodigo, renderizador).not.toContain(renderizador);
+    }
+  });
+
+  it('o quantitativo sai da avaliação salva, sem recálculo', () => {
+    expect(coerencia).toContain('instrument: avaliacao.instrument');
+    expect(coerencia).toContain('norm_selector: avaliacao.norm_selector');
+    expect(coerencia).toContain('resultados: avaliacao.resultados');
+  });
+
+  it('o adaptador não pontua, não classifica e não escolhe corte', () => {
+    for (const proibido of [
+      'Math.',
+      'reduce(',
+      'classification =',
+      'percentil(',
+      'cutoff',
+      'corte',
+      'norm_entries',
+    ]) {
+      expect(semComentarios(coerencia), proibido).not.toContain(proibido);
+    }
+  });
+
+  it('falha do catálogo não derruba o documento', () => {
+    expect(ilhaCodigo).toContain('.catch(');
+    expect(ilhaCodigo).toContain('if (!detalhe) return null;');
+  });
+
+  it('fail closed quando as faixas de hoje não reconhecem a classificação', () => {
+    expect(ilhaCodigo).toContain('faixasDivergemDoResultado(detalhe, resposta)');
+    expect(ilhaCodigo).toMatch(/faixasDivergemDoResultado\([^)]*\)\)\s*return null;/);
+  });
+
+  // A guarda é regra do DOCUMENTO: na tela de correção resultado e catálogo
+  // são necessariamente da mesma época.
+  it('a guarda mora no adaptador, não nos gráficos aprovados', () => {
+    const graphs = 'src/app/app/corrigefacil/graphs';
+    for (const arquivo of ['graph-model.ts', 'graph-config.ts', 'ResultGraph.tsx']) {
+      expect(source(`${graphs}/${arquivo}`), arquivo).not.toContain(
+        'faixasDivergemDoResultado',
+      );
+    }
+  });
+
+  it('não ressuscita visual_context nem chama IA', () => {
+    for (const proibido of ['visual_context', 'openai', 'callOpenAI', 'monthly_']) {
+      expect(ilhaCodigo, proibido).not.toContain(proibido);
+      expect(semComentarios(coerencia), proibido).not.toContain(proibido);
+    }
+  });
+
+  it('o gráfico não é convertido em imagem nem persistido', () => {
+    for (const proibido of ['canvas', 'toDataURL', 'base64', 'screenshot', '.insert(']) {
+      expect(ilhaCodigo.toLowerCase(), proibido).not.toContain(proibido.toLowerCase());
+    }
+  });
+});
+
+describe('documento — copiar texto', () => {
+  it('a toolbar oferece copiar, e copia só a narrativa', () => {
+    expect(documento).toContain('Copiar texto');
+    expect(documento).toContain('Copiado');
+    expect(documentoCodigo).toContain(
+      'copiarNarrativa(estado.dados.relatorio.output_text)',
+    );
+    expect(documentoCodigo).toContain('navigator.clipboard.writeText(texto)');
   });
 });

@@ -30,7 +30,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Printer } from 'lucide-react';
+import { ArrowLeft, Copy, Printer } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createClient } from '@/utils/supabase/client';
@@ -49,6 +49,7 @@ import {
   rotuloDestino,
   type PerfilDocumento,
 } from '@/lib/report/document-model';
+import { ReportGraphIsland } from './ReportGraphIsland';
 
 /** Mensagem única para relatório inexistente, de outro usuário, ou de
  *  outra avaliação. Distinguir os casos confirmaria a existência de um
@@ -146,6 +147,7 @@ export function RelatorioDocumentClient({
   reportId,
 }: Readonly<{ assessmentId: string; reportId: string }>) {
   const [estado, setEstado] = useState<Fase>({ fase: 'carregando' });
+  const [copiado, setCopiado] = useState(false);
 
   const carregar = useCallback(
     async (signal: AbortSignal) => {
@@ -207,6 +209,17 @@ export function RelatorioDocumentClient({
     return () => document.body.classList.remove('pp-print-document');
   }, []);
 
+  async function copiarNarrativa(texto: string) {
+    try {
+      await navigator.clipboard.writeText(texto);
+      setCopiado(true);
+      window.setTimeout(() => setCopiado(false), 1800);
+    } catch {
+      // Sem clipboard disponível o texto continua na tela, selecionável.
+      setCopiado(false);
+    }
+  }
+
   /** Ações da aplicação: vivem FORA da folha e somem no papel. */
   const barra = (
     <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
@@ -219,16 +232,31 @@ export function RelatorioDocumentClient({
       </Link>
 
       {estado.fase === 'ok' && (
-        // Só o diálogo nativo: quem gera o PDF é o navegador, com "Salvar
-        // como PDF". Sem blob, sem download próprio, sem PDF no servidor.
-        <button
-          type="button"
-          onClick={() => window.print()}
-          className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-5 py-2.5 text-sm text-pp-ink hover:border-pp-ink/40 transition"
-        >
-          <Printer className="w-4 h-4" aria-hidden="true" />
-          Imprimir / Salvar PDF
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Copia SÓ a narrativa da IA — o mesmo texto que a visualização
+              inline copiava antes de ser unificada aqui. Nada de HTML,
+              cabeçalho, tabela ou gráfico: quem cola isso num editor quer o
+              texto para trabalhar em cima, não a marcação do documento. */}
+          <button
+            type="button"
+            onClick={() => copiarNarrativa(estado.dados.relatorio.output_text)}
+            className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-5 py-2.5 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+          >
+            <Copy className="w-4 h-4" aria-hidden="true" />
+            {copiado ? 'Copiado' : 'Copiar texto'}
+          </button>
+
+          {/* Só o diálogo nativo: quem gera o PDF é o navegador, com "Salvar
+              como PDF". Sem blob, sem download próprio, sem PDF no servidor. */}
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-5 py-2.5 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+          >
+            <Printer className="w-4 h-4" aria-hidden="true" />
+            Imprimir / Salvar PDF
+          </button>
+        </div>
       )}
     </div>
   );
@@ -419,6 +447,17 @@ export function RelatorioDocumentClient({
             </div>
           )}
         </section>
+
+        {/* ── REPRESENTAÇÃO VISUAL ──────────────────────────────────── */}
+        {/* Entre a tabela e a narrativa: o gráfico é releitura dos mesmos
+            números que acabaram de ser lidos, e a análise vem depois de
+            ambos. Sem título aqui — o `ResultGraph` já traz o dele, e dois
+            títulos iguais seriam ruído.
+
+            Devolve null sozinho quando não há gráfico aprovado, quando o
+            catálogo não carregou ou quando as faixas de hoje não reconhecem
+            a classificação gravada. */}
+        <ReportGraphIsland avaliacao={avaliacao} />
 
         {/* ── NARRATIVA ─────────────────────────────────────────────── */}
         {/* `output_text` como está: renderizado, nunca reescrito. O aviso
