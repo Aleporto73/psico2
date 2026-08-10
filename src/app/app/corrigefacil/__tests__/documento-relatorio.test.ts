@@ -175,10 +175,54 @@ describe('documento profissional — impressão A4 (Bloco 7B)', () => {
     expect(barra).toContain('Voltar à avaliação');
   });
 
-  it('declara A4 com margens de documento', () => {
-    expect(css).toContain('@page');
-    expect(css).toContain('size: A4');
-    expect(css).toMatch(/margin:\s*\d+mm\s+\d+mm/);
+  it('declara A4 com margens de documento numa página NOMEADA', () => {
+    expect(css).toMatch(
+      /@page\s+pp-relatorio\s*\{[^}]*size:\s*A4[^}]*margin:\s*18mm\s+16mm[^}]*\}/,
+    );
+  });
+
+  // `@page` anônimo não aceita seletor: ele configuraria o papel de TODA
+  // impressão do Psico2 — Doc Studio incluso — só por existir neste CSS.
+  // A named page só vale onde alguém a referencia.
+  it('não deixa @page anônimo impondo A4 ao app inteiro', () => {
+    expect(css).not.toMatch(/@page\s*\{/);
+  });
+
+  it('só o documento reivindica a página nomeada', () => {
+    expect(css).toMatch(
+      /body\.pp-print-document \.pp-doc\s*\{\s*\n?\s*page:\s*pp-relatorio/,
+    );
+    // e o gancho já existia no componente, então ele não precisou mudar
+    expect(documento).toContain('pp-doc');
+  });
+
+  // bg-pp-canvas vive na raiz do AppShell, que é compartilhado. O fundo é
+  // neutralizado sob o escopo do documento em vez de sair do produto.
+  it('fundo da aplicação não vai ao papel, e só sob o escopo do documento', () => {
+    expect(css).toMatch(
+      /body\.pp-print-document,\s*\n?\s*body\.pp-print-document \[class~='bg-pp-canvas'\]\s*\{\s*\n?\s*background:\s*#fff\s*!important/,
+    );
+    expect(source('src/app/app/AppShell.tsx')).toContain('bg-pp-canvas');
+  });
+
+  // Toda regra de ELEMENTO precisa ser escopada; caso contrário vaza para
+  // as outras telas do app na impressão.
+  it('nenhuma regra de elemento do bloco de print escapa do escopo', () => {
+    const bloco = css.slice(css.indexOf('@media print {'));
+    const seletores = bloco
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.endsWith('{') || l.endsWith(','))
+      .map((l) => l.replace(/\s*[{,]$/, ''))
+      .filter((l) => l && !l.startsWith('/*') && !l.startsWith('*'));
+
+    for (const seletor of seletores) {
+      const permitido =
+        seletor === '@media print' ||
+        seletor === '@page pp-relatorio' ||
+        seletor.startsWith('body.pp-print-document');
+      expect(permitido, `seletor fora do escopo: ${seletor}`).toBe(true);
+    }
   });
 
   // O padding do <main> é do AppShell, compartilhado por todo o produto.
@@ -187,7 +231,10 @@ describe('documento profissional — impressão A4 (Bloco 7B)', () => {
     expect(css).toContain('body.pp-print-document main');
     expect(documentoCodigo).toContain("classList.add('pp-print-document')");
     expect(documentoCodigo).toContain("classList.remove('pp-print-document')");
-    expect(source('src/app/app/AppShell.tsx')).toContain('p-6 md:p-8');
+    // o AppShell continua com o padding e o fundo que o produto usa
+    const shell = source('src/app/app/AppShell.tsx');
+    expect(shell).toContain('p-6 md:p-8');
+    expect(shell).toContain('bg-pp-canvas');
   });
 
   it('a folha perde borda, sombra e padding no papel', () => {

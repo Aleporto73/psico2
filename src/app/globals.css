@@ -269,18 +269,41 @@
  * o documento não renderiza (o `<main>` do AppShell) ou que saem do
  * ReactMarkdown sem className própria.
  *
- * ESCOPO: tudo abaixo depende de `body.pp-print-document`, classe que só a
- * rota do documento adiciona, enquanto está montada. Nenhuma outra tela do
- * app é afetada — foi o que permitiu resolver o padding do shell sem tocar
- * no AppShell, que é compartilhado por todo o produto.
+ * ESCOPO: as regras de ELEMENTO dependem de `body.pp-print-document`, classe
+ * que só a rota do documento adiciona, enquanto está montada. Nenhuma outra
+ * tela do app é afetada — foi o que permitiu resolver o padding do shell sem
+ * tocar no AppShell, que é compartilhado por todo o produto.
+ *
+ * A regra de PÁGINA é o caso à parte, e por isso é NOMEADA. `@page` anônimo
+ * não aceita seletor: ele configuraria o papel de TODA impressão do Psico2 —
+ * Doc Studio incluso — a partir do momento em que este CSS existe. Uma named
+ * page só passa a valer onde alguém a referencia com `page:`, e quem a
+ * referencia aqui é apenas `.pp-doc`, dentro do escopo da rota.
  * ------------------------------------------------------------------- */
 
 @media print {
   /* A4 com margens de documento profissional. O papel manda na margem;
-     por isso a "folha" da tela zera o próprio padding ao imprimir. */
-  @page {
+     por isso a "folha" da tela zera o próprio padding ao imprimir.
+     NOMEADA de propósito — ver o cabeçalho. */
+  @page pp-relatorio {
     size: A4;
     margin: 18mm 16mm;
+  }
+
+  /* O único ponto que reivindica a página nomeada. Sem esta linha, o
+     `@page pp-relatorio` acima não tem efeito em lugar nenhum. */
+  body.pp-print-document .pp-doc {
+    page: pp-relatorio;
+  }
+
+  /* O fundo da APLICAÇÃO não vai ao papel. `bg-pp-canvas` vive na raiz do
+     AppShell, que é compartilhado e não pode ser alterado por causa desta
+     rota; então o fundo é neutralizado aqui, sob o escopo do documento, e
+     só enquanto ele está montado. Vale também com "gráficos de fundo"
+     ligado, que é justamente quando o canvas apareceria impresso. */
+  body.pp-print-document,
+  body.pp-print-document [class~='bg-pp-canvas'] {
+    background: #fff !important;
   }
 
   /* O `p-6 md:p-8` do <main> existe para a APLICAÇÃO. No papel ele somaria
