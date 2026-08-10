@@ -1,10 +1,17 @@
 import { NextResponse } from 'next/server';
 import { callOpenAI } from '@/lib/openai';
+import { formatAgeAtEvaluation } from '@/lib/report/format-age';
 import {
   formatCredential,
   getCredentialLabel,
   getProfessionLabel,
 } from '@/lib/report/professional-identity';
+
+// A formatação da idade mudou de arquivo, não de comportamento: o
+// documento profissional precisa dela no cliente e este módulo é
+// server-only por causa de `@/lib/openai`. Continua exportada daqui para
+// não quebrar quem já a importava.
+export { formatAgeAtEvaluation };
 
 type ReportType = 'family' | 'school' | 'technical' | 'internal';
 
@@ -37,13 +44,6 @@ const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const MAX_NOTES_CHARS = 6000;
-
-type AgeAtEvaluation = {
-  years?: unknown;
-  months?: unknown;
-  days?: unknown;
-  corrected?: unknown;
-};
 
 type ResultRow = {
   raw: number | string | null;
@@ -92,33 +92,6 @@ function oneRelation<T>(value: unknown): T | null {
   if (Array.isArray(value)) return (value[0] as T | undefined) ?? null;
   if (value && typeof value === 'object') return value as T;
   return null;
-}
-
-function integerOrNull(value: unknown): number | null {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0
-    ? value
-    : null;
-}
-
-export function formatAgeAtEvaluation(raw: unknown): string | null {
-  if (!raw || typeof raw !== 'object') return null;
-  const age = raw as AgeAtEvaluation;
-  const years = integerOrNull(age.years);
-  const months = integerOrNull(age.months);
-  const days = integerOrNull(age.days);
-
-  if (years === null) return null;
-
-  const parts: string[] = [`${years} ${years === 1 ? 'ano' : 'anos'}`];
-  if (months !== null) parts.push(`${months} ${months === 1 ? 'mês' : 'meses'}`);
-  if (days !== null) parts.push(`${days} ${days === 1 ? 'dia' : 'dias'}`);
-
-  const base =
-    parts.length === 1
-      ? parts[0]
-      : `${parts.slice(0, -1).join(', ')} e ${parts[parts.length - 1]}`;
-
-  return age.corrected === true ? `${base} (idade corrigida)` : base;
 }
 
 function cleanScalar(value: number | string | null): string | null {
