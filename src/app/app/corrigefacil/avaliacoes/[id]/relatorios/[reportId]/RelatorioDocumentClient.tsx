@@ -335,6 +335,16 @@ export function RelatorioDocumentClient({
                       <tr key={l.escala} className="align-top print:break-inside-avoid">
                         <td className="border border-pp-ink/15 px-3 py-2 text-pp-ink font-medium">
                           {l.escala}
+                          {/* Quando NENHUMA escala tem valor, não sobra
+                              coluna quantitativa para a mensagem atravessar
+                              com colSpan — e ela sumia, deixando só o código
+                              da escala numa linha muda. A mensagem desce para
+                              cá em vez de criar uma coluna sem cabeçalho. */}
+                          {!l.disponivel && numericas === 0 && (
+                            <span className="block font-normal text-pp-ink-soft mt-1">
+                              {l.mensagem ?? 'Resultado indisponível.'}
+                            </span>
+                          )}
                         </td>
 
                         {l.disponivel ? (

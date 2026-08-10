@@ -136,6 +136,22 @@ describe('documento profissional — composição', () => {
     expect(documento).toContain('montarLinhas(avaliacao.resultados)');
     expect(documento).toContain('colunasVisiveis(linhas)');
   });
+
+  // Bug real: com TODAS as escalas indisponíveis, `colunasVisiveis` zera
+  // todas as colunas quantitativas, `numericas` vira 0 e a mensagem
+  // persistida sumia — a linha ficava só com o código da escala. É
+  // exatamente o "campo vazio" que o produto proíbe. Os dois caminhos
+  // precisam existir: colSpan quando há colunas, e a mensagem junto da
+  // escala quando não há.
+  it('mensagem de indisponível sobrevive mesmo sem coluna quantitativa', () => {
+    expect(documentoCodigo).toContain('!l.disponivel && numericas === 0');
+    expect(documentoCodigo).toContain('numericas > 0 &&');
+
+    const ocorrencias = documentoCodigo.match(
+      /l\.mensagem \?\? 'Resultado indisponível\.'/g,
+    );
+    expect(ocorrencias).toHaveLength(2);
+  });
 });
 
 describe('documento profissional — o que é do próximo bloco', () => {

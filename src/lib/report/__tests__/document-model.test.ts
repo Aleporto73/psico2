@@ -133,6 +133,27 @@ describe('tabela determinística — colunas', () => {
     const colunas = colunasVisiveis(montarLinhas({}));
     expect(Object.values(colunas).every((v) => v === false)).toBe(true);
   });
+
+  // Este caso é a PREMISSA de um bug real: com todas as escalas
+  // indisponíveis não sobra coluna quantitativa nenhuma, e o compositor
+  // não tem por onde esticar a mensagem com colSpan. O modelo está certo
+  // — quem precisa tratar o zero é a tela, e há guarda para isso em
+  // corrigefacil/__tests__/documento-relatorio.test.ts.
+  it('todas as escalas indisponíveis zeram as colunas, mas preservam a mensagem', () => {
+    const linhas = montarLinhas({
+      TOTAL: resultado({
+        available: false,
+        message: 'não há norma publicada para esta idade neste domínio',
+      }),
+    });
+    const colunas = colunasVisiveis(linhas);
+
+    expect(Object.values(colunas).every((v) => v === false)).toBe(true);
+    expect(linhas[0].mensagem).toBe(
+      'não há norma publicada para esta idade neste domínio',
+    );
+    expect(linhas[0].disponivel).toBe(false);
+  });
 });
 
 describe('data da avaliação', () => {
