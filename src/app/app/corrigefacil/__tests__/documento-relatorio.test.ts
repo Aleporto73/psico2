@@ -331,7 +331,9 @@ describe('painel — um relatório canônico (Bloco 7C)', () => {
     expect(painelCodigo).not.toContain('selectedReport');
   });
 
-  it('não renderiza mais narrativa inline', () => {
+  // O texto só reaparece no painel como RESGATE de erro (pré-formatado, ver
+  // adiante). Como leitura normal do relatório, não existe mais aqui.
+  it('não renderiza mais narrativa como leitura normal', () => {
     expect(painelCodigo).not.toContain('ReactMarkdown');
     expect(painelCodigo).not.toContain('remarkGfm');
     expect(painelCodigo).not.toContain('window.print()');
@@ -351,12 +353,58 @@ describe('painel — um relatório canônico (Bloco 7C)', () => {
     expect(posts).toHaveLength(1);
   });
 
-  it('sem report.id não inventa rota', () => {
-    const gerar = painelCodigo.slice(
-      painelCodigo.indexOf('async function generateReport()'),
-      painelCodigo.indexOf('async function goToCheckout()'),
-    );
-    expect(gerar).toContain('if (report.id) {');
+  const gerar = painelCodigo.slice(
+    painelCodigo.indexOf('async function generateReport()'),
+    painelCodigo.indexOf('async function goToCheckout()'),
+  );
+
+  it('caso normal: com report.id navega e sai, sem fallback', () => {
+    // o push acontece dentro do `if (report.id)` e ele RETORNA — o resgate
+    // abaixo é inalcançável quando o relatório foi salvo
+    expect(gerar).toMatch(/if \(report\.id\) \{[\s\S]*?router\.push\([\s\S]*?\);\s*\n\s*return;/);
+  });
+
+  // O backend responde 200 com `id: null` quando a IA gerou e o INSERT
+  // falhou: a unidade JÁ foi cobrada e o texto só existe nessa resposta.
+  // Sem resgate, o profissional perde uma geração que pagou.
+  it('caso save failure: preserva o texto sem inventar rota', () => {
+    expect(gerar).toContain('setUnsavedReport({');
+    expect(gerar).toContain('texto: report.output_text ?? \'\'');
+    expect(painelCodigo).toContain('unsavedReport && (');
+    expect(painelCodigo).toContain('copiarTexto(unsavedReport.texto)');
+    expect(painelCodigo).toContain('{unsavedReport.texto}');
+  });
+
+  it('o resgate não finge ser o documento canônico', () => {
+    const resgate = painelCodigo.slice(painelCodigo.indexOf('{unsavedReport && ('));
+    // sem rota, sem impressão, sem tabela, sem gráfico: nada disso existe
+    // para um relatório que não foi salvo
+    expect(resgate).not.toContain('Abrir relatório');
+    expect(resgate).not.toContain('/relatorios/');
+    expect(resgate).not.toContain('window.print()');
+    expect(resgate).not.toContain('ResultGraph');
+    expect(resgate).not.toContain('<table');
+  });
+
+  it('nunca constrói uma rota com id nulo', () => {
+    expect(painelCodigo).not.toContain('/relatorios/null');
+    expect(painelCodigo).not.toMatch(/relatorios\/\$\{[^}]*report\.id\}/);
+    // a única construção de rota passa por encodeURIComponent(report.id),
+    // e ela vive dentro do `if (report.id)`
+    expect(gerar).toContain('/relatorios/${encodeURIComponent(report.id)}');
+  });
+
+  it('o resgate é limpo ao iniciar nova geração', () => {
+    expect(gerar).toContain('setUnsavedReport(null)');
+  });
+
+  it('o resgate não dispara segundo POST nem nova geração', () => {
+    const resgate = painelCodigo.slice(painelCodigo.indexOf('{unsavedReport && ('));
+    expect(resgate).not.toContain('fetch(');
+    expect(resgate).not.toContain('generateReport');
+    // e o arquivo inteiro segue com um POST só
+    const posts = painelCodigo.match(/method:\s*'POST'/g) ?? [];
+    expect(posts).toHaveLength(1);
   });
 
   it('preserva geração, cota, checkout, destinos e observações', () => {
