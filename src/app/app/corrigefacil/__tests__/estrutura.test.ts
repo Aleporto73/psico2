@@ -37,8 +37,8 @@ describe('salvamento: invariantes de tela', () => {
     // ResultadoCorrecao só é montado no ramo `resultado ? ... : ...`,
     // então o rótulo não pode aparecer fora dele.
     const antesDoResultado = AVALIAR.split('function ResultadoCorrecao')[0];
-    expect(antesDoResultado).not.toContain('Salvar avaliação');
-    expect(AVALIAR).toContain('Salvar avaliação');
+    expect(antesDoResultado).not.toContain('Salvar sem relatório');
+    expect(AVALIAR).toContain('Salvar sem relatório');
   });
 
   it('24) não há salvamento automático: salvarAvaliacao nunca é chamada em efeito', () => {
