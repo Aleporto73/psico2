@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { callOpenAI } from '@/lib/openai';
 import {
   formatCredential,
+  getCredentialLabel,
   getProfessionLabel,
 } from '@/lib/report/professional-identity';
 
@@ -202,7 +203,15 @@ function formatDate(value: unknown): string | null {
  *  Categoria ou credencial sem rótulo publicável (`outro`,
  *  `nao_informado`, valor desconhecido) sai como AUSÊNCIA: a linha some
  *  em vez de carregar o código cru. É o que o prompt já pede — omitir
- *  campo ausente em vez de preencher. */
+ *  campo ausente em vez de preencher.
+ *
+ *  A credencial exige a SIGLA para existir, e é por isso que o gate é
+ *  `getCredentialLabel` e não `formatCredential`. Sem sigla publicável,
+ *  `formatCredential` devolveria o número sozinho — comportamento certo
+ *  para o Doc Studio, que o mostra ao lado do nome de quem assina, e
+ *  errado aqui: um "Registro/credencial: 12345" solto no prompt é um
+ *  registro sem órgão, que a IA não tem como qualificar e pode redigir
+ *  como se fosse. Número sem sigla não é registro; é dígito. */
 export function professionalText(profile: ProfessionalProfile | null): string {
   if (!profile) return 'Perfil profissional: não incluído.';
   const name = (profile.display_name || profile.name || '').trim();
@@ -210,10 +219,9 @@ export function professionalText(profile: ProfessionalProfile | null): string {
     profile.profession_category,
     profile.gender,
   );
-  const credential = formatCredential(
-    profile.credential_type,
-    profile.credential_number,
-  );
+  const credential = getCredentialLabel(profile.credential_type)
+    ? formatCredential(profile.credential_type, profile.credential_number)
+    : '';
 
   const lines: string[] = [];
   if (name) lines.push(`Nome: ${name}`);

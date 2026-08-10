@@ -49,6 +49,10 @@ describe('identidade profissional — credencial', () => {
     expect(formatCredential('crp', '06/12345')).toBe('CRP 06/12345');
   });
 
+  // TRAVA DO COMPORTAMENTO LEGADO DO DOC STUDIO. Não "corrigir" para string
+  // vazia: lá a credencial aparece ao lado do nome de quem assina, e o número
+  // sozinho ainda informa. Quem precisa da SIGLA para publicar a linha é o
+  // prompt do CorrigeFácil, e esse gate mora em `professionalText` — não aqui.
   it('sem sigla publicável sobra só o número, sem o código cru', () => {
     expect(formatCredential('outro', '12345')).toBe('12345');
   });

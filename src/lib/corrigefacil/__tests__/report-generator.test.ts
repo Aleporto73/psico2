@@ -94,6 +94,34 @@ describe('CorrigeFácil report generator', () => {
     expect(texto).not.toContain('nao_informado');
   });
 
+  // O caso que passou batido na primeira versão: `credential_number` PRESENTE
+  // com tipo sem sigla publicável. `formatCredential` devolve o número sozinho
+  // — certo para o Doc Studio, errado no prompt, onde "Registro/credencial:
+  // 12345" é um registro sem órgão que a IA pode redigir como se fosse.
+  it('registro sem sigla publicável não vai ao prompt, mesmo com número preenchido', () => {
+    const texto = professionalText({
+      display_name: 'Teste',
+      credential_type: 'outro',
+      credential_number: '12345',
+    });
+
+    expect(texto).not.toContain('Registro/credencial:');
+    expect(texto).not.toContain('12345');
+    expect(texto).toBe('Nome: Teste');
+  });
+
+  it('vale para nao_informado, tipo desconhecido e tipo vazio', () => {
+    for (const credential_type of ['nao_informado', 'sigla_que_nao_existe', '']) {
+      const texto = professionalText({
+        display_name: 'Teste',
+        credential_type,
+        credential_number: '12345',
+      });
+
+      expect(texto, credential_type || '(vazio)').toBe('Nome: Teste');
+    }
+  });
+
   it('perfil ausente continua declarado como ausente', () => {
     expect(professionalText(null)).toBe('Perfil profissional: não incluído.');
   });
