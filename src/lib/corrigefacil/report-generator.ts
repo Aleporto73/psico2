@@ -30,12 +30,18 @@ const REPORT_TYPE_LABEL: Record<ReportType, string> = {
 };
 
 /** O que muda por destino é a VOZ e a profundidade — nunca a estrutura nem
- *  o que pode ser afirmado. As quatro seções são as mesmas nos quatro. */
+ *  o que pode ser afirmado. As cinco seções são as mesmas nos quatro. */
 const DESTINATION_RULES: Record<ReportType, string> = {
   family:
     'Escreva para quem não é da área: linguagem acessível, respeitosa, sem jargão, e sem alarmismo. ' +
     'Traduza a classificação em termos compreensíveis, mantendo o rótulo exato ao mencioná-lo. ' +
-    'Nas orientações, fale do que observar no cotidiano em nível geral. ' +
+    // Antes esta linha pedia "fale do que observar no cotidiano em nível
+    // geral" — um convite direto a nomear domínios, e em contradição com a
+    // regra geral que proíbe justamente isso. A família recebe PROCESSO.
+    'Ajude a família a entender COMO usar este resultado: guardá-lo junto do acompanhamento já existente, ' +
+    'conversar sobre ele com o profissional responsável e evitar decisões tomadas a partir de um resultado isolado. ' +
+    'NÃO oriente a família a procurar sintomas, comportamentos ou mudanças que não tenham sido fornecidos: ' +
+    'mandar observar o que ninguém relatou transforma o relatório em fonte de preocupação inventada. ' +
     'Não responsabilize pais ou cuidadores pelo resultado, não sugira diagnóstico e não antecipe evolução.',
   school:
     'Escreva para o contexto educacional: linguagem pedagógica e funcional, voltada a observação, ' +
@@ -46,15 +52,22 @@ const DESTINATION_RULES: Record<ReportType, string> = {
     'rendimento, comportamento, atenção, interação social, rotina, engajamento ou bem-estar como objetos de acompanhamento. ' +
     'Você não sabe o que a escola vai encontrar, e antecipar isso inventa um domínio que ninguém forneceu. ' +
     'Correto: "integrar o resultado às observações disponíveis no contexto escolar". ' +
-    'Incorreto: "acompanhar mudanças na participação nas atividades".',
+    'Incorreto: "acompanhar mudanças na participação nas atividades". ' +
+    'O que a escola PODE receber são orientações de processo: integrar o resultado ao que já se observa, ' +
+    'registrar informações pertinentes de modo objetivo, preservar confidencialidade, evitar exposição ou rotulação ' +
+    'a partir de um resultado isolado e manter comunicação com família e equipe quando pertinente.',
   technical:
     'Escreva para outros profissionais: linguagem técnica e precisa. ' +
     'Integre os valores e classificações disponíveis, destaque convergências e diferenças entre as escalas ' +
     'e explicite os limites interpretativos do que foi aplicado. ' +
-    'O texto deve facilitar a integração com entrevista, observação e outros instrumentos, sem substituí-los.',
+    'O texto deve facilitar a integração com entrevista, observação e outros instrumentos, sem substituí-los. ' +
+    'Diferencie explicitamente achado de RASTREIO de conclusão clínica, e oriente o confronto com os dados que a equipe já tem. ' +
+    'Não formule hipótese diagnóstica nova.',
   internal:
-    'Registro operacional do próprio profissional: MESMA estrutura de quatro seções, porém curto e direto. ' +
-    'Evite prosa: resultado, significado cauteloso, o que acompanhar e próximos passos gerais. ' +
+    'Registro operacional do próprio profissional: MESMA estrutura de cinco seções, porém curta e direta. ' +
+    // "o que acompanhar" puxava para nomear domínio; o registro interno
+    // organiza PROVIDÊNCIA, não sintoma a vigiar.
+    'Evite prosa: achado, limite do que ele permite concluir, o que integrar, registrar ou revisar, e a próxima providência. ' +
     'Frases objetivas valem mais que parágrafos desenvolvidos.',
 };
 
@@ -185,28 +198,38 @@ A classificação é RESULTADO DE RASTREIO, não descrição clínica da pessoa.
 
 Quando houver contexto escrito pelo profissional, o domínio que ele mencionou fica liberado para a redação — mantendo clara a origem, sem convertê-lo em resultado do instrumento.
 
-ESTRUTURA OBRIGATÓRIA — exatamente estas quatro seções, nesta ordem, em Markdown:
+ESTRUTURA OBRIGATÓRIA — exatamente estas cinco seções, nesta ordem, em Markdown:
 
 ## Síntese dos resultados
 Comece pelo RESULTADO, em poucas linhas. Dê a visão principal do que a avaliação mostrou. Ao mencionar uma classificação, reproduza o rótulo exatamente como recebido, sem sinônimo e sem gradação própria. Havendo várias escalas, sintetize o perfil conjunto sem criar hierarquia que os dados não sustentam.
+Prefira "o rastreamento resultou na classificação X" ou "o resultado situou-se na classificação X". Não use "resultado positivo de rastreio" como fórmula.
+PROXIMIDADE DE FAIXA NÃO É INTERPRETAÇÃO. Um valor perto do limite de outra faixa continua pertencendo à faixa que o servidor determinou. Não escreva "quase alta", "próximo da faixa alta", "imediatamente abaixo da faixa alta", "limítrofe" nem "próximo do corte", a menos que isso venha persistido na classificação ou na mensagem. Comparar o número com um corte é reclassificar.
 
 ## Análise e interpretação
-Explique o PESO INTERPRETATIVO do resultado: o que a classificação permite afirmar, o que ela NÃO permite afirmar e, quando couber, a necessidade de integrar com outras fontes. Havendo mais de uma escala, é aqui que elas se articulam.
+Explique o PESO INTERPRETATIVO do resultado: o que a classificação permite afirmar, o que ela NÃO permite afirmar e, quando couber, a necessidade de integrar com outras fontes. Havendo mais de uma escala, é aqui que elas se articulam — e a relação precisa ser real, lida dos valores e classificações recebidos.
 Não reescreva a síntese com outras palavras. A classificação já foi nomeada acima: refira-se a ela como "esse resultado" em vez de repetir o rótulo inteiro, salvo quando a repetição for realmente necessária.
-É proibido explicar POR QUE a pessoa obteve o resultado, atribuir causa, presumir sintoma, comportamento, desempenho escolar ou dinâmica familiar que não tenham sido fornecidos, e usar conhecimento próprio de pontos de corte para acrescentar informação que não veio nos dados.
-Não preencha a falta de dados com exemplos de sintomas ou de funcionalidade. Escala única e sem contexto do profissional pede uma análise CURTA: conhecimento geral sobre o construto não vira fato sobre o avaliado.
+É proibido explicar POR QUE a pessoa obteve o resultado, atribuir causa, presumir sintoma, comportamento, desempenho escolar, funcionalidade, dificuldade, repercussão, prognóstico ou dinâmica familiar que não tenham sido fornecidos, e usar conhecimento próprio de pontos de corte para acrescentar informação que não veio nos dados.
+Não preencha a falta de dados com exemplos de sintomas ou de funcionalidade. Escala única e sem contexto do profissional pede uma análise CURTA — um ou dois parágrafos bem escritos bastam: conhecimento geral sobre o construto não vira fato sobre o avaliado.
 Evite "apresenta", "demonstra", "confirma", "comprova". Prefira formulações proporcionais: "o resultado sugere", "o achado é compatível com", "esse resultado deve ser integrado a".
 
-## Pontos de atenção
-Em lista de itens, cada um acrescentando algo DISTINTO das seções anteriores. Não use como item a classificação que a síntese já enunciou. Cada item precisa se apoiar diretamente num resultado persistido ou no contexto escrito pelo profissional.
-Não crie itens para encher, não invente "aspectos preservados" sem dado que os sustente e não trate ausência de elevação como habilidade preservada. Havendo um único ponto distinto, escreva um único item: um item verdadeiro vale mais que três repetidos.
+## Considerações para o contexto
+Transforme o resultado em informação UTILIZÁVEL por quem vai receber o documento, sem inventar característica alguma do avaliado. Fale de PROCESSO — como usar, guardar, comunicar e integrar este resultado —, não do que se vai encontrar na pessoa.
+Cabem aqui: integrar o resultado ao que já se observa e registra, tratar a informação com confidencialidade, evitar exposição ou rotulação a partir de um resultado isolado, manter comunicação entre os envolvidos quando pertinente e situar o rastreamento dentro do acompanhamento que já existe.
+Não cabem: antecipar o que o destinatário vai encontrar, nomear domínios que ninguém forneceu nem sugerir que se procure sinal, sintoma ou mudança específica. A seção ganha valor pela utilidade do processo, não por descrever a pessoa.
 
-## Orientações
-Próximos passos gerais, coerentes com o destino. Não repita aqui a classificação, o alerta de que não é diagnóstico nem o pedido de cautela, se isso já foi dito antes.
-Sem contexto do profissional, as orientações devem ser PROCESSUAIS: integrar o resultado às informações já disponíveis, registrar o que for pertinente, manter comunicação entre os contextos envolvidos e discutir com os profissionais responsáveis, conforme julgamento profissional. Não nomeie o que acompanhar ("observar humor", "acompanhar sono", "monitorar participação", "acompanhar bem-estar") sem que instrumento, escala, classificação ou contexto do profissional sustentem aquele domínio.
-Não prescreva medicamento, psicoterapia específica, intervenção padronizada ou encaminhamento obrigatório sem base. Não escreva recomendação genérica desconectada do resultado só para alongar o texto.
+## Recomendações e acompanhamento
+Em lista de itens, para o documento ser prático. Cada item é uma ação de PROCESSO coerente com o destino — integrar, registrar, comunicar, discutir com os responsáveis, revisar quando houver informação nova.
+Cada item precisa se apoiar num resultado persistido ou no contexto escrito pelo profissional. Não use como item a classificação que a síntese já enunciou. Não crie itens para encher, não invente "aspectos preservados" sem dado que os sustente e não trate ausência de elevação como habilidade preservada. Havendo um único item verdadeiro, escreva um: um item verdadeiro vale mais que três repetidos.
+Não repita aqui a classificação, o alerta de que não é diagnóstico nem o pedido de cautela, se isso já foi dito antes.
+Não recomende acompanhar, observar ou monitorar um domínio que ninguém forneceu — nada de "acompanhar queda de rendimento", "observar isolamento", "monitorar humor", "acompanhar sono", "observar mudança comportamental", "acompanhar participação". Não prescreva medicamento, psicoterapia específica, protocolo, intervenção padronizada ou encaminhamento obrigatório sem base explícita. Não escreva recomendação genérica desconectada do resultado só para alongar o texto.
 
-CADA SEÇÃO CUMPRE UMA FUNÇÃO DIFERENTE: a síntese diz o achado, a análise diz o alcance e o limite, os pontos de atenção acrescentam o que ainda não foi dito e as orientações apontam o próximo passo. Dizer a mesma coisa quatro vezes empobrece o documento.
+## Considerações finais
+Um parágrafo curto que fecha o raciocínio: como este resultado deve ser utilizado e qual o lugar dele no acompanhamento. Dois parágrafos só em instrumento realmente complexo.
+Não repita pontuação, não repita a classificação inteira, não recapitule as recomendações, não introduza fato novo, não crie diagnóstico nem prognóstico e não escreva um segundo aviso ético — o parágrafo obrigatório vem depois e basta.
+
+CADA SEÇÃO CUMPRE UMA FUNÇÃO DIFERENTE: a síntese diz o achado, a análise diz o alcance e o limite, as considerações para o contexto dizem como usar, as recomendações dizem o que fazer e as considerações finais fecham. Dizer a mesma coisa cinco vezes empobrece o documento.
+
+MAIS COMPLETO NÃO É MAIS LONGO. A riqueza deste relatório vem de organização, clareza, transição entre as seções e utilidade prática — nunca de alongar o texto, repetir a classificação, acrescentar sintomas ou criar domínios funcionais. Densidade editorial, não densidade factual inventada.
 
 NÃO transforme o relatório em checklist burocrático. A estrutura existe para organizar a leitura profissional, não para produzir uma sequência mecânica de campos nem frases padronizadas. Escreva texto que se lê, não formulário preenchido.
 
@@ -215,11 +238,11 @@ EXTENSÃO: proporcional à informação disponível. Instrumento de escala únic
 DESTINO: ${REPORT_TYPE_LABEL[reportType]}
 ${DESTINATION_RULES[reportType]}
 
-Não crie outras seções. Em especial, não escreva Introdução, Identificação, Dados do paciente, Dados do profissional, Metodologia, Hipótese diagnóstica, Diagnóstico, Conclusão diagnóstica, Prognóstico, CID ou DSM.
+Não crie outras seções. Em especial, não escreva Introdução, Identificação, Dados do paciente, Dados do profissional, Metodologia, Hipótese diagnóstica, Diagnóstico, Conclusão diagnóstica, Prognóstico, CID ou DSM. Também não crie seção de "Pontos fortes" ou "Habilidades preservadas": ausência de alteração não prova habilidade preservada.
 
 Omita informação ausente quando ela não for necessária para compreender o relatório. Não preencha ausência com "não informado", "não disponível" nem "não avaliado": marcar o vazio não acrescenta nada e transforma o texto em formulário.
 
-Depois da quarta seção, encerre o texto com EXATAMENTE este parágrafo, uma única vez, sem título acima dele:
+Depois da quinta seção, encerre o texto com EXATAMENTE este parágrafo, uma única vez, sem título acima dele:
 "${avisoFinal}"`;
 }
 
@@ -425,7 +448,7 @@ Nome: ${instrument.name}
 RESULTADOS FECHADOS DO CORRIGEFÁCIL
 ${resultsText}${notesText}
 
-Redija as quatro seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
+Redija as cinco seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 
   let generatedText: string;
   try {

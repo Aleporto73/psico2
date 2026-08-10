@@ -156,18 +156,30 @@ describe('CorrigeFácil report generator', () => {
 describe('prompt CorrigeFácil — estrutura editorial (Bloco 8)', () => {
   const destinos = ['family', 'school', 'technical', 'internal'] as const;
 
-  it('exige exatamente as quatro seções, na ordem', () => {
+  it('exige exatamente as cinco seções, na ordem', () => {
     for (const destino of destinos) {
       const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO');
       const posicoes = [
         prompt.indexOf('## Síntese dos resultados'),
         prompt.indexOf('## Análise e interpretação'),
-        prompt.indexOf('## Pontos de atenção'),
-        prompt.indexOf('## Orientações'),
+        prompt.indexOf('## Considerações para o contexto'),
+        prompt.indexOf('## Recomendações e acompanhamento'),
+        prompt.indexOf('## Considerações finais'),
       ];
 
       for (const p of posicoes) expect(p, destino).toBeGreaterThan(-1);
       expect([...posicoes].sort((a, b) => a - b), destino).toEqual(posicoes);
+
+      // cinco e só cinco: nenhum heading extra escapou
+      expect((prompt.match(/^## /gm) ?? []).length, destino).toBe(5);
+    }
+  });
+
+  it('"Pontos de atenção" deixou de ser seção obrigatória', () => {
+    for (const destino of destinos) {
+      const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO');
+      expect(prompt, destino).not.toContain('## Pontos de atenção');
+      expect(prompt, destino).not.toContain('## Orientações');
     }
   });
 
@@ -253,8 +265,9 @@ describe('prompt CorrigeFácil — estrutura editorial (Bloco 8)', () => {
   it('o aviso ético fecha o texto, uma vez, sem título', () => {
     const prompt = buildCorrigeFacilSystemPrompt('internal', 'AVISO FINAL TESTE');
     expect(prompt).toContain('uma única vez, sem título acima dele');
+    expect(prompt).toContain('Depois da quinta seção');
     expect(prompt.indexOf('AVISO FINAL TESTE')).toBeGreaterThan(
-      prompt.indexOf('## Orientações'),
+      prompt.indexOf('## Considerações finais'),
     );
     // uma ocorrência só: dois disclaimers no mesmo documento seria ruído
     expect(prompt.match(/AVISO FINAL TESTE/g)).toHaveLength(1);
@@ -329,7 +342,7 @@ describe('prompt CorrigeFácil — antirrepetição (Bloco 9A)', () => {
   it('cada seção tem função distinta, declarada', () => {
     const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
     expect(prompt).toContain('CADA SEÇÃO CUMPRE UMA FUNÇÃO DIFERENTE');
-    expect(prompt).toContain('Dizer a mesma coisa quatro vezes empobrece o documento');
+    expect(prompt).toContain('Dizer a mesma coisa cinco vezes empobrece o documento');
   });
 
   it('a análise não reescreve a síntese', () => {
@@ -344,12 +357,16 @@ describe('prompt CorrigeFácil — antirrepetição (Bloco 9A)', () => {
     expect(prompt).toContain('um item verdadeiro vale mais que três repetidos');
   });
 
-  it('orientações não repetem cautela já dita e são processuais sem contexto', () => {
+  // A regra migrou de "## Orientações" para "## Recomendações e
+  // acompanhamento" no 9A.2, e ficou mais forte: antes o texto só exigia
+  // orientação processual QUANDO faltasse contexto; agora todo item é ação
+  // de processo, e o domínio sem lastro é proibido nominalmente.
+  it('recomendações não repetem cautela já dita e são processuais', () => {
     const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
     expect(prompt).toContain('Não repita aqui a classificação, o alerta de que não é diagnóstico');
-    expect(prompt).toContain('as orientações devem ser PROCESSUAIS');
-    expect(prompt).toContain('observar humor');
-    expect(prompt).toContain('monitorar participação');
+    expect(prompt).toContain('Cada item é uma ação de PROCESSO');
+    expect(prompt).toContain('monitorar humor');
+    expect(prompt).toContain('acompanhar participação');
   });
 
   // Princípio editorial herdado do Relatório Pró das planilhas: a estrutura
@@ -389,14 +406,15 @@ describe('prompt CorrigeFácil — antirrepetição (Bloco 9A)', () => {
   });
 
   // O que o 9A NÃO podia afrouxar.
-  it('as quatro seções e as travas do 8 continuam de pé', () => {
+  it('as cinco seções e as travas do 8 continuam de pé', () => {
     for (const destino of ['family', 'school', 'technical', 'internal'] as const) {
       const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO FINAL');
       for (const secao of [
         '## Síntese dos resultados',
         '## Análise e interpretação',
-        '## Pontos de atenção',
-        '## Orientações',
+        '## Considerações para o contexto',
+        '## Recomendações e acompanhamento',
+        '## Considerações finais',
       ]) {
         expect(prompt, `${destino} ${secao}`).toContain(secao);
       }
@@ -486,8 +504,116 @@ describe('prompt CorrigeFácil — regra por destino', () => {
 
   it('o registro interno mantém a mesma estrutura, só mais curto', () => {
     const prompt = buildCorrigeFacilSystemPrompt('internal', 'AVISO');
-    expect(prompt).toContain('MESMA estrutura de quatro seções');
+    expect(prompt).toContain('MESMA estrutura de cinco seções');
     expect(prompt).toContain('## Síntese dos resultados');
-    expect(prompt).toContain('## Orientações');
+    expect(prompt).toContain('## Considerações finais');
+    // processual, não "o que acompanhar" — que puxava para nomear domínio
+    expect(prompt).toContain('o que integrar, registrar ou revisar');
+    expect(prompt).not.toContain('significado cauteloso, o que acompanhar');
+  });
+});
+
+describe('prompt CorrigeFácil — superioridade editorial (Bloco 9A.2)', () => {
+  const destinos = ['family', 'school', 'technical', 'internal'] as const;
+
+  // O FREE interpretou posição numérica ("imediatamente abaixo da faixa
+  // alta"). Comparar o número com um corte É reclassificar.
+  it('proíbe inferir proximidade de faixa', () => {
+    for (const destino of destinos) {
+      const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO');
+      expect(prompt, destino).toContain('PROXIMIDADE DE FAIXA NÃO É INTERPRETAÇÃO');
+      for (const forma of [
+        '"quase alta"',
+        '"próximo da faixa alta"',
+        '"imediatamente abaixo da faixa alta"',
+        '"limítrofe"',
+        '"próximo do corte"',
+      ]) {
+        expect(prompt, `${destino} ${forma}`).toContain(forma);
+      }
+      expect(prompt, destino).toContain('Comparar o número com um corte é reclassificar');
+    }
+  });
+
+  it('a síntese não vira fórmula de "resultado positivo de rastreio"', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('school', 'AVISO');
+    expect(prompt).toContain('o rastreamento resultou na classificação');
+    expect(prompt).toContain('Não use "resultado positivo de rastreio" como fórmula');
+  });
+
+  it('considerações para o contexto falam de processo, não da pessoa', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('school', 'AVISO');
+    expect(prompt).toContain('Fale de PROCESSO');
+    expect(prompt).toContain('confidencialidade');
+    expect(prompt).toContain('evitar exposição ou rotulação');
+    expect(prompt).toContain('Não cabem: antecipar o que o destinatário vai encontrar');
+    expect(prompt).toContain('nomear domínios que ninguém forneceu');
+  });
+
+  it('a escola recebe processo e não recebe domínio inventado', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('school', 'AVISO');
+    expect(prompt).toContain('O que a escola PODE receber são orientações de processo');
+    expect(prompt).toContain('NÃO nomeie o que a escola deve observar');
+    expect(prompt).toContain('Você não sabe o que a escola vai encontrar');
+  });
+
+  // A regra anterior mandava "fale do que observar no cotidiano em nível
+  // geral" — convite direto a nomear domínio, contra a regra geral.
+  it('a família não é mandada procurar sintoma', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('family', 'AVISO');
+    expect(prompt).toContain(
+      'NÃO oriente a família a procurar sintomas, comportamentos ou mudanças que não tenham sido fornecidos',
+    );
+    expect(prompt).toContain('conversar sobre ele com o profissional responsável');
+    expect(prompt).not.toContain('fale do que observar no cotidiano em nível geral');
+  });
+
+  it('a equipe integra fontes sem criar diagnóstico', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(prompt).toContain('Diferencie explicitamente achado de RASTREIO de conclusão clínica');
+    expect(prompt).toContain('Não formule hipótese diagnóstica nova');
+  });
+
+  it('recomendações são processuais e não inventam domínio', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('family', 'AVISO');
+    expect(prompt).toContain('Cada item é uma ação de PROCESSO');
+    expect(prompt).toContain('Não recomende acompanhar, observar ou monitorar um domínio que ninguém forneceu');
+    expect(prompt).toContain('Não prescreva medicamento');
+  });
+
+  it('as considerações finais fecham sem trazer fato novo', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(prompt).toContain('Um parágrafo curto que fecha o raciocínio');
+    expect(prompt).toContain('não introduza fato novo');
+    expect(prompt).toContain('não escreva um segundo aviso ético');
+  });
+
+  it('não existe seção automática de pontos fortes', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('family', 'AVISO');
+    expect(prompt).toContain('não crie seção de "Pontos fortes" ou "Habilidades preservadas"');
+    expect(prompt).toContain('ausência de alteração não prova habilidade preservada');
+  });
+
+  it('riqueza vem da forma, não de fato inventado', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(prompt).toContain('MAIS COMPLETO NÃO É MAIS LONGO');
+    expect(prompt).toContain('Densidade editorial, não densidade factual inventada');
+  });
+
+  // O 9A.2 não podia afrouxar nada do que veio antes.
+  it('travas do 9A e do #72 continuam intactas', () => {
+    for (const destino of destinos) {
+      const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO');
+      expect(prompt, destino).toContain('REGRA DE EVIDÊNCIA');
+      expect(prompt, destino).toContain('o conceito NÃO ENTRA');
+      expect(prompt, destino).toContain('A classificação é RESULTADO DE RASTREIO');
+      expect(prompt, destino).toContain('NÃO transforme o relatório em checklist burocrático');
+      expect(prompt, destino).toContain('Não preencha ausência com');
+      for (const marcador of ['"não informado"', '"não disponível"', '"não avaliado"']) {
+        expect(prompt, `${destino} ${marcador}`).toContain(marcador);
+      }
+      expect(prompt, destino).toContain('não trate ausência de elevação como habilidade preservada');
+      expect(prompt, destino).toContain('prognóstico');
+    }
   });
 });
