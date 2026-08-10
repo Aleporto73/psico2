@@ -1,44 +1,25 @@
 // Doc Studio — cabeçalho e assinatura profissional a partir do perfil (Minha Conta).
 // Assinatura é TEXTO (nome + profissão flexionada + registro). Sem imagem/logo.
+//
+// As tabelas e a tradução código -> rótulo saíram daqui para
+// `@/lib/report/professional-identity`, porque o Relatório Pró do
+// CorrigeFácil precisa exatamente da mesma tradução. Continuam
+// reexportadas por este módulo: o comportamento do Doc Studio não muda e
+// nenhum import existente precisou ser reescrito.
 
 import type { ReportProfile } from '../types';
+import {
+  formatCredential,
+  getCredentialLabel,
+  getProfessionLabel,
+} from '@/lib/report/professional-identity';
 
-export const professionLabels: Record<string, Record<string, string>> = {
-  psicologo: { F: 'Psicóloga', M: 'Psicólogo', N: 'Psicólogo(a)' },
-  psicopedagogo: { F: 'Psicopedagoga', M: 'Psicopedagogo', N: 'Psicopedagogo(a)' },
-  neuropsicopedagogo: { F: 'Neuropsicopedagoga', M: 'Neuropsicopedagogo', N: 'Neuropsicopedagogo(a)' },
-  fonoaudiologo: { F: 'Fonoaudióloga', M: 'Fonoaudiólogo', N: 'Fonoaudiólogo(a)' },
-  terapeuta_ocupacional: { F: 'Terapeuta Ocupacional', M: 'Terapeuta Ocupacional', N: 'Terapeuta Ocupacional' },
-  medico: { F: 'Médica', M: 'Médico', N: 'Médico(a)' },
-  pediatra: { F: 'Pediatra', M: 'Pediatra', N: 'Pediatra' },
-};
-
-export const credentialLabels: Record<string, string> = {
-  crp: 'CRP',
-  crfa: 'CRFa',
-  crefito: 'CREFITO',
-  crm: 'CRM',
-  rqe: 'RQE',
-  cbo_2394_25: 'CBO 2394-25',
-  cbo_2394_40: 'CBO 2394-40',
-  cbo_2394_45: 'CBO 2394-45',
-  abpp: 'ABPp',
-  sbnpp: 'SBNPp',
-  sindpsicopp: 'SINDPSICOPP',
-};
-
-export function getProfessionLabel(
-  category: string | null | undefined,
-  gender: string | null | undefined,
-): string {
-  if (!category || category === 'outro') return '';
-  return professionLabels[category]?.[gender || 'N'] ?? '';
-}
-
-export function getCredentialLabel(type: string | null | undefined): string {
-  if (!type || type === 'outro' || type === 'nao_informado') return '';
-  return credentialLabels[type] ?? '';
-}
+export {
+  professionLabels,
+  credentialLabels,
+  getProfessionLabel,
+  getCredentialLabel,
+} from '@/lib/report/professional-identity';
 
 export interface DocHeader {
   name: string;
@@ -49,9 +30,7 @@ export function buildHeader(profile: ReportProfile | null): DocHeader {
   if (!profile) return { name: 'Nome profissional', subtitle: 'Identificação profissional' };
 
   const profession = getProfessionLabel(profile.profession_category, profile.gender);
-  const credential = [getCredentialLabel(profile.credential_type), profile.credential_number?.trim()]
-    .filter(Boolean)
-    .join(' ');
+  const credential = formatCredential(profile.credential_type, profile.credential_number);
   const subtitle = [profession, credential].filter(Boolean).join(' · ');
 
   return {
@@ -85,9 +64,7 @@ export interface ProfessionalSignature {
 export function getProfessionalSignature(profile: ReportProfile | null): ProfessionalSignature {
   const name = profile?.display_name?.trim() ?? '';
   const profession = getProfessionLabel(profile?.profession_category, profile?.gender);
-  const credential = [getCredentialLabel(profile?.credential_type), profile?.credential_number?.trim()]
-    .filter(Boolean)
-    .join(' ');
+  const credential = formatCredential(profile?.credential_type, profile?.credential_number);
   const missingItems: string[] = [];
 
   if (!name) missingItems.push('nome profissional');

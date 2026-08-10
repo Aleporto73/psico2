@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server';
 import { callOpenAI } from '@/lib/openai';
+import {
+  formatCredential,
+  getCredentialLabel,
+  getProfessionLabel,
+} from '@/lib/report/professional-identity';
 
 type ReportType = 'family' | 'school' | 'technical' | 'internal';
 
@@ -63,6 +68,17 @@ type ScaleData = {
   code?: string;
   name?: string;
   ordinal?: number;
+};
+
+/** Os campos de `profiles` que o cabeçalho do relatório usa. `gender` só
+ *  serve para flexionar a profissão; nenhum outro dado de conta entra. */
+type ProfessionalProfile = {
+  name?: string | null;
+  display_name?: string | null;
+  gender?: string | null;
+  profession_category?: string | null;
+  credential_type?: string | null;
+  credential_number?: string | null;
 };
 
 function normalizeReportType(raw: unknown): ReportType {
@@ -177,14 +193,35 @@ function formatDate(value: unknown): string | null {
   return `${match[3]}/${match[2]}/${match[1]}`;
 }
 
-function professionalText(profile: any): string {
+/** O bloco de profissional que vai ao prompt.
+ *
+ *  Manda RÓTULO, não código: `profiles` guarda `psicologo`/`crp`, e era
+ *  isso que chegava à IA — que então redigia "psicologo" no lugar de
+ *  "Psicóloga". A tradução é a mesma do Doc Studio e mora em
+ *  `@/lib/report/professional-identity`.
+ *
+ *  Categoria ou credencial sem rótulo publicável (`outro`,
+ *  `nao_informado`, valor desconhecido) sai como AUSÊNCIA: a linha some
+ *  em vez de carregar o código cru. É o que o prompt já pede — omitir
+ *  campo ausente em vez de preencher.
+ *
+ *  A credencial exige a SIGLA para existir, e é por isso que o gate é
+ *  `getCredentialLabel` e não `formatCredential`. Sem sigla publicável,
+ *  `formatCredential` devolveria o número sozinho — comportamento certo
+ *  para o Doc Studio, que o mostra ao lado do nome de quem assina, e
+ *  errado aqui: um "Registro/credencial: 12345" solto no prompt é um
+ *  registro sem órgão, que a IA não tem como qualificar e pode redigir
+ *  como se fosse. Número sem sigla não é registro; é dígito. */
+export function professionalText(profile: ProfessionalProfile | null): string {
   if (!profile) return 'Perfil profissional: não incluído.';
   const name = (profile.display_name || profile.name || '').trim();
-  const profession = (profile.profession_category || '').trim();
-  const credential = [profile.credential_type, profile.credential_number]
-    .map((v) => (typeof v === 'string' ? v.trim() : ''))
-    .filter(Boolean)
-    .join(' ');
+  const profession = getProfessionLabel(
+    profile.profession_category,
+    profile.gender,
+  );
+  const credential = getCredentialLabel(profile.credential_type)
+    ? formatCredential(profile.credential_type, profile.credential_number)
+    : '';
 
   const lines: string[] = [];
   if (name) lines.push(`Nome: ${name}`);
@@ -307,7 +344,7 @@ export async function generateCorrigeFacilReport(args: {
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
     .select(
-      'name, display_name, profession_category, credential_type, credential_number',
+      'name, display_name, gender, profession_category, credential_type, credential_number',
     )
     .eq('id', userId)
     .maybeSingle();
