@@ -13,6 +13,7 @@ interface ProfileDetails {
   status: string;
   activation_status: string;
   display_name: string | null;
+  clinic_name: string | null;
   gender: string | null;
   profession_category: string | null;
   credential_type: string | null;
@@ -35,6 +36,7 @@ export default function AppMinhaContaPage() {
 
   // Perfil para relatórios (cabeçalho dos documentos)
   const [displayName, setDisplayName] = useState('');
+  const [clinicName, setClinicName] = useState('');
   const [gender, setGender] = useState('');
   const [professionCategory, setProfessionCategory] = useState('');
   const [credentialType, setCredentialType] = useState('');
@@ -67,6 +69,7 @@ export default function AppMinhaContaPage() {
       setProfile(prof);
       setProfileType(prof.profile_type || 'unknown');
       setDisplayName(prof.display_name || '');
+      setClinicName(prof.clinic_name || '');
       setGender(prof.gender || '');
       setProfessionCategory(prof.profession_category || '');
       setCredentialType(prof.credential_type || '');
@@ -130,6 +133,7 @@ export default function AppMinhaContaPage() {
         .from('profiles')
         .update({
           display_name: displayName.trim() || null,
+          clinic_name: clinicName.trim() || null,
           gender: gender || null,
           profession_category: professionCategory || null,
           credential_type: credentialType || null,
@@ -327,10 +331,10 @@ export default function AppMinhaContaPage() {
         <form onSubmit={handleUpdateReportProfile} className="space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-            {/* 1. Nome de exibição */}
+            {/* 1. Nome profissional */}
             <div className="space-y-2 md:col-span-2">
               <label htmlFor="display_name" className="text-pp-ink-soft block text-xs font-medium">
-                Nome de exibição
+                Nome profissional
               </label>
               <input
                 id="display_name"
@@ -340,11 +344,29 @@ export default function AppMinhaContaPage() {
                 className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
               />
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Como você quer aparecer no cabeçalho dos relatórios. Pode ser seu nome ou o nome fantasia da clínica.
+                Como seu nome deve aparecer nos relatórios e documentos.
               </p>
             </div>
 
-            {/* 2. Gênero */}
+            {/* 2. Clínica / consultório — separado do nome da pessoa. Antes os
+                dois disputavam o campo acima, e preencher um custava o outro. */}
+            <div className="space-y-2 md:col-span-2">
+              <label htmlFor="clinic_name" className="text-pp-ink-soft block text-xs font-medium">
+                Clínica / consultório (opcional)
+              </label>
+              <input
+                id="clinic_name"
+                type="text"
+                value={clinicName}
+                onChange={(e) => setClinicName(e.target.value)}
+                className="w-full px-4 py-3 bg-pp-canvas border border-pp-hairline rounded-xl text-base text-pp-ink focus:outline-none focus:border-pp-ink focus:ring-1 focus:ring-pp-ink/20 transition"
+              />
+              <p className="text-xs text-pp-ink-soft leading-relaxed">
+                Nome da clínica, consultório ou estabelecimento que deve aparecer nos documentos. Deixe em branco se não utilizar.
+              </p>
+            </div>
+
+            {/* 3. Gênero */}
             <div className="space-y-2">
               <label htmlFor="gender" className="text-pp-ink-soft block text-xs font-medium">
                 Gênero (para flexionar a profissão no cabeçalho)
@@ -362,7 +384,7 @@ export default function AppMinhaContaPage() {
               </select>
             </div>
 
-            {/* 3. Categoria profissional */}
+            {/* 4. Categoria profissional */}
             <div className="space-y-2">
               <label htmlFor="profession_category" className="text-pp-ink-soft block text-xs font-medium">
                 Categoria profissional
@@ -385,7 +407,7 @@ export default function AppMinhaContaPage() {
               </select>
             </div>
 
-            {/* 4. Registro, conselho ou credencial profissional */}
+            {/* 5. Registro, conselho ou credencial profissional */}
             <div className="space-y-2">
               <label htmlFor="credential_type" className="text-pp-ink-soft block text-xs font-medium">
                 Registro, conselho ou credencial profissional
@@ -413,7 +435,7 @@ export default function AppMinhaContaPage() {
               </select>
             </div>
 
-            {/* 5. Número do registro */}
+            {/* 6. Número do registro */}
             <div className="space-y-2">
               <label htmlFor="credential_number" className="text-pp-ink-soft block text-xs font-medium">
                 Número do registro
