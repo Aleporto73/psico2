@@ -182,6 +182,39 @@ export function montarIdentidade(
 }
 
 // ---------------------------------------------------------------------
+// INSTRUMENTO
+// ---------------------------------------------------------------------
+
+/** "CES-D — Escala de Rastreamento Populacional para Depressão".
+ *
+ *  O código sozinho não diz nada a quem recebe o documento; o nome completo
+ *  vem do catálogo e é melhoria de APRESENTAÇÃO — sem ele, o código continua
+ *  valendo, e é por isso que `nome` é opcional.
+ *
+ *  Nada aqui é tabelado: não há mapa de instrumentos, não há nome escrito no
+ *  código. O que entra é o que o catálogo devolveu. */
+export function rotuloInstrumento(
+  code: string,
+  nome?: string | null,
+): string {
+  const codigo = code.trim();
+  const completo = nome?.trim() ?? '';
+
+  if (!completo || completo === codigo) return codigo;
+
+  // Catálogo que já devolve "CES-D — Escala…" não pode virar
+  // "CES-D — CES-D — Escala…". A checagem é por PREFIXO seguido de
+  // separador ou espaço: um nome que apenas contenha as letras do código no
+  // meio da frase não conta como duplicação.
+  const semPrefixo = completo.slice(codigo.length);
+  if (completo.startsWith(codigo) && /^[\s—–-]/.test(semPrefixo)) {
+    return completo;
+  }
+
+  return `${codigo} — ${completo}`;
+}
+
+// ---------------------------------------------------------------------
 // DESTINO
 // ---------------------------------------------------------------------
 

@@ -7,6 +7,7 @@ import {
   montarLinhas,
   resolverDataAvaliacao,
   rotuloDestino,
+  rotuloInstrumento,
 } from '../document-model';
 
 function resultado(over: Partial<ResultadoEscala> = {}): ResultadoEscala {
@@ -244,6 +245,48 @@ describe('identidade profissional do documento', () => {
     expect(JSON.stringify(id)).not.toContain('Nome de cadastro');
     expect(JSON.stringify(id)).not.toContain('a@b.c');
     expect(JSON.stringify(id)).not.toContain('11999999999');
+  });
+});
+
+describe('rótulo do instrumento', () => {
+  it('junta código e nome do catálogo', () => {
+    expect(
+      rotuloInstrumento('CES-D', 'Escala de Rastreamento Populacional para Depressão'),
+    ).toBe('CES-D — Escala de Rastreamento Populacional para Depressão');
+  });
+
+  it('sem nome, o código sozinho continua valendo', () => {
+    expect(rotuloInstrumento('CES-D')).toBe('CES-D');
+    expect(rotuloInstrumento('CES-D', null)).toBe('CES-D');
+    expect(rotuloInstrumento('CES-D', '   ')).toBe('CES-D');
+  });
+
+  it('nome igual ao código não vira repetição', () => {
+    expect(rotuloInstrumento('PHQ-9', 'PHQ-9')).toBe('PHQ-9');
+  });
+
+  // Catálogo que já devolve o código no nome não pode gerar
+  // "CES-D — CES-D — Escala…".
+  it('não duplica o código quando o nome já o traz', () => {
+    expect(
+      rotuloInstrumento('CES-D', 'CES-D — Escala de Rastreamento'),
+    ).toBe('CES-D — Escala de Rastreamento');
+    expect(rotuloInstrumento('CES-D', 'CES-D - Escala')).toBe('CES-D - Escala');
+    expect(rotuloInstrumento('CES-D', 'CES-D Escala')).toBe('CES-D Escala');
+  });
+
+  // Prefixo só conta com separador: um nome que começa com as mesmas letras
+  // sem delimitar o código não é duplicação, é outra palavra.
+  it('prefixo sem separador não é tratado como duplicação', () => {
+    expect(rotuloInstrumento('TDF', 'TDFusão de Fonemas')).toBe(
+      'TDF — TDFusão de Fonemas',
+    );
+  });
+
+  it('não carrega nome de instrumento algum embutido', () => {
+    // a função só devolve o que recebeu — nada de mapa interno
+    expect(rotuloInstrumento('XYZ-1')).toBe('XYZ-1');
+    expect(rotuloInstrumento('XYZ-1', 'Nome Qualquer')).toBe('XYZ-1 — Nome Qualquer');
   });
 });
 

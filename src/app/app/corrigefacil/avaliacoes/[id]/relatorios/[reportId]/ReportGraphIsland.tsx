@@ -39,7 +39,17 @@ import { ResultGraph } from '@/app/app/corrigefacil/graphs/ResultGraph';
 
 export function ReportGraphIsland({
   avaliacao,
-}: Readonly<{ avaliacao: AvaliacaoDetalhe }>) {
+  onNomeDoInstrumento,
+}: Readonly<{
+  avaliacao: AvaliacaoDetalhe;
+  /** Devolve ao documento o nome do instrumento JÁ carregado aqui.
+   *
+   *  Existe para o cabeçalho poder escrever "CES-D — Escala de Rastreamento…"
+   *  sem uma segunda ida ao catálogo: a carga é esta, e ela já acontecia.
+   *  É repasse de um campo, não mudança de responsabilidade — a busca, o
+   *  fail-soft e o fail-closed continuam inteiros aqui. */
+  onNomeDoInstrumento?: (nome: string) => void;
+}>) {
   const [detalhe, setDetalhe] = useState<InstrumentoDetalhe | null>(null);
 
   useEffect(() => {
@@ -47,7 +57,9 @@ export function ReportGraphIsland({
 
     buscarInstrumento(avaliacao.instrument, { signal: controller.signal })
       .then((d) => {
-        if (!controller.signal.aborted) setDetalhe(d);
+        if (controller.signal.aborted) return;
+        setDetalhe(d);
+        if (d.name) onNomeDoInstrumento?.(d.name);
       })
       .catch(() => {
         // Falha do catálogo NÃO derruba o documento e não vira mensagem de
@@ -57,7 +69,7 @@ export function ReportGraphIsland({
       });
 
     return () => controller.abort();
-  }, [avaliacao.instrument]);
+  }, [avaliacao.instrument, onNomeDoInstrumento]);
 
   if (!detalhe) return null;
 
