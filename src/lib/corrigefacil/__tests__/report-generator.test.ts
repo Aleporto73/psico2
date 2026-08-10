@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildCorrigeFacilSystemPrompt,
@@ -5,6 +7,18 @@ import {
   formatClosedResults,
   professionalText,
 } from '../report-generator';
+
+const motor = readFileSync(
+  join(process.cwd(), 'src/lib/corrigefacil/report-generator.ts'),
+  'utf8',
+);
+
+/** Só o `userText`: é o que efetivamente vai ao modelo, e é sobre ele que as
+ *  guardas de minimização falam. */
+const userText = motor.slice(
+  motor.indexOf('const userText = `'),
+  motor.indexOf('Preserve integralmente os dados fechados acima.'),
+);
 
 describe('CorrigeFácil report generator', () => {
   it('preserva somente a precisão disponível da idade manual', () => {
@@ -136,5 +150,197 @@ describe('CorrigeFácil report generator', () => {
     expect(prompt).toContain('não selecione normas');
     expect(prompt).toContain('Não faça diagnóstico');
     expect(prompt).toContain('AVISO FINAL TESTE');
+  });
+});
+
+describe('prompt CorrigeFácil — estrutura editorial (Bloco 8)', () => {
+  const destinos = ['family', 'school', 'technical', 'internal'] as const;
+
+  it('exige exatamente as quatro seções, na ordem', () => {
+    for (const destino of destinos) {
+      const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO');
+      const posicoes = [
+        prompt.indexOf('## Síntese dos resultados'),
+        prompt.indexOf('## Análise e interpretação'),
+        prompt.indexOf('## Pontos de atenção'),
+        prompt.indexOf('## Orientações'),
+      ];
+
+      for (const p of posicoes) expect(p, destino).toBeGreaterThan(-1);
+      expect([...posicoes].sort((a, b) => a - b), destino).toEqual(posicoes);
+    }
+  });
+
+  it('proíbe as seções que pertencem ao documento ou ao laudo', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    const proibidas = prompt.slice(prompt.indexOf('Não crie outras seções'));
+
+    for (const secao of [
+      'Introdução',
+      'Identificação',
+      'Dados do paciente',
+      'Metodologia',
+      'Hipótese diagnóstica',
+      'Conclusão diagnóstica',
+      'Prognóstico',
+      'CID',
+      'DSM',
+    ]) {
+      expect(proibidas, secao).toContain(secao);
+    }
+  });
+
+  // O defeito observado em produção: a narrativa reabria com nome, idade,
+  // data e respondente, que o documento já mostra fora do output_text.
+  it('manda não repetir o cabeçalho que o documento já monta', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('family', 'AVISO');
+    expect(prompt).toContain('O QUE VOCÊ NÃO PRECISA ESCREVER');
+    expect(prompt).toContain('Não abra o texto recontando nome, idade, data, respondente ou profissional');
+    expect(prompt).toContain('Não repita a tabela linha por linha');
+    expect(prompt).toContain('Não assine');
+    expect(prompt).toContain('Nunca escreva códigos internos do sistema');
+  });
+
+  it('proíbe causalidade e afirmação absoluta em todos os destinos', () => {
+    for (const destino of destinos) {
+      const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO');
+      expect(prompt, destino).toContain(
+        'É proibido explicar POR QUE a pessoa obteve o resultado',
+      );
+      expect(prompt, destino).toContain('atribuir causa');
+      expect(prompt, destino).toContain('o resultado sugere');
+      expect(prompt, destino).toContain('Evite "apresenta", "demonstra", "confirma", "comprova"');
+    }
+  });
+
+  // A escola é onde o salto causal é mais tentador: o resultado emocional
+  // vira "explicação" do rendimento. A regra do destino ataca isso
+  // nominalmente, além da proibição geral acima.
+  it('a regra da escola barra o salto de resultado para causa escolar', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('school', 'AVISO');
+    expect(prompt).toContain('NÃO é causa de desempenho escolar');
+    expect(prompt).toContain('não transforme um no outro');
+    expect(prompt).toContain(
+      'Não afirme dificuldade de aprendizagem, problema de comportamento ou queda de rendimento que não tenha sido fornecido',
+    );
+  });
+
+  it('exige classificação reproduzida ao pé da letra', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(prompt).toContain('reproduza o rótulo exatamente como recebido');
+    expect(prompt).toContain('sem sinônimo');
+  });
+
+  it('impede item inventado e "aspecto preservado" sem base', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('family', 'AVISO');
+    expect(prompt).toContain('Não crie itens para encher');
+    expect(prompt).toContain('não invente "aspectos preservados" sem dado que os sustente');
+    expect(prompt).toContain('não trate ausência de elevação como habilidade preservada');
+  });
+
+  it('mantém as orientações prudentes e ligadas ao resultado', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('family', 'AVISO');
+    expect(prompt).toContain('Não prescreva medicamento');
+    expect(prompt).toContain('Não escreva recomendação genérica desconectada do resultado');
+  });
+
+  it('a extensão acompanha a informação, não o contrário', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(prompt).toContain('Qualidade acima de tamanho');
+    expect(prompt).toContain('nunca produza volume inventando conteúdo');
+  });
+
+  it('o aviso ético fecha o texto, uma vez, sem título', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('internal', 'AVISO FINAL TESTE');
+    expect(prompt).toContain('uma única vez, sem título acima dele');
+    expect(prompt.indexOf('AVISO FINAL TESTE')).toBeGreaterThan(
+      prompt.indexOf('## Orientações'),
+    );
+    // uma ocorrência só: dois disclaimers no mesmo documento seria ruído
+    expect(prompt.match(/AVISO FINAL TESTE/g)).toHaveLength(1);
+  });
+});
+
+describe('payload enviado ao modelo — minimização', () => {
+  // `escore_bruto` chegou a aparecer na narrativa em produção: é código
+  // interno e não sustenta nenhuma decisão de redação, já que os resultados
+  // fechados dizem quais métricas existem.
+  it('não manda o tipo de escore interno', () => {
+    expect(userText).not.toContain('Tipo de escore');
+    expect(userText).not.toContain('score_type');
+  });
+
+  it('não manda a identidade do profissional', () => {
+    expect(userText).not.toContain('PROFISSIONAL RESPONSÁVEL');
+    expect(userText).not.toContain('professionalText');
+  });
+
+  it('o motor deixou de ler profiles para gerar a narrativa', () => {
+    expect(motor).not.toContain("from('profiles')");
+  });
+
+  it('mantém instrumento por código e nome', () => {
+    expect(userText).toContain('Código: ${instrument.code}');
+    expect(userText).toContain('Nome: ${instrument.name}');
+  });
+
+  it('a identificação segue no payload, mas marcada como contexto', () => {
+    expect(userText).toContain('o documento já a apresenta — não a reconte');
+    expect(userText).toContain('Nome do avaliado:');
+    expect(userText).toContain('Idade na avaliação:');
+  });
+
+  // Observação subjetiva e dado quantitativo não podem entrar com o mesmo
+  // peso de evidência.
+  it('separa contexto do profissional de resultado do instrumento', () => {
+    expect(motor).toContain('CONTEXTO FORNECIDO PELO PROFISSIONAL');
+    expect(motor).toContain('não é resultado do instrumento');
+  });
+
+  // O formatter compartilhado continua vivo e testado: quem o usa agora é o
+  // documento, não o prompt.
+  it('professionalText permanece exportado e correto', () => {
+    expect(
+      professionalText({
+        display_name: 'Ana Souza',
+        gender: 'F',
+        profession_category: 'psicologo',
+        credential_type: 'crp',
+        credential_number: '06/12345',
+      }),
+    ).toContain('Profissão: Psicóloga');
+  });
+});
+
+describe('prompt CorrigeFácil — regra por destino', () => {
+  it('cada destino recebe a própria voz, e nenhum recebe a do outro', () => {
+    const marcas: Record<string, string> = {
+      family: 'Não responsabilize pais ou cuidadores',
+      school: 'NÃO é causa de desempenho escolar',
+      technical: 'destaque convergências e diferenças entre as escalas',
+      internal: 'Registro operacional do próprio profissional',
+    };
+
+    for (const [destino, marca] of Object.entries(marcas)) {
+      const prompt = buildCorrigeFacilSystemPrompt(
+        destino as 'family' | 'school' | 'technical' | 'internal',
+        'AVISO',
+      );
+      expect(prompt, destino).toContain(marca);
+
+      for (const [outro, marcaAlheia] of Object.entries(marcas)) {
+        if (outro === destino) continue;
+        expect(prompt, `${destino} não deve receber a regra de ${outro}`).not.toContain(
+          marcaAlheia,
+        );
+      }
+    }
+  });
+
+  it('o registro interno mantém a mesma estrutura, só mais curto', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('internal', 'AVISO');
+    expect(prompt).toContain('MESMA estrutura de quatro seções');
+    expect(prompt).toContain('## Síntese dos resultados');
+    expect(prompt).toContain('## Orientações');
   });
 });
