@@ -352,6 +352,35 @@ describe('prompt CorrigeFácil — antirrepetição (Bloco 9A)', () => {
     expect(prompt).toContain('monitorar participação');
   });
 
+  // Princípio editorial herdado do Relatório Pró das planilhas: a estrutura
+  // organiza a leitura, não vira sequência mecânica de campos.
+  it('proíbe transformar o relatório em checklist burocrático', () => {
+    for (const destino of ['family', 'school', 'technical', 'internal'] as const) {
+      const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO');
+      expect(prompt, destino).toContain(
+        'NÃO transforme o relatório em checklist burocrático',
+      );
+      expect(prompt, destino).toContain('não para produzir uma sequência mecânica de campos');
+      expect(prompt, destino).toContain('Escreva texto que se lê, não formulário preenchido');
+    }
+  });
+
+  // Antes a regra dizia "não repetidamente", o que licenciava usar uma ou
+  // duas vezes, e nomeava só uma das três formulações.
+  it('manda omitir a ausência, sem marcá-la com nenhuma das três formulações', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+
+    expect(prompt).toContain(
+      'Omita informação ausente quando ela não for necessária para compreender o relatório',
+    );
+    for (const marcador of ['"não informado"', '"não disponível"', '"não avaliado"']) {
+      expect(prompt, marcador).toContain(marcador);
+    }
+    expect(prompt).toContain('Não preencha ausência com');
+    // a brecha do advérbio não pode voltar
+    expect(prompt).not.toContain('"não informado" repetidamente');
+  });
+
   it('seção obrigatória não significa volume obrigatório', () => {
     const prompt = buildCorrigeFacilSystemPrompt('internal', 'AVISO');
     expect(prompt).toContain('Seção obrigatória NÃO significa volume obrigatório');
