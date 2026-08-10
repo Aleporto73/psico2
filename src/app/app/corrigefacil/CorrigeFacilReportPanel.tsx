@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Copy, Printer, Sparkles } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { useRouter } from 'next/navigation';
+import { Copy, Sparkles } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
 
 type ReportType = 'family' | 'school' | 'technical' | 'internal';
@@ -13,7 +12,11 @@ type AiReport = {
   id: string | null;
   title: string | null;
   report_type: string | null;
-  output_text: string;
+  /** Só a resposta do POST traz o texto. A LISTA não busca mais: ela mostra
+   *  destino e data, e quem lê a narrativa é o documento. Carregar N
+   *  relatórios inteiros para exibir duas linhas cada era custo da
+   *  visualização inline que deixou de existir. */
+  output_text?: string;
   created_at: string;
 };
 
@@ -86,9 +89,16 @@ export function CorrigeFacilReportPanel({
   const [monthlyLimit, setMonthlyLimit] = useState<number>(50);
   const [reports, setReports] = useState<AiReport[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
-  const [selectedReport, setSelectedReport] = useState<AiReport | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  /** FALLBACK DE ERRO, não uma segunda UX. Só existe quando a IA gerou e o
+   *  INSERT em ai_reports falhou: a unidade já foi cobrada, o texto veio na
+   *  resposta e não há rota canônica para ele. Some na próxima geração. */
+  const [unsavedReport, setUnsavedReport] = useState<{
+    texto: string;
+    aviso: string;
+  } | null>(null);
+  const [copiado, setCopiado] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (assessmentId) setResolvedAssessmentId(assessmentId);
@@ -100,7 +110,7 @@ export function CorrigeFacilReportPanel({
       const supabase = createClient();
       const { data, error } = await supabase
         .from('ai_reports')
-        .select('id, title, report_type, output_text, created_at')
+        .select('id, title, report_type, created_at')
         .eq('corrigefacil_assessment_id', id)
         .order('created_at', { ascending: false });
 
@@ -164,6 +174,10 @@ export function CorrigeFacilReportPanel({
   async function generateReport() {
     if (!reportType || generating) return;
     setMessage(null);
+    // Geração nova zera o resgate anterior: se aquele texto não foi copiado,
+    // ele já se perdeu, e mantê-lo na tela ao lado de um relatório novo só
+    // confundiria qual é qual.
+    setUnsavedReport(null);
     setGenerating(true);
     try {
       const id = await resolveAssessment();
@@ -206,7 +220,6 @@ export function CorrigeFacilReportPanel({
         return;
       }
 
-      setSelectedReport(report);
       if (report.id) {
         setReports((current) => [report, ...current.filter((item) => item.id !== report.id)]);
       }
@@ -222,6 +235,29 @@ export function CorrigeFacilReportPanel({
       setReportType('');
       setComposerOpen(false);
       setAccess('active');
+
+      // O relatório já está gravado e a cota já foi consumida por ESTE POST.
+      // Abrir o documento é só navegação — nenhuma segunda requisição, nenhuma
+      // segunda unidade.
+      if (report.id) {
+        router.push(
+          `/app/corrigefacil/avaliacoes/${encodeURIComponent(id)}/relatorios/${encodeURIComponent(report.id)}`,
+        );
+        return;
+      }
+
+      // `id` nulo com 200: a IA gerou, a unidade foi cobrada e o INSERT em
+      // ai_reports falhou. Não existe rota canônica para um relatório que não
+      // foi salvo, e o texto só existe NESTA resposta — some no reload. Sem
+      // este resgate, o profissional perde uma geração que já pagou.
+      // Não há retry, não há segundo POST: a saída é copiar agora.
+      setUnsavedReport({
+        texto: report.output_text ?? '',
+        aviso:
+          typeof body?.message === 'string'
+            ? body.message
+            : 'Relatório gerado, mas não foi possível salvá-lo no histórico.',
+      });
     } catch {
       setMessage('Não foi possível gerar o relatório agora. Tente novamente.');
     } finally {
@@ -245,12 +281,11 @@ export function CorrigeFacilReportPanel({
     }
   }
 
-  async function copyReport() {
-    if (!selectedReport) return;
+  async function copiarTexto(texto: string) {
     try {
-      await navigator.clipboard.writeText(selectedReport.output_text);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      await navigator.clipboard.writeText(texto);
+      setCopiado(true);
+      window.setTimeout(() => setCopiado(false), 1800);
     } catch {
       setMessage('Não foi possível copiar automaticamente. Selecione o texto e copie manualmente.');
     }
@@ -280,27 +315,19 @@ export function CorrigeFacilReportPanel({
                   <p className="text-sm text-pp-ink">{reportTypeLabel(report.report_type)}</p>
                   <p className="text-xs text-pp-ink-soft">{formatDate(report.created_at)}</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedReport(report)}
+                {/* UM caminho só. O documento completo é o relatório: não
+                    existe mais uma segunda representação do mesmo conteúdo
+                    aqui dentro, com metade das informações e outra ideia de
+                    layout. Sem `report.id` não há rota, e aí a linha aparece
+                    sem ação em vez de abrir algo que não existe. */}
+                {report.id && resolvedAssessmentId && (
+                  <Link
+                    href={`/app/corrigefacil/avaliacoes/${encodeURIComponent(resolvedAssessmentId)}/relatorios/${encodeURIComponent(report.id)}`}
                     className="rounded-pill border border-pp-ink/15 px-4 py-2 text-sm text-pp-ink hover:border-pp-ink/40 transition"
                   >
-                    Ver
-                  </button>
-                  {/* Documento composto (cabeçalho, identificação, tabela e
-                      narrativa). Só existe com os DOIS ids: sem `report.id`
-                      não há rota, e o relatório continua legível no `Ver`
-                      acima — que segue sendo o caminho inline de sempre. */}
-                  {report.id && resolvedAssessmentId && (
-                    <Link
-                      href={`/app/corrigefacil/avaliacoes/${encodeURIComponent(resolvedAssessmentId)}/relatorios/${encodeURIComponent(report.id)}`}
-                      className="rounded-pill border border-pp-ink/15 px-4 py-2 text-sm text-pp-ink hover:border-pp-ink/40 transition"
-                    >
-                      Abrir relatório completo
-                    </Link>
-                  )}
-                </div>
+                    Abrir relatório
+                  </Link>
+                )}
               </div>
             ))}
           </div>
@@ -428,64 +455,43 @@ export function CorrigeFacilReportPanel({
         )}
       </div>
 
-      {selectedReport && (
-        <article className="border border-pp-hairline rounded-block bg-white/40 p-6 sm:p-7 space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-pp-hairline pb-4">
-            <div>
-              <p className="text-pp-ink font-medium">{reportTypeLabel(selectedReport.report_type)}</p>
-              <p className="text-xs text-pp-ink-soft mt-1">{formatDate(selectedReport.created_at)}</p>
-            </div>
-            <div className="flex flex-wrap gap-2 print:hidden">
-              <button
-                type="button"
-                onClick={copyReport}
-                className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-4 py-2 text-sm text-pp-ink hover:border-pp-ink/40 transition"
-              >
-                <Copy className="w-4 h-4" aria-hidden="true" />
-                {copied ? 'Copiado' : 'Copiar relatório'}
-              </button>
-              <button
-                type="button"
-                onClick={() => window.print()}
-                className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-4 py-2 text-sm text-pp-ink hover:border-pp-ink/40 transition"
-              >
-                <Printer className="w-4 h-4" aria-hidden="true" />
-                Imprimir
-              </button>
-            </div>
+      {/* RESGATE. Não é o relatório: é o texto de uma geração que já foi
+          cobrada e não chegou ao histórico. Sem `ai_report` salvo não existe
+          documento canônico, então aqui NÃO há "Abrir relatório", rota,
+          impressão, tabela nem gráfico — só o texto e como levá-lo embora.
+
+          Em pré-formatado, não em Markdown renderizado: o que aparece é
+          exatamente o que o botão copia, e isto não pode virar uma segunda
+          leitura concorrendo com o documento canônico. */}
+      {unsavedReport && (
+        <section
+          role="alert"
+          className="border border-pp-block-coral rounded-block p-6 space-y-4 print:hidden"
+        >
+          <div className="space-y-1">
+            <p className="text-pp-ink text-sm font-medium">{unsavedReport.aviso}</p>
+            <p className="text-pp-ink-soft text-xs">
+              Copie o texto agora para não perder o conteúdo. Esta geração já foi
+              contabilizada, e o texto não ficará disponível depois que você sair
+              desta tela.
+            </p>
           </div>
 
-          <div className="text-[15px] leading-[1.7] text-pp-ink break-words">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                h1: ({ children }) => (
-                  <h1 className="font-serif italic text-3xl mt-6 mb-3 first:mt-0">{children}</h1>
-                ),
-                h2: ({ children }) => (
-                  <h2 className="font-serif italic text-2xl mt-7 mb-3 first:mt-0">{children}</h2>
-                ),
-                h3: ({ children }) => <h3 className="font-medium text-lg mt-5 mb-2">{children}</h3>,
-                p: ({ children }) => <p className="my-3">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc pl-5 my-3 space-y-1">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal pl-5 my-3 space-y-1">{children}</ol>,
-                table: ({ children }) => (
-                  <div className="overflow-x-auto my-4">
-                    <table className="w-full border-collapse text-sm">{children}</table>
-                  </div>
-                ),
-                th: ({ children }) => (
-                  <th className="border border-pp-ink/15 px-3 py-2 text-left">{children}</th>
-                ),
-                td: ({ children }) => (
-                  <td className="border border-pp-ink/15 px-3 py-2 align-top">{children}</td>
-                ),
-              }}
-            >
-              {selectedReport.output_text}
-            </ReactMarkdown>
+          <button
+            type="button"
+            onClick={() => copiarTexto(unsavedReport.texto)}
+            className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-5 py-2.5 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+          >
+            <Copy className="w-4 h-4" aria-hidden="true" />
+            {copiado ? 'Copiado' : 'Copiar texto'}
+          </button>
+
+          <div className="max-h-96 overflow-y-auto rounded-2xl border border-pp-ink/10 bg-white/60 p-4">
+            <p className="whitespace-pre-wrap text-sm leading-[1.7] text-pp-ink break-words">
+              {unsavedReport.texto}
+            </p>
           </div>
-        </article>
+        </section>
       )}
     </section>
   );

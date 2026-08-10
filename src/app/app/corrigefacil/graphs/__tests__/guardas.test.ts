@@ -298,13 +298,38 @@ describe('20 · o resultado textual continua na tela', () => {
     expect(iSalvar).toBeGreaterThan(iGrafico);
   });
 
-  it('a tela do histórico não foi tocada pelo gráfico', () => {
+  // A LISTA e o DETALHE do histórico continuam sem gráfico, e o motivo é
+  // psicométrico: ali o resultado é congelado e as faixas viriam do catálogo
+  // de hoje, sem nada que prove que são as mesmas que classificaram aquele
+  // escore. O DOCUMENTO do relatório é a exceção deliberada do Bloco 7C —
+  // ele compõe o mesmo gráfico aprovado, mas só depois de provar coerência,
+  // e desiste em silêncio quando não pode provar. Sem essa prova a exceção
+  // viraria exatamente o furo que esta guarda existe para impedir, e é por
+  // isso que a prova é verificada logo abaixo.
+  it('a lista e o detalhe do histórico continuam sem gráfico', () => {
     const hist = join(process.cwd(), 'src/app/app/corrigefacil/avaliacoes');
     const arquivos = readdirSync(hist, { recursive: true }) as string[];
     for (const f of arquivos) {
       if (!f.endsWith('.tsx') && !f.endsWith('.ts')) continue;
+      if (f.replace(/\\/g, '/').includes('/relatorios/')) continue;
       const texto = readFileSync(join(hist, f), 'utf8');
       expect(texto, f).not.toContain('ResultGraph');
     }
+  });
+
+  it('o documento só desenha o gráfico atrás da guarda de coerência', () => {
+    const ilha = readFileSync(
+      join(
+        process.cwd(),
+        'src/app/app/corrigefacil/avaliacoes/[id]/relatorios/[reportId]/ReportGraphIsland.tsx',
+      ),
+      'utf8',
+    );
+
+    const iGuarda = ilha.indexOf('faixasDivergemDoResultado(detalhe, resposta)');
+    const iGrafico = ilha.indexOf('<ResultGraph');
+    expect(iGuarda).toBeGreaterThan(-1);
+    expect(iGrafico).toBeGreaterThan(iGuarda);
+    expect(ilha).toMatch(/faixasDivergemDoResultado\([^)]*\)\)\s*return null;/);
   });
 });

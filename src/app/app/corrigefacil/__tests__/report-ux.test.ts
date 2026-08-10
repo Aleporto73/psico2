@@ -58,11 +58,20 @@ describe('CorrigeFácil → Relatório Pró — UX V1', () => {
     expect(panel).toContain(".eq('corrigefacil_assessment_id', id)");
     expect(panel).toContain('Relatórios desta avaliação');
     expect(panel).toContain('Gerar outro relatório');
-    expect(panel).toContain('Copiar relatório');
+    // Rever é abrir o documento canônico. A leitura inline do mesmo relatório
+    // dentro do painel saiu no Bloco 7C — eram duas representações do mesmo
+    // conteúdo, com layouts e informações diferentes.
+    expect(panel).toContain('Abrir relatório');
   });
 
-  it('mantém somente a impressão do relatório no detalhe salvo', () => {
-    expect(panel).toContain('onClick={() => window.print()}');
+  it('copiar e imprimir vivem no documento, não no painel', () => {
+    const documento = source(
+      'src/app/app/corrigefacil/avaliacoes/[id]/relatorios/[reportId]/RelatorioDocumentClient.tsx',
+    );
+    expect(documento).toContain('Copiar texto');
+    expect(documento).toContain('onClick={() => window.print()}');
+    // o detalhe salvo nunca teve impressão própria, e continua sem
     expect(detalhe).not.toContain('onClick={() => window.print()}');
+    expect(panel).not.toContain('onClick={() => window.print()}');
   });
 });
