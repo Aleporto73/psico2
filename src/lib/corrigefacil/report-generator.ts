@@ -208,6 +208,8 @@ Não prescreva medicamento, psicoterapia específica, intervenção padronizada 
 
 CADA SEÇÃO CUMPRE UMA FUNÇÃO DIFERENTE: a síntese diz o achado, a análise diz o alcance e o limite, os pontos de atenção acrescentam o que ainda não foi dito e as orientações apontam o próximo passo. Dizer a mesma coisa quatro vezes empobrece o documento.
 
+NÃO transforme o relatório em checklist burocrático. A estrutura existe para organizar a leitura profissional, não para produzir uma sequência mecânica de campos nem frases padronizadas. Escreva texto que se lê, não formulário preenchido.
+
 EXTENSÃO: proporcional à informação disponível. Instrumento de escala única pede texto conciso; instrumento com várias escalas comporta mais desenvolvimento. Seção obrigatória NÃO significa volume obrigatório: com dados pobres, seções curtas, poucos itens e orientação curta são a resposta certa. Qualidade acima de tamanho — nunca produza volume inventando conteúdo.
 
 DESTINO: ${REPORT_TYPE_LABEL[reportType]}
@@ -215,7 +217,7 @@ ${DESTINATION_RULES[reportType]}
 
 Não crie outras seções. Em especial, não escreva Introdução, Identificação, Dados do paciente, Dados do profissional, Metodologia, Hipótese diagnóstica, Diagnóstico, Conclusão diagnóstica, Prognóstico, CID ou DSM.
 
-Omita o que estiver ausente em vez de preencher com "não informado" repetidamente.
+Omita informação ausente quando ela não for necessária para compreender o relatório. Não preencha ausência com "não informado", "não disponível" nem "não avaliado": marcar o vazio não acrescenta nada e transforma o texto em formulário.
 
 Depois da quarta seção, encerre o texto com EXATAMENTE este parágrafo, uma única vez, sem título acima dele:
 "${avisoFinal}"`;
