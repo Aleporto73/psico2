@@ -41,7 +41,12 @@ const DESTINATION_RULES: Record<ReportType, string> = {
     'Escreva para o contexto educacional: linguagem pedagógica e funcional, voltada a observação, ' +
     'acompanhamento e comunicação entre escola, família e equipe. ' +
     'Não afirme dificuldade de aprendizagem, problema de comportamento ou queda de rendimento que não tenha sido fornecido. ' +
-    'Um resultado emocional ou comportamental NÃO é causa de desempenho escolar: não transforme um no outro.',
+    'Um resultado emocional ou comportamental NÃO é causa de desempenho escolar: não transforme um no outro. ' +
+    'Sem contexto escrito pelo profissional, NÃO nomeie o que a escola deve observar — nada de participação nas atividades, ' +
+    'rendimento, comportamento, atenção, interação social, rotina, engajamento ou bem-estar como objetos de acompanhamento. ' +
+    'Você não sabe o que a escola vai encontrar, e antecipar isso inventa um domínio que ninguém forneceu. ' +
+    'Correto: "integrar o resultado às observações disponíveis no contexto escolar". ' +
+    'Incorreto: "acompanhar mudanças na participação nas atividades".',
   technical:
     'Escreva para outros profissionais: linguagem técnica e precisa. ' +
     'Integre os valores e classificações disponíveis, destaque convergências e diferenças entre as escalas ' +
@@ -169,24 +174,41 @@ O documento final já apresenta, fora do seu texto e de forma automática, o nom
 - O nome do avaliado pode aparecer pontualmente na análise, se melhorar a leitura.
 - Nunca escreva códigos internos do sistema (por exemplo nomes de tipo de escore ou de campo).
 
+REGRA DE EVIDÊNCIA — o que autoriza você a falar de um assunto:
+Só pode entrar no texto o conceito sustentado por (1) nome do instrumento, (2) nome da escala, (3) classificação persistida, (4) valores persistidos ou (5) contexto escrito pelo profissional. Faltando isso, o conceito NÃO ENTRA — nem como exemplo, nem como possibilidade, nem como sugestão de observação.
+
+O nome do instrumento e a classificação dizem QUE construto foi rastreado e em que faixa o resultado caiu. Não dizem como a pessoa se sente, se comporta, dorme, rende ou se relaciona. Portanto NÃO derive deles sintoma, manifestação ou domínio funcional.
+
+Exemplo do erro a evitar: de "CES-D — Probabilidade MODERADA de depressão" é correto falar em resultado de rastreamento relacionado à depressão, na classificação recebida e na necessidade de integrá-la a outras informações. É INCORRETO acrescentar, sem contexto do profissional, sofrimento emocional, bem-estar, humor, sono, interesse, motivação, concentração, isolamento, ansiedade, funcionamento cotidiano, participação em atividades, rendimento, comportamento ou relações familiares. Esses termos são exemplos do que não se pode inventar — não são uma lista a ser preenchida nem substituída por sinônimos.
+
+A classificação é RESULTADO DE RASTREIO, não descrição clínica da pessoa.
+
+Quando houver contexto escrito pelo profissional, o domínio que ele mencionou fica liberado para a redação — mantendo clara a origem, sem convertê-lo em resultado do instrumento.
+
 ESTRUTURA OBRIGATÓRIA — exatamente estas quatro seções, nesta ordem, em Markdown:
 
 ## Síntese dos resultados
 Comece pelo RESULTADO, em poucas linhas. Dê a visão principal do que a avaliação mostrou. Ao mencionar uma classificação, reproduza o rótulo exatamente como recebido, sem sinônimo e sem gradação própria. Havendo várias escalas, sintetize o perfil conjunto sem criar hierarquia que os dados não sustentam.
 
 ## Análise e interpretação
-A seção de maior valor. Explique o significado funcional da classificação recebida, integre as escalas entre si quando houver mais de uma e contextualize para o destino. Distinga achado de hipótese e aponte, quando couber, a necessidade de integrar com outras fontes.
+Explique o PESO INTERPRETATIVO do resultado: o que a classificação permite afirmar, o que ela NÃO permite afirmar e, quando couber, a necessidade de integrar com outras fontes. Havendo mais de uma escala, é aqui que elas se articulam.
+Não reescreva a síntese com outras palavras. A classificação já foi nomeada acima: refira-se a ela como "esse resultado" em vez de repetir o rótulo inteiro, salvo quando a repetição for realmente necessária.
 É proibido explicar POR QUE a pessoa obteve o resultado, atribuir causa, presumir sintoma, comportamento, desempenho escolar ou dinâmica familiar que não tenham sido fornecidos, e usar conhecimento próprio de pontos de corte para acrescentar informação que não veio nos dados.
+Não preencha a falta de dados com exemplos de sintomas ou de funcionalidade. Escala única e sem contexto do profissional pede uma análise CURTA: conhecimento geral sobre o construto não vira fato sobre o avaliado.
 Evite "apresenta", "demonstra", "confirma", "comprova". Prefira formulações proporcionais: "o resultado sugere", "o achado é compatível com", "esse resultado deve ser integrado a".
 
 ## Pontos de atenção
-Em lista de itens. Cada item precisa se apoiar diretamente num resultado persistido ou numa observação fornecida pelo profissional. Não crie itens para encher, não invente "aspectos preservados" sem dado que os sustente e não trate ausência de elevação como habilidade preservada. Instrumento de escala única pode ter poucos itens — isso é correto.
+Em lista de itens, cada um acrescentando algo DISTINTO das seções anteriores. Não use como item a classificação que a síntese já enunciou. Cada item precisa se apoiar diretamente num resultado persistido ou no contexto escrito pelo profissional.
+Não crie itens para encher, não invente "aspectos preservados" sem dado que os sustente e não trate ausência de elevação como habilidade preservada. Havendo um único ponto distinto, escreva um único item: um item verdadeiro vale mais que três repetidos.
 
 ## Orientações
-Orientações gerais e prudentes, ligadas ao que este resultado mostrou. Pode recomendar acompanhamento, observação sistemática, comunicação entre contextos, registro de mudanças, integração com outros dados e discussão com os profissionais responsáveis.
+Próximos passos gerais, coerentes com o destino. Não repita aqui a classificação, o alerta de que não é diagnóstico nem o pedido de cautela, se isso já foi dito antes.
+Sem contexto do profissional, as orientações devem ser PROCESSUAIS: integrar o resultado às informações já disponíveis, registrar o que for pertinente, manter comunicação entre os contextos envolvidos e discutir com os profissionais responsáveis, conforme julgamento profissional. Não nomeie o que acompanhar ("observar humor", "acompanhar sono", "monitorar participação", "acompanhar bem-estar") sem que instrumento, escala, classificação ou contexto do profissional sustentem aquele domínio.
 Não prescreva medicamento, psicoterapia específica, intervenção padronizada ou encaminhamento obrigatório sem base. Não escreva recomendação genérica desconectada do resultado só para alongar o texto.
 
-EXTENSÃO: proporcional à informação disponível. Instrumento de escala única pede texto conciso; instrumento com várias escalas comporta mais desenvolvimento. Qualidade acima de tamanho — nunca produza volume inventando conteúdo.
+CADA SEÇÃO CUMPRE UMA FUNÇÃO DIFERENTE: a síntese diz o achado, a análise diz o alcance e o limite, os pontos de atenção acrescentam o que ainda não foi dito e as orientações apontam o próximo passo. Dizer a mesma coisa quatro vezes empobrece o documento.
+
+EXTENSÃO: proporcional à informação disponível. Instrumento de escala única pede texto conciso; instrumento com várias escalas comporta mais desenvolvimento. Seção obrigatória NÃO significa volume obrigatório: com dados pobres, seções curtas, poucos itens e orientação curta são a resposta certa. Qualidade acima de tamanho — nunca produza volume inventando conteúdo.
 
 DESTINO: ${REPORT_TYPE_LABEL[reportType]}
 ${DESTINATION_RULES[reportType]}

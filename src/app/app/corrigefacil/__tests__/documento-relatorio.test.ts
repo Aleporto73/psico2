@@ -423,7 +423,10 @@ describe('documento — gráfico do CorrigeFácil (Bloco 7C)', () => {
   const coerencia = source('src/lib/report/graph-coherence.ts');
 
   it('o documento monta o gráfico entre a tabela e a narrativa', () => {
-    expect(documento).toContain('<ReportGraphIsland avaliacao={avaliacao} />');
+    // posição, não a linha JSX exata: adicionar uma prop à ilha não pode
+    // quebrar uma guarda que fala de ORDEM
+    expect(documento).toContain('<ReportGraphIsland');
+    expect(documento).toContain('avaliacao={avaliacao}');
     const iTabela = documento.indexOf('montarLinhas(avaliacao.resultados)');
     const iGrafico = documento.indexOf('<ReportGraphIsland');
     const iNarrativa = documento.indexOf('{relatorio.output_text}');
@@ -496,6 +499,57 @@ describe('documento — gráfico do CorrigeFácil (Bloco 7C)', () => {
     for (const proibido of ['canvas', 'toDataURL', 'base64', 'screenshot', '.insert(']) {
       expect(ilhaCodigo.toLowerCase(), proibido).not.toContain(proibido.toLowerCase());
     }
+  });
+});
+
+describe('documento — nome do instrumento (Bloco 9A)', () => {
+  const ilha = source(`${ROTA}/ReportGraphIsland.tsx`);
+  const ilhaCodigo = semComentarios(ilha);
+
+  it('o rótulo sai do formatter puro, não de texto na tela', () => {
+    expect(documento).toContain(
+      'rotuloInstrumento(avaliacao.instrument, nomeInstrumento)',
+    );
+  });
+
+  // A regra de formatação e o fallback vivem em document-model.ts e têm
+  // teste unitário próprio; aqui basta provar que o documento a usa.
+  it('não carrega nome de instrumento escrito no componente', () => {
+    for (const nome of ['CES-D', 'PHQ-9', 'DASS', 'Escala de Rastreamento']) {
+      expect(documentoCodigo, nome).not.toContain(nome);
+    }
+  });
+
+  // O ponto que motivou o callback: a ilha JÁ buscava o catálogo, e o
+  // cabeçalho não pode abrir uma segunda ida por causa de um rótulo.
+  it('existe uma única carga de catálogo, e ela é da ilha', () => {
+    expect(ilhaCodigo).toContain('buscarInstrumento(avaliacao.instrument');
+    expect(documentoCodigo).not.toContain('buscarInstrumento');
+
+    const chamadas = ilhaCodigo.match(/buscarInstrumento\(/g) ?? [];
+    expect(chamadas).toHaveLength(1);
+  });
+
+  it('a ilha repassa o nome ao documento por callback', () => {
+    expect(ilhaCodigo).toContain('onNomeDoInstrumento?.(d.name)');
+    expect(documento).toContain('onNomeDoInstrumento={setNomeInstrumento}');
+  });
+
+  // Nome é melhoria de apresentação: catálogo fora do ar não pode derrubar
+  // nem sujar o cabeçalho.
+  it('falha de catálogo mantém o documento e o rótulo em pé', () => {
+    expect(ilhaCodigo).toContain('.catch(');
+    expect(documentoCodigo).not.toContain('nome não encontrado');
+    // sem nome, o estado começa vazio e o formatter devolve só o código
+    expect(documentoCodigo).toContain("useState('')");
+  });
+
+  it('o repasse não mexeu no fail closed nem no gráfico', () => {
+    const iGuarda = ilhaCodigo.indexOf('faixasDivergemDoResultado(detalhe, resposta)');
+    const iGrafico = ilhaCodigo.indexOf('<ResultGraph');
+    expect(iGuarda).toBeGreaterThan(-1);
+    expect(iGrafico).toBeGreaterThan(iGuarda);
+    expect(ilhaCodigo).toContain('respostaDaAvaliacao(avaliacao)');
   });
 });
 

@@ -47,6 +47,7 @@ import {
   montarLinhas,
   resolverDataAvaliacao,
   rotuloDestino,
+  rotuloInstrumento,
   type PerfilDocumento,
 } from '@/lib/report/document-model';
 import { ReportGraphIsland } from './ReportGraphIsland';
@@ -148,6 +149,11 @@ export function RelatorioDocumentClient({
 }: Readonly<{ assessmentId: string; reportId: string }>) {
   const [estado, setEstado] = useState<Fase>({ fase: 'carregando' });
   const [copiado, setCopiado] = useState(false);
+  /** Nome completo do instrumento, quando o catálogo o entrega. Chega pela
+   *  ilha do gráfico, que já fazia essa carga — o documento NÃO abre uma
+   *  segunda consulta só para o cabeçalho. Vazio é normal: o código sozinho
+   *  continua sendo um rótulo válido. */
+  const [nomeInstrumento, setNomeInstrumento] = useState('');
 
   const carregar = useCallback(
     async (signal: AbortSignal) => {
@@ -352,9 +358,13 @@ export function RelatorioDocumentClient({
             <Campo rotulo="Idade na avaliação" valor={idade} />
             <Campo rotulo="Data da avaliação" valor={dataAvaliacao} />
             <Campo rotulo="Respondente" valor={respondente || null} />
-            {/* Código do instrumento, não nome por extenso: o nome exigiria
-                `instruments`, cuja leitura depende de assinatura ativa. */}
-            <Campo rotulo="Instrumento" valor={avaliacao.instrument} />
+            {/* Código sempre; nome completo quando o catálogo o entrega pela
+                ilha do gráfico. Se não vier, o código sozinho permanece — o
+                cabeçalho nunca fica vazio nem exibe erro técnico. */}
+            <Campo
+              rotulo="Instrumento"
+              valor={rotuloInstrumento(avaliacao.instrument, nomeInstrumento)}
+            />
           </dl>
         </section>
 
@@ -457,7 +467,10 @@ export function RelatorioDocumentClient({
             Devolve null sozinho quando não há gráfico aprovado, quando o
             catálogo não carregou ou quando as faixas de hoje não reconhecem
             a classificação gravada. */}
-        <ReportGraphIsland avaliacao={avaliacao} />
+        <ReportGraphIsland
+          avaliacao={avaliacao}
+          onNomeDoInstrumento={setNomeInstrumento}
+        />
 
         {/* ── NARRATIVA ─────────────────────────────────────────────── */}
         {/* `output_text` como está: renderizado, nunca reescrito. O aviso

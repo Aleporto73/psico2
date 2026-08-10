@@ -261,6 +261,124 @@ describe('prompt CorrigeFácil — estrutura editorial (Bloco 8)', () => {
   });
 });
 
+describe('prompt CorrigeFácil — regra de evidência (Bloco 9A)', () => {
+  const destinos = ['family', 'school', 'technical', 'internal'] as const;
+
+  it('lista as cinco fontes que autorizam falar de um assunto', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(prompt).toContain('REGRA DE EVIDÊNCIA');
+    expect(prompt).toContain('nome do instrumento');
+    expect(prompt).toContain('nome da escala');
+    expect(prompt).toContain('classificação persistida');
+    expect(prompt).toContain('valores persistidos');
+    expect(prompt).toContain('contexto escrito pelo profissional');
+    expect(prompt).toContain('o conceito NÃO ENTRA');
+  });
+
+  // O defeito real de produção: a classificação virava descrição clínica.
+  it('classificação não autoriza inferir sintoma nem domínio funcional', () => {
+    for (const destino of destinos) {
+      const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO');
+      expect(prompt, destino).toContain(
+        'NÃO derive deles sintoma, manifestação ou domínio funcional',
+      );
+      expect(prompt, destino).toContain(
+        'A classificação é RESULTADO DE RASTREIO, não descrição clínica da pessoa',
+      );
+    }
+  });
+
+  it('nomeia os domínios que apareceram indevidamente em produção', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    for (const dominio of [
+      'sofrimento emocional',
+      'bem-estar',
+      'humor',
+      'sono',
+      'funcionamento cotidiano',
+      'participação em atividades',
+      'rendimento',
+      'comportamento',
+      'relações familiares',
+    ]) {
+      expect(prompt, dominio).toContain(dominio);
+    }
+    // e diz que são exemplos de trava, não um cardápio a preencher
+    expect(prompt).toContain('não são uma lista a ser preenchida nem substituída por sinônimos');
+  });
+
+  it('contexto do profissional libera o domínio que ele mencionou', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('school', 'AVISO');
+    expect(prompt).toContain(
+      'o domínio que ele mencionou fica liberado para a redação',
+    );
+    expect(prompt).toContain('sem convertê-lo em resultado do instrumento');
+  });
+
+  it('a escola não antecipa o que vai encontrar', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('school', 'AVISO');
+    expect(prompt).toContain('NÃO nomeie o que a escola deve observar');
+    expect(prompt).toContain('Você não sabe o que a escola vai encontrar');
+    expect(prompt).toContain(
+      'integrar o resultado às observações disponíveis no contexto escolar',
+    );
+  });
+});
+
+describe('prompt CorrigeFácil — antirrepetição (Bloco 9A)', () => {
+  it('cada seção tem função distinta, declarada', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(prompt).toContain('CADA SEÇÃO CUMPRE UMA FUNÇÃO DIFERENTE');
+    expect(prompt).toContain('Dizer a mesma coisa quatro vezes empobrece o documento');
+  });
+
+  it('a análise não reescreve a síntese', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('family', 'AVISO');
+    expect(prompt).toContain('Não reescreva a síntese com outras palavras');
+    expect(prompt).toContain('refira-se a ela como "esse resultado"');
+  });
+
+  it('pontos de atenção não repetem a classificação para preencher', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('family', 'AVISO');
+    expect(prompt).toContain('Não use como item a classificação que a síntese já enunciou');
+    expect(prompt).toContain('um item verdadeiro vale mais que três repetidos');
+  });
+
+  it('orientações não repetem cautela já dita e são processuais sem contexto', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(prompt).toContain('Não repita aqui a classificação, o alerta de que não é diagnóstico');
+    expect(prompt).toContain('as orientações devem ser PROCESSUAIS');
+    expect(prompt).toContain('observar humor');
+    expect(prompt).toContain('monitorar participação');
+  });
+
+  it('seção obrigatória não significa volume obrigatório', () => {
+    const prompt = buildCorrigeFacilSystemPrompt('internal', 'AVISO');
+    expect(prompt).toContain('Seção obrigatória NÃO significa volume obrigatório');
+    expect(prompt).toContain('seções curtas, poucos itens e orientação curta');
+    expect(prompt).toContain('pede uma análise CURTA');
+  });
+
+  // O que o 9A NÃO podia afrouxar.
+  it('as quatro seções e as travas do 8 continuam de pé', () => {
+    for (const destino of ['family', 'school', 'technical', 'internal'] as const) {
+      const prompt = buildCorrigeFacilSystemPrompt(destino, 'AVISO FINAL');
+      for (const secao of [
+        '## Síntese dos resultados',
+        '## Análise e interpretação',
+        '## Pontos de atenção',
+        '## Orientações',
+      ]) {
+        expect(prompt, `${destino} ${secao}`).toContain(secao);
+      }
+      expect(prompt, destino).toContain('Não recalcule escores');
+      expect(prompt, destino).toContain('não selecione normas');
+      expect(prompt, destino).toContain('Não faça diagnóstico');
+      expect(prompt, destino).toContain('AVISO FINAL');
+    }
+  });
+});
+
 describe('payload enviado ao modelo — minimização', () => {
   // `escore_bruto` chegou a aparecer na narrativa em produção: é código
   // interno e não sustenta nenhuma decisão de redação, já que os resultados
