@@ -29,15 +29,28 @@ const REPORT_TYPE_LABEL: Record<ReportType, string> = {
   internal: 'Registro interno',
 };
 
+/** O que muda por destino é a VOZ e a profundidade — nunca a estrutura nem
+ *  o que pode ser afirmado. As quatro seções são as mesmas nos quatro. */
 const DESTINATION_RULES: Record<ReportType, string> = {
   family:
-    'Use linguagem profissional, simples e acessível. Explique classificações sem jargão desnecessário, destaque pontos de atenção e aspectos preservados somente quando sustentados pelos dados e ofereça orientações gerais cautelosas.',
+    'Escreva para quem não é da área: linguagem acessível, respeitosa, sem jargão, e sem alarmismo. ' +
+    'Traduza a classificação em termos compreensíveis, mantendo o rótulo exato ao mencioná-lo. ' +
+    'Nas orientações, fale do que observar no cotidiano em nível geral. ' +
+    'Não responsabilize pais ou cuidadores pelo resultado, não sugira diagnóstico e não antecipe evolução.',
   school:
-    'Use linguagem objetiva, pedagógica e funcional. Relacione os achados ao contexto escolar somente quando isso estiver sustentado pelos dados ou pelas observações fornecidas. Não invente causalidade.',
+    'Escreva para o contexto educacional: linguagem pedagógica e funcional, voltada a observação, ' +
+    'acompanhamento e comunicação entre escola, família e equipe. ' +
+    'Não afirme dificuldade de aprendizagem, problema de comportamento ou queda de rendimento que não tenha sido fornecido. ' +
+    'Um resultado emocional ou comportamental NÃO é causa de desempenho escolar: não transforme um no outro.',
   technical:
-    'Use linguagem técnica e organizada. Inclua os valores quantitativos realmente disponíveis, suas classificações e uma síntese cautelosa para integração com outros dados profissionais.',
+    'Escreva para outros profissionais: linguagem técnica e precisa. ' +
+    'Integre os valores e classificações disponíveis, destaque convergências e diferenças entre as escalas ' +
+    'e explicite os limites interpretativos do que foi aplicado. ' +
+    'O texto deve facilitar a integração com entrevista, observação e outros instrumentos, sem substituí-los.',
   internal:
-    'Produza um registro curto e operacional: identificação, instrumento, resultados principais, síntese, observações profissionais e acompanhamento.',
+    'Registro operacional do próprio profissional: MESMA estrutura de quatro seções, porém curto e direto. ' +
+    'Evite prosa: resultado, significado cauteloso, o que acompanhar e próximos passos gerais. ' +
+    'Frases objetivas valem mais que parágrafos desenvolvidos.',
 };
 
 const UUID_REGEX =
@@ -61,7 +74,6 @@ type ResultRow = {
 type InstrumentData = {
   code?: string;
   name?: string;
-  score_type?: string;
 };
 
 type ScaleData = {
@@ -140,21 +152,50 @@ Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Tr
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
-- instrumento e tipo de escore;
+- instrumento (código e nome);
 - resultados persistidos por escala;
-- perfil profissional fornecido;
 - observações adicionais escritas pelo profissional.
 
 Não use respostas item a item, tabelas normativas, regras de pontuação, gráficos ou imagens como fonte de cálculo. Não faça diagnóstico. Não gere laudo formal definitivo. Não invente achados, contexto, funcionalidade, causalidade ou conclusão que não esteja sustentada pelos dados fornecidos.
 
 Separe mentalmente três níveis de informação: (1) fatos do CorrigeFácil, que são imutáveis; (2) contexto fornecido pelo profissional; (3) sua redação/síntese. O nível 3 nunca pode contradizer nem inventar os níveis 1 e 2.
 
+O QUE VOCÊ NÃO PRECISA ESCREVER:
+O documento final já apresenta, fora do seu texto e de forma automática, o nome do avaliado, a idade, a data, o respondente, o instrumento, a identificação do profissional, a tabela completa dos resultados e o gráfico. Você escreve APENAS a parte interpretativa.
+- Não abra o texto recontando nome, idade, data, respondente ou profissional.
+- Não escreva parágrafo de identificação, de metodologia nem "rascunho de apoio destinado a...".
+- Não repita a tabela linha por linha ("bruto: 29, escore: 29, percentil: ..."). Os números aparecem no texto só quando forem necessários para sustentar a leitura.
+- Não assine: a identificação profissional já fecha o documento.
+- O nome do avaliado pode aparecer pontualmente na análise, se melhorar a leitura.
+- Nunca escreva códigos internos do sistema (por exemplo nomes de tipo de escore ou de campo).
+
+ESTRUTURA OBRIGATÓRIA — exatamente estas quatro seções, nesta ordem, em Markdown:
+
+## Síntese dos resultados
+Comece pelo RESULTADO, em poucas linhas. Dê a visão principal do que a avaliação mostrou. Ao mencionar uma classificação, reproduza o rótulo exatamente como recebido, sem sinônimo e sem gradação própria. Havendo várias escalas, sintetize o perfil conjunto sem criar hierarquia que os dados não sustentam.
+
+## Análise e interpretação
+A seção de maior valor. Explique o significado funcional da classificação recebida, integre as escalas entre si quando houver mais de uma e contextualize para o destino. Distinga achado de hipótese e aponte, quando couber, a necessidade de integrar com outras fontes.
+É proibido explicar POR QUE a pessoa obteve o resultado, atribuir causa, presumir sintoma, comportamento, desempenho escolar ou dinâmica familiar que não tenham sido fornecidos, e usar conhecimento próprio de pontos de corte para acrescentar informação que não veio nos dados.
+Evite "apresenta", "demonstra", "confirma", "comprova". Prefira formulações proporcionais: "o resultado sugere", "o achado é compatível com", "esse resultado deve ser integrado a".
+
+## Pontos de atenção
+Em lista de itens. Cada item precisa se apoiar diretamente num resultado persistido ou numa observação fornecida pelo profissional. Não crie itens para encher, não invente "aspectos preservados" sem dado que os sustente e não trate ausência de elevação como habilidade preservada. Instrumento de escala única pode ter poucos itens — isso é correto.
+
+## Orientações
+Orientações gerais e prudentes, ligadas ao que este resultado mostrou. Pode recomendar acompanhamento, observação sistemática, comunicação entre contextos, registro de mudanças, integração com outros dados e discussão com os profissionais responsáveis.
+Não prescreva medicamento, psicoterapia específica, intervenção padronizada ou encaminhamento obrigatório sem base. Não escreva recomendação genérica desconectada do resultado só para alongar o texto.
+
+EXTENSÃO: proporcional à informação disponível. Instrumento de escala única pede texto conciso; instrumento com várias escalas comporta mais desenvolvimento. Qualidade acima de tamanho — nunca produza volume inventando conteúdo.
+
 DESTINO: ${REPORT_TYPE_LABEL[reportType]}
 ${DESTINATION_RULES[reportType]}
 
-Estruture o texto de forma natural para o destino solicitado, omitindo campos ausentes em vez de preencher com "não informado" repetidamente.
+Não crie outras seções. Em especial, não escreva Introdução, Identificação, Dados do paciente, Dados do profissional, Metodologia, Hipótese diagnóstica, Diagnóstico, Conclusão diagnóstica, Prognóstico, CID ou DSM.
 
-Encerre o texto completo com EXATAMENTE este parágrafo, uma única vez, ao final:
+Omita o que estiver ausente em vez de preencher com "não informado" repetidamente.
+
+Depois da quarta seção, encerre o texto com EXATAMENTE este parágrafo, uma única vez, sem título acima dele:
 "${avisoFinal}"`;
 }
 
@@ -238,7 +279,11 @@ export async function generateCorrigeFacilReport(args: {
   const { data: assessment, error: assessmentError } = await supabase
     .from('assessments')
     .select(
-      'id, user_id, subject_label, subject_meta, eval_date, created_at, completed_at, status, instruments!inner(code, name, score_type)',
+      // `score_type` saiu: é código interno (`escore_bruto`) que vazava para o
+      // texto do relatório, e nada na redação depende dele — os resultados
+      // fechados já dizem quais métricas existem. Continua no banco e na
+      // tabela do documento; só não vai mais ao modelo.
+      'id, user_id, subject_label, subject_meta, eval_date, created_at, completed_at, status, instruments!inner(code, name)',
     )
     .eq('id', assessmentId)
     .eq('user_id', userId)
@@ -314,17 +359,13 @@ export async function generateCorrigeFacilReport(args: {
     );
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select(
-      'name, display_name, gender, profession_category, credential_type, credential_number',
-    )
-    .eq('id', userId)
-    .maybeSingle();
-
-  if (profileError) {
-    console.warn('Professional profile lookup failed:', profileError);
-  }
+  // O perfil profissional NÃO é mais lido aqui. O documento renderiza o
+  // cabeçalho e a assinatura deterministicamente, e a narrativa não deve
+  // assinar nem repetir o profissional — mandá-lo ao modelo só produzia
+  // aberturas do tipo "elaborado a partir dos dados informados pela
+  // profissional...". Nada na redação depende disso, então o dado deixa de
+  // sair do banco para esta chamada. `professionalText` continua exportado e
+  // testado: ele é o formatter compartilhado, e segue servindo ao documento.
 
   const evaluationDate =
     formatDate(assessment.eval_date) ||
@@ -338,30 +379,29 @@ export async function generateCorrigeFacilReport(args: {
       : '';
 
   const resultsText = formatClosedResults(rows);
+  // Contexto do profissional NÃO é resultado do instrumento, e o rótulo diz
+  // isso ao modelo: sem essa separação, observação subjetiva e dado
+  // quantitativo entram no texto como se tivessem o mesmo peso de evidência.
   const notesText = additionalNotes
-    ? `\n\nOBSERVAÇÕES ADICIONAIS DO PROFISSIONAL:\n${additionalNotes}`
+    ? `\n\nCONTEXTO FORNECIDO PELO PROFISSIONAL (não é resultado do instrumento; ao apoiar uma conclusão nele, deixe a origem clara no texto):\n${additionalNotes}`
     : '';
 
   const userText = `ORIGEM: CorrigeFácil
 TIPO DE RELATÓRIO: ${REPORT_TYPE_LABEL[reportType]}
 
-IDENTIFICAÇÃO DA AVALIAÇÃO
+IDENTIFICAÇÃO DA AVALIAÇÃO (contexto para você; o documento já a apresenta — não a reconte)
 Nome do avaliado: ${subjectName}
 Idade na avaliação: ${age}
 Data da avaliação/registro: ${evaluationDate}${respondent ? `\nRespondente: ${respondent}` : ''}
 
-PROFISSIONAL RESPONSÁVEL
-${professionalText(profile)}
-
 INSTRUMENTO
 Código: ${instrument.code}
 Nome: ${instrument.name}
-Tipo de escore: ${instrument.score_type || 'não especificado'}
 
 RESULTADOS FECHADOS DO CORRIGEFÁCIL
 ${resultsText}${notesText}
 
-Redija o rascunho profissional para o destino solicitado. Preserve integralmente os dados fechados acima.`;
+Redija as quatro seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 
   let generatedText: string;
   try {
