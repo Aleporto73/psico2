@@ -53,6 +53,17 @@ describe('Minha Conta — perfil para relatórios', () => {
     expect(page).not.toContain('nome fantasia da clínica');
   });
 
+  // A seção deixou de ser exclusiva do Doc Studio: ela é a fonte cadastral de
+  // identidade profissional da plataforma, e outros documentos passarão a lê-la.
+  it('descreve a seção sem prendê-la ao Doc Studio', () => {
+    expect(page).toContain(
+      'Esses dados podem aparecer no cabeçalho e na identificação dos seus documentos profissionais.',
+    );
+    expect(page).not.toContain(
+      'Esses dados aparecem no cabeçalho dos documentos criados no Doc Studio.',
+    );
+  });
+
   // Trava de escopo do Bloco 6: a clínica é cadastral por enquanto.
   it('não introduz contato, endereço nem logo', () => {
     expect(page).not.toContain('clinic_logo');

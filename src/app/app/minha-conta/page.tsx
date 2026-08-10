@@ -325,7 +325,7 @@ export default function AppMinhaContaPage() {
         </div>
 
         <p className="text-sm text-pp-ink-soft max-w-2xl leading-relaxed">
-          Esses dados aparecem no cabeçalho dos documentos criados no Doc Studio. Você pode alterar a qualquer momento.
+          Esses dados podem aparecer no cabeçalho e na identificação dos seus documentos profissionais. Você pode alterar a qualquer momento.
         </p>
 
         <form onSubmit={handleUpdateReportProfile} className="space-y-5">
