@@ -30,7 +30,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Printer } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createClient } from '@/utils/supabase/client';
@@ -198,20 +198,45 @@ export function RelatorioDocumentClient({
     return () => controller.abort();
   }, [carregar]);
 
-  const voltar = (
-    <Link
-      href={`/app/corrigefacil/avaliacoes/${encodeURIComponent(assessmentId)}`}
-      className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition print:hidden"
-    >
-      <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-      Voltar à avaliação
-    </Link>
+  // Marca o <body> enquanto esta rota está montada. É o que permite ao
+  // `@media print` de globals.css zerar o padding de tela do <main> — que
+  // pertence ao AppShell, compartilhado por todo o produto — sem alterar o
+  // AppShell nem afetar nenhuma outra página. Sai na desmontagem.
+  useEffect(() => {
+    document.body.classList.add('pp-print-document');
+    return () => document.body.classList.remove('pp-print-document');
+  }, []);
+
+  /** Ações da aplicação: vivem FORA da folha e somem no papel. */
+  const barra = (
+    <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
+      <Link
+        href={`/app/corrigefacil/avaliacoes/${encodeURIComponent(assessmentId)}`}
+        className="inline-flex items-center gap-2 text-pp-ink-soft text-sm hover:text-pp-ink transition"
+      >
+        <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+        Voltar à avaliação
+      </Link>
+
+      {estado.fase === 'ok' && (
+        // Só o diálogo nativo: quem gera o PDF é o navegador, com "Salvar
+        // como PDF". Sem blob, sem download próprio, sem PDF no servidor.
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-5 py-2.5 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+        >
+          <Printer className="w-4 h-4" aria-hidden="true" />
+          Imprimir / Salvar PDF
+        </button>
+      )}
+    </div>
   );
 
   if (estado.fase === 'carregando') {
     return (
-      <div className="max-w-3xl mx-auto space-y-6 pt-4">
-        {voltar}
+      <div className="mx-auto max-w-[210mm] space-y-6 pt-4">
+        {barra}
         <output className="block text-pp-ink-soft text-sm">
           Montando o documento…
         </output>
@@ -221,8 +246,8 @@ export function RelatorioDocumentClient({
 
   if (estado.fase === 'erro') {
     return (
-      <div className="max-w-3xl mx-auto space-y-6 pt-4">
-        {voltar}
+      <div className="mx-auto max-w-[210mm] space-y-6 pt-4">
+        {barra}
         <section className="bg-pp-block-lilac rounded-block p-8">
           <p className="text-pp-ink text-base">{estado.mensagem}</p>
         </section>
@@ -245,12 +270,20 @@ export function RelatorioDocumentClient({
   );
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 pt-4">
-      {voltar}
+    <div className="mx-auto max-w-[210mm] space-y-6 pt-4 print:max-w-none print:pt-0 print:space-y-0">
+      {barra}
 
-      <article className="bg-white border border-pp-hairline rounded-block p-8 sm:p-10 space-y-8 print:border-0 print:p-0">
+      {/* A FOLHA. Na tela: largura de A4, fundo branco e sombra muito
+          discreta, para ler como documento e não como formulário. No papel:
+          sem borda, sem sombra, sem cantos e sem padding — quem dá a margem
+          é `@page`, e somar as duas empurraria o texto para dentro.
+
+          `pp-doc` é o gancho das regras de paginação em globals.css. */}
+      <article className="pp-doc bg-white border border-pp-hairline rounded-block shadow-[0_1px_3px_rgba(14,42,56,0.06)] px-[16mm] py-[18mm] space-y-8 print:max-w-none print:border-0 print:rounded-none print:shadow-none print:p-0">
         {/* ── CABEÇALHO ─────────────────────────────────────────────── */}
-        <header className="space-y-4 border-b border-pp-hairline pb-6">
+        {/* Bloco pequeno e de leitura única: cabe inteiro numa página e não
+            deve ser partido. */}
+        <header className="space-y-4 border-b border-pp-hairline pb-6 print:break-inside-avoid">
           {identidade.temAlgo && (
             <div className="space-y-0.5">
               {identidade.clinica && (
@@ -280,7 +313,9 @@ export function RelatorioDocumentClient({
         </header>
 
         {/* ── IDENTIFICAÇÃO ─────────────────────────────────────────── */}
-        <section className="space-y-3">
+        {/* Quadro curto: parte-lo entre páginas separaria "Avaliado" da
+            idade e da data, que se leem juntos. */}
+        <section className="space-y-3 print:break-inside-avoid">
           <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
             Identificação
           </h2>
@@ -296,6 +331,10 @@ export function RelatorioDocumentClient({
         </section>
 
         {/* ── RESULTADOS ────────────────────────────────────────────── */}
+        {/* SEM `break-inside-avoid` na seção: um instrumento com muitas
+            escalas ocupa mais de uma página, e protegê-la inteira jogaria
+            tudo para a folha seguinte deixando um vazio enorme. A proteção
+            fica na LINHA, que é a unidade pequena. */}
         <section className="space-y-3">
           <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
             Resultados
@@ -306,8 +345,12 @@ export function RelatorioDocumentClient({
               Esta avaliação não possui resultados registrados.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
+            /* Na tela o scroll horizontal salva a tabela larga; no papel não
+               há para onde rolar, então o contêiner libera o overflow (regra
+               em globals.css) e a tabela quebra o texto na célula. Nenhuma
+               coluna é escondida para caber. */
+            <div className="overflow-x-auto print:overflow-visible">
+              <table className="w-full border-collapse text-sm print:text-[11px]">
                 <thead>
                   <tr className="text-left text-pp-ink-soft">
                     <th className="border border-pp-ink/15 px-3 py-2 font-medium">Escala</th>
@@ -381,23 +424,36 @@ export function RelatorioDocumentClient({
         {/* `output_text` como está: renderizado, nunca reescrito. O aviso
             ético já vem embutido nele pelo motor — acrescentar outro aqui
             duplicaria o disclaimer. */}
-        <section className="text-[15px] leading-[1.7] text-pp-ink break-words">
+        {/* Parágrafo longo PRECISA poder quebrar entre páginas — proteger a
+            narrativa inteira produziria folhas quase vazias. As guardas de
+            órfã/viúva e de título ficam em globals.css, no nível certo. */}
+        <section className="text-[15px] leading-[1.7] text-pp-ink break-words print:text-[11.5pt] print:leading-[1.55]">
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
               h1: ({ children }) => (
-                <h2 className="font-serif italic text-2xl mt-7 mb-3 first:mt-0">{children}</h2>
+                <h2 className="font-serif italic text-2xl mt-7 mb-3 first:mt-0 print:text-[15pt] print:mt-6">
+                  {children}
+                </h2>
               ),
               h2: ({ children }) => (
-                <h2 className="font-serif italic text-xl mt-7 mb-3 first:mt-0">{children}</h2>
+                <h2 className="font-serif italic text-xl mt-7 mb-3 first:mt-0 print:text-[13.5pt] print:mt-6">
+                  {children}
+                </h2>
               ),
-              h3: ({ children }) => <h3 className="font-medium text-lg mt-5 mb-2">{children}</h3>,
+              h3: ({ children }) => (
+                <h3 className="font-medium text-lg mt-5 mb-2 print:text-[12pt] print:mt-4">
+                  {children}
+                </h3>
+              ),
               p: ({ children }) => <p className="my-3">{children}</p>,
               ul: ({ children }) => <ul className="list-disc pl-5 my-3 space-y-1">{children}</ul>,
               ol: ({ children }) => <ol className="list-decimal pl-5 my-3 space-y-1">{children}</ol>,
               table: ({ children }) => (
-                <div className="overflow-x-auto my-4">
-                  <table className="w-full border-collapse text-sm">{children}</table>
+                <div className="overflow-x-auto my-4 print:overflow-visible">
+                  <table className="w-full border-collapse text-sm print:text-[11px]">
+                    {children}
+                  </table>
                 </div>
               ),
               th: ({ children }) => (
@@ -417,7 +473,7 @@ export function RelatorioDocumentClient({
             perfil sustenta. A clínica não se repete aqui — ela já abre o
             documento, e repetir viraria ruído em página curta. */}
         {(identidade.nome || identidade.credenciamento) && (
-          <footer className="border-t border-pp-hairline pt-6 space-y-0.5">
+          <footer className="border-t border-pp-hairline pt-6 space-y-0.5 print:break-inside-avoid">
             {identidade.nome && (
               <p className="text-pp-ink text-sm font-medium">{identidade.nome}</p>
             )}

@@ -260,3 +260,83 @@
     @apply font-sans;
   }
 }
+
+/* ---------------------------------------------------------------------
+ * IMPRESSÃO DO DOCUMENTO PROFISSIONAL (CorrigeFácil · Relatório Pró)
+ *
+ * Só o que o Tailwind não consegue expressar mora aqui: `@page` é regra de
+ * página e não tem utilitário, e as demais precisam alcançar elementos que
+ * o documento não renderiza (o `<main>` do AppShell) ou que saem do
+ * ReactMarkdown sem className própria.
+ *
+ * ESCOPO: tudo abaixo depende de `body.pp-print-document`, classe que só a
+ * rota do documento adiciona, enquanto está montada. Nenhuma outra tela do
+ * app é afetada — foi o que permitiu resolver o padding do shell sem tocar
+ * no AppShell, que é compartilhado por todo o produto.
+ * ------------------------------------------------------------------- */
+
+@media print {
+  /* A4 com margens de documento profissional. O papel manda na margem;
+     por isso a "folha" da tela zera o próprio padding ao imprimir. */
+  @page {
+    size: A4;
+    margin: 18mm 16mm;
+  }
+
+  /* O `p-6 md:p-8` do <main> existe para a APLICAÇÃO. No papel ele somaria
+     à margem de `@page` e empurraria o documento para dentro. */
+  body.pp-print-document main {
+    padding: 0 !important;
+  }
+
+  /* Contêiner que espera scroll na tela não pode esconder conteúdo no
+     papel — não há para onde rolar uma folha impressa. Alcança tanto a
+     tabela determinística quanto as tabelas que vêm do Markdown. */
+  body.pp-print-document .pp-doc [class*='overflow-'] {
+    overflow: visible !important;
+  }
+
+  body.pp-print-document .pp-doc table {
+    /* largura fixa faz o navegador distribuir as colunas em vez de
+       estourar a caixa quando uma classificação é longa */
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  body.pp-print-document .pp-doc th,
+  body.pp-print-document .pp-doc td {
+    /* palavra longa quebra dentro da célula em vez de alargar a coluna */
+    overflow-wrap: anywhere;
+  }
+
+  /* Cabeçalho de tabela repetido a cada página. É o padrão do `thead`,
+     mas declarar explicitamente protege de regra de layout que o mude. */
+  body.pp-print-document .pp-doc thead {
+    display: table-header-group;
+  }
+
+  /* Unidades PEQUENAS, e só elas. Proteger a narrativa ou a seção inteira
+     de resultados jogaria blocos de várias páginas para a folha seguinte e
+     deixaria buracos enormes — parágrafo longo tem de poder quebrar. */
+  body.pp-print-document .pp-doc tr,
+  body.pp-print-document .pp-doc li {
+    break-inside: avoid;
+  }
+
+  /* Título não fica sozinho no pé da página: ele se move junto com o que
+     anuncia. Vale para os títulos do documento e para os que saem do
+     Markdown da narrativa. */
+  body.pp-print-document .pp-doc h1,
+  body.pp-print-document .pp-doc h2,
+  body.pp-print-document .pp-doc h3 {
+    break-after: avoid;
+    break-inside: avoid;
+  }
+
+  /* Viúvas e órfãs em parágrafo: duas linhas é o mínimo civilizado. */
+  body.pp-print-document .pp-doc p,
+  body.pp-print-document .pp-doc li {
+    orphans: 2;
+    widows: 2;
+  }
+}

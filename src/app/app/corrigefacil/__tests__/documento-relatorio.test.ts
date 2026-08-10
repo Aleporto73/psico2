@@ -154,6 +154,93 @@ describe('documento profissional — composição', () => {
   });
 });
 
+describe('documento profissional — impressão A4 (Bloco 7B)', () => {
+  const css = source('src/app/globals.css');
+
+  it('oferece a ação de imprimir usando só o diálogo nativo', () => {
+    expect(documento).toContain('Imprimir / Salvar PDF');
+    expect(documentoCodigo).toContain('window.print()');
+  });
+
+  // Nada da aplicação pode entrar no papel: a barra inteira sai, e o shell
+  // já saía antes deste bloco.
+  it('a barra de ações fica fora do papel', () => {
+    expect(documento).toContain('print:hidden');
+    const barra = documento.slice(
+      documento.indexOf('const barra ='),
+      documento.indexOf("if (estado.fase === 'carregando')"),
+    );
+    expect(barra).toContain('print:hidden');
+    expect(barra).toContain('window.print()');
+    expect(barra).toContain('Voltar à avaliação');
+  });
+
+  it('declara A4 com margens de documento', () => {
+    expect(css).toContain('@page');
+    expect(css).toContain('size: A4');
+    expect(css).toMatch(/margin:\s*\d+mm\s+\d+mm/);
+  });
+
+  // O padding do <main> é do AppShell, compartilhado por todo o produto.
+  // A regra é escopada por uma classe que só esta rota adiciona.
+  it('neutraliza o padding do shell sem alterar o AppShell', () => {
+    expect(css).toContain('body.pp-print-document main');
+    expect(documentoCodigo).toContain("classList.add('pp-print-document')");
+    expect(documentoCodigo).toContain("classList.remove('pp-print-document')");
+    expect(source('src/app/app/AppShell.tsx')).toContain('p-6 md:p-8');
+  });
+
+  it('a folha perde borda, sombra e padding no papel', () => {
+    expect(documento).toContain('print:border-0');
+    expect(documento).toContain('print:shadow-none');
+    expect(documento).toContain('print:p-0');
+  });
+
+  it('tabela não depende de scroll horizontal na impressão', () => {
+    expect(documento).toContain('print:overflow-visible');
+    expect(css).toContain('overflow: visible !important');
+  });
+
+  it('cabeçalho de tabela pode repetir entre páginas', () => {
+    expect(css).toContain('display: table-header-group');
+  });
+
+  it('protege unidades pequenas contra quebra, não blocos inteiros', () => {
+    // linha da tabela, item de lista, cabeçalho e identificação: pequenos.
+    expect(documento).toContain('print:break-inside-avoid');
+    expect(css).toMatch(/tr,\s*\n?\s*body\.pp-print-document \.pp-doc li \{\s*\n?\s*break-inside: avoid/);
+
+    // a narrativa e a seção de resultados podem ocupar várias páginas e
+    // NÃO podem ser protegidas inteiras — produziria folhas quase vazias.
+    const narrativa = documento.slice(
+      documento.indexOf('<section className="text-[15px]'),
+      documento.indexOf('{relatorio.output_text}'),
+    );
+    expect(narrativa).not.toContain('break-inside-avoid');
+  });
+
+  it('título não fica órfão no pé da página', () => {
+    expect(css).toContain('break-after: avoid');
+    expect(css).toContain('orphans: 2');
+    expect(css).toContain('widows: 2');
+  });
+
+  it('não usa biblioteca de PDF nem download próprio', () => {
+    for (const proibido of [
+      'jspdf',
+      'html2canvas',
+      'puppeteer',
+      'playwright',
+      'react-to-print',
+      'pdfkit',
+      'createObjectURL',
+      'new Blob',
+    ]) {
+      expect(documentoCodigo.toLowerCase(), proibido).not.toContain(proibido.toLowerCase());
+    }
+  });
+});
+
 describe('documento profissional — o que é do próximo bloco', () => {
   it('não desenha gráfico neste bloco', () => {
     for (const proibido of [
