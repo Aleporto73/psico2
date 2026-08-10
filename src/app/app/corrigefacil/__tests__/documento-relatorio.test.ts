@@ -154,6 +154,140 @@ describe('documento profissional — composição', () => {
   });
 });
 
+describe('documento profissional — impressão A4 (Bloco 7B)', () => {
+  const css = source('src/app/globals.css');
+
+  it('oferece a ação de imprimir usando só o diálogo nativo', () => {
+    expect(documento).toContain('Imprimir / Salvar PDF');
+    expect(documentoCodigo).toContain('window.print()');
+  });
+
+  // Nada da aplicação pode entrar no papel: a barra inteira sai, e o shell
+  // já saía antes deste bloco.
+  it('a barra de ações fica fora do papel', () => {
+    expect(documento).toContain('print:hidden');
+    const barra = documento.slice(
+      documento.indexOf('const barra ='),
+      documento.indexOf("if (estado.fase === 'carregando')"),
+    );
+    expect(barra).toContain('print:hidden');
+    expect(barra).toContain('window.print()');
+    expect(barra).toContain('Voltar à avaliação');
+  });
+
+  it('declara A4 com margens de documento numa página NOMEADA', () => {
+    expect(css).toMatch(
+      /@page\s+pp-relatorio\s*\{[^}]*size:\s*A4[^}]*margin:\s*18mm\s+16mm[^}]*\}/,
+    );
+  });
+
+  // `@page` anônimo não aceita seletor: ele configuraria o papel de TODA
+  // impressão do Psico2 — Doc Studio incluso — só por existir neste CSS.
+  // A named page só vale onde alguém a referencia.
+  it('não deixa @page anônimo impondo A4 ao app inteiro', () => {
+    expect(css).not.toMatch(/@page\s*\{/);
+  });
+
+  it('só o documento reivindica a página nomeada', () => {
+    expect(css).toMatch(
+      /body\.pp-print-document \.pp-doc\s*\{\s*\n?\s*page:\s*pp-relatorio/,
+    );
+    // e o gancho já existia no componente, então ele não precisou mudar
+    expect(documento).toContain('pp-doc');
+  });
+
+  // bg-pp-canvas vive na raiz do AppShell, que é compartilhado. O fundo é
+  // neutralizado sob o escopo do documento em vez de sair do produto.
+  it('fundo da aplicação não vai ao papel, e só sob o escopo do documento', () => {
+    expect(css).toMatch(
+      /body\.pp-print-document,\s*\n?\s*body\.pp-print-document \[class~='bg-pp-canvas'\]\s*\{\s*\n?\s*background:\s*#fff\s*!important/,
+    );
+    expect(source('src/app/app/AppShell.tsx')).toContain('bg-pp-canvas');
+  });
+
+  // Toda regra de ELEMENTO precisa ser escopada; caso contrário vaza para
+  // as outras telas do app na impressão.
+  it('nenhuma regra de elemento do bloco de print escapa do escopo', () => {
+    const bloco = css.slice(css.indexOf('@media print {'));
+    const seletores = bloco
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.endsWith('{') || l.endsWith(','))
+      .map((l) => l.replace(/\s*[{,]$/, ''))
+      .filter((l) => l && !l.startsWith('/*') && !l.startsWith('*'));
+
+    for (const seletor of seletores) {
+      const permitido =
+        seletor === '@media print' ||
+        seletor === '@page pp-relatorio' ||
+        seletor.startsWith('body.pp-print-document');
+      expect(permitido, `seletor fora do escopo: ${seletor}`).toBe(true);
+    }
+  });
+
+  // O padding do <main> é do AppShell, compartilhado por todo o produto.
+  // A regra é escopada por uma classe que só esta rota adiciona.
+  it('neutraliza o padding do shell sem alterar o AppShell', () => {
+    expect(css).toContain('body.pp-print-document main');
+    expect(documentoCodigo).toContain("classList.add('pp-print-document')");
+    expect(documentoCodigo).toContain("classList.remove('pp-print-document')");
+    // o AppShell continua com o padding e o fundo que o produto usa
+    const shell = source('src/app/app/AppShell.tsx');
+    expect(shell).toContain('p-6 md:p-8');
+    expect(shell).toContain('bg-pp-canvas');
+  });
+
+  it('a folha perde borda, sombra e padding no papel', () => {
+    expect(documento).toContain('print:border-0');
+    expect(documento).toContain('print:shadow-none');
+    expect(documento).toContain('print:p-0');
+  });
+
+  it('tabela não depende de scroll horizontal na impressão', () => {
+    expect(documento).toContain('print:overflow-visible');
+    expect(css).toContain('overflow: visible !important');
+  });
+
+  it('cabeçalho de tabela pode repetir entre páginas', () => {
+    expect(css).toContain('display: table-header-group');
+  });
+
+  it('protege unidades pequenas contra quebra, não blocos inteiros', () => {
+    // linha da tabela, item de lista, cabeçalho e identificação: pequenos.
+    expect(documento).toContain('print:break-inside-avoid');
+    expect(css).toMatch(/tr,\s*\n?\s*body\.pp-print-document \.pp-doc li \{\s*\n?\s*break-inside: avoid/);
+
+    // a narrativa e a seção de resultados podem ocupar várias páginas e
+    // NÃO podem ser protegidas inteiras — produziria folhas quase vazias.
+    const narrativa = documento.slice(
+      documento.indexOf('<section className="text-[15px]'),
+      documento.indexOf('{relatorio.output_text}'),
+    );
+    expect(narrativa).not.toContain('break-inside-avoid');
+  });
+
+  it('título não fica órfão no pé da página', () => {
+    expect(css).toContain('break-after: avoid');
+    expect(css).toContain('orphans: 2');
+    expect(css).toContain('widows: 2');
+  });
+
+  it('não usa biblioteca de PDF nem download próprio', () => {
+    for (const proibido of [
+      'jspdf',
+      'html2canvas',
+      'puppeteer',
+      'playwright',
+      'react-to-print',
+      'pdfkit',
+      'createObjectURL',
+      'new Blob',
+    ]) {
+      expect(documentoCodigo.toLowerCase(), proibido).not.toContain(proibido.toLowerCase());
+    }
+  });
+});
+
 describe('documento profissional — o que é do próximo bloco', () => {
   it('não desenha gráfico neste bloco', () => {
     for (const proibido of [
