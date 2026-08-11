@@ -93,8 +93,13 @@ export function parseNarrativa(outputText: string): SecaoEditavel[] {
 /** Campos do editor -> Markdown, SEM o aviso.
  *
  *  Preserva os headings que existiam: não acrescenta, não renomeia, não
- *  reordena. Seção esvaziada pelo profissional some junto com o título —
- *  título órfão sobre nada é pior que a ausência. */
+ *  reordena.
+ *
+ *  Seção estruturada sem conteúdo NÃO chega aqui pelo caminho de
+ *  salvamento: `secoesEstruturadasVazias` barra antes. O descarte abaixo
+ *  existe só para nunca emitir um título órfão sobre nada — não é
+ *  autorização para apagar seção. Não trocar por `## Título\n` vazio: isso
+ *  gravaria heading solto no documento. Quem impede a perda é o validador. */
 export function serializarNarrativa(secoes: SecaoEditavel[]): string {
   return secoes
     .map((s) => {
@@ -112,4 +117,20 @@ export function serializarNarrativa(secoes: SecaoEditavel[]): string {
  *  inteira e deixar o documento só com o aviso. */
 export function narrativaVazia(secoes: SecaoEditavel[]): boolean {
   return serializarNarrativa(secoes) === '';
+}
+
+/** Títulos das seções ESTRUTURADAS que ficaram sem conteúdo.
+ *
+ *  Os títulos são travados na tela, mas esvaziar o campo abaixo de um deles
+ *  fazia a seção inteira desaparecer na serialização — um jeito indireto de
+ *  apagar um heading que a UI não deixa editar. A saída não é gravar título
+ *  órfão nem remover a seção calada: é recusar o salvamento e dizer qual
+ *  seção falta.
+ *
+ *  O campo ÚNICO (`titulo === ''`) fica de fora: ali não há heading a
+ *  proteger, e quem cuida do caso é `narrativaVazia`. */
+export function secoesEstruturadasVazias(secoes: SecaoEditavel[]): string[] {
+  return secoes
+    .filter((s) => s.titulo !== '' && s.conteudo.trim() === '')
+    .map((s) => s.titulo);
 }

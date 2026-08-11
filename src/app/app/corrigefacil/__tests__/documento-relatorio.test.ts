@@ -614,6 +614,26 @@ describe('documento — edição da narrativa (Bloco 9B)', () => {
     );
   });
 
+  // O heading é travado na tela; esvaziar o campo abaixo dele não pode ser
+  // um caminho indireto para apagá-lo.
+  it('recusa salvar com seção estruturada vazia, sem perder o digitado', () => {
+    const salvar = documentoCodigo.slice(
+      documentoCodigo.indexOf('async function salvarEdicao'),
+      documentoCodigo.indexOf('const barra ='),
+    );
+    expect(salvar).toContain('secoesEstruturadasVazias(secoes).length > 0');
+    expect(salvar).toContain(
+      "'Preencha o conteúdo de todas as seções antes de salvar.'",
+    );
+    // recusa ANTES de chamar a RPC, e sem tocar nos campos
+    expect(salvar.indexOf('secoesEstruturadasVazias')).toBeLessThan(
+      salvar.indexOf('supabase.rpc('),
+    );
+    expect(salvar.indexOf('secoesEstruturadasVazias')).toBeLessThan(
+      salvar.indexOf('setSecoes(null)'),
+    );
+  });
+
   it('cancelar descarta sem tocar no banco', () => {
     expect(documento).toContain('setSecoes(null);');
     expect(documentoCodigo).not.toContain('autosave');

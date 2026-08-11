@@ -53,6 +53,7 @@ import {
 import {
   narrativaVazia,
   parseNarrativa,
+  secoesEstruturadasVazias,
   serializarNarrativa,
   TITULO_UNICO,
   type SecaoEditavel,
@@ -247,6 +248,15 @@ export function RelatorioDocumentClient({
    *  toca uma coluna só e reanexa o aviso ético no próprio banco. */
   async function salvarEdicao(reportIdAtual: string) {
     if (!secoes || salvando) return;
+
+    // Seção estruturada vazia seria apagada na serialização — e com ela o
+    // heading, que a tela mantém travado. Em vez de gravar título órfão ou
+    // remover a seção em silêncio, recusa-se o salvamento: o texto das
+    // outras seções continua intacto na tela.
+    if (secoesEstruturadasVazias(secoes).length > 0) {
+      setErroEdicao('Preencha o conteúdo de todas as seções antes de salvar.');
+      return;
+    }
 
     if (narrativaVazia(secoes)) {
       setErroEdicao('O relatório não pode ficar sem texto.');

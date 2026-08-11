@@ -4,6 +4,7 @@ import {
   narrativaVazia,
   parseNarrativa,
   removerAviso,
+  secoesEstruturadasVazias,
   serializarNarrativa,
   TITULO_UNICO,
 } from '../editable-narrative';
@@ -169,6 +170,58 @@ describe('serialização', () => {
     const texto = serializarNarrativa(secoes);
     const ordem = (texto.match(/^## (.+)$/gm) ?? []).map((l) => l.replace('## ', ''));
     expect(ordem).toEqual(secoes.map((s) => s.titulo));
+  });
+});
+
+describe('seção estruturada vazia — heading travado não pode sumir', () => {
+  // Os títulos são travados na tela, mas esvaziar o campo abaixo de um deles
+  // fazia a seção inteira desaparecer na serialização: um jeito indireto de
+  // apagar um heading que a UI não deixa editar.
+  it('cinco seções com uma vazia é inválido para salvar', () => {
+    const secoes = parseNarrativa(CINCO).map((s, i) =>
+      i === 2 ? { ...s, conteudo: '' } : s,
+    );
+    expect(secoesEstruturadasVazias(secoes)).toEqual([
+      'Considerações para o contexto',
+    ]);
+  });
+
+  it('quatro seções com uma vazia é inválido para salvar', () => {
+    const secoes = parseNarrativa(QUATRO).map((s, i) =>
+      i === 3 ? { ...s, conteudo: '   ' } : s,
+    );
+    expect(secoesEstruturadasVazias(secoes)).toEqual(['Orientações']);
+  });
+
+  it('aponta todas as seções faltantes, não só a primeira', () => {
+    const secoes = parseNarrativa(CINCO).map((s, i) =>
+      i === 0 || i === 4 ? { ...s, conteudo: '' } : s,
+    );
+    expect(secoesEstruturadasVazias(secoes)).toEqual([
+      'Síntese dos resultados',
+      'Considerações finais',
+    ]);
+  });
+
+  it('edição válida não acusa nada e preserva TODOS os headings', () => {
+    const secoes = parseNarrativa(CINCO).map((s) => ({
+      ...s,
+      conteudo: `${s.conteudo} Revisado pelo profissional.`,
+    }));
+    expect(secoesEstruturadasVazias(secoes)).toEqual([]);
+
+    const texto = serializarNarrativa(secoes);
+    expect((texto.match(/^## /gm) ?? []).length).toBe(5);
+    expect(texto).toContain('## Considerações para o contexto');
+    expect(texto).toContain('Revisado pelo profissional.');
+  });
+
+  // O campo único não tem heading a proteger; quem cuida dele é narrativaVazia.
+  it('o fallback sem headings não é afetado', () => {
+    const unico = parseNarrativa('Texto corrido, sem estrutura.');
+    expect(secoesEstruturadasVazias(unico)).toEqual([]);
+    expect(secoesEstruturadasVazias([{ titulo: '', conteudo: '' }])).toEqual([]);
+    expect(narrativaVazia([{ titulo: '', conteudo: '' }])).toBe(true);
   });
 });
 
