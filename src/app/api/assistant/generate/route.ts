@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { callOpenAI, OpenAIContentPart, VISION_NOT_SUPPORTED } from '@/lib/openai';
+// A constante saiu daqui para `@/lib/report/ethical-disclaimer`: o editor de
+// narrativa e a RPC de salvamento precisam comparar exatamente o MESMO texto.
+// Nada mudou no comportamento deste arquivo.
+import { AVISO_FINAL } from '@/lib/report/ethical-disclaimer';
 import { generateCorrigeFacilReport } from '@/lib/corrigefacil/report-generator';
 
 const MONTHLY_LIMIT = 50;
@@ -35,9 +39,6 @@ const ALLOWED_IMAGE_MIME = new Set([
 ]);
 const DATA_URL_REGEX =
   /^data:(image\/(?:png|jpe?g|webp));base64,([A-Za-z0-9+/=]+)$/i;
-
-const AVISO_FINAL =
-  'Observação: este texto é um rascunho de apoio operacional elaborado a partir dos dados fornecidos. Ele deve ser revisado, complementado e validado pelo profissional responsável. Não substitui avaliação clínica, manual técnico, aplicação padronizada, teste original ou interpretação profissional.';
 
 const IMAGE_UNREADABLE_MSG =
   'Não consegui ler todos os dados do print. Envie uma imagem mais nítida ou transcreva os resultados principais.';

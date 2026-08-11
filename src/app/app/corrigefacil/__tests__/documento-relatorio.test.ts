@@ -553,6 +553,231 @@ describe('documento — nome do instrumento (Bloco 9A)', () => {
   });
 });
 
+describe('documento — edição da narrativa (Bloco 9B)', () => {
+  const migration = source(
+    'supabase/migrations/20260810213000_corrigefacil_report_text_rpc.sql',
+  );
+
+  it('oferece "Editar texto" com ícone e rótulo legível', () => {
+    expect(documento).toContain('Editar texto');
+    expect(documento).toContain('<Pencil');
+  });
+
+  it('em edição, só Cancelar e Salvar alterações', () => {
+    expect(documento).toContain('Cancelar');
+    expect(documento).toContain('Salvar alterações');
+    // Copiar e Imprimir só existem fora do modo edição: operariam sobre o
+    // texto persistido enquanto há revisão não salva na tela.
+    expect(documento).toContain("estado.fase === 'ok' && !editando &&");
+    expect(documento).toContain("estado.fase === 'ok' && editando &&");
+  });
+
+  it('usa o parser compartilhado, sem textarea de Markdown bruto', () => {
+    expect(documento).toContain('parseNarrativa(estado.dados.relatorio.output_text)');
+    expect(documento).toContain('serializarNarrativa(secoes)');
+    expect(documento).toContain('{secao.titulo || TITULO_UNICO}');
+  });
+
+  // A gravação passa pela RPC estreita. Um `.update()` direto exigiria
+  // policy de UPDATE, que destrancaria a linha inteira de ai_reports.
+  it('salva por RPC, nunca por update direto', () => {
+    expect(documentoCodigo).toContain('supabase.rpc(');
+    expect(documentoCodigo).toContain("'update_corrigefacil_report_text'");
+    expect(documentoCodigo).not.toContain('.update(');
+  });
+
+  it('editar não gera IA, não consome cota e não cria relatório', () => {
+    expect(documentoCodigo).not.toContain('/api/assistant/generate');
+    expect(documentoCodigo).not.toContain('openai');
+    expect(documentoCodigo).not.toContain('monthly_');
+    expect(documentoCodigo).not.toContain('has_active_assistant');
+    expect(documentoCodigo).not.toContain('.insert(');
+  });
+
+  it('a narrativa enviada vai SEM o aviso ético', () => {
+    expect(documentoCodigo).toContain('new_narrative: serializarNarrativa(secoes)');
+    expect(documentoCodigo).not.toContain('AVISO_FINAL');
+  });
+
+  // Perder a revisão digitada por causa de uma falha de rede seria o pior
+  // desfecho possível desta tela.
+  it('falha ao salvar preserva o texto e o modo edição', () => {
+    const salvar = documentoCodigo.slice(
+      documentoCodigo.indexOf('async function salvarEdicao'),
+      documentoCodigo.indexOf('const barra ='),
+    );
+    expect(salvar).toContain('setErroEdicao(');
+    expect(salvar).toContain('return;');
+    // só limpa os campos no caminho de sucesso
+    expect(salvar.indexOf('setSecoes(null)')).toBeGreaterThan(
+      salvar.indexOf('setErroEdicao('),
+    );
+  });
+
+  // O heading é travado na tela; esvaziar o campo abaixo dele não pode ser
+  // um caminho indireto para apagá-lo.
+  it('recusa salvar com seção estruturada vazia, sem perder o digitado', () => {
+    const salvar = documentoCodigo.slice(
+      documentoCodigo.indexOf('async function salvarEdicao'),
+      documentoCodigo.indexOf('const barra ='),
+    );
+    expect(salvar).toContain('secoesEstruturadasVazias(secoes).length > 0');
+    expect(salvar).toContain(
+      "'Preencha o conteúdo de todas as seções antes de salvar.'",
+    );
+    // recusa ANTES de chamar a RPC, e sem tocar nos campos
+    expect(salvar.indexOf('secoesEstruturadasVazias')).toBeLessThan(
+      salvar.indexOf('supabase.rpc('),
+    );
+    expect(salvar.indexOf('secoesEstruturadasVazias')).toBeLessThan(
+      salvar.indexOf('setSecoes(null)'),
+    );
+  });
+
+  it('cancelar descarta sem tocar no banco', () => {
+    expect(documento).toContain('setSecoes(null);');
+    expect(documentoCodigo).not.toContain('autosave');
+  });
+
+  it('não há versionamento', () => {
+    for (const proibido of [
+      'report_versions',
+      'original_ai_text',
+      'edit_history',
+      'revision',
+      'snapshot',
+    ]) {
+      expect(documentoCodigo.toLowerCase(), proibido).not.toContain(proibido);
+      expect(migration.toLowerCase(), proibido).not.toContain(proibido);
+    }
+  });
+});
+
+describe('RPC de edição — superfície estreita', () => {
+  const migration = source(
+    'supabase/migrations/20260810213000_corrigefacil_report_text_rpc.sql',
+  );
+
+  it('é SECURITY DEFINER com search_path fixo', () => {
+    expect(migration).toContain('security definer');
+    expect(migration).toContain('set search_path = public');
+  });
+
+  it('exige autenticação e as três condições de identidade', () => {
+    expect(migration).toContain('auth.uid() is null');
+    expect(migration).toContain('where id = report_uuid');
+    expect(migration).toContain('and user_id = auth.uid()');
+    expect(migration).toContain('and corrigefacil_assessment_id = assessment_uuid');
+  });
+
+  // O ponto central: uma coluna, e só ela.
+  it('atualiza SOMENTE output_text', () => {
+    // SQL sem comentários: o comentário acima do UPDATE cita nominalmente as
+    // colunas que NÃO são tocadas, e casá-lo acusaria o contrário do que ele
+    // diz. Guarda de "não faz X" precisa olhar código.
+    const sql = migration.replace(/^\s*--.*$/gm, '');
+    // só o SET: o WHERE logo abaixo contém `user_id = auth.uid()`, que é
+    // condição de posse e não coluna sendo escrita
+    const set = sql.slice(
+      sql.indexOf('set output_text'),
+      sql.indexOf('where id = report_uuid'),
+    );
+    expect(set).toContain('set output_text = v_final');
+    for (const coluna of [
+      'created_at',
+      'report_type',
+      'title',
+      'input_text',
+      'corrigefacil_assessment_id =',
+      'user_id =',
+    ]) {
+      expect(set, coluna).not.toContain(coluna);
+    }
+  });
+
+  it('valida entrada e limita tamanho', () => {
+    expect(migration).toContain('btrim');
+    expect(migration).toContain('narrativa vazia');
+    expect(migration).toContain('30000');
+  });
+
+  // Se dependesse do frontend, uma chamada direta salvaria relatório
+  // profissional sem a ressalva obrigatória.
+  it('o aviso ético é reanexado pelo próprio banco, sem duplicar', () => {
+    expect(migration).toContain('rascunho de apoio operacional');
+    expect(migration).toContain("v_final := v_narrativa || E'\\n\\n' || v_aviso");
+    expect(migration).toContain('position(v_aviso in v_narrativa) > 0');
+    expect(migration).toContain('return v_final');
+  });
+
+  // Policy de UPDATE destrancaria a linha inteira, não só o texto.
+  it('NÃO cria policy de UPDATE nem toca em policies existentes', () => {
+    expect(migration.toLowerCase()).not.toContain('create policy');
+    expect(migration.toLowerCase()).not.toContain('drop policy');
+    expect(migration.toLowerCase()).not.toContain('alter table');
+  });
+
+  it('não exige assinatura ativa para editar', () => {
+    expect(migration).not.toContain('has_active_assistant');
+    expect(migration).not.toContain('user_access_status');
+  });
+
+  it('grants seguem o padrão do projeto', () => {
+    expect(migration).toContain('revoke all on function public.update_corrigefacil_report_text(uuid, uuid, text) from public;');
+    expect(migration).toContain('from anon;');
+    expect(migration).toContain('to authenticated;');
+    expect(migration).toContain('to service_role;');
+  });
+
+  it('não cria tabela, trigger nem insere em ai_reports', () => {
+    expect(migration.toLowerCase()).not.toContain('create table');
+    expect(migration.toLowerCase()).not.toContain('create trigger');
+    expect(migration.toLowerCase()).not.toContain('insert into public.ai_reports');
+  });
+});
+
+describe('documento — paginação do rodapé (Bloco 9B)', () => {
+  const css = source('src/app/globals.css');
+
+  it('o rodapé tem classe própria e continua indivisível', () => {
+    expect(documento).toContain('pp-professional-footer');
+    expect(documento).toContain('print:break-inside-avoid');
+  });
+
+  // Milímetros, não compressão do documento: relatório com três páginas de
+  // conteúdo continua com três.
+  it('a compactação é só do rodapé, e só no print', () => {
+    expect(css).toMatch(
+      /body\.pp-print-document \.pp-doc \.pp-professional-footer\s*\{[^}]*margin-top:\s*2mm[^}]*padding-top:\s*3mm[^}]*\}/,
+    );
+  });
+
+  it('A4 e margens gerais não mudaram', () => {
+    expect(css).toMatch(
+      /@page\s+pp-relatorio\s*\{[^}]*size:\s*A4[^}]*margin:\s*18mm\s+16mm[^}]*\}/,
+    );
+    expect(css).not.toMatch(/@page\s*\{/);
+  });
+
+  it('nenhuma regra de print vazou do escopo', () => {
+    const bloco = css.slice(css.indexOf('@media print {'));
+    const seletores = bloco
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l.endsWith('{') || l.endsWith(','))
+      .map((l) => l.replace(/\s*[{,]$/, ''))
+      .filter((l) => l && !l.startsWith('/*') && !l.startsWith('*'));
+
+    for (const seletor of seletores) {
+      const permitido =
+        seletor === '@media print' ||
+        seletor === '@page pp-relatorio' ||
+        seletor.startsWith('body.pp-print-document');
+      expect(permitido, `seletor fora do escopo: ${seletor}`).toBe(true);
+    }
+  });
+});
+
 describe('documento — copiar texto', () => {
   it('a toolbar oferece copiar, e copia só a narrativa', () => {
     expect(documento).toContain('Copiar texto');
