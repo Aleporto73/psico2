@@ -149,7 +149,6 @@ export function AppShell({ children, hasDocStudioAccess, hasCorrigeFacilAccess =
       { name: 'Studio DOC', path: '/app/doc-studio', icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
       { name: 'Relatório', path: '/app/assistente-gpt', icon: <IconChat /> },
       { name: 'ABA', path: '/app/assistente-aba', icon: <IconChat /> },
-      { name: 'Laudos', path: '/app/assistente-laudos', icon: <IconChat /> },
     ] },
     { separatorBefore: true, label: 'Ferramentas upgrade', items: [
       { name: 'Relatório Pró', path: '/app/assistente-pro', icon: <IconSpark />, badge: 'Novo' },
