@@ -10,8 +10,8 @@ import {
 //
 // Lê SÓ `products_public` — a view sanitizada, sem access_url — pelo slug.
 // Preço, nome e descrição vêm de lá quando existirem; se o produto ainda não
-// estiver cadastrado (que é o estado de hoje em produção) ou a consulta
-// falhar, cai no fallback seguro definido em locked-product.ts.
+// estiver cadastrado ou a consulta falhar, cai no fallback seguro definido em
+// locked-product.ts — sem inventar preço.
 //
 // É curta de propósito: o Doc Studio tem uma página comercial longa com
 // catálogo de modelos; aqui basta dizer o que a ferramenta faz e como obtê-la.
@@ -78,14 +78,16 @@ export async function CorrigeFacilLocked() {
         </div>
 
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-          <p className="text-pp-ink text-3xl md:text-4xl font-medium">
-            {visao.precoLabel}
-            {visao.pagamentoUnico && (
-              <span className="text-pp-ink-soft text-base font-normal ml-2">
-                pagamento único
-              </span>
-            )}
-          </p>
+          {visao.precoLabel && (
+            <p className="text-pp-ink text-3xl md:text-4xl font-medium">
+              {visao.precoLabel}
+              {visao.pagamentoUnico && (
+                <span className="text-pp-ink-soft text-base font-normal ml-2">
+                  pagamento único
+                </span>
+              )}
+            </p>
+          )}
           <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink bg-white/60 rounded-pill">
             Acesso vitalício — pague uma vez
           </span>
@@ -99,7 +101,7 @@ export async function CorrigeFacilLocked() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
             >
-              Comprar por {visao.precoLabel}
+              {visao.precoLabel ? `Comprar por ${visao.precoLabel}` : 'Comprar'}
               <ExternalLink className="w-4 h-4" aria-hidden="true" />
             </a>
             <p className="text-xs text-pp-ink-soft mt-2">
