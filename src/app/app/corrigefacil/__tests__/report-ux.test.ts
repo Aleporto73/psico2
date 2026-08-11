@@ -40,7 +40,7 @@ describe('CorrigeFácil → Relatório Pró — UX V1', () => {
 
   it('faz upsell inline e salva antes do checkout quando necessário', () => {
     expect(panel).toContain('50 relatórios por mês durante 12 meses · R$57 — pagamento único.');
-    expect(panel).toContain('Liberar Relatório Pró');
+    expect(panel).toContain('Desbloquear Relatórios Pro');
     expect(panel).toContain('await resolveAssessment()');
     expect(panel).toContain('CHECKOUT_URL_IA_PRO');
   });
@@ -73,5 +73,180 @@ describe('CorrigeFácil → Relatório Pró — UX V1', () => {
     // o detalhe salvo nunca teve impressão própria, e continua sem
     expect(detalhe).not.toContain('onClick={() => window.print()}');
     expect(panel).not.toContain('onClick={() => window.print()}');
+  });
+});
+
+// ── Card de oferta dos Relatórios Pro ────────────────────────────────────
+//
+// Este bloco cobre COPY e COMPOSIÇÃO do card, e — sobretudo — trava o que o
+// ajuste comercial NÃO pode ter arrastado junto: um segundo gate, um segundo
+// POST, uma chamada de IA nova ou qualquer mexida em cota. O card é tela;
+// backend, entitlement e cota continuam sendo os mesmos de antes.
+
+/** Fonte sem comentários, mesmo motivo de documento-relatorio.test.ts: as
+ *  guardas de "não faz X" precisam olhar CÓDIGO, não a explicação escrita
+ *  ao lado dele. */
+function semComentarios(texto: string): string {
+  return texto.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+}
+
+/** Fonte com os espaços colapsados.
+ *
+ *  Uma frase de UI dentro do JSX é quebrada em várias linhas pela largura da
+ *  coluna, e uma guarda de COPY não pode depender de onde o formatador
+ *  escolheu quebrar — reindentar o card derrubaria o teste sem que uma
+ *  palavra tivesse mudado. */
+function frases(fonte: string): string {
+  return fonte.replace(/\s+/g, ' ');
+}
+
+const panelCodigo = semComentarios(panel);
+const panelTexto = frases(panel);
+
+describe('CorrigeFácil → card dos Relatórios Pro', () => {
+  it('tem eyebrow, título, texto e linha de apoio na ordem da hierarquia', () => {
+    const eyebrow = panelTexto.indexOf('> Relatórios Pro </p>');
+    const titulo = panelTexto.indexOf(
+      'Transforme esta avaliação em um relatório profissional.',
+    );
+    const texto = panelTexto.indexOf(
+      'Gere um relatório completo a partir deste resultado',
+    );
+    const apoio = panelTexto.indexOf(
+      'Ideal para escola, família, equipe multiprofissional ou registro interno.',
+    );
+
+    expect(eyebrow).toBeGreaterThan(-1);
+    expect(titulo).toBeGreaterThan(eyebrow);
+    expect(texto).toBeGreaterThan(titulo);
+    expect(apoio).toBeGreaterThan(texto);
+
+    // o eyebrow é pequeno e caixa-alta por CSS, não por texto gritado na fonte
+    expect(panel).toContain('text-[11px] uppercase tracking-wide text-pp-ink-soft');
+  });
+
+  it('promete só o que o fluxo entrega', () => {
+    expect(panelTexto).toContain(
+      'Gere um relatório completo a partir deste resultado, com análise ' +
+        'organizada, considerações para o contexto e recomendações prontas ' +
+        'para revisar, editar e salvar.',
+    );
+    for (const proibido of [
+      'diagnóstico automático',
+      'laudo automático',
+      'interpretação clínica automática',
+      'substitui o profissional',
+    ]) {
+      expect(frases(semComentarios(panel)).toLowerCase(), proibido).not.toContain(
+        proibido.toLowerCase(),
+      );
+    }
+  });
+
+  it('com acesso: CTA de gerar e microcopy de edição', () => {
+    expect(panelTexto).toContain('Gerar relatório completo');
+    expect(panelTexto).toContain('Edite o texto antes de imprimir ou salvar em PDF.');
+    // a microcopy fica ABAIXO do botão que abre o gerador
+    const botao = panelTexto.indexOf('onClick={openGenerator}');
+    const micro = panelTexto.indexOf('Edite o texto antes de imprimir ou salvar em PDF.');
+    expect(botao).toBeGreaterThan(-1);
+    expect(micro).toBeGreaterThan(botao);
+  });
+
+  it('sem acesso: CTA de desbloqueio e microcopy de assinatura', () => {
+    expect(panelTexto).toContain('Desbloquear Relatórios Pro');
+    expect(panelTexto).toContain(
+      'Assine o PsicoPro para gerar relatórios completos com base nesta avaliação.',
+    );
+    const botao = panelTexto.indexOf('onClick={goToCheckout}');
+    const micro = panelTexto.indexOf(
+      'Assine o PsicoPro para gerar relatórios completos',
+    );
+    expect(botao).toBeGreaterThan(-1);
+    expect(micro).toBeGreaterThan(botao);
+    // e o desbloqueio só aparece quando o gate disse que não há acesso
+    expect(panel).toContain("{access === 'inactive' ? (");
+  });
+
+  it('o botão continua no fluxo existente, sem caminho paralelo', () => {
+    // gerar = abrir o gerador de sempre; desbloquear = o checkout de sempre
+    expect(panelCodigo).toContain('onClick={openGenerator}');
+    expect(panelCodigo).toContain('onClick={goToCheckout}');
+    expect(panelCodigo).toContain('window.location.assign(CHECKOUT_URL_IA_PRO)');
+
+    const aberturas = panelCodigo.match(/onClick=\{openGenerator\}/g) ?? [];
+    expect(aberturas).toHaveLength(1);
+    const checkouts = panelCodigo.match(/onClick=\{goToCheckout\}/g) ?? [];
+    expect(checkouts).toHaveLength(1);
+
+    // um POST no arquivo inteiro: o card não gera por conta própria
+    const posts = panelCodigo.match(/method:\s*'POST'/g) ?? [];
+    expect(posts).toHaveLength(1);
+  });
+
+  it('não duplica entitlement: um gate só, o mesmo de antes', () => {
+    const gates = panelCodigo.match(/fetch\('\/api\/assistant\/generate',\s*\{\s*method:\s*'GET'\s*\}\)/g) ?? [];
+    expect(gates).toHaveLength(1);
+    // nenhuma regra de acesso reimplementada na tela
+    for (const proibido of [
+      'has_active_assistant',
+      'user_access_status',
+      "from('subscriptions')",
+      "from('entitlements')",
+      "from('user_products')",
+      'service_role',
+    ]) {
+      expect(panelCodigo, proibido).not.toContain(proibido);
+    }
+    // 403 continua sendo o único sinal de "sem acesso"
+    expect(panelCodigo).toContain('response.status === 403');
+  });
+
+  it('não cria chamada de IA nem toca em cota', () => {
+    for (const proibido of ['openai', 'callopenai', 'anthropic', 'gpt-']) {
+      expect(panelCodigo.toLowerCase(), proibido).not.toContain(proibido);
+    }
+    // cota é LIDA da resposta, nunca escrita nem calculada aqui
+    expect(panelCodigo).toContain('body.monthly_count');
+    expect(panelCodigo).toContain('body.monthly_limit');
+    expect(panelCodigo).not.toContain('monthly_limit:');
+    expect(panelCodigo).not.toContain('monthly_count:');
+  });
+
+  it('o card não escreve no banco', () => {
+    expect(panelCodigo).not.toContain('.insert(');
+    expect(panelCodigo).not.toContain('.update(');
+    expect(panelCodigo).not.toContain('.delete(');
+    expect(panelCodigo).not.toContain('supabase.rpc(');
+    // a única leitura continua sendo a lista de relatórios da avaliação
+    const selects = panelCodigo.match(/\.from\('/g) ?? [];
+    expect(selects).toHaveLength(1);
+    expect(panelCodigo).toContain("from('ai_reports')");
+  });
+
+  it('o card vem depois do resultado, nas duas telas que o exibem', () => {
+    // correção: escalas → gráfico → card. Nada da oferta antes do dado.
+    const iResultados = avaliar.indexOf('{linhas.map(([escala, r]) => (');
+    const iGrafico = avaliar.indexOf('<ResultGraph detalhe={detalhe}');
+    const iCard = avaliar.indexOf('<CorrigeFacilReportPanel');
+    expect(iResultados).toBeGreaterThan(-1);
+    expect(iGrafico).toBeGreaterThan(iResultados);
+    expect(iCard).toBeGreaterThan(iGrafico);
+
+    // avaliação salva: resultados → card
+    const dResultados = detalhe.indexOf('{Object.entries(d.resultados).map(');
+    const dCard = detalhe.indexOf('<CorrigeFacilReportPanel');
+    expect(dResultados).toBeGreaterThan(-1);
+    expect(dCard).toBeGreaterThan(dResultados);
+  });
+
+  it('o card fica fora do papel e não mexe em gráfico nem em impressão', () => {
+    const card = panel.slice(
+      panel.indexOf('bg-pp-block-lilac/40 border border-pp-block-lilac'),
+      panel.indexOf('{unsavedReport && ('),
+    );
+    expect(card).toContain('print:hidden');
+    expect(card).not.toContain('ResultGraph');
+    expect(card).not.toContain('window.print()');
   });
 });
