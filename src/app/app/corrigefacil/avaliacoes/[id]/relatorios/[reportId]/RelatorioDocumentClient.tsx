@@ -30,7 +30,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Copy, Printer } from 'lucide-react';
+import { ArrowLeft, Copy, Pencil, Printer } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { createClient } from '@/utils/supabase/client';
@@ -50,6 +50,13 @@ import {
   rotuloInstrumento,
   type PerfilDocumento,
 } from '@/lib/report/document-model';
+import {
+  narrativaVazia,
+  parseNarrativa,
+  serializarNarrativa,
+  TITULO_UNICO,
+  type SecaoEditavel,
+} from '@/lib/report/editable-narrative';
 import { ReportGraphIsland } from './ReportGraphIsland';
 
 /** Mensagem única para relatório inexistente, de outro usuário, ou de
@@ -154,6 +161,13 @@ export function RelatorioDocumentClient({
    *  segunda consulta só para o cabeçalho. Vazio é normal: o código sozinho
    *  continua sendo um rótulo válido. */
   const [nomeInstrumento, setNomeInstrumento] = useState('');
+  /** Campos do editor. `null` = fora do modo edição. O documento continua
+   *  mostrando o texto PERSISTIDO enquanto isso não for salvo. */
+  const [secoes, setSecoes] = useState<SecaoEditavel[] | null>(null);
+  const [salvando, setSalvando] = useState(false);
+  const [erroEdicao, setErroEdicao] = useState<string | null>(null);
+  const [salvo, setSalvo] = useState(false);
+  const editando = secoes !== null;
 
   const carregar = useCallback(
     async (signal: AbortSignal) => {
@@ -226,6 +240,61 @@ export function RelatorioDocumentClient({
     }
   }
 
+  /** Salva a REDAÇÃO. Não gera IA, não cria relatório, não consome cota.
+   *
+   *  Vai por RPC e não por `.update()`: `ai_reports` não tem policy de
+   *  UPDATE de usuário, e criar uma destrancaria a linha inteira. A função
+   *  toca uma coluna só e reanexa o aviso ético no próprio banco. */
+  async function salvarEdicao(reportIdAtual: string) {
+    if (!secoes || salvando) return;
+
+    if (narrativaVazia(secoes)) {
+      setErroEdicao('O relatório não pode ficar sem texto.');
+      return;
+    }
+
+    setSalvando(true);
+    setErroEdicao(null);
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc(
+        'update_corrigefacil_report_text',
+        {
+          report_uuid: reportIdAtual,
+          assessment_uuid: assessmentId,
+          // SEM aviso: quem o acrescenta é a RPC.
+          new_narrative: serializarNarrativa(secoes),
+        },
+      );
+
+      if (error || typeof data !== 'string') {
+        // Falha mantém o modo edição e TODO o texto digitado. Voltar ao
+        // texto antigo em silêncio faria o profissional perder a revisão.
+        setErroEdicao(
+          'Não foi possível salvar as alterações. O texto continua aqui — tente novamente.',
+        );
+        return;
+      }
+
+      setEstado((atual) =>
+        atual.fase === 'ok'
+          ? {
+              ...atual,
+              dados: {
+                ...atual.dados,
+                relatorio: { ...atual.dados.relatorio, output_text: data },
+              },
+            }
+          : atual,
+      );
+      setSecoes(null);
+      setSalvo(true);
+      window.setTimeout(() => setSalvo(false), 2500);
+    } finally {
+      setSalvando(false);
+    }
+  }
+
   /** Ações da aplicação: vivem FORA da folha e somem no papel. */
   const barra = (
     <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
@@ -237,8 +306,22 @@ export function RelatorioDocumentClient({
         Voltar à avaliação
       </Link>
 
-      {estado.fase === 'ok' && (
+      {estado.fase === 'ok' && !editando && (
         <div className="flex flex-wrap items-center gap-2">
+          {/* Ícone MAIS texto: quem usa isto é profissional de saúde e
+              educação, não desenvolvedor. Lápis sozinho não se lê. */}
+          <button
+            type="button"
+            onClick={() => {
+              setErroEdicao(null);
+              setSecoes(parseNarrativa(estado.dados.relatorio.output_text));
+            }}
+            className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-5 py-2.5 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+          >
+            <Pencil className="w-4 h-4" aria-hidden="true" />
+            Editar texto
+          </button>
+
           {/* Copia SÓ a narrativa da IA — o mesmo texto que a visualização
               inline copiava antes de ser unificada aqui. Nada de HTML,
               cabeçalho, tabela ou gráfico: quem cola isso num editor quer o
@@ -261,6 +344,33 @@ export function RelatorioDocumentClient({
           >
             <Printer className="w-4 h-4" aria-hidden="true" />
             Imprimir / Salvar PDF
+          </button>
+        </div>
+      )}
+
+      {/* Em edição, Copiar e Imprimir SOMEM. Enquanto há texto não salvo, os
+          dois operariam sobre o conteúdo persistido — o profissional
+          imprimiria a versão antiga achando que levava a revisão. */}
+      {estado.fase === 'ok' && editando && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setSecoes(null);
+              setErroEdicao(null);
+            }}
+            disabled={salvando}
+            className="rounded-pill border border-pp-ink/15 px-5 py-2.5 text-sm text-pp-ink hover:border-pp-ink/40 transition disabled:opacity-40"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => salvarEdicao(estado.dados.relatorio.id)}
+            disabled={salvando}
+            className="inline-flex items-center gap-2 rounded-pill bg-pp-ink text-pp-canvas px-5 py-2.5 text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-40"
+          >
+            {salvando ? 'Salvando…' : 'Salvar alterações'}
           </button>
         </div>
       )}
@@ -479,7 +589,65 @@ export function RelatorioDocumentClient({
         {/* Parágrafo longo PRECISA poder quebrar entre páginas — proteger a
             narrativa inteira produziria folhas quase vazias. As guardas de
             órfã/viúva e de título ficam em globals.css, no nível certo. */}
-        <section className="text-[15px] leading-[1.7] text-pp-ink break-words print:text-[11.5pt] print:leading-[1.55]">
+        {editando && (
+          // O EDITOR. Títulos travados, conteúdo editável, e o aviso ético
+          // fora daqui — `parseNarrativa` já o retirou, e a RPC o reanexa ao
+          // salvar. `print:hidden` porque texto não salvo não vai ao papel.
+          <section className="space-y-5 print:hidden">
+            <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+              Revisando a redação — os resultados, a tabela e o gráfico não mudam
+            </p>
+
+            {secoes.map((secao, i) => (
+              <div key={secao.titulo || `secao-${i}`} className="space-y-1.5">
+                <p className="text-pp-ink text-sm font-medium">
+                  {secao.titulo || TITULO_UNICO}
+                </p>
+                <textarea
+                  value={secao.conteudo}
+                  onChange={(e) =>
+                    setSecoes((atual) =>
+                      atual
+                        ? atual.map((s, j) =>
+                            j === i ? { ...s, conteudo: e.target.value } : s,
+                          )
+                        : atual,
+                    )
+                  }
+                  rows={Math.min(20, Math.max(4, secao.conteudo.split('\n').length + 2))}
+                  className="w-full rounded-2xl border border-pp-ink/15 bg-white px-4 py-3 text-sm leading-[1.7] text-pp-ink resize-y"
+                />
+              </div>
+            ))}
+
+            {erroEdicao && (
+              <p role="alert" className="text-sm text-pp-ink">
+                {erroEdicao}
+              </p>
+            )}
+
+            <p className="text-xs text-pp-ink-soft">
+              O aviso profissional obrigatório é mantido automaticamente ao final
+              do relatório e não pode ser editado.
+            </p>
+          </section>
+        )}
+
+        {salvo && !editando && (
+          <output className="block text-sm text-pp-ink-soft print:hidden">
+            Alterações salvas.
+          </output>
+        )}
+
+        <section
+          className={[
+            'text-[15px] leading-[1.7] text-pp-ink break-words print:text-[11.5pt] print:leading-[1.55]',
+            // Em edição a leitura some da tela, mas continua montada: é ela
+            // que o print usaria, e ter duas versões visíveis do mesmo texto
+            // deixaria ambíguo qual está valendo.
+            editando ? 'hidden' : '',
+          ].join(' ')}
+        >
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
@@ -525,7 +693,7 @@ export function RelatorioDocumentClient({
             perfil sustenta. A clínica não se repete aqui — ela já abre o
             documento, e repetir viraria ruído em página curta. */}
         {(identidade.nome || identidade.credenciamento) && (
-          <footer className="border-t border-pp-hairline pt-6 space-y-0.5 print:break-inside-avoid">
+          <footer className="pp-professional-footer border-t border-pp-hairline pt-6 space-y-0.5 print:break-inside-avoid">
             {identidade.nome && (
               <p className="text-pp-ink text-sm font-medium">{identidade.nome}</p>
             )}

@@ -362,4 +362,17 @@
     orphans: 2;
     widows: 2;
   }
+
+  /* A identificação profissional saía sozinha numa terceira página quando a
+     segunda terminava com o aviso ético e faltavam poucos milímetros. O
+     bloco continua indivisível — ele é pequeno e não deve ser partido —, mas
+     no papel perde a folga de tela que o empurrava para fora.
+
+     São milímetros, de propósito: comprimir o documento inteiro para caber
+     em duas páginas seria resolver o sintoma estragando a leitura. Relatório
+     que ocupa três páginas de conteúdo continua ocupando três. */
+  body.pp-print-document .pp-doc .pp-professional-footer {
+    margin-top: 2mm;
+    padding-top: 3mm;
+  }
 }
