@@ -291,7 +291,8 @@ export function CorrigeFacilReportPanel({
     }
   }
 
-  const actionLabel = reports.length > 0 ? 'Gerar outro relatório' : 'Gerar relatório';
+  const actionLabel =
+    reports.length > 0 ? 'Gerar outro relatório completo' : 'Gerar relatório completo';
 
   return (
     <section className="space-y-5">
@@ -338,32 +339,63 @@ export function CorrigeFacilReportPanel({
         <output className="block text-sm text-pp-ink-soft print:hidden">Carregando relatórios…</output>
       )}
 
-      <div className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-4 print:hidden">
-        <div className="space-y-1">
-          <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">Relatório Pró</p>
-          <p className="text-pp-ink text-base font-medium">
-            Transforme este resultado em um relatório profissional.
+      {/* O card de oferta. Ele fica DEPOIS do resultado (quem posiciona são
+          AvaliarClient e DetalheClient) porque a promessa só faz sentido
+          quando já existe um resultado na tela para transformar.
+
+          A hierarquia é eyebrow → título → o que o relatório entrega → para
+          quem serve → CTA → microcopy do CTA. Nenhuma promessa fora do fluxo
+          implementado: o que está escrito aqui é exatamente o que o
+          documento canônico faz (gerar, revisar, editar, imprimir/PDF). */}
+      <div className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 sm:p-7 space-y-5 print:hidden">
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+            Relatórios Pro
+          </p>
+          <h2 className="text-pp-ink text-lg sm:text-xl font-medium leading-snug">
+            Transforme esta avaliação em um relatório profissional.
+          </h2>
+          <p className="text-pp-ink text-sm leading-relaxed max-w-prose">
+            Gere um relatório completo a partir deste resultado, com análise
+            organizada, considerações para o contexto e recomendações prontas
+            para revisar, editar e salvar.
+          </p>
+          <p className="text-pp-ink-soft text-xs leading-relaxed">
+            Ideal para escola, família, equipe multiprofissional ou registro
+            interno.
           </p>
           {access === 'active' && monthlyCount !== null && (
-            <p className="text-xs text-pp-ink-soft tabular-nums">
+            <p className="text-xs text-pp-ink-soft tabular-nums pt-1">
               {monthlyCount} de {monthlyLimit} relatórios utilizados neste mês.
             </p>
           )}
         </div>
 
         {access === 'inactive' ? (
-          <div className="space-y-4">
+          /* SEM ACESSO. Mesmo gate e mesmo checkout de antes — só o rótulo e
+             a microcopy mudaram. O plano continua sendo exibido como está
+             cadastrado: esta etapa não decide preço. */
+          <div className="space-y-3">
             <p className="text-sm text-pp-ink-soft">
               50 relatórios por mês durante 12 meses · R$57 — pagamento único.
             </p>
-            <button
-              type="button"
-              onClick={goToCheckout}
-              disabled={preparingCheckout}
-              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-50"
-            >
-              {preparingCheckout ? 'Salvando avaliação…' : 'Liberar Relatório Pró'}
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                onClick={goToCheckout}
+                disabled={preparingCheckout}
+                className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-50"
+              >
+                {preparingCheckout ? 'Salvando avaliação…' : 'Desbloquear Relatórios Pro'}
+              </button>
+              {/* "Assine" sugeriria recorrência num produto de pagamento
+                  único, e o nome do produto já é o do eyebrow — não se
+                  introduz um segundo nome comercial aqui. */}
+              <p className="text-xs text-pp-ink-soft">
+                Tenha acesso aos Relatórios Pro e gere relatórios completos com
+                base nesta avaliação.
+              </p>
+            </div>
           </div>
         ) : composerOpen && access === 'active' ? (
           <div className="space-y-4">
@@ -437,15 +469,24 @@ export function CorrigeFacilReportPanel({
             </div>
           </div>
         ) : (
-          <button
-            type="button"
-            onClick={openGenerator}
-            disabled={access === 'checking'}
-            className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-50"
-          >
-            <Sparkles className="w-4 h-4" aria-hidden="true" />
-            {access === 'checking' ? 'Salvando e verificando acesso…' : actionLabel}
-          </button>
+          /* COM ACESSO (e também o estado inicial, antes de o gate responder).
+             Mesmo `openGenerator` de sempre: ele salva a avaliação, consulta o
+             endpoint único de acesso e abre o compositor. Não há fluxo
+             paralelo de geração. */
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={openGenerator}
+              disabled={access === 'checking'}
+              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition disabled:opacity-50"
+            >
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+              {access === 'checking' ? 'Salvando e verificando acesso…' : actionLabel}
+            </button>
+            <p className="text-xs text-pp-ink-soft">
+              Edite o texto antes de imprimir ou salvar em PDF.
+            </p>
+          </div>
         )}
 
         {message && (
