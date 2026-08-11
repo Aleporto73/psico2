@@ -3,7 +3,6 @@ import {
   DESCRICAO_FALLBACK,
   montarVisaoBloqueada,
   NOME_FALLBACK,
-  PRECO_FALLBACK,
   SLUG_CORRIGEFACIL,
   type ProdutoBloqueado,
 } from '../locked-product';
@@ -11,7 +10,7 @@ import {
 const completo: ProdutoBloqueado = {
   name: 'CorrigeFácil',
   description: 'Correção de instrumentos dentro do sistema.',
-  price: 47,
+  price: 57,
   billing_type: 'one_time',
   checkout_url: 'https://www.payment.eng.br/checkout?product=XPTO&price=ABC',
 };
@@ -28,6 +27,7 @@ describe('tela bloqueada do CorrigeFácil', () => {
     expect(visao.checkoutUrl).toBeNull();
     expect(visao.nome).toBe(NOME_FALLBACK);
     expect(visao.descricao).toBe(DESCRICAO_FALLBACK);
+    expect(visao.precoLabel).toBeNull();
   });
 
   it('9) checkout_url null: sem link de compra, mesmo com o produto cadastrado', () => {
@@ -37,6 +37,7 @@ describe('tela bloqueada do CorrigeFácil', () => {
     expect(visao.checkoutUrl).toBeNull();
     // o produto existe, então nome e preço vêm dele
     expect(visao.nome).toBe('CorrigeFácil');
+    expect(visao.precoLabel).toContain('57');
   });
 
   it('9b) checkout_url em branco conta como ausente', () => {
@@ -52,12 +53,10 @@ describe('tela bloqueada do CorrigeFácil', () => {
     expect(visao.checkoutUrl).toBe(completo.checkout_url);
   });
 
-  it('11) preço real substitui o fallback', () => {
+  it('11) preço exibido vem somente do catálogo', () => {
     expect(montarVisaoBloqueada({ ...completo, price: 97 }).precoLabel).toContain('97');
-    expect(montarVisaoBloqueada({ ...completo, price: null }).precoLabel).toContain(
-      String(PRECO_FALLBACK),
-    );
-    expect(montarVisaoBloqueada(null).precoLabel).toContain(String(PRECO_FALLBACK));
+    expect(montarVisaoBloqueada({ ...completo, price: null }).precoLabel).toBeNull();
+    expect(montarVisaoBloqueada(null).precoLabel).toBeNull();
   });
 
   it('11b) preço zero é preço real, não ausência', () => {
@@ -70,6 +69,7 @@ describe('tela bloqueada do CorrigeFácil', () => {
     // nada que pareça um caminho de compra
     expect(visao.checkoutUrl).toBeNull();
     expect(visao.modoCta).not.toBe('checkout');
+    expect(visao.precoLabel).toBeNull();
     // e nenhum campo carrega access_url disfarçada de checkout
     expect(JSON.stringify(visao)).not.toContain('/app/');
     expect(JSON.stringify(visao)).not.toContain('http');
