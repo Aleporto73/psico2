@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { callOpenAI, OpenAIContentPart, VISION_NOT_SUPPORTED } from '@/lib/openai';
-// A constante saiu daqui para `@/lib/report/ethical-disclaimer`: o editor de
-// narrativa e a RPC de salvamento precisam comparar exatamente o MESMO texto.
-// Nada mudou no comportamento deste arquivo.
-import { AVISO_FINAL } from '@/lib/report/ethical-disclaimer';
+// Relatório NOVO nasce com a nota de responsabilidade profissional. Ela é
+// padrão, não trava: depois de gerado, o editor permite mantê-la,
+// reescrevê-la ou removê-la. Ver `@/lib/report/ethical-disclaimer`.
+import { NOTA_PROFISSIONAL } from '@/lib/report/ethical-disclaimer';
 import { generateCorrigeFacilReport } from '@/lib/corrigefacil/report-generator';
 
 const MONTHLY_LIMIT = 50;
@@ -101,7 +101,7 @@ Para psicólogos: usar "considerações clínicas preliminares" apenas como orga
 
 FECHAMENTO ÉTICO OBRIGATÓRIO:
 Encerre o texto completo com EXATAMENTE este parágrafo (uma única vez, ao final):
-"${AVISO_FINAL}"`;
+"${NOTA_PROFISSIONAL}"`;
 
 type ReportType = 'family' | 'school' | 'technical' | 'internal';
 const REPORT_TYPES: ReadonlySet<ReportType> = new Set([
@@ -248,7 +248,7 @@ export async function POST(request: Request) {
         body,
         currentMonthlyCount: count ?? 0,
         monthlyLimit: MONTHLY_LIMIT,
-        avisoFinal: AVISO_FINAL,
+        avisoFinal: NOTA_PROFISSIONAL,
       });
     }
 
@@ -430,8 +430,8 @@ Gere o rascunho descritivo de apoio conforme as instruções do sistema, adaptan
       );
     }
 
-    if (!generatedText.includes(AVISO_FINAL)) {
-      generatedText = `${generatedText}\n\n${AVISO_FINAL}`;
+    if (!generatedText.includes(NOTA_PROFISSIONAL)) {
+      generatedText = `${generatedText}\n\n${NOTA_PROFISSIONAL}`;
     }
 
     const reportTitle = `${areaClean} — ${nomeClean}`;

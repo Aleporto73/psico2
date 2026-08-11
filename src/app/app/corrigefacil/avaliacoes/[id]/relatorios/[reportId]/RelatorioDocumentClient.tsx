@@ -55,8 +55,9 @@ import {
   parseNarrativa,
   secoesEstruturadasVazias,
   serializarNarrativa,
+  TITULO_NOTA,
   TITULO_UNICO,
-  type SecaoEditavel,
+  type NarrativaEditavel,
 } from '@/lib/report/editable-narrative';
 import { ReportGraphIsland } from './ReportGraphIsland';
 
@@ -164,11 +165,11 @@ export function RelatorioDocumentClient({
   const [nomeInstrumento, setNomeInstrumento] = useState('');
   /** Campos do editor. `null` = fora do modo edição. O documento continua
    *  mostrando o texto PERSISTIDO enquanto isso não for salvo. */
-  const [secoes, setSecoes] = useState<SecaoEditavel[] | null>(null);
+  const [rascunho, setRascunho] = useState<NarrativaEditavel | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erroEdicao, setErroEdicao] = useState<string | null>(null);
   const [salvo, setSalvo] = useState(false);
-  const editando = secoes !== null;
+  const editando = rascunho !== null;
 
   const carregar = useCallback(
     async (signal: AbortSignal) => {
@@ -245,20 +246,23 @@ export function RelatorioDocumentClient({
    *
    *  Vai por RPC e não por `.update()`: `ai_reports` não tem policy de
    *  UPDATE de usuário, e criar uma destrancaria a linha inteira. A função
-   *  toca uma coluna só e reanexa o aviso ético no próprio banco. */
+   *  toca uma coluna só e grava exatamente o texto enviado. */
   async function salvarEdicao(reportIdAtual: string) {
-    if (!secoes || salvando) return;
+    if (!rascunho || salvando) return;
 
     // Seção estruturada vazia seria apagada na serialização — e com ela o
     // heading, que a tela mantém travado. Em vez de gravar título órfão ou
     // remover a seção em silêncio, recusa-se o salvamento: o texto das
     // outras seções continua intacto na tela.
-    if (secoesEstruturadasVazias(secoes).length > 0) {
+    //
+    // A NOTA não entra nesta validação: ela é opcional, e apagá-la é uma
+    // decisão legítima de quem assina o documento.
+    if (secoesEstruturadasVazias(rascunho.secoes).length > 0) {
       setErroEdicao('Preencha o conteúdo de todas as seções antes de salvar.');
       return;
     }
 
-    if (narrativaVazia(secoes)) {
+    if (narrativaVazia(rascunho.secoes)) {
       setErroEdicao('O relatório não pode ficar sem texto.');
       return;
     }
@@ -272,8 +276,9 @@ export function RelatorioDocumentClient({
         {
           report_uuid: reportIdAtual,
           assessment_uuid: assessmentId,
-          // SEM aviso: quem o acrescenta é a RPC.
-          new_narrative: serializarNarrativa(secoes),
+          // Texto FINAL, com a nota se o profissional a manteve e sem ela se
+          // apagou. Nada é reanexado depois — nem aqui, nem no banco.
+          new_narrative: serializarNarrativa(rascunho.secoes, rascunho.notaFinal),
         },
       );
 
@@ -297,7 +302,7 @@ export function RelatorioDocumentClient({
             }
           : atual,
       );
-      setSecoes(null);
+      setRascunho(null);
       setSalvo(true);
       window.setTimeout(() => setSalvo(false), 2500);
     } finally {
@@ -324,7 +329,7 @@ export function RelatorioDocumentClient({
             type="button"
             onClick={() => {
               setErroEdicao(null);
-              setSecoes(parseNarrativa(estado.dados.relatorio.output_text));
+              setRascunho(parseNarrativa(estado.dados.relatorio.output_text));
             }}
             className="inline-flex items-center gap-2 rounded-pill border border-pp-ink/15 px-5 py-2.5 text-sm text-pp-ink hover:border-pp-ink/40 transition"
           >
@@ -366,7 +371,7 @@ export function RelatorioDocumentClient({
           <button
             type="button"
             onClick={() => {
-              setSecoes(null);
+              setRascunho(null);
               setErroEdicao(null);
             }}
             disabled={salvando}
@@ -600,15 +605,15 @@ export function RelatorioDocumentClient({
             narrativa inteira produziria folhas quase vazias. As guardas de
             órfã/viúva e de título ficam em globals.css, no nível certo. */}
         {editando && (
-          // O EDITOR. Títulos travados, conteúdo editável, e o aviso ético
-          // fora daqui — `parseNarrativa` já o retirou, e a RPC o reanexa ao
-          // salvar. `print:hidden` porque texto não salvo não vai ao papel.
+          // O EDITOR. Títulos travados, conteúdo editável, e a nota final num
+          // campo próprio — opcional, porque quem assina o documento é o
+          // profissional. `print:hidden` porque texto não salvo não vai ao papel.
           <section className="space-y-5 print:hidden">
             <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
               Revisando a redação — os resultados, a tabela e o gráfico não mudam
             </p>
 
-            {secoes.map((secao, i) => (
+            {rascunho.secoes.map((secao, i) => (
               <div key={secao.titulo || `secao-${i}`} className="space-y-1.5">
                 <p className="text-pp-ink text-sm font-medium">
                   {secao.titulo || TITULO_UNICO}
@@ -616,11 +621,14 @@ export function RelatorioDocumentClient({
                 <textarea
                   value={secao.conteudo}
                   onChange={(e) =>
-                    setSecoes((atual) =>
+                    setRascunho((atual) =>
                       atual
-                        ? atual.map((s, j) =>
-                            j === i ? { ...s, conteudo: e.target.value } : s,
-                          )
+                        ? {
+                            ...atual,
+                            secoes: atual.secoes.map((s, j) =>
+                              j === i ? { ...s, conteudo: e.target.value } : s,
+                            ),
+                          }
                         : atual,
                     )
                   }
@@ -630,16 +638,32 @@ export function RelatorioDocumentClient({
               </div>
             ))}
 
+            {/* A NOTA. Vem preenchida quando o relatório tem uma — inclusive a
+                antiga, de relatórios anteriores a esta mudança. Pode ser
+                mantida, reescrita ou apagada, e apagar não impede salvar. */}
+            <div className="space-y-1.5 border-t border-pp-hairline pt-5">
+              <p className="text-pp-ink text-sm font-medium">{TITULO_NOTA}</p>
+              <textarea
+                value={rascunho.notaFinal}
+                onChange={(e) =>
+                  setRascunho((atual) =>
+                    atual ? { ...atual, notaFinal: e.target.value } : atual,
+                  )
+                }
+                rows={4}
+                className="w-full rounded-2xl border border-pp-ink/15 bg-white px-4 py-3 text-sm leading-[1.7] text-pp-ink resize-y"
+              />
+              <p className="text-xs text-pp-ink-soft">
+                Texto sugerido para fechar o documento. Você pode ajustá-lo ou
+                deixá-lo em branco — o relatório é de sua responsabilidade.
+              </p>
+            </div>
+
             {erroEdicao && (
               <p role="alert" className="text-sm text-pp-ink">
                 {erroEdicao}
               </p>
             )}
-
-            <p className="text-xs text-pp-ink-soft">
-              O aviso profissional obrigatório é mantido automaticamente ao final
-              do relatório e não pode ser editado.
-            </p>
           </section>
         )}
 
