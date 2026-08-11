@@ -10,17 +10,18 @@
 //
 // DUAS REGRAS QUE ATRAVESSAM O ARQUIVO
 //
-// 1. O AVISO ÉTICO NUNCA ENTRA NA ÁREA EDITÁVEL. Ele é retirado na leitura
-//    e NÃO é devolvido na serialização — quem o reanexa é a RPC, no banco.
-//    Deixá-lo num textarea seria convidar a apagá-lo ou reescrevê-lo.
+// 1. A NOTA FINAL É EDITÁVEL E OPCIONAL. Ela sai do corpo da narrativa para
+//    um campo próprio, vem preenchida quando existe e pode ser reescrita ou
+//    apagada. Nada a reanexa por conta própria — nem aqui, nem no banco.
+//    Quem assina o documento é o profissional.
 //
 // 2. NADA DE CONVERTER RELATÓRIO ANTIGO. Um relatório com quatro seções
-//    continua com quatro; um sem estrutura nenhuma vira um campo único.
-//    Editar não é regenerar, e o editor não tem opinião sobre a estrutura
-//    que a IA produziu na época.
+//    continua com quatro; um sem estrutura nenhuma vira um campo único; e a
+//    nota antiga é oferecida COMO ESTÁ, sem reescrita automática. Editar não
+//    é regenerar.
 // =====================================================================
 
-import { AVISO_FINAL } from './ethical-disclaimer';
+import { NOTAS_RECONHECIDAS } from './ethical-disclaimer';
 
 /** Uma seção editável. `titulo` vazio = relatório sem estrutura
  *  reconhecível, e o campo é único. */
@@ -31,19 +32,43 @@ export type SecaoEditavel = {
   conteudo: string;
 };
 
+/** O relatório aberto no editor: corpo em seções + nota final separada. */
+export type NarrativaEditavel = {
+  secoes: SecaoEditavel[];
+  /** Vazia quando o relatório não tem nota — estado legítimo. */
+  notaFinal: string;
+};
+
 /** Rótulo do campo único quando não há heading algum. */
 export const TITULO_UNICO = 'Texto do relatório';
 
-/** Retira o aviso do fim do texto, para que ele nunca chegue ao editor.
+/** Rótulo do campo da nota. */
+export const TITULO_NOTA = 'Nota de responsabilidade profissional (opcional)';
+
+/** Separa a nota final do corpo, reconhecendo as formas conhecidas.
  *
- *  Compara pelo texto exato da constante compartilhada — não por regex nem
- *  por "último parágrafo": o último parágrafo de um relatório editado pode
- *  ser qualquer coisa, e cortá-lo às cegas apagaria conteúdo do
- *  profissional. */
-export function removerAviso(texto: string): string {
-  const i = texto.lastIndexOf(AVISO_FINAL);
-  if (i === -1) return texto.trimEnd();
-  return texto.slice(0, i).trimEnd();
+ *  Compara pelo texto exato das constantes — não por regex nem por "último
+ *  parágrafo": o último parágrafo de um relatório já editado pode ser
+ *  qualquer coisa, e cortá-lo às cegas apagaria conteúdo do profissional.
+ *
+ *  Nota não reconhecida — porque o profissional a reescreveu — fica no corpo
+ *  e continua editável lá. Preferimos isso a adivinhar. */
+export function separarNotaFinal(texto: string): {
+  corpo: string;
+  nota: string;
+} {
+  const limpo = (texto ?? '').trimEnd();
+
+  for (const nota of NOTAS_RECONHECIDAS) {
+    const i = limpo.lastIndexOf(nota);
+    // só conta se estiver realmente no FIM: um texto que a cite no meio não
+    // está fechando com ela
+    if (i !== -1 && limpo.slice(i).trim() === nota) {
+      return { corpo: limpo.slice(0, i).trimEnd(), nota };
+    }
+  }
+
+  return { corpo: limpo, nota: '' };
 }
 
 /** Markdown salvo -> campos do editor.
@@ -51,9 +76,9 @@ export function removerAviso(texto: string): string {
  *  Só `##` conta como divisor. `#` e `###` continuam sendo conteúdo: o
  *  contrato do prompt usa `##`, e promover outros níveis a seção quebraria
  *  relatórios que usam `###` como subtítulo interno. */
-export function parseNarrativa(outputText: string): SecaoEditavel[] {
-  const semAviso = removerAviso(outputText ?? '');
-  const linhas = semAviso.split('\n');
+export function parseNarrativa(outputText: string): NarrativaEditavel {
+  const { corpo, nota } = separarNotaFinal(outputText ?? '');
+  const linhas = corpo.split('\n');
 
   const secoes: SecaoEditavel[] = [];
   let atual: SecaoEditavel | null = null;
@@ -76,7 +101,7 @@ export function parseNarrativa(outputText: string): SecaoEditavel[] {
 
   // Sem nenhum heading: campo único, com o texto inteiro.
   if (secoes.length === 0) {
-    return [{ titulo: '', conteudo: semAviso.trim() }];
+    return { secoes: [{ titulo: '', conteudo: corpo.trim() }], notaFinal: nota };
   }
 
   for (const s of secoes) s.conteudo = s.conteudo.trim();
@@ -87,21 +112,28 @@ export function parseNarrativa(outputText: string): SecaoEditavel[] {
   const antes = preambulo.join('\n').trim();
   if (antes) secoes.unshift({ titulo: '', conteudo: antes });
 
-  return secoes;
+  return { secoes, notaFinal: nota };
 }
 
-/** Campos do editor -> Markdown, SEM o aviso.
+/** Campos do editor -> Markdown.
  *
  *  Preserva os headings que existiam: não acrescenta, não renomeia, não
  *  reordena.
+ *
+ *  A NOTA entra só se o profissional a deixou preenchida. Nota apagada é
+ *  decisão dele, não erro a corrigir: nada a reintroduz aqui, e nada a
+ *  reintroduz no banco.
  *
  *  Seção estruturada sem conteúdo NÃO chega aqui pelo caminho de
  *  salvamento: `secoesEstruturadasVazias` barra antes. O descarte abaixo
  *  existe só para nunca emitir um título órfão sobre nada — não é
  *  autorização para apagar seção. Não trocar por `## Título\n` vazio: isso
  *  gravaria heading solto no documento. Quem impede a perda é o validador. */
-export function serializarNarrativa(secoes: SecaoEditavel[]): string {
-  return secoes
+export function serializarNarrativa(
+  secoes: SecaoEditavel[],
+  notaFinal = '',
+): string {
+  const corpo = secoes
     .map((s) => {
       const conteudo = s.conteudo.trim();
       if (!s.titulo) return conteudo;
@@ -111,10 +143,14 @@ export function serializarNarrativa(secoes: SecaoEditavel[]): string {
     .filter(Boolean)
     .join('\n\n')
     .trim();
+
+  const nota = notaFinal.trim();
+  if (!nota) return corpo;
+  return corpo ? `${corpo}\n\n${nota}` : nota;
 }
 
-/** Há algo a salvar? Serialização vazia significaria apagar a narrativa
- *  inteira e deixar o documento só com o aviso. */
+/** Há algo a salvar no CORPO? A nota não conta: um relatório que só tivesse
+ *  a nota de responsabilidade não seria um relatório. */
 export function narrativaVazia(secoes: SecaoEditavel[]): boolean {
   return serializarNarrativa(secoes) === '';
 }

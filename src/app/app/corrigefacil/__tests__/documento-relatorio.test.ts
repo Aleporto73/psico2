@@ -574,7 +574,7 @@ describe('documento — edição da narrativa (Bloco 9B)', () => {
 
   it('usa o parser compartilhado, sem textarea de Markdown bruto', () => {
     expect(documento).toContain('parseNarrativa(estado.dados.relatorio.output_text)');
-    expect(documento).toContain('serializarNarrativa(secoes)');
+    expect(documento).toContain('serializarNarrativa(rascunho.secoes, rascunho.notaFinal)');
     expect(documento).toContain('{secao.titulo || TITULO_UNICO}');
   });
 
@@ -594,9 +594,14 @@ describe('documento — edição da narrativa (Bloco 9B)', () => {
     expect(documentoCodigo).not.toContain('.insert(');
   });
 
-  it('a narrativa enviada vai SEM o aviso ético', () => {
-    expect(documentoCodigo).toContain('new_narrative: serializarNarrativa(secoes)');
-    expect(documentoCodigo).not.toContain('AVISO_FINAL');
+  // A nota vai JUNTO com o corpo — se o profissional a manteve. Não há mais
+  // reanexo automático, nem aqui nem no banco.
+  it('a narrativa enviada é exatamente o que fica gravado', () => {
+    expect(documentoCodigo).toContain(
+      'new_narrative: serializarNarrativa(rascunho.secoes, rascunho.notaFinal)',
+    );
+    expect(documentoCodigo).not.toContain('NOTA_PROFISSIONAL');
+    expect(documentoCodigo).not.toContain('NOTA_LEGADA');
   });
 
   // Perder a revisão digitada por causa de uma falha de rede seria o pior
@@ -609,7 +614,7 @@ describe('documento — edição da narrativa (Bloco 9B)', () => {
     expect(salvar).toContain('setErroEdicao(');
     expect(salvar).toContain('return;');
     // só limpa os campos no caminho de sucesso
-    expect(salvar.indexOf('setSecoes(null)')).toBeGreaterThan(
+    expect(salvar.indexOf('setRascunho(null)')).toBeGreaterThan(
       salvar.indexOf('setErroEdicao('),
     );
   });
@@ -621,7 +626,7 @@ describe('documento — edição da narrativa (Bloco 9B)', () => {
       documentoCodigo.indexOf('async function salvarEdicao'),
       documentoCodigo.indexOf('const barra ='),
     );
-    expect(salvar).toContain('secoesEstruturadasVazias(secoes).length > 0');
+    expect(salvar).toContain('secoesEstruturadasVazias(rascunho.secoes).length > 0');
     expect(salvar).toContain(
       "'Preencha o conteúdo de todas as seções antes de salvar.'",
     );
@@ -630,16 +635,70 @@ describe('documento — edição da narrativa (Bloco 9B)', () => {
       salvar.indexOf('supabase.rpc('),
     );
     expect(salvar.indexOf('secoesEstruturadasVazias')).toBeLessThan(
-      salvar.indexOf('setSecoes(null)'),
+      salvar.indexOf('setRascunho(null)'),
     );
+    // a NOTA fica fora dessa validação: apagá-la é decisão legítima
+    expect(salvar).not.toContain('notaFinal.trim() === ');
+    expect(salvar).not.toContain('nota obrigat');
   });
 
   it('cancelar descarta sem tocar no banco', () => {
-    expect(documento).toContain('setSecoes(null);');
+    expect(documento).toContain('setRascunho(null);');
     expect(documentoCodigo).not.toContain('autosave');
   });
 
+  // ── HOTFIX: nota final editável e opcional ──────────────────────────
+  it('a nota final tem campo próprio, marcado como opcional', () => {
+    expect(documento).toContain('{TITULO_NOTA}');
+    expect(documento).toContain('value={rascunho.notaFinal}');
+    expect(documento).toContain('notaFinal: e.target.value');
+    expect(documento).toContain('deixá-lo em branco');
+  });
+
+  it('sumiu a promessa de que a nota é obrigatória e imutável', () => {
+    expect(documento).not.toContain('não pode ser editado');
+    expect(documento).not.toContain('mantido automaticamente');
+  });
+
+  it('o documento não reintroduz nota nenhuma por conta própria', () => {
+    expect(documentoCodigo).not.toContain('ethical-disclaimer');
+    expect(documentoCodigo).not.toContain('rascunho de apoio operacional');
+  });
+});
+
+describe('nota de responsabilidade — texto padrão', () => {
+  const constantes = source('src/lib/report/ethical-disclaimer.ts');
+  const rota = source('src/app/api/assistant/generate/route.ts');
+
+  it('a nota padrão não desqualifica o documento', () => {
+    const nova = constantes.slice(
+      constantes.indexOf('export const NOTA_PROFISSIONAL'),
+      constantes.indexOf('export const NOTA_LEGADA'),
+    );
+    expect(nova).toContain('Nota de responsabilidade profissional');
+    expect(nova.toLowerCase()).not.toContain('rascunho');
+    expect(nova.toLowerCase()).not.toContain('apoio operacional');
+    expect(nova.toLowerCase()).not.toContain('não substitui');
+  });
+
+  // A legada existe só para o editor RECONHECER relatórios antigos.
+  it('a nota legada é preservada apenas para reconhecimento', () => {
+    expect(constantes).toContain('export const NOTA_LEGADA');
+    expect(constantes).toContain('rascunho de apoio operacional');
+    expect(constantes).toContain('NOTAS_RECONHECIDAS');
+  });
+
+  it('relatório NOVO nasce com a nota padrão', () => {
+    expect(rota).toContain("import { NOTA_PROFISSIONAL } from '@/lib/report/ethical-disclaimer'");
+    expect(rota).toContain('avisoFinal: NOTA_PROFISSIONAL');
+    expect(rota).not.toContain('AVISO_FINAL');
+  });
+
   it('não há versionamento', () => {
+    const rpc = source(
+      'supabase/migrations/20260811114000_corrigefacil_optional_professional_note.sql',
+    ).toLowerCase();
+
     for (const proibido of [
       'report_versions',
       'original_ai_text',
@@ -648,14 +707,16 @@ describe('documento — edição da narrativa (Bloco 9B)', () => {
       'snapshot',
     ]) {
       expect(documentoCodigo.toLowerCase(), proibido).not.toContain(proibido);
-      expect(migration.toLowerCase(), proibido).not.toContain(proibido);
+      expect(rpc, proibido).not.toContain(proibido);
     }
   });
 });
 
 describe('RPC de edição — superfície estreita', () => {
+  // A versão VIGENTE da função. A migration de 20260810213000 fica no
+  // histórico como o que de fato foi aplicado, e não é reescrita.
   const migration = source(
-    'supabase/migrations/20260810213000_corrigefacil_report_text_rpc.sql',
+    'supabase/migrations/20260811114000_corrigefacil_optional_professional_note.sql',
   );
 
   it('é SECURITY DEFINER com search_path fixo', () => {
@@ -703,11 +764,21 @@ describe('RPC de edição — superfície estreita', () => {
 
   // Se dependesse do frontend, uma chamada direta salvaria relatório
   // profissional sem a ressalva obrigatória.
-  it('o aviso ético é reanexado pelo próprio banco, sem duplicar', () => {
-    expect(migration).toContain('rascunho de apoio operacional');
-    expect(migration).toContain("v_final := v_narrativa || E'\\n\\n' || v_aviso");
-    expect(migration).toContain('position(v_aviso in v_narrativa) > 0');
-    expect(migration).toContain('return v_final');
+  // HOTFIX: a RPC deixou de reanexar. Quem decide o fechamento do documento
+  // é quem o assina — uma função que reinjeta texto contra a vontade do
+  // autor não protege ninguém.
+  it('a RPC grava exatamente o texto recebido, sem reanexar nada', () => {
+    const nova = source(
+      'supabase/migrations/20260811114000_corrigefacil_optional_professional_note.sql',
+    );
+    expect(nova).toContain('create or replace function public.update_corrigefacil_report_text');
+    expect(nova).toContain('v_final := btrim(coalesce(new_narrative');
+    expect(nova).toContain('return v_final');
+    // nada de aviso embutido, concatenação ou deduplicação
+    expect(nova).not.toContain('v_aviso');
+    expect(nova).not.toContain('rascunho de apoio operacional');
+    expect(nova).not.toContain('Nota de responsabilidade profissional:');
+    expect(nova).not.toContain('position(');
   });
 
   // Policy de UPDATE destrancaria a linha inteira, não só o texto.
