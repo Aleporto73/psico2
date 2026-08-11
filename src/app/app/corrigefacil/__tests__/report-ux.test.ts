@@ -102,6 +102,8 @@ function frases(fonte: string): string {
 
 const panelCodigo = semComentarios(panel);
 const panelTexto = frases(panel);
+/** O que de fato chega à tela: sem comentário e sem quebra de linha. */
+const panelCodigoTexto = frases(panelCodigo);
 
 describe('CorrigeFácil → card dos Relatórios Pro', () => {
   it('tem eyebrow, título, texto e linha de apoio na ordem da hierarquia', () => {
@@ -153,19 +155,30 @@ describe('CorrigeFácil → card dos Relatórios Pro', () => {
     expect(micro).toBeGreaterThan(botao);
   });
 
-  it('sem acesso: CTA de desbloqueio e microcopy de assinatura', () => {
+  it('sem acesso: CTA de desbloqueio e microcopy de acesso', () => {
     expect(panelTexto).toContain('Desbloquear Relatórios Pro');
     expect(panelTexto).toContain(
-      'Assine o PsicoPro para gerar relatórios completos com base nesta avaliação.',
+      'Tenha acesso aos Relatórios Pro e gere relatórios completos com base ' +
+        'nesta avaliação.',
     );
     const botao = panelTexto.indexOf('onClick={goToCheckout}');
     const micro = panelTexto.indexOf(
-      'Assine o PsicoPro para gerar relatórios completos',
+      'Tenha acesso aos Relatórios Pro e gere relatórios completos',
     );
     expect(botao).toBeGreaterThan(-1);
     expect(micro).toBeGreaterThan(botao);
     // e o desbloqueio só aparece quando o gate disse que não há acesso
     expect(panel).toContain("{access === 'inactive' ? (");
+  });
+
+  // O produto é pagamento único: "assine" prometeria recorrência. E o card
+  // usa UM nome comercial só, o do eyebrow.
+  it('a microcopy sem acesso não fala em assinatura nem cria um segundo nome', () => {
+    // texto que chega à tela, não o comentário que explica a decisão
+    expect(panelCodigoTexto).not.toContain('PsicoPro');
+    expect(panelCodigoTexto).not.toContain('Assine');
+    expect(panelCodigoTexto.toLowerCase()).not.toContain('assinatura');
+    expect(panelCodigoTexto.toLowerCase()).not.toContain('mensalidade');
   });
 
   it('o botão continua no fluxo existente, sem caminho paralelo', () => {

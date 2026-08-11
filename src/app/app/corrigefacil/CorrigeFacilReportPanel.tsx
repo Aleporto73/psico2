@@ -388,9 +388,12 @@ export function CorrigeFacilReportPanel({
               >
                 {preparingCheckout ? 'Salvando avaliação…' : 'Desbloquear Relatórios Pro'}
               </button>
+              {/* "Assine" sugeriria recorrência num produto de pagamento
+                  único, e o nome do produto já é o do eyebrow — não se
+                  introduz um segundo nome comercial aqui. */}
               <p className="text-xs text-pp-ink-soft">
-                Assine o PsicoPro para gerar relatórios completos com base nesta
-                avaliação.
+                Tenha acesso aos Relatórios Pro e gere relatórios completos com
+                base nesta avaliação.
               </p>
             </div>
           </div>
