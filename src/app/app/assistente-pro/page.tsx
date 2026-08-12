@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Lock, Check, TriangleAlert, X, Sparkles, ImagePlus, Plus, Trash2, Zap, History, Shield, SquarePen } from 'lucide-react';
+import { Lock, Check, TriangleAlert, X, Sparkles, ImagePlus, Plus, Trash2, Zap, History, ChartColumn, SquarePen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Link from 'next/link';
+import { temAcessoCorrigeFacil, type ClienteDeAcesso } from '../corrigefacil/access';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
 
@@ -53,6 +54,43 @@ const MAX_IMAGES = 4;
 const MAX_NOTES_CHARS = 6000;
 const ALLOWED_IMAGE_MIME = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
 const CHECKOUT_URL_IA_PRO = 'https://www.payment.eng.br/checkout?product=MCGNKAAY&price=74F2T5WL';
+
+/** Rota interna do CorrigeFácil — a mesma do menu e da página de produtos.
+ *  Cross-sell: o CTA secundário só aponta para lá. Nenhum checkout do
+ *  CorrigeFácil é reimplementado aqui, e nenhuma compra é combinada. */
+const ROTA_CORRIGEFACIL = '/app/corrigefacil';
+
+/** Copy que MUDA conforme o usuário já tenha direito ao CorrigeFácil.
+ *
+ *  O CorrigeFácil está em FASE DE TESTES: quem não tem o direito não o vê no
+ *  menu, e esta página não pode virar a porta dos fundos dessa decisão. Por
+ *  isso o produto não é apenas escondido do CTA — ele não é NOMEADO para
+ *  quem não tem acesso. Citar o nome aqui já seria descoberta.
+ *
+ *  Quem TEM acesso vê a comunicação integrada inteira: para essa pessoa o
+ *  fluxo conjunto é real e útil, e o CTA leva a uma ferramenta que ela já
+ *  possui — daí "Abrir", não "Conhecer".
+ *
+ *  A oferta do Relatórios Pró (R$57, 50/mês, 12 meses), a segurança e a
+ *  separação comercial são idênticas nos dois estados. O que muda é só a
+ *  menção ao outro produto. */
+function copyIntegracao(temCorrigeFacil: boolean) {
+  return temCorrigeFacil
+    ? {
+        heroTitulo: 'Relatórios Pró — ideal para quem usa o CorrigeFácil',
+        blocoTitulo: 'Perfeito para os resultados do CorrigeFácil',
+        blocoTexto:
+          'Corrija no CorrigeFácil e transforme o resultado em relatório profissional com o Relatórios Pró. Ideal para aproveitar avaliações já corrigidas, gráficos quando disponíveis e informações já salvas no sistema.',
+        separacao: 'Relatórios Pró é contratado à parte do CorrigeFácil.',
+      }
+    : {
+        heroTitulo: 'Relatórios Pró — pague uma vez, use o ano todo',
+        blocoTitulo: 'Potencialize seus resultados com o Relatórios Pró',
+        blocoTexto:
+          'Transforme resultados e informações já salvas no sistema em relatórios profissionais completos, com mais rapidez e organização.',
+        separacao: 'Relatórios Pró é um produto contratado à parte.',
+      };
+}
 
 const MONTHLY_LIMIT = 50;
 
@@ -303,10 +341,36 @@ export default function AppAssistenteProPage() {
   const [modalReport, setModalReport] = useState<AiReport | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
+  /** Direito ao CorrigeFácil. Começa em `false` de propósito: enquanto a
+   *  resposta não chega, o usuário é tratado como quem NÃO tem — assim o
+   *  caminho para /app/corrigefacil nunca pisca na tela antes do gate
+   *  responder. */
+  const [hasCorrigeFacilAccess, setHasCorrigeFacilAccess] = useState(false);
+
   // ── Fetch Status ──────────────────────────────────────────────────────────
 
   useEffect(() => {
     fetchAssistantStatus();
+  }, []);
+
+  // A REGRA não é reescrita aqui: é o mesmo `temAcessoCorrigeFacil` que o
+  // layout e as rotas do módulo usam, perguntando a mesma função do banco.
+  // Ele já é fail-closed em todos os caminhos; o `.catch` é só a rede.
+  useEffect(() => {
+    let cancelado = false;
+    const cliente = createClient();
+
+    temAcessoCorrigeFacil(cliente as unknown as ClienteDeAcesso)
+      .then((tem) => {
+        if (!cancelado) setHasCorrigeFacilAccess(tem);
+      })
+      .catch(() => {
+        if (!cancelado) setHasCorrigeFacilAccess(false);
+      });
+
+    return () => {
+      cancelado = true;
+    };
   }, []);
 
   const fetchAssistantStatus = async () => {
@@ -559,18 +623,25 @@ export default function AppAssistenteProPage() {
 
   const canAddMoreImages = images.length < MAX_IMAGES;
   const selectedReport = REPORT_TYPE_OPTIONS.find((o) => o.value === form.reportType);
+  const copy = copyIntegracao(hasCorrigeFacilAccess);
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
 
-      {/* Header editorial */}
+      {/* Header editorial.
+          Para quem TEM o CorrigeFácil, ele entra já no título: essa pessoa é
+          exatamente quem tem o que transformar em relatório aqui. É
+          CROSS-SELL, não bundle — os dois continuam sendo compras separadas,
+          e nenhuma linha desta página diz o contrário.
+          Para quem NÃO tem, o título volta ao da oferta anual: o produto em
+          fase de testes não é anunciado. */}
       <header className="space-y-2 pt-4">
-        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">Relatório Pró — pague uma vez, use o ano todo</h1>
+        <h1 className="font-serif italic text-4xl md:text-5xl text-pp-ink leading-tight">{copy.heroTitulo}</h1>
         <p className="text-pp-ink-soft text-base md:text-lg">
-          Não é mensalidade. Você paga R$57 uma única vez e recebe 50 relatórios liberados a cada mês, durante 12 meses.
+          Transforme resultados, gráficos e informações salvas no sistema em relatórios profissionais com muito mais agilidade.
         </p>
         <p className="text-sm text-pp-ink-soft">
-          O Relatório Grátis continua disponível e é excelente. O Pró é para quem precisa de mais volume: vale por 12 meses e depois é só renovar se quiser continuar.
+          Você paga R$57 uma única vez e libera 50 relatórios por mês durante 12 meses — sem mensalidade. O Relatório Grátis continua disponível.
         </p>
       </header>
 
@@ -973,56 +1044,83 @@ export default function AppAssistenteProPage() {
 
       {assistantState === 'blocked' && (
         <div className="bg-pp-block-coral rounded-block p-10 text-center max-w-2xl mx-auto space-y-6">
+          {/* Cadeado saiu: ele vendia por carência ("você está bloqueado").
+              O Sparkles é o mesmo ícone que o menu já usa para este produto,
+              e a caixa passa a vender por benefício e por fluxo. */}
           <div className="w-20 h-20 mx-auto rounded-full bg-pp-ink/5 flex items-center justify-center text-pp-ink">
-            <Lock className="w-10 h-10" aria-hidden="true" />
+            <Sparkles className="w-10 h-10" aria-hidden="true" />
           </div>
           <div className="space-y-3">
-            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">Quando o Grátis não é suficiente</h2>
+            <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink">{copy.blocoTitulo}</h2>
             <p className="text-pp-ink-soft text-base leading-relaxed">
-              O Relatório Grátis é ótimo, mas permite poucos usos por mês. O Relatório Pró libera 50 relatórios todo mês, que renovam durante 12 meses. Um pagamento de{' '}
-              <strong className="font-medium text-pp-ink">R$57</strong>, válido por 12 meses — sem mensalidade, sem plano de IA caro.
-              
+              {copy.blocoTexto}
+            </p>
+            <p className="text-pp-ink-soft text-base leading-relaxed">
+              Por <strong className="font-medium text-pp-ink">R$57</strong>, você libera 50 relatórios por mês durante 12 meses. Todo mês, sua franquia volta para 50.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left pt-2">
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
               <div className="text-pp-ink"><Zap className="w-[22px] h-[22px]" aria-hidden="true" /></div>
-              <strong className="text-pp-ink block text-sm font-medium">50 todo mês</strong>
+              <strong className="text-pp-ink block text-sm font-medium">50 por mês</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                50 relatórios liberados a cada mês. Usou 34? No mês seguinte volta a 50.
+                50 relatórios liberados a cada mês durante 12 meses.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
               <div className="text-pp-ink"><History className="w-[22px] h-[22px]" aria-hidden="true" /></div>
               <strong className="text-pp-ink block text-sm font-medium">Pagamento único</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                R$57 uma vez, pelo ano inteiro. Não é assinatura mensal.
+                Pague uma vez e use ao longo do ano.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
-              <div className="text-pp-ink"><Shield className="w-[22px] h-[22px]" aria-hidden="true" /></div>
-              <strong className="text-pp-ink block text-sm font-medium">100% seguro</strong>
+              <div className="text-pp-ink"><ChartColumn className="w-[22px] h-[22px]" aria-hidden="true" /></div>
+              <strong className="text-pp-ink block text-sm font-medium">Aproveite os resultados</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Dados processados com segurança. Nenhum dado é retido pela IA.
+                Use informações já registradas no sistema para agilizar a montagem.
               </p>
             </div>
             <div className="bg-white border border-pp-hairline rounded-xl p-4 space-y-2">
               <div className="text-pp-ink"><SquarePen className="w-[22px] h-[22px]" aria-hidden="true" /></div>
               <strong className="text-pp-ink block text-sm font-medium">Fica tudo salvo</strong>
               <p className="text-xs text-pp-ink-soft leading-relaxed">
-                Todos os relatórios gerados ficam salvos no sistema e acessíveis quando quiser.
+                Os relatórios ficam registrados e acessíveis quando precisar.
               </p>
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => window.open(CHECKOUT_URL_IA_PRO, '_blank', 'noopener,noreferrer')}
-            className="inline-flex items-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
-          >
-            Pagar R$57 uma vez e liberar
-          </button>
+          {/* CTA principal: o MESMO checkout de sempre, aberto do mesmo jeito.
+              CTA secundário: só existe para quem JÁ tem o CorrigeFácil, e por
+              isso diz "Abrir" — é ferramenta que a pessoa possui, não oferta.
+              Sem o direito, nenhum caminho para /app/corrigefacil é
+              renderizado: a fase de testes continua valendo, e esta página
+              não vira rota de descoberta. */}
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              onClick={() => window.open(CHECKOUT_URL_IA_PRO, '_blank', 'noopener,noreferrer')}
+              className="inline-flex items-center justify-center bg-pp-ink text-pp-canvas px-8 py-3.5 rounded-pill text-base font-medium hover:bg-pp-ink-soft transition"
+            >
+              Quero liberar 50 relatórios por mês
+            </button>
+            {hasCorrigeFacilAccess && (
+              <Link
+                href={ROTA_CORRIGEFACIL}
+                className="inline-flex items-center justify-center border border-pp-ink/25 text-pp-ink px-8 py-3.5 rounded-pill text-base font-medium hover:border-pp-ink/50 transition"
+              >
+                Abrir CorrigeFácil
+              </Link>
+            )}
+          </div>
+
+          {/* A garantia de segurança vinha do card que saiu daqui; ela é fato
+              sobre o produto e não podia sumir junto. A segunda frase é a
+              trava comercial: são duas compras, nunca um pacote. */}
+          <p className="text-xs text-pp-ink-soft leading-relaxed">
+            Dados processados com segurança — nenhum dado é retido pela IA. {copy.separacao}
+          </p>
         </div>
       )}
 
