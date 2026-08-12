@@ -135,20 +135,22 @@ describe('navegação', () => {
     }
   });
 
-  // 40) REVISTO DE NOVO. A versão anterior travava o CONTRÁRIO desta: o item
-  // só aparecia para quem já tinha direito, porque /app/corrigefacil levava
-  // quem não tinha a uma tela sem caminho de compra. Agora a rota tem página
-  // interna de venda, o beco sem saída deixou de existir e o item passa a ser
-  // incondicional, como Relatório Pró e Psico Flow.
-  it('40) o CorrigeFácil aparece no menu sem depender de direito', () => {
-    expect(APPSHELL).toContain("path: '/app/corrigefacil'");
-    // a prop condicional foi embora inteira — nem resquício de assinatura
-    expect(APPSHELL).not.toContain('hasCorrigeFacilAccess');
-    // e o item não voltou para dentro de nenhum spread condicional
-    expect(APPSHELL).not.toMatch(/\.\.\.\([^)]*\?\s*\[\s*\{[^}]*\/app\/corrigefacil/);
+  // 40) O produto está em FASE DE TESTES e o menu volta a ser condicionado ao
+  // direito: quem não tem `has_corrigefacil_access` não vê o item. A página
+  // interna de venda existe e é boa, mas ela é para teste e para a venda
+  // futura — não para descoberta pública ainda. Esta guarda é o que impede
+  // que uma limpeza de código "solte" o item sem decisão comercial.
+  it('40) o CorrigeFácil no menu depende do direito durante a fase de testes', () => {
+    expect(APPSHELL).toContain('hasCorrigeFacilAccess');
+    // o item vive dentro do spread condicional, não solto na lista
+    const semCondicional = APPSHELL.replace(
+      /\.\.\.\(hasCorrigeFacilAccess[\s\S]*?: \[\]\),/g,
+      '',
+    );
+    expect(semCondicional).not.toContain("path: '/app/corrigefacil'");
   });
 
-  it('40a) o item fica em Ferramentas upgrade, depois de Relatório Pró e Flow', () => {
+  it('40a) quando aparece, fica em Ferramentas upgrade depois de Pró e Flow', () => {
     const grupo = APPSHELL.slice(
       APPSHELL.indexOf("label: 'Ferramentas upgrade'"),
       APPSHELL.indexOf('{ separatorBefore: true, items: ['),
@@ -161,27 +163,26 @@ describe('navegação', () => {
     expect(corrige).toBeGreaterThan(flow);
   });
 
-  it('40b) o layout não resolve mais o direito do CorrigeFácil', () => {
-    // A consulta existia SÓ para decidir o menu. Sem essa decisão, ela seria
-    // uma ida ao banco por requisição em todas as rotas de /app, sem leitor.
-    expect(LAYOUT).not.toContain('temAcessoCorrigeFacil');
-    expect(LAYOUT).not.toContain('hasCorrigeFacilAccess');
-    expect(LAYOUT).not.toContain('has_corrigefacil_access');
+  it('40b) o direito vem do helper único, não de regra reescrita no layout', () => {
+    expect(LAYOUT).toContain('temAcessoCorrigeFacil');
+    // nada de consultar compra ou entitlement à mão
     expect(LAYOUT).not.toContain("from('purchases')");
-    // e o que sobrou é a resolução do Doc Studio, que continua tendo leitor
+    expect(LAYOUT).not.toContain('has_corrigefacil_access =');
+    // e o Doc Studio continua sendo resolvido do lado dele
     expect(LAYOUT).toContain('has_doc_studio_access');
   });
 
-  it('40c) o layout continua fail-closed no que ainda resolve', () => {
+  it('40c) o layout é fail-closed: erro não revela o item', () => {
     const captura = LAYOUT.split('catch (err)')[1] ?? '';
+    expect(captura).toContain('hasCorrigeFacilAccess = false');
     expect(captura).toContain('hasDocStudioAccess = false');
     expect(captura).toContain('unstable_rethrow');
   });
 
   it('40d) o gate real de /app/corrigefacil não foi afrouxado', () => {
-    // O menu virou incondicional; a ROTA não. As duas telas que exigem
-    // direito comercial continuam consultando o helper único e caindo na
-    // página de venda quando ele diz não.
+    // Menu é cosmético; a ROTA é o gate. As duas telas que exigem direito
+    // comercial continuam consultando o helper único e caindo na página de
+    // venda quando ele diz não.
     const PAGE = semComentarios(ler('app/app/corrigefacil/page.tsx'));
     const AVALIAR_PAGE = semComentarios(
       ler('app/app/corrigefacil/avaliar/[code]/page.tsx'),
