@@ -129,7 +129,7 @@ type NavGroup = {
   items: NavItem[];
 };
 
-export function AppShell({ children, hasDocStudioAccess, hasCorrigeFacilAccess = false }: Readonly<{ children: React.ReactNode; hasDocStudioAccess: boolean; hasCorrigeFacilAccess?: boolean }>) {
+export function AppShell({ children, hasDocStudioAccess }: Readonly<{ children: React.ReactNode; hasDocStudioAccess: boolean }>) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -153,14 +153,14 @@ export function AppShell({ children, hasDocStudioAccess, hasCorrigeFacilAccess =
     { separatorBefore: true, label: 'Ferramentas upgrade', items: [
       { name: 'Relatório Pró', path: '/app/assistente-pro', icon: <IconSpark />, badge: 'Novo' },
       { name: 'Psico Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
-      // CorrigeFácil aparece SÓ para quem já tem direito. Os vizinhos deste
-      // grupo aparecem para todos porque têm página de venda com checkout; o
-      // produto `corrigefacil` ainda não tem, e um item que leva a "compra
-      // indisponível" é pior que item nenhum. Quando o checkout existir,
-      // basta remover a condição.
-      ...(hasCorrigeFacilAccess
-        ? [{ name: 'CorrigeFácil', path: '/app/corrigefacil', icon: <IconChecklist />, badge: 'Novo' as const }]
-        : []),
+      // Incondicional, como os dois vizinhos: /app/corrigefacil agora tem
+      // página interna de venda para quem ainda não comprou, então o item
+      // nunca leva a beco sem saída. A condição que existia aqui era
+      // cosmética e sumiu junto com a consulta que a alimentava no layout.
+      //
+      // O menu NÃO autoriza nada: o gate real é o Server Component da rota,
+      // que continua fail-closed em `temAcessoCorrigeFacil`.
+      { name: 'CorrigeFácil', path: '/app/corrigefacil', icon: <IconChecklist />, badge: 'Novo' },
     ] },
     { separatorBefore: true, items: [
       { name: 'Produtos', path: '/app/produtos', icon: <IconProducts /> },

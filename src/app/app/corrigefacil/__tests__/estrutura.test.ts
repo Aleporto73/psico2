@@ -135,33 +135,64 @@ describe('navegação', () => {
     }
   });
 
-  // 40) REVISTO. A regra antiga era "o AppShell não conhece o CorrigeFácil",
-  // escrita quando o módulo ainda não estava operacional. Hoje ele está: 21
-  // instrumentos publicados e avaliações sendo salvas em produção. O item
-  // entrou no menu — mas CONDICIONADO ao direito, porque o produto comercial
-  // continua sem checkout e um item que leva a "compra indisponível" é pior
-  // que item nenhum. O que o teste trava agora é a condição.
-  it('40) o CorrigeFácil no menu depende do direito, nunca é incondicional', () => {
-    expect(APPSHELL).toContain('hasCorrigeFacilAccess');
-    // o item vive dentro do spread condicional, não solto na lista
-    const semCondicional = APPSHELL.replace(
-      /\.\.\.\(hasCorrigeFacilAccess[\s\S]*?: \[\]\),/g,
-      '',
+  // 40) REVISTO DE NOVO. A versão anterior travava o CONTRÁRIO desta: o item
+  // só aparecia para quem já tinha direito, porque /app/corrigefacil levava
+  // quem não tinha a uma tela sem caminho de compra. Agora a rota tem página
+  // interna de venda, o beco sem saída deixou de existir e o item passa a ser
+  // incondicional, como Relatório Pró e Psico Flow.
+  it('40) o CorrigeFácil aparece no menu sem depender de direito', () => {
+    expect(APPSHELL).toContain("path: '/app/corrigefacil'");
+    // a prop condicional foi embora inteira — nem resquício de assinatura
+    expect(APPSHELL).not.toContain('hasCorrigeFacilAccess');
+    // e o item não voltou para dentro de nenhum spread condicional
+    expect(APPSHELL).not.toMatch(/\.\.\.\([^)]*\?\s*\[\s*\{[^}]*\/app\/corrigefacil/);
+  });
+
+  it('40a) o item fica em Ferramentas upgrade, depois de Relatório Pró e Flow', () => {
+    const grupo = APPSHELL.slice(
+      APPSHELL.indexOf("label: 'Ferramentas upgrade'"),
+      APPSHELL.indexOf('{ separatorBefore: true, items: ['),
     );
-    expect(semCondicional).not.toContain("path: '/app/corrigefacil'");
+    const pro = grupo.indexOf("path: '/app/assistente-pro'");
+    const flow = grupo.indexOf("path: '/app/flow'");
+    const corrige = grupo.indexOf("path: '/app/corrigefacil'");
+    expect(pro).toBeGreaterThan(-1);
+    expect(flow).toBeGreaterThan(pro);
+    expect(corrige).toBeGreaterThan(flow);
   });
 
-  it('40b) o direito vem do helper único, não de regra reescrita no layout', () => {
-    expect(LAYOUT).toContain('temAcessoCorrigeFacil');
-    // nada de consultar compra ou entitlement à mão
-    expect(LAYOUT).not.toContain("from('purchases')");
+  it('40b) o layout não resolve mais o direito do CorrigeFácil', () => {
+    // A consulta existia SÓ para decidir o menu. Sem essa decisão, ela seria
+    // uma ida ao banco por requisição em todas as rotas de /app, sem leitor.
+    expect(LAYOUT).not.toContain('temAcessoCorrigeFacil');
+    expect(LAYOUT).not.toContain('hasCorrigeFacilAccess');
     expect(LAYOUT).not.toContain('has_corrigefacil_access');
+    expect(LAYOUT).not.toContain("from('purchases')");
+    // e o que sobrou é a resolução do Doc Studio, que continua tendo leitor
+    expect(LAYOUT).toContain('has_doc_studio_access');
   });
 
-  it('40c) o layout é fail-closed: erro não revela o item', () => {
+  it('40c) o layout continua fail-closed no que ainda resolve', () => {
     const captura = LAYOUT.split('catch (err)')[1] ?? '';
-    expect(captura).toContain('hasCorrigeFacilAccess = false');
+    expect(captura).toContain('hasDocStudioAccess = false');
     expect(captura).toContain('unstable_rethrow');
+  });
+
+  it('40d) o gate real de /app/corrigefacil não foi afrouxado', () => {
+    // O menu virou incondicional; a ROTA não. As duas telas que exigem
+    // direito comercial continuam consultando o helper único e caindo na
+    // página de venda quando ele diz não.
+    const PAGE = semComentarios(ler('app/app/corrigefacil/page.tsx'));
+    const AVALIAR_PAGE = semComentarios(
+      ler('app/app/corrigefacil/avaliar/[code]/page.tsx'),
+    );
+    for (const fonte of [PAGE, AVALIAR_PAGE]) {
+      expect(fonte).toContain('temAcessoCorrigeFacil');
+    }
+    expect(PAGE).toContain('if (!temAcesso)');
+    expect(PAGE).toContain('<CorrigeFacilLocked />');
+    // o catálogo funcional segue atrás do gate
+    expect(PAGE).toContain('<CorrigeFacilCatalogClient />');
   });
 });
 
@@ -175,6 +206,137 @@ describe('a tela de venda não promete o que não existe', () => {
     // histórico é rota real; correção no servidor e resultado congelado são
     // comportamento da Edge já implantada.
     expect(LOCKED).toContain('Histórico das aplicações');
+  });
+
+  it('nenhuma promessa de comparação, evolução ou laudo incluído', () => {
+    const texto = LOCKED.toLowerCase();
+    for (const proibido of [
+      'comparação entre aplicações',
+      'compare aplicações',
+      'evolução automática',
+      'evolução do paciente',
+      'laudo incluído',
+      'laudo automático',
+      'diagnóstico',
+    ]) {
+      expect(texto, proibido).not.toContain(proibido);
+    }
+  });
+});
+
+// ── Página INTERNA de venda (/app/corrigefacil sem direito) ────────────
+describe('página interna de venda do CorrigeFácil', () => {
+  const LOCKED_PRODUCT = semComentarios(
+    ler('app/app/corrigefacil/locked-product.ts'),
+  );
+
+  it('lê products_public com as cinco colunas de sempre', () => {
+    expect(LOCKED).toContain("from('products_public')");
+    expect(LOCKED).toContain(
+      "select('name, description, price, billing_type, checkout_url')",
+    );
+    expect(LOCKED).toContain("eq('slug', SLUG_CORRIGEFACIL)");
+    // e nada além da view sanitizada
+    expect(LOCKED).not.toContain('access_url');
+    expect(LOCKED).not.toContain("from('products')");
+    expect(LOCKED).not.toContain('SERVICE_ROLE');
+  });
+
+  it('nenhum preço de CorrigeFácil escrito no componente', () => {
+    // o preço vem de visao.precoLabel, formatado a partir de products_public
+    expect(LOCKED).toContain('visao.precoLabel');
+    expect(LOCKED).not.toMatch(/R\$\s*\d/);
+    expect(LOCKED).not.toContain('57');
+    expect(LOCKED_PRODUCT).not.toMatch(/price:\s*\d/);
+  });
+
+  it('nenhum checkout escrito no componente', () => {
+    expect(LOCKED).toContain('visao.checkoutUrl');
+    expect(LOCKED).not.toContain('payment.eng.br');
+    expect(LOCKED).not.toContain('product=');
+    expect(LOCKED).not.toContain('price=');
+  });
+
+  it('sem checkout_url não existe link de compra, e o botão vira aviso', () => {
+    // o <a> de compra vive DENTRO do ramo que exige checkoutUrl
+    expect(LOCKED).toContain("visao.modoCta === 'checkout' && visao.checkoutUrl ?");
+    expect(LOCKED).toContain('Disponibilização em preparação');
+    // e o href do CTA é a URL do catálogo, não uma constante
+    expect(LOCKED).toContain('href={visao.checkoutUrl}');
+    const links = LOCKED.match(/href=\{?["']?https?:/g) ?? [];
+    expect(links).toHaveLength(0);
+  });
+
+  it('referencia o vídeo e o poster da demonstração', () => {
+    expect(LOCKED).toContain('/videos/corrigefacil-demo.mp4');
+    expect(LOCKED).toContain('/videos/corrigefacil-poster.jpg');
+    // mesmo padrão do Flow: sem autoplay, sem download antecipado
+    expect(LOCKED).toContain('preload="none"');
+    expect(LOCKED).toContain('playsInline');
+    expect(LOCKED).toContain('muted');
+    expect(LOCKED).not.toContain('autoPlay');
+  });
+
+  it('o Relatórios Pro é declarado opcional e à parte, sem preço nem checkout', () => {
+    expect(LOCKED).toContain(
+      'Relatórios Pro é um recurso opcional, contratado à parte.',
+    );
+    // o bloco não pode carregar comércio próprio
+    const bloco = LOCKED.slice(
+      LOCKED.indexOf('Precisa transformar o resultado em um relatório?'),
+      LOCKED.indexOf('O CorrigeFácil calcula e organiza resultados'),
+    );
+    expect(bloco).not.toContain('href=');
+    expect(bloco).not.toContain('precoLabel');
+    expect(bloco).not.toContain('checkout');
+    expect(bloco).not.toContain('incluído no');
+  });
+
+  it('mantém o aviso de responsabilidade profissional', () => {
+    expect(LOCKED).toContain('não substitui a');
+    expect(LOCKED).toContain('avaliação profissional');
+    expect(LOCKED).toContain('responsabilidade pelo documento');
+  });
+
+  it('a vitrine não vira caminho de aplicação', () => {
+    const vitrine = LOCKED.slice(
+      LOCKED.indexOf('Instrumentos disponíveis'),
+      LOCKED.indexOf('Como funciona'),
+    );
+    // badges são <li> de texto: sem Link, sem href, sem rota de aplicação
+    expect(vitrine).not.toContain('<Link');
+    expect(vitrine).not.toContain('href');
+    expect(vitrine).not.toContain('/avaliar/');
+    expect(vitrine).not.toContain('Aplicar');
+    // e a tela inteira não importa Link nem monta rota do módulo
+    expect(LOCKED).not.toContain("from 'next/link'");
+    expect(LOCKED).not.toContain('/app/corrigefacil/avaliar');
+  });
+
+  it('a lista de instrumentos vem da fonte soberana, não de cópia local', () => {
+    expect(LOCKED).toContain("import { CODIGOS_DOS_21 } from './graphs/graph-config'");
+    expect(LOCKED).toContain('ordenarInstrumentos(CODIGOS_DOS_21)');
+    // nenhum código de instrumento escrito à mão no componente
+    for (const codigo of ['BAYLEY-III', 'PHQ-9', 'DASS-21', 'TRILHAS_PRE']) {
+      expect(LOCKED, codigo).not.toContain(`'${codigo}'`);
+    }
+    expect(LOCKED).not.toContain('.slice(0,');
+    expect(LOCKED).not.toContain('entre outros');
+  });
+
+  it('os tons dos badges saem da paleta existente, sem hexadecimal novo', () => {
+    expect(LOCKED).toContain('tomDoInstrumento(i)');
+    expect(LOCKED_PRODUCT).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    for (const tom of [
+      'bg-pp-block-lilac',
+      'bg-pp-block-mint',
+      'bg-pp-block-cream',
+      'bg-pp-block-coral',
+      'bg-pp-block-pink',
+      'bg-pp-block-lime',
+    ]) {
+      expect(LOCKED_PRODUCT, tom).toContain(tom);
+    }
   });
 });
 

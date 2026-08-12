@@ -3,9 +3,13 @@ import {
   DESCRICAO_FALLBACK,
   montarVisaoBloqueada,
   NOME_FALLBACK,
+  ordenarInstrumentos,
   SLUG_CORRIGEFACIL,
+  tomDoInstrumento,
+  TONS_VITRINE,
   type ProdutoBloqueado,
 } from '../locked-product';
+import { CODIGOS_DOS_21 } from '../graphs/graph-config';
 
 const completo: ProdutoBloqueado = {
   name: 'CorrigeFácil',
@@ -80,5 +84,59 @@ describe('tela bloqueada do CorrigeFácil', () => {
       false,
     );
     expect(montarVisaoBloqueada(null).pagamentoUnico).toBe(true);
+  });
+
+  // O fallback aparece justamente quando o catálogo está fora do ar — a hora
+  // em que menos se pode prometer tela que não existe.
+  it('o fallback de descrição não promete comparação entre aplicações', () => {
+    const texto = DESCRICAO_FALLBACK.toLowerCase();
+    expect(texto).not.toContain('comparação');
+    expect(texto).not.toContain('comparar');
+    expect(texto).not.toContain('evolução');
+    // e continua descrevendo o que existe
+    expect(texto).toContain('correção');
+    expect(texto).toContain('histórico');
+  });
+});
+
+describe('vitrine de instrumentos da tela de venda', () => {
+  const exibidos = ordenarInstrumentos(CODIGOS_DOS_21);
+
+  it('exibe exatamente os 21, sem faltar nem sobrar', () => {
+    expect(CODIGOS_DOS_21).toHaveLength(21);
+    expect(exibidos).toHaveLength(21);
+    // conjunto idêntico ao da fonte soberana, nos dois sentidos
+    expect([...exibidos].sort()).toEqual([...CODIGOS_DOS_21].sort());
+    for (const codigo of CODIGOS_DOS_21) {
+      expect(exibidos, codigo).toContain(codigo);
+    }
+    expect(new Set(exibidos).size).toBe(21);
+  });
+
+  it('a ordem exibida é alfabética, não a ordem do registro', () => {
+    const alfabetica = [...CODIGOS_DOS_21].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    expect(exibidos).toEqual(alfabetica);
+    for (let i = 1; i < exibidos.length; i += 1) {
+      expect(exibidos[i - 1].localeCompare(exibidos[i], 'pt-BR')).toBeLessThan(0);
+    }
+    // o registro é ordenado por FAMÍLIA de gráfico; se a exibição fosse igual
+    // a ele, esta tela estaria mostrando a ordem errada
+    expect(exibidos).not.toEqual([...CODIGOS_DOS_21]);
+  });
+
+  it('não muta a fonte soberana ao ordenar', () => {
+    const antes = [...CODIGOS_DOS_21];
+    ordenarInstrumentos(CODIGOS_DOS_21);
+    expect([...CODIGOS_DOS_21]).toEqual(antes);
+  });
+
+  it('o tom cicla pela paleta e cobre os 21 sem estourar', () => {
+    expect(TONS_VITRINE).toHaveLength(6);
+    for (let i = 0; i < exibidos.length; i += 1) {
+      expect(TONS_VITRINE).toContain(tomDoInstrumento(i));
+    }
+    expect(tomDoInstrumento(0)).toBe(tomDoInstrumento(TONS_VITRINE.length));
+    // determinístico: mesma posição, mesmo tom
+    expect(tomDoInstrumento(7)).toBe(tomDoInstrumento(7));
   });
 });
