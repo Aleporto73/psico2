@@ -241,7 +241,7 @@ describe('página interna de venda do CorrigeFácil', () => {
   /** Recorte do bloco do Relatórios Pró. */
   const relatoriosPro = () =>
     LOCKED.slice(
-      LOCKED.indexOf('Quer transformar o resultado em um relatório profissional?'),
+      LOCKED.indexOf('Potencialize o CorrigeFácil com Relatórios Pró'),
       LOCKED.indexOf('O CorrigeFácil calcula e organiza resultados'),
     );
 
@@ -269,8 +269,24 @@ describe('página interna de venda do CorrigeFácil', () => {
     expect(oferta).not.toMatch(/R\$\s*\d/);
     expect(oferta).not.toContain('57');
     expect(LOCKED_PRODUCT).not.toMatch(/price:\s*\d/);
-    // description continua sendo EXIBIDA, não só selecionada
-    expect(LOCKED).toContain('{visao.descricao}');
+  });
+
+  // O texto cadastrado em products_public.description ainda diz "no lugar
+  // das planilhas". Ele continua SENDO CONSULTADO (o contrato de
+  // montarVisaoBloqueada não mudou e tem teste próprio), mas não é mais
+  // renderizado nesta tela.
+  it('a descrição do catálogo não é mais renderizada no card roxo', () => {
+    expect(LOCKED).not.toContain('{visao.descricao}');
+    expect(LOCKED).not.toContain('visao.descricao');
+    // a consulta e o contrato continuam de pé
+    expect(LOCKED).toContain(
+      "select('name, description, price, billing_type, checkout_url')",
+    );
+    expect(LOCKED_PRODUCT).toContain('descricao:');
+    // e a copy comercial aprovada é a que fala
+    expect(LOCKED).toContain(
+      'instrumentos com correção digital integrada ao',
+    );
   });
 
   it('nenhum checkout escrito no componente', () => {
@@ -309,7 +325,7 @@ describe('página interna de venda do CorrigeFácil', () => {
     // âncoras de JSX, não das constantes declaradas no topo do arquivo
     const iBeneficios = LOCKED.indexOf('BENEFICIOS.map(');
     const iComoFunciona = LOCKED.indexOf('PASSOS.map(');
-    const iPro = LOCKED.indexOf('Quer transformar o resultado em um relatório');
+    const iPro = LOCKED.indexOf('Potencialize o CorrigeFácil com Relatórios Pró');
     const iAviso = LOCKED.indexOf('O CorrigeFácil calcula e organiza resultados');
 
     expect(oferta).toBeGreaterThan(-1);
@@ -323,13 +339,13 @@ describe('página interna de venda do CorrigeFácil', () => {
 
   it('o Relatórios Pró é declarado opcional e à parte, sem checkout próprio', () => {
     const bloco = relatoriosPro();
-    expect(bloco).toContain(
-      'Relatórios Pró é um recurso opcional, contratado à parte.',
-    );
-    // a oferta do outro produto é descrita, nunca vendida daqui
-    expect(bloco).not.toContain('href=');
+    expect(bloco).toContain('Relatórios Pró é opcional e contratado à parte.');
+    // a oferta do outro produto é descrita, nunca VENDIDA daqui: nenhum
+    // checkout, nenhuma URL externa, nenhum preço vindo do catálogo
     expect(bloco).not.toContain('precoLabel');
     expect(bloco).not.toContain('checkout');
+    expect(bloco).not.toContain('payment.eng.br');
+    expect(bloco).not.toMatch(/href=\{?["']?https?:/);
     // e em nenhuma hipótese ele é anunciado como incluso
     expect(bloco).not.toContain('incluído no');
     expect(bloco).not.toContain('já vem');
@@ -339,17 +355,76 @@ describe('página interna de venda do CorrigeFácil', () => {
   it('a oferta do Relatórios Pró está completa e na mesma caixa do aviso', () => {
     const bloco = relatoriosPro();
     expect(bloco).toContain(
-      '50 relatórios por mês durante 12 meses por R$ 57 em pagamento único.',
+      'Corrija no CorrigeFácil e transforme o resultado em relatório',
+    );
+    expect(bloco).toContain(
+      'Por apenas R$ 57, você libera 50 relatórios por mês durante 12 meses.',
     );
     // sem a renovação dita, "50 por mês" fica ambíguo
-    expect(bloco).toContain('liberados novamente 50 relatórios');
-    expect(bloco).toContain('12');
+    expect(bloco).toContain('Todo mês, sua franquia volta para 50.');
     // o preço é do OUTRO produto: separá-lo da frase "à parte" transformaria
     // o número em promessa de inclusão
-    const iPreco = bloco.indexOf('50 relatórios por mês');
+    const iPreco = bloco.indexOf('Por apenas R$ 57');
     const iAParte = bloco.indexOf('contratado à parte');
     expect(iPreco).toBeGreaterThan(-1);
     expect(iAParte).toBeGreaterThan(iPreco);
+  });
+
+  // Os dois CTAs do card não podem criar comércio novo: um é âncora interna,
+  // o outro é a rota que o resto do sistema já usa para o Relatórios Pró.
+  it('os dois CTAs reaproveitam fluxos existentes', () => {
+    const bloco = relatoriosPro();
+
+    expect(bloco).toContain('Quero o CorrigeFácil');
+    expect(bloco).toContain('Quero Relatórios Pró');
+
+    // CTA 1: âncora para o ÚNICO ponto de compra do CorrigeFácil na página
+    expect(bloco).toContain('href="#oferta-corrigefacil"');
+    expect(LOCKED).toContain('id="oferta-corrigefacil"');
+    // e ele não repete preço nem duplica o botão de compra
+    expect(bloco).not.toContain('Comprar por');
+    expect(bloco).not.toContain('visao.');
+
+    // CTA 2: a mesma rota do menu, do dashboard e da página de produtos
+    expect(bloco).toContain('href={ROTA_RELATORIOS_PRO}');
+    expect(LOCKED).toContain("const ROTA_RELATORIOS_PRO = '/app/assistente-pro'");
+    expect(APPSHELL).toContain("path: '/app/assistente-pro'");
+    expect(semComentarios(ler('app/app/produtos/page.tsx'))).toContain(
+      "'/app/assistente-pro'",
+    );
+  });
+
+  // Fail-closed: com o produto em preparação, o CTA leva ao card de oferta,
+  // que naquele estado mostra o aviso — não existe caminho alternativo de
+  // compra que escape da regra de checkout_url.
+  it('o CTA do CorrigeFácil não contorna o fail-closed', () => {
+    const bloco = relatoriosPro();
+    // a âncora aponta para a seção; quem decide o que há lá é `visao.modoCta`
+    expect(bloco).toContain('href="#oferta-corrigefacil"');
+    // nenhum <a> externo no bloco inteiro
+    const externos = bloco.match(/href=["']https?:/g) ?? [];
+    expect(externos).toHaveLength(0);
+    // e o arquivo continua com UM único link de compra, o do catálogo
+    const compras = LOCKED.match(/href=\{visao\.checkoutUrl\}/g) ?? [];
+    expect(compras).toHaveLength(1);
+  });
+
+  // Nem os 21 instrumentos têm gráfico. A etapa 3 não pode dar a entender
+  // que têm, e a ressalva precisa estar VISÍVEL na mesma seção — não só no
+  // benefício lá em cima.
+  it('o passo do gráfico carrega a ressalva, e ela aparece logo abaixo', () => {
+    expect(LOCKED).toContain("'Receba resultado, classificação e gráfico*'");
+    expect(LOCKED).toContain('*Gráfico nos instrumentos compatíveis.');
+
+    // a nota vem depois da grade dos passos, dentro da mesma seção
+    const iPassos = LOCKED.indexOf('PASSOS.map(');
+    const iNota = LOCKED.indexOf('*Gráfico nos instrumentos compatíveis.');
+    const iPro = LOCKED.indexOf('Potencialize o CorrigeFácil com Relatórios Pró');
+    expect(iNota).toBeGreaterThan(iPassos);
+    expect(iPro).toBeGreaterThan(iNota);
+
+    // e a promessa incondicional não voltou
+    expect(LOCKED).not.toContain("'Receba resultado, classificação e gráfico'");
   });
 
   it('mantém o aviso de responsabilidade profissional', () => {
@@ -364,9 +439,13 @@ describe('página interna de venda do CorrigeFácil', () => {
     expect(vitrine()).not.toContain('href');
     expect(vitrine()).not.toContain('/avaliar/');
     expect(vitrine()).not.toContain('Aplicar');
-    // e a tela inteira não importa Link nem monta rota do módulo
-    expect(LOCKED).not.toContain("from 'next/link'");
+    // a tela não monta rota de aplicação em lugar nenhum
     expect(LOCKED).not.toContain('/app/corrigefacil/avaliar');
+    // e o ÚNICO Link do arquivo é o do Relatórios Pró — se aparecer um
+    // segundo, alguém abriu um caminho novo sem passar por aqui
+    const links = LOCKED.match(/<Link\b/g) ?? [];
+    expect(links).toHaveLength(1);
+    expect(LOCKED).toContain('href={ROTA_RELATORIOS_PRO}');
   });
 
   it('a lista de instrumentos vem da fonte soberana, não de cópia local', () => {

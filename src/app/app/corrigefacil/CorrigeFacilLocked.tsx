@@ -1,4 +1,6 @@
+import Link from 'next/link';
 import {
+  ArrowRight,
   ChartColumn,
   ClipboardCheck,
   ExternalLink,
@@ -72,10 +74,19 @@ const BENEFICIO_HISTORICO = {
     'registrados.',
 };
 
+/** Rota comercial do Relatórios Pró — a MESMA que o menu, o dashboard e a
+ *  página de produtos já usam. O checkout daquele produto mora lá dentro e
+ *  não é reimplementado aqui: esta página só aponta para o fluxo existente. */
+const ROTA_RELATORIOS_PRO = '/app/assistente-pro';
+
 const PASSOS = [
   'Escolha o instrumento',
   'Registre as respostas',
-  'Receba resultado, classificação e gráfico quando disponível',
+  // "quando disponível" virou asterisco: inteiro na etapa, ele era a única
+  // que quebrava em duas linhas no desktop. A ressalva não sumiu — ela desce
+  // para a nota logo abaixo da grade, porque nem os 21 instrumentos têm
+  // gráfico e a etapa não pode dar a entender que têm.
+  'Receba resultado, classificação e gráfico*',
   'Salve a avaliação no histórico',
 ];
 
@@ -116,8 +127,13 @@ export async function CorrigeFacilLocked() {
         </p>
       </header>
 
-      {/* 2 · Oferta — preço e checkout vêm do catálogo, nunca do componente */}
-      <section className="bg-pp-block-lilac rounded-block p-8 md:p-10 space-y-6">
+      {/* 2 · Oferta — preço e checkout vêm do catálogo, nunca do componente.
+          O id é o alvo do CTA do card do Relatórios Pró: existe UM ponto de
+          compra do CorrigeFácil nesta página, e é este. */}
+      <section
+        id="oferta-corrigefacil"
+        className="bg-pp-block-lilac rounded-block p-8 md:p-10 space-y-6 scroll-mt-6"
+      >
         <div className="flex items-center gap-2 text-pp-ink-soft">
           <ClipboardCheck className="w-5 h-5" aria-hidden="true" />
           <p className="font-serif italic text-sm">Ferramenta interna PsicoPlanilhas</p>
@@ -139,14 +155,19 @@ export async function CorrigeFacilLocked() {
           </span>
         </div>
 
-        <div className="space-y-2 max-w-2xl">
-          <p className="text-pp-ink text-base leading-relaxed">
-            Tenha acesso a {TOTAL} instrumentos com correção digital integrada ao
-            PsicoPlanilhas. Registre respostas, consulte resultados e mantenha suas
-            avaliações organizadas e salvas no sistema.
-          </p>
-          <p className="text-pp-ink-soft text-sm leading-relaxed">{visao.descricao}</p>
-        </div>
+        {/* `visao.descricao` NÃO é renderizada aqui.
+            O texto cadastrado hoje em products_public.description ainda diz
+            "no lugar das planilhas", que contradiz o posicionamento vigente —
+            as planilhas continuam sendo produto do ecossistema — e repetia em
+            cinza o que a linha abaixo já diz melhor. O campo continua sendo
+            consultado e continua no contrato de `montarVisaoBloqueada`, com
+            teste próprio: quem precisar dele em outro contexto acha pronto.
+            Ele só não fala nesta caixa. */}
+        <p className="text-pp-ink text-base leading-relaxed max-w-2xl">
+          Tenha acesso a {TOTAL} instrumentos com correção digital integrada ao
+          PsicoPlanilhas. Registre respostas, consulte resultados e mantenha suas
+          avaliações organizadas e salvas no sistema.
+        </p>
 
         {visao.modoCta === 'checkout' && visao.checkoutUrl ? (
           <div>
@@ -296,31 +317,61 @@ export async function CorrigeFacilLocked() {
             </li>
           ))}
         </ol>
+        {/* Nota do asterisco do passo 3. Precisa ficar logo abaixo da grade:
+            é ela que impede a etapa de sugerir gráfico nos 21. */}
+        <p className="text-xs text-pp-ink-soft">
+          *Gráfico nos instrumentos compatíveis.
+        </p>
       </section>
 
       {/* 7 · Relatórios Pró — continuidade do fluxo, PRODUTO SEPARADO.
-          Não há checkout aqui: esta página vende UMA coisa. O preço citado é
-          o do Relatórios Pró e vem acompanhado, na mesma caixa, da frase que
-          diz que ele é contratado à parte — as duas informações não podem se
-          separar, ou a primeira sozinha vira promessa de inclusão. */}
-      <section className="bg-pp-block-cream rounded-block p-6 md:p-8 space-y-3">
-        <h2 className="text-pp-ink text-lg font-medium">
-          Quer transformar o resultado em um relatório profissional?
-        </h2>
-        <p className="text-pp-ink-soft text-sm leading-relaxed max-w-2xl">
-          Depois de corrigir a avaliação no CorrigeFácil, você também pode usar o
-          Relatórios Pró para transformar essas informações em um relatório
-          profissional completo, organizado e editável.
-        </p>
-        <p className="text-pp-ink text-base font-medium">
-          50 relatórios por mês durante 12 meses por R$ 57 em pagamento único.
-        </p>
-        <p className="text-pp-ink-soft text-sm leading-relaxed">
-          A cada novo mês, são liberados novamente 50 relatórios durante os 12
-          meses contratados.
-        </p>
-        <p className="text-pp-ink text-sm font-medium">
-          Relatórios Pró é um recurso opcional, contratado à parte.
+          NENHUM comércio novo nasce aqui:
+          · "Quero o CorrigeFácil" é âncora para o card de oferta lá em cima.
+            Não repete checkout, não repete preço e — o ponto — não tem como
+            burlar o fail-closed: se o produto está `em_preparacao`, o que o
+            usuário encontra ao chegar lá é o aviso, não um botão de compra.
+          · "Quero Relatórios Pró" leva a /app/assistente-pro, a MESMA rota que
+            o menu, o dashboard e a página de produtos já usam para esse
+            produto — inclusive para quem ainda não assina. O checkout do
+            Relatórios Pró mora lá e continua morando só lá.
+          O preço citado é o do Relatórios Pró e continua na mesma caixa da
+          frase que diz que ele é contratado à parte: separá-las transformaria
+          o número em promessa de inclusão. */}
+      <section className="bg-pp-block-cream rounded-block p-6 md:p-8 space-y-4">
+        <div className="space-y-2">
+          <h2 className="text-pp-ink text-lg font-medium">
+            Potencialize o CorrigeFácil com Relatórios Pró
+          </h2>
+          <p className="text-pp-ink text-base leading-relaxed max-w-2xl">
+            Corrija no CorrigeFácil e transforme o resultado em relatório
+            profissional.
+          </p>
+          <p className="text-pp-ink text-base font-medium">
+            Por apenas R$ 57, você libera 50 relatórios por mês durante 12 meses.
+          </p>
+          <p className="text-pp-ink-soft text-sm">
+            Todo mês, sua franquia volta para 50.
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          <a
+            href="#oferta-corrigefacil"
+            className="inline-flex items-center justify-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+          >
+            Quero o CorrigeFácil
+          </a>
+          <Link
+            href={ROTA_RELATORIOS_PRO}
+            className="inline-flex items-center justify-center gap-2 border border-pp-ink/25 text-pp-ink px-6 py-3 rounded-pill text-sm font-medium hover:border-pp-ink/50 transition"
+          >
+            Quero Relatórios Pró
+            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+          </Link>
+        </div>
+
+        <p className="text-pp-ink-soft text-xs">
+          Relatórios Pró é opcional e contratado à parte.
         </p>
       </section>
 
