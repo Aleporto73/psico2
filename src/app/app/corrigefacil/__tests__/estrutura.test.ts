@@ -135,20 +135,22 @@ describe('navegação', () => {
     }
   });
 
-  // 40) REVISTO DE NOVO. A versão anterior travava o CONTRÁRIO desta: o item
-  // só aparecia para quem já tinha direito, porque /app/corrigefacil levava
-  // quem não tinha a uma tela sem caminho de compra. Agora a rota tem página
-  // interna de venda, o beco sem saída deixou de existir e o item passa a ser
-  // incondicional, como Relatório Pró e Psico Flow.
-  it('40) o CorrigeFácil aparece no menu sem depender de direito', () => {
-    expect(APPSHELL).toContain("path: '/app/corrigefacil'");
-    // a prop condicional foi embora inteira — nem resquício de assinatura
-    expect(APPSHELL).not.toContain('hasCorrigeFacilAccess');
-    // e o item não voltou para dentro de nenhum spread condicional
-    expect(APPSHELL).not.toMatch(/\.\.\.\([^)]*\?\s*\[\s*\{[^}]*\/app\/corrigefacil/);
+  // 40) O produto está em FASE DE TESTES e o menu volta a ser condicionado ao
+  // direito: quem não tem `has_corrigefacil_access` não vê o item. A página
+  // interna de venda existe e é boa, mas ela é para teste e para a venda
+  // futura — não para descoberta pública ainda. Esta guarda é o que impede
+  // que uma limpeza de código "solte" o item sem decisão comercial.
+  it('40) o CorrigeFácil no menu depende do direito durante a fase de testes', () => {
+    expect(APPSHELL).toContain('hasCorrigeFacilAccess');
+    // o item vive dentro do spread condicional, não solto na lista
+    const semCondicional = APPSHELL.replace(
+      /\.\.\.\(hasCorrigeFacilAccess[\s\S]*?: \[\]\),/g,
+      '',
+    );
+    expect(semCondicional).not.toContain("path: '/app/corrigefacil'");
   });
 
-  it('40a) o item fica em Ferramentas upgrade, depois de Relatório Pró e Flow', () => {
+  it('40a) quando aparece, fica em Ferramentas upgrade depois de Pró e Flow', () => {
     const grupo = APPSHELL.slice(
       APPSHELL.indexOf("label: 'Ferramentas upgrade'"),
       APPSHELL.indexOf('{ separatorBefore: true, items: ['),
@@ -161,27 +163,26 @@ describe('navegação', () => {
     expect(corrige).toBeGreaterThan(flow);
   });
 
-  it('40b) o layout não resolve mais o direito do CorrigeFácil', () => {
-    // A consulta existia SÓ para decidir o menu. Sem essa decisão, ela seria
-    // uma ida ao banco por requisição em todas as rotas de /app, sem leitor.
-    expect(LAYOUT).not.toContain('temAcessoCorrigeFacil');
-    expect(LAYOUT).not.toContain('hasCorrigeFacilAccess');
-    expect(LAYOUT).not.toContain('has_corrigefacil_access');
+  it('40b) o direito vem do helper único, não de regra reescrita no layout', () => {
+    expect(LAYOUT).toContain('temAcessoCorrigeFacil');
+    // nada de consultar compra ou entitlement à mão
     expect(LAYOUT).not.toContain("from('purchases')");
-    // e o que sobrou é a resolução do Doc Studio, que continua tendo leitor
+    expect(LAYOUT).not.toContain('has_corrigefacil_access =');
+    // e o Doc Studio continua sendo resolvido do lado dele
     expect(LAYOUT).toContain('has_doc_studio_access');
   });
 
-  it('40c) o layout continua fail-closed no que ainda resolve', () => {
+  it('40c) o layout é fail-closed: erro não revela o item', () => {
     const captura = LAYOUT.split('catch (err)')[1] ?? '';
+    expect(captura).toContain('hasCorrigeFacilAccess = false');
     expect(captura).toContain('hasDocStudioAccess = false');
     expect(captura).toContain('unstable_rethrow');
   });
 
   it('40d) o gate real de /app/corrigefacil não foi afrouxado', () => {
-    // O menu virou incondicional; a ROTA não. As duas telas que exigem
-    // direito comercial continuam consultando o helper único e caindo na
-    // página de venda quando ele diz não.
+    // Menu é cosmético; a ROTA é o gate. As duas telas que exigem direito
+    // comercial continuam consultando o helper único e caindo na página de
+    // venda quando ele diz não.
     const PAGE = semComentarios(ler('app/app/corrigefacil/page.tsx'));
     const AVALIAR_PAGE = semComentarios(
       ler('app/app/corrigefacil/avaliar/[code]/page.tsx'),
@@ -230,6 +231,20 @@ describe('página interna de venda do CorrigeFácil', () => {
     ler('app/app/corrigefacil/locked-product.ts'),
   );
 
+  /** Recorte da seção da vitrine: do título até o vídeo. */
+  const vitrine = () =>
+    LOCKED.slice(
+      LOCKED.indexOf('instrumentos disponíveis no CorrigeFácil'),
+      LOCKED.indexOf('Veja o CorrigeFácil funcionando'),
+    );
+
+  /** Recorte do bloco do Relatórios Pró. */
+  const relatoriosPro = () =>
+    LOCKED.slice(
+      LOCKED.indexOf('Quer transformar o resultado em um relatório profissional?'),
+      LOCKED.indexOf('O CorrigeFácil calcula e organiza resultados'),
+    );
+
   it('lê products_public com as cinco colunas de sempre', () => {
     expect(LOCKED).toContain("from('products_public')");
     expect(LOCKED).toContain(
@@ -243,11 +258,19 @@ describe('página interna de venda do CorrigeFácil', () => {
   });
 
   it('nenhum preço de CorrigeFácil escrito no componente', () => {
-    // o preço vem de visao.precoLabel, formatado a partir de products_public
-    expect(LOCKED).toContain('visao.precoLabel');
-    expect(LOCKED).not.toMatch(/R\$\s*\d/);
-    expect(LOCKED).not.toContain('57');
+    // ESCOPADO ao card de oferta de propósito. O bloco do Relatórios Pró
+    // cita o preço DELE, que é outro produto e é copy fixa aprovada; varrer
+    // o arquivo inteiro proibiria o certo junto com o errado.
+    const oferta = LOCKED.slice(
+      LOCKED.indexOf("from('products_public')"),
+      LOCKED.indexOf('instrumentos disponíveis no CorrigeFácil'),
+    );
+    expect(oferta).toContain('visao.precoLabel');
+    expect(oferta).not.toMatch(/R\$\s*\d/);
+    expect(oferta).not.toContain('57');
     expect(LOCKED_PRODUCT).not.toMatch(/price:\s*\d/);
+    // description continua sendo EXIBIDA, não só selecionada
+    expect(LOCKED).toContain('{visao.descricao}');
   });
 
   it('nenhum checkout escrito no componente', () => {
@@ -277,19 +300,56 @@ describe('página interna de venda do CorrigeFácil', () => {
     expect(LOCKED).not.toContain('autoPlay');
   });
 
-  it('o Relatórios Pro é declarado opcional e à parte, sem preço nem checkout', () => {
-    expect(LOCKED).toContain(
-      'Relatórios Pro é um recurso opcional, contratado à parte.',
+  // A ORDEM é decisão comercial: a vitrine dos 21 responde a pergunta que
+  // fecha a compra, e não pode voltar para depois do vídeo.
+  it('a vitrine vem depois do preço e ANTES do vídeo', () => {
+    const oferta = LOCKED.indexOf("from('products_public')");
+    const iVitrine = LOCKED.indexOf('instrumentos disponíveis no CorrigeFácil');
+    const iVideo = LOCKED.indexOf('Veja o CorrigeFácil funcionando');
+    // âncoras de JSX, não das constantes declaradas no topo do arquivo
+    const iBeneficios = LOCKED.indexOf('BENEFICIOS.map(');
+    const iComoFunciona = LOCKED.indexOf('PASSOS.map(');
+    const iPro = LOCKED.indexOf('Quer transformar o resultado em um relatório');
+    const iAviso = LOCKED.indexOf('O CorrigeFácil calcula e organiza resultados');
+
+    expect(oferta).toBeGreaterThan(-1);
+    expect(iVitrine).toBeGreaterThan(oferta);
+    expect(iVideo).toBeGreaterThan(iVitrine);
+    expect(iBeneficios).toBeGreaterThan(iVideo);
+    expect(iComoFunciona).toBeGreaterThan(iBeneficios);
+    expect(iPro).toBeGreaterThan(iComoFunciona);
+    expect(iAviso).toBeGreaterThan(iPro);
+  });
+
+  it('o Relatórios Pró é declarado opcional e à parte, sem checkout próprio', () => {
+    const bloco = relatoriosPro();
+    expect(bloco).toContain(
+      'Relatórios Pró é um recurso opcional, contratado à parte.',
     );
-    // o bloco não pode carregar comércio próprio
-    const bloco = LOCKED.slice(
-      LOCKED.indexOf('Precisa transformar o resultado em um relatório?'),
-      LOCKED.indexOf('O CorrigeFácil calcula e organiza resultados'),
-    );
+    // a oferta do outro produto é descrita, nunca vendida daqui
     expect(bloco).not.toContain('href=');
     expect(bloco).not.toContain('precoLabel');
     expect(bloco).not.toContain('checkout');
+    // e em nenhuma hipótese ele é anunciado como incluso
     expect(bloco).not.toContain('incluído no');
+    expect(bloco).not.toContain('já vem');
+    expect(bloco).not.toContain('sem custo');
+  });
+
+  it('a oferta do Relatórios Pró está completa e na mesma caixa do aviso', () => {
+    const bloco = relatoriosPro();
+    expect(bloco).toContain(
+      '50 relatórios por mês durante 12 meses por R$ 57 em pagamento único.',
+    );
+    // sem a renovação dita, "50 por mês" fica ambíguo
+    expect(bloco).toContain('liberados novamente 50 relatórios');
+    expect(bloco).toContain('12');
+    // o preço é do OUTRO produto: separá-lo da frase "à parte" transformaria
+    // o número em promessa de inclusão
+    const iPreco = bloco.indexOf('50 relatórios por mês');
+    const iAParte = bloco.indexOf('contratado à parte');
+    expect(iPreco).toBeGreaterThan(-1);
+    expect(iAParte).toBeGreaterThan(iPreco);
   });
 
   it('mantém o aviso de responsabilidade profissional', () => {
@@ -299,15 +359,11 @@ describe('página interna de venda do CorrigeFácil', () => {
   });
 
   it('a vitrine não vira caminho de aplicação', () => {
-    const vitrine = LOCKED.slice(
-      LOCKED.indexOf('Instrumentos disponíveis'),
-      LOCKED.indexOf('Como funciona'),
-    );
     // badges são <li> de texto: sem Link, sem href, sem rota de aplicação
-    expect(vitrine).not.toContain('<Link');
-    expect(vitrine).not.toContain('href');
-    expect(vitrine).not.toContain('/avaliar/');
-    expect(vitrine).not.toContain('Aplicar');
+    expect(vitrine()).not.toContain('<Link');
+    expect(vitrine()).not.toContain('href');
+    expect(vitrine()).not.toContain('/avaliar/');
+    expect(vitrine()).not.toContain('Aplicar');
     // e a tela inteira não importa Link nem monta rota do módulo
     expect(LOCKED).not.toContain("from 'next/link'");
     expect(LOCKED).not.toContain('/app/corrigefacil/avaliar');
@@ -315,7 +371,7 @@ describe('página interna de venda do CorrigeFácil', () => {
 
   it('a lista de instrumentos vem da fonte soberana, não de cópia local', () => {
     expect(LOCKED).toContain("import { CODIGOS_DOS_21 } from './graphs/graph-config'");
-    expect(LOCKED).toContain('ordenarInstrumentos(CODIGOS_DOS_21)');
+    expect(LOCKED).toContain('montarVitrine(CODIGOS_DOS_21)');
     // nenhum código de instrumento escrito à mão no componente
     for (const codigo of ['BAYLEY-III', 'PHQ-9', 'DASS-21', 'TRILHAS_PRE']) {
       expect(LOCKED, codigo).not.toContain(`'${codigo}'`);
@@ -324,8 +380,63 @@ describe('página interna de venda do CorrigeFácil', () => {
     expect(LOCKED).not.toContain('entre outros');
   });
 
+  // Os números da linha comercial são CONTADOS da vitrine. Escritos à mão,
+  // o texto continuaria dizendo 21 no dia em que a fonte tivesse 22.
+  it('total e novidades são derivados, não digitados', () => {
+    expect(LOCKED).toContain('const TOTAL = VITRINE.length');
+    expect(LOCKED).toContain("VITRINE.filter((item) => item.selo === 'novo').length");
+    expect(vitrine()).toContain('{TOTAL} instrumentos');
+    expect(vitrine()).toContain('{NOVIDADES} novidades');
+    // e nenhum número de catálogo escrito na copy
+    expect(vitrine()).not.toMatch(/\b21 instrumentos/);
+    expect(vitrine()).not.toMatch(/\b10 novidades/);
+  });
+
+  it('os selos têm legenda, e ela diz que a novidade é do catálogo', () => {
+    expect(vitrine()).toContain('= novidade no');
+    expect(vitrine()).toContain('catálogo PsicoPlanilhas');
+    expect(vitrine()).toContain('referência Brasil no CorrigeFácil');
+    // "novo" jamais pode ser afirmado sobre o INSTRUMENTO em si
+    const texto = vitrine().toLowerCase();
+    expect(texto).not.toContain('instrumento novo');
+    expect(texto).not.toContain('recém-criado');
+    expect(texto).not.toContain('lançamento');
+  });
+
+  it('o rótulo de exibição não vaza para o código técnico', () => {
+    // o componente exibe `rotulo`; quem decide o texto é o modelo
+    expect(LOCKED).toContain('{rotulo}');
+    expect(LOCKED_PRODUCT).toContain("'TRACO-ANSIEDADE': 'Traço - Ansiedade'");
+    // e a chave técnica continua sendo a do registro, em todo lugar
+    expect(ler('app/app/corrigefacil/graphs/graph-config.ts')).toContain(
+      "'TRACO-ANSIEDADE'",
+    );
+  });
+
+  // As planilhas continuam sendo produto do ecossistema. Vender o
+  // CorrigeFácil depreciando a planilha canibaliza a própria casa.
+  it('não posiciona o CorrigeFácil contra as planilhas', () => {
+    for (const texto of [LOCKED.toLowerCase(), LOCKED_PRODUCT.toLowerCase()]) {
+      for (const proibido of [
+        'sem depender de planilha',
+        'no lugar das planilha',
+        'no lugar da planilha',
+        'substitua suas planilha',
+        'substitui as planilha',
+        'abandone as planilha',
+        'planilhas soltas',
+        'mais fácil que planilha',
+        'melhor que planilha',
+        'chega de planilha',
+      ]) {
+        expect(texto, proibido).not.toContain(proibido);
+      }
+    }
+  });
+
   it('os tons dos badges saem da paleta existente, sem hexadecimal novo', () => {
-    expect(LOCKED).toContain('tomDoInstrumento(i)');
+    expect(LOCKED).toContain('${tom}');
+    expect(LOCKED_PRODUCT).toContain('tomDoInstrumento');
     expect(LOCKED_PRODUCT).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     for (const tom of [
       'bg-pp-block-lilac',

@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CODIGOS_COM_ROTULO,
+  CODIGOS_COM_SELO,
   DESCRICAO_FALLBACK,
   montarVisaoBloqueada,
+  montarVitrine,
   NOME_FALLBACK,
   ordenarInstrumentos,
   SLUG_CORRIGEFACIL,
+  TEXTO_SELO,
   tomDoInstrumento,
   TONS_VITRINE,
   type ProdutoBloqueado,
@@ -95,7 +99,19 @@ describe('tela bloqueada do CorrigeFácil', () => {
     expect(texto).not.toContain('evolução');
     // e continua descrevendo o que existe
     expect(texto).toContain('correção');
-    expect(texto).toContain('histórico');
+    expect(texto).toContain('avaliações salvas');
+  });
+
+  // Este texto aparece justamente quando o catálogo está fora do ar. Se ele
+  // depreciar a planilha, deprecia no pior momento possível — e as planilhas
+  // continuam sendo produto da casa.
+  it('o fallback não posiciona o CorrigeFácil contra as planilhas', () => {
+    const texto = DESCRICAO_FALLBACK.toLowerCase();
+    expect(texto).not.toContain('no lugar da');
+    expect(texto).not.toContain('sem depender');
+    expect(texto).not.toContain('substitu');
+    // o posicionamento é de ecossistema, não de troca
+    expect(texto).toContain('psicoplanilhas');
   });
 });
 
@@ -138,5 +154,95 @@ describe('vitrine de instrumentos da tela de venda', () => {
     expect(tomDoInstrumento(0)).toBe(tomDoInstrumento(TONS_VITRINE.length));
     // determinístico: mesma posição, mesmo tom
     expect(tomDoInstrumento(7)).toBe(tomDoInstrumento(7));
+  });
+});
+
+describe('apresentação comercial da vitrine', () => {
+  const itens = montarVitrine(CODIGOS_DOS_21);
+  const por = (codigo: string) => itens.find((i) => i.codigo === codigo)!;
+
+  it('monta os 21 na ordem alfabética, com tom e rótulo', () => {
+    expect(itens).toHaveLength(21);
+    expect(itens.map((i) => i.codigo)).toEqual(ordenarInstrumentos(CODIGOS_DOS_21));
+    for (const item of itens) {
+      expect(item.rotulo.length).toBeGreaterThan(0);
+      expect(TONS_VITRINE).toContain(item.tom);
+    }
+  });
+
+  // Uma linha de metadado para um código que não existe na fonte soberana
+  // não quebra nada em runtime: o selo simplesmente nunca aparece. É o tipo
+  // de erro que só um teste pega.
+  it('nenhum metadado aponta para instrumento fora da fonte soberana', () => {
+    for (const codigo of [...CODIGOS_COM_ROTULO, ...CODIGOS_COM_SELO]) {
+      expect(CODIGOS_DOS_21, codigo).toContain(codigo);
+    }
+  });
+
+  it('marca exatamente as 10 novidades do catálogo', () => {
+    const novos = itens.filter((i) => i.selo === 'novo').map((i) => i.codigo);
+    expect(novos).toEqual([
+      'BAYLEY-III',
+      'C-TRF_1.5-5',
+      'CONFIAS',
+      'DASS-21',
+      'EPQ-J',
+      'ERA-A',
+      'ERA-F',
+      'ETPC',
+      'SCARED-C',
+      'TDF',
+    ]);
+    expect(novos).toHaveLength(10);
+  });
+
+  it('BPA-2 é o único com selo Brasil', () => {
+    const brasil = itens.filter((i) => i.selo === 'brasil').map((i) => i.codigo);
+    expect(brasil).toEqual(['BPA-2']);
+    // e ele NÃO é "novidade no catálogo": a planilha São Paulo já existe.
+    // O que é novo é a referência Brasil, e o selo diz isso.
+    expect(por('BPA-2').selo).not.toBe('novo');
+    expect(TEXTO_SELO.brasil).toBe('Brasil');
+  });
+
+  it('os 10 que já existem como planilha ficam sem selo', () => {
+    const semSelo = itens.filter((i) => i.selo === null).map((i) => i.codigo);
+    expect(semSelo).toEqual([
+      'CES-D',
+      'CHECK-DIS',
+      'DCDQ',
+      'PHQ-9',
+      'QA-ADULTO',
+      'SDQ-POR',
+      'SNAP-IV-18',
+      'SNAP-IV-26',
+      'TRACO-ANSIEDADE',
+      'TRILHAS_PRE',
+    ]);
+    expect(semSelo).toHaveLength(10);
+  });
+
+  it('10 + 10 + 1 cobre os 21, sem sobreposição', () => {
+    const novos = itens.filter((i) => i.selo === 'novo');
+    const brasil = itens.filter((i) => i.selo === 'brasil');
+    const sem = itens.filter((i) => i.selo === null);
+    expect(novos.length + brasil.length + sem.length).toBe(21);
+  });
+
+  // O rótulo é SÓ apresentação: a chave técnica não muda em lugar nenhum.
+  it('TRACO-ANSIEDADE exibe "Traço - Ansiedade" sem trocar o código', () => {
+    const item = por('TRACO-ANSIEDADE');
+    expect(item.codigo).toBe('TRACO-ANSIEDADE');
+    expect(item.rotulo).toBe('Traço - Ansiedade');
+    // e a chave continua sendo a que o registro visual conhece
+    expect(CODIGOS_DOS_21).toContain('TRACO-ANSIEDADE');
+    expect(CODIGOS_DOS_21).not.toContain('Traço - Ansiedade');
+  });
+
+  it('quem não tem rótulo próprio exibe o código cru', () => {
+    for (const item of itens) {
+      if (CODIGOS_COM_ROTULO.includes(item.codigo)) continue;
+      expect(item.rotulo).toBe(item.codigo);
+    }
   });
 });
