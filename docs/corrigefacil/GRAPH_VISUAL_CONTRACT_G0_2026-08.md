@@ -402,6 +402,23 @@ pontas**. É o mesmo caso que G1A §5.2 item 4 chama de coincidência **provada*
 | risco | **PRO (Pró-Social) tem direção OPOSTA** — pontuação alta é competência preservada, enquanto alta em EMO/CON/HIP/PAR é dificuldade. É também a única das cinco que **não** entra no TOTAL (`scale_components` tem 4 filhos, PRO fora). Cinco barras iguais diriam que PRO é mais uma dificuldade. E nenhuma subescala tem faixa: sem corte, não há o que representar além do número |
 | decisão G0 | **APROVADO** só para o TOTAL. As subescalas ficam em tabela, com PRO rotulada na direção dela |
 
+#### Complemento · IMPACTO (2026-08-13)
+
+A Seção de Impacto passou a ser carregada, e com ela veio a escala
+**IMPACTO (0–6)**, formada só pelos itens 28, 29 e 30 e **fora do TOTAL**.
+
+| campo | conteúdo |
+|---|---|
+| componente | **ScoreBandChart**, como COMPLEMENTO — o gráfico do TOTAL não muda |
+| métrica | score (= bruto, por identidade explícita no loader) |
+| escala | IMPACTO |
+| range | **0–6** |
+| direção | `ascendente_sinalizador` |
+| tom | `semantico_por_faixa` — 4 faixas, todas presas ao IMPACTO |
+| título | Impacto |
+| risco | **misturar 0–6 com 0–40 no mesmo eixo.** Um Impacto Grave é 4 de 6; ao lado de um Total que vai a 40, a mesma barra pareceria irrelevante. São leituras diferentes, cada uma com sua régua |
+| decisão G0 | **APROVADO** como gráfico separado. Nunca como barra a mais no eixo do TOTAL |
+
 ---
 
 ### SNAP-IV-18 e SNAP-IV-26
@@ -608,7 +625,7 @@ onde a direção parece "óbvia".
 | PHQ-9 | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | 5 faixas |
 | QA-ADULTO | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | — |
 | SCARED-C | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | corte próprio por subescala; a cor sai da faixa daquela escala, nunca da altura comparada |
-| **SDQ-POR** | `semantico_por_faixa` (só TOTAL) | `ordinal` | **`especifica_por_escala`** | **TOTAL** pode ter semântica por faixa (`ascendente_sinalizador`). **PRO continua fora do gráfico** e é `ascendente_favoravel` — direção **oposta**. **Nunca aplicar a direção nem a cor do TOTAL a PRO.** EMO/CON/HIP/PAR não têm faixa: sem faixa, sem cor semântica |
+| **SDQ-POR** | `semantico_por_faixa` (TOTAL e IMPACTO) | `ordinal` | **`especifica_por_escala`** | **TOTAL** pode ter semântica por faixa (`ascendente_sinalizador`). **PRO continua fora do gráfico** e é `ascendente_favoravel` — direção **oposta**. **Nunca aplicar a direção nem a cor do TOTAL a PRO.** EMO/CON/HIP/PAR não têm faixa: sem faixa, sem cor semântica. **IMPACTO** é gráfico SEPARADO, `ascendente_sinalizador`, eixo 0–6 — **nunca no eixo 0–40 do TOTAL** |
 | SNAP-IV-18 | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | 2 faixas por escala, corte próprio |
 | SNAP-IV-26 | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | TOD corta em 4 e as outras em 6 — a cor sai da faixa da escala |
 | TDF | `neutro` | `ordinal` | `ascendente_favoravel` | desempenho; `available=false` não recebe cor |
@@ -662,7 +679,7 @@ onde a direção parece "óbvia".
 | PHQ-9 | ScoreBandChart | score 0–27 | TOTAL | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
 | QA-ADULTO | ScoreBandChart | score 0–50 | TOTAL | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
 | SCARED-C | CategoricalProfileChart + band | score por escala | 5 subescalas + TOTAL | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
-| SDQ-POR | ScoreBandChart | score 0–40 | TOTAL (5 subescalas fora) | `semantico_por_faixa` (só TOTAL) | `ordinal` | **`especifica_por_escala`** | **APROVADO** |
+| SDQ-POR | ScoreBandChart + band do IMPACTO | score 0–40 · score 0–6 | TOTAL + IMPACTO (5 subescalas fora) | `semantico_por_faixa` (TOTAL e IMPACTO) | `ordinal` | **`especifica_por_escala`** | **APROVADO** |
 | SNAP-IV-18 | CategoricalProfileChart | contagem por escala | DES, HIP | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
 | SNAP-IV-26 | CategoricalProfileChart | contagem por escala | DES, HIP, TOD | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **APROVADO** |
 | TDF | ScoreBandChart | pontuação padrão | escala única | `neutro` | `ordinal` | `ascendente_favoravel` | **APROVADO** |

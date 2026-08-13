@@ -193,6 +193,28 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
         },
       ],
     },
+    // A Seção de Impacto é uma leitura SEPARADA, e por isso entra como
+    // complemento e não como escala a mais no gráfico do TOTAL: 0..6 e
+    // 0..40 não compartilham eixo, e pôr as duas na mesma régua faria um
+    // Impacto Grave (4 de 6) parecer irrelevante ao lado de um Total 40.
+    //
+    // `score` É o bruto aqui, por identidade explícita — o loader
+    // materializa IMPACTO com _identidade('IMPACTO', 6), score = raw nas
+    // sete linhas. O teto 6 declarado (sdq_por.json, escala IMPACTO) está
+    // na MESMA métrica que este gráfico plota, então a proibição de G1A
+    // §5.2, que recai sobre métrica transformada, não alcança o caso.
+    complementos: [
+      {
+        familia: 'score_band',
+        metrica: 'score',
+        blocos: [{ titulo: 'Impacto', escalas: ['IMPACTO'] }],
+        // ao contrário de PRO, aqui não há ambiguidade de direção: mais
+        // impacto é mais prejuízo. As quatro faixas vêm do servidor.
+        direcao: 'ascendente_sinalizador',
+        tom: 'semantico_por_faixa',
+        range: { min: 0, max: 6 },
+      },
+    ],
   },
 
   TDF: {

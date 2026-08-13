@@ -185,6 +185,35 @@ describe('escalas incluídas e excluídas', () => {
     // direção do instrumento reconhece que ela varia entre escalas
     expect(cfg('SDQ-POR').direcao).toBe('especifica_por_escala');
   });
+
+  it('11b · SDQ-POR: o IMPACTO é complemento, com eixo PRÓPRIO', () => {
+    const e = configDoInstrumento('SDQ-POR');
+    if (e?.status !== 'aprovado') throw new Error('SDQ-POR deveria estar aprovado');
+
+    // o gráfico do TOTAL não mudou: uma escala só, 0..40
+    expect(e.config.blocos[0].escalas).toEqual(['TOTAL']);
+    expect(e.config.range).toEqual({ min: 0, max: 40 });
+
+    // e o IMPACTO entra AO LADO, não dentro. 0..6 e 0..40 no mesmo eixo
+    // fariam um Impacto Grave (4 de 6) parecer irrelevante ao lado de um
+    // Total 40 — são leituras diferentes, e cada uma com sua régua.
+    expect(e.complementos, 'o IMPACTO sumiu do contrato').toHaveLength(1);
+    const impacto = e.complementos![0];
+    expect(impacto.familia).toBe('score_band');
+    expect(impacto.metrica).toBe('score');
+    expect(impacto.blocos[0].escalas).toEqual(['IMPACTO']);
+    expect(impacto.blocos[0].titulo).toBe('Impacto');
+    expect(impacto.range).toEqual({ min: 0, max: 6 });
+
+    // ao contrário de PRO, aqui a direção é única e sinalizadora
+    expect(impacto.direcao).toBe('ascendente_sinalizador');
+    expect(impacto.tom).toBe('semantico_por_faixa');
+
+    // IMPACTO é representação APROVADA: não pode estar em `excluidas`, e
+    // não pode ter virado mais uma barra no eixo do TOTAL
+    expect(excluidasDe('SDQ-POR')).not.toContain('IMPACTO');
+    expect(escalasDe('SDQ-POR')).not.toContain('IMPACTO');
+  });
 });
 
 describe('réguas independentes', () => {

@@ -4,7 +4,7 @@
 // servidor. Quem calcula idade, escolhe norma, pontua e classifica é o servidor.
 import type { PedidoCorrecao } from '@/lib/corrigefacil/api';
 import type { RegraPrematuridade } from '@/lib/corrigefacil/date-norm-api';
-import type { ModeloFormulario } from './form-model';
+import { estadoDoGate, itensVisiveis, type ModeloFormulario } from './form-model';
 
 export type RespostasItens = Record<number, number>;
 export type BrutosEscalas = Record<string, number>;
@@ -53,16 +53,48 @@ function pendenciaDatas(modelo: ModeloFormulario, estado: EstadoFormulario): Pen
   return faltam.length ? [{ tipo: 'datas', faltam }] : [];
 }
 
+/** Os números de item que o envio EXIGE, já com a regra do gate aplicada.
+ *
+ *  A base é a regra do servidor (`_itens_sem_resposta` no engine, e a gêmea
+ *  da Edge): só item que PONTUA pode segurar o envio, porque item auxiliar
+ *  não entra em soma nenhuma e exigi-lo travaria o formulário por um campo
+ *  que não move escore.
+ *
+ *  Sobre ela, o gate muda dois pontos — os mesmos dois de `store._com_gate`
+ *  e de `comGate` na Edge:
+ *
+ *    o item do GATE passa a ser obrigatório mesmo sendo auxiliar. Sem ele o
+ *    servidor não tem como distinguir "impacto zero" de "seção não
+ *    respondida", e recusa a conclusão;
+ *
+ *    as parcelas da seção deixam de ser obrigatórias enquanto a porta não
+ *    estiver aberta. Elas nem estão na tela nesse estado, e exigir o que
+ *    não se vê deixaria o botão desligado sem dizer por quê.
+ *
+ *  O gate só é exigido se o item existir no modelo: quem manda o que existe
+ *  é o catálogo, e a tela não inventa campo que o servidor não declarou. */
+export function itensExigidos(
+  modelo: ModeloFormulario,
+  respostas: RespostasItens,
+): number[] {
+  const exigidos = new Set(
+    modelo.itens.filter((i) => !i.auxiliar).map((i) => i.numero),
+  );
+  const gate = modelo.gate;
+  if (gate) {
+    if (modelo.itens.some((i) => i.numero === gate.item)) exigidos.add(gate.item);
+    if (estadoDoGate(modelo, respostas) !== 'aberto') {
+      for (const n of gate.exigidos) exigidos.delete(n);
+    }
+  }
+  return [...exigidos].sort((a, b) => a - b);
+}
+
 function pendenciaItens(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
   if (modelo.entryMode !== 'itens') return [];
-  // só item que PONTUA pode segurar o envio. É a mesma regra do servidor
-  // (`_itens_sem_resposta` no engine, e a gêmea da Edge): item auxiliar não
-  // entra em soma nenhuma, e exigi-lo travaria o formulário por um campo
-  // que não move escore. Divergir daqui faria a tela bloquear um envio que
-  // o servidor aceitaria — ou liberar um que ele recusaria.
-  const faltam = modelo.itens
-    .filter((i) => !i.auxiliar && !temValor(estado.respostas[i.numero]))
-    .map((i) => i.numero);
+  const faltam = itensExigidos(modelo, estado.respostas).filter(
+    (n) => !temValor(estado.respostas[n]),
+  );
   return faltam.length ? [{ tipo: 'itens', faltam }] : [];
 }
 
@@ -163,15 +195,18 @@ export function progresso(
   estado: EstadoFormulario,
 ): { respondidos: number; total: number } | null {
   if (modelo.entryMode !== 'itens' || modelo.itens.length === 0) return null;
-  // o contador conta o que o envio exige: os itens que PONTUAM. Incluir o
-  // auxiliar faria o PHQ-9 dizer "9 de 10" com o protocolo inteiro
-  // respondido, e o profissional procuraria um item que não falta.
-  const pontuados = modelo.itens.filter((i) => !i.auxiliar);
-  if (pontuados.length === 0) return null;
-  const respondidos = pontuados.filter((i) =>
-    temValor(estado.respostas[i.numero]),
+  // o contador conta EXATAMENTE o que o envio exige. Incluir o auxiliar
+  // faria o PHQ-9 dizer "9 de 10" com o protocolo inteiro respondido, e o
+  // profissional procuraria um item que não falta; no SDQ, contar as
+  // parcelas do impacto com a porta fechada faria "26 de 29" travar num
+  // número que nunca fecha. Por isso o total é dinâmico: abrir a porta
+  // acrescenta as três parcelas ao denominador, que é o que passa a faltar.
+  const exigidos = itensExigidos(modelo, estado.respostas);
+  if (exigidos.length === 0) return null;
+  const respondidos = exigidos.filter((n) =>
+    temValor(estado.respostas[n]),
   ).length;
-  return { respondidos, total: pontuados.length };
+  return { respondidos, total: exigidos.length };
 }
 
 /** Data de nascimento posterior à data da avaliação.
@@ -211,7 +246,14 @@ export function montarPedido(
 
   if (modelo.entryMode === 'itens') {
     const respostas: Record<string, number> = {};
-    for (const item of modelo.itens) {
+    // só o que está NA TELA agora. Com a porta fechada, uma resposta antiga
+    // de 28-30 continua no estado (fechar a porta não apaga o que o
+    // profissional já digitou, e reabri-la traz tudo de volta), mas ela não
+    // vale mais para este protocolo e não pode ser gravada como se valesse.
+    // O servidor zera o IMPACTO de qualquer jeito — o gate dele é a
+    // autoridade —, e o que se ganha aqui é o registro coerente: não fica
+    // gravado "atrapalha Muito" numa avaliação que diz não haver dificuldade.
+    for (const item of itensVisiveis(modelo, estado.respostas)) {
       const v = estado.respostas[item.numero];
       if (temValor(v)) respostas[String(item.numero)] = v;
     }
