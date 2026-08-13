@@ -38,12 +38,14 @@ import {
   buscarAvaliacao,
   CorrigeFacilError,
   type AvaliacaoDetalhe,
+  type RespostaAuxiliar,
 } from '@/lib/corrigefacil/api';
 import { formatAgeAtEvaluation } from '@/lib/report/format-age';
 import {
   colunasVisiveis,
   formatarDataDocumento,
   montarIdentidade,
+  montarAuxiliares,
   montarLinhas,
   resolverDataAvaliacao,
   rotuloDestino,
@@ -583,6 +585,21 @@ export function RelatorioDocumentClient({
           )}
         </section>
 
+        {/* ── RESPOSTAS AUXILIARES ──────────────────────────────────── */}
+        {/* Determinístico, e por isso FORA da narrativa: o valor aparece no
+            documento porque foi respondido, não porque a IA resolveu
+            mencioná-lo. A IA pode interpretá-lo no texto abaixo; alterá-lo
+            ela não pode, porque não é ela quem o imprime aqui.
+
+            Fora da TABELA também, e pelo mesmo motivo do resto do produto:
+            a tabela tem colunas de escore, percentil e classificação, e o
+            auxiliar não tem nenhuma das três. Uma linha dele ali seria lida
+            como resultado.
+
+            Devolve null sozinho quando a avaliação não tem auxiliar — o que
+            inclui toda avaliação salva antes deste campo existir. */}
+        <AuxiliaresDoDocumento respostas={avaliacao.auxiliary_responses} />
+
         {/* ── REPRESENTAÇÃO VISUAL ──────────────────────────────────── */}
         {/* Entre a tabela e a narrativa: o gráfico é releitura dos mesmos
             números que acabaram de ser lidos, e a análise vem depois de
@@ -743,6 +760,37 @@ export function RelatorioDocumentClient({
 
 /** Campo do quadro de identificação. Valor ausente some inteiro — rótulo
  *  com traço ao lado sugere dado perdido, não dado não coletado. */
+/** As respostas auxiliares, na tipografia do documento.
+ *
+ *  Seção curta e de leitura única: não deve ser partida entre páginas —
+ *  separar a pergunta da resposta deixaria as duas ilegíveis. */
+function AuxiliaresDoDocumento({
+  respostas,
+}: Readonly<{ respostas: RespostaAuxiliar[] | undefined }>) {
+  const linhas = montarAuxiliares(respostas);
+  if (linhas.length === 0) return null;
+
+  return (
+    <section className="space-y-3 print:break-inside-avoid">
+      <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+        Respostas complementares
+      </h2>
+      <dl className="space-y-2 text-sm print:text-[11px]">
+        {linhas.map((l) => (
+          <div key={l.number} className="flex flex-wrap gap-x-2">
+            <dt className="text-pp-ink-soft">{l.pergunta}</dt>
+            <dd className="text-pp-ink font-medium">{l.resposta}</dd>
+          </div>
+        ))}
+      </dl>
+      <p className="text-[11px] text-pp-ink-soft">
+        Respondido junto do protocolo. Não entra na pontuação nem na
+        classificação.
+      </p>
+    </section>
+  );
+}
+
 function Campo({ rotulo, valor }: Readonly<{ rotulo: string; valor: string | null }>) {
   if (!valor) return null;
   return (

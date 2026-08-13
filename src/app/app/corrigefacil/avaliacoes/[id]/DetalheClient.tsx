@@ -11,6 +11,7 @@ import {
 import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
+import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { formatarData } from '../historico-view';
 
 const AVISO =
@@ -160,6 +161,13 @@ export function DetalheClient({ id }: { id: string }) {
           </div>
         ))}
       </section>
+
+      {/* O que foi respondido e não foi pontuado. Vem GRAVADO da Edge, em
+          `auxiliary_responses` — nada é recalculado aqui, e o TOTAL acima
+          continua sendo o congelado na conclusão. Avaliação antiga, salva
+          antes de o campo existir, simplesmente não traz a chave e não
+          renderiza seção nenhuma. */}
+      <RespostasAuxiliares respostas={d.auxiliary_responses} />
 
       <CorrigeFacilReportPanel assessmentId={d.assessment_id} />
 

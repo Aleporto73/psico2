@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { ResultadoEscala } from '@/lib/corrigefacil/api';
+import type {
+  RespostaAuxiliar,
+  ResultadoEscala,
+} from '@/lib/corrigefacil/api';
 import {
+  montarAuxiliares,
   colunasVisiveis,
   formatarDataDocumento,
   montarIdentidade,
@@ -301,5 +305,87 @@ describe('destino', () => {
   it('destino ausente ou desconhecido não vira rótulo inventado', () => {
     expect(rotuloDestino(null)).toBeNull();
     expect(rotuloDestino('destino_novo')).toBeNull();
+  });
+});
+
+
+// =====================================================================
+// H · o impacto funcional no DOCUMENTO
+//
+// O documento imprime o valor auxiliar deterministicamente: ele sai porque
+// foi respondido, não porque a narrativa resolveu citá-lo. A IA pode
+// interpretá-lo no texto; alterá-lo ela não pode, porque não é ela quem o
+// imprime.
+// =====================================================================
+
+function auxiliar(over: Partial<RespostaAuxiliar> = {}): RespostaAuxiliar {
+  return {
+    number: 10,
+    text:
+      'Quanto esses sintomas dificultaram trabalho/estudo, tarefas de casa ' +
+      'ou relacionamento com outras pessoas?',
+    value: 3,
+    label: 'Extrema dificuldade',
+    ...over,
+  };
+}
+
+describe('montarAuxiliares · o auxiliar no documento', () => {
+  it('H · impacto 3 salvo reproduz "Extrema dificuldade"', () => {
+    const linhas = montarAuxiliares([auxiliar()]);
+
+    expect(linhas).toHaveLength(1);
+    expect(linhas[0].resposta).toBe('Extrema dificuldade');
+    expect(linhas[0].number).toBe(10);
+    expect(linhas[0].pergunta).toMatch(/dificultaram/);
+  });
+
+  it('o rótulo é o do SERVIDOR: nada é reclassificado aqui', () => {
+    // o mesmo valor 3 com outro rótulo sai com o outro rótulo. Se o
+    // documento tivesse tabela própria, este teste falharia.
+    const linhas = montarAuxiliares([
+      auxiliar({ value: 3, label: 'Rótulo que só o servidor conhece' }),
+    ]);
+    expect(linhas[0].resposta).toBe('Rótulo que só o servidor conhece');
+  });
+
+  it('sem rótulo, o valor cru — nunca um texto inventado', () => {
+    expect(montarAuxiliares([auxiliar({ label: null, value: 2 })])[0].resposta)
+      .toBe('2');
+    // e zero É resposta: não pode sumir por ser falsy
+    expect(montarAuxiliares([auxiliar({ label: null, value: 0 })])[0].resposta)
+      .toBe('0');
+  });
+
+  it('sem rótulo E sem valor, a linha não existe', () => {
+    // imprimir a pergunta com a resposta em branco afirmaria que ela ficou
+    // sem resposta, que é outra coisa
+    expect(montarAuxiliares([auxiliar({ label: null, value: null })])).toEqual([]);
+  });
+
+  it('avaliação sem auxiliar não rende linha nenhuma', () => {
+    // é o caso de TODA avaliação salva antes do campo existir, e o dos
+    // outros vinte instrumentos
+    expect(montarAuxiliares(undefined)).toEqual([]);
+    expect(montarAuxiliares([])).toEqual([]);
+  });
+
+  it('o auxiliar NÃO entra na tabela de resultados', () => {
+    // a prova de que as duas coisas não se misturam: `montarLinhas` só
+    // enxerga `resultados`, e o auxiliar nunca esteve lá
+    const resultados: Record<string, ResultadoEscala> = {
+      TOTAL: {
+        raw: 9, score: 9, percentile: null, z: null,
+        classification: 'Leve', available: true, message: null, flags: [],
+      },
+    };
+    const linhas = montarLinhas(resultados);
+
+    expect(linhas.map((l) => l.escala)).toEqual(['TOTAL']);
+    expect(linhas[0].bruto).toBe(9);
+    expect(linhas[0].classificacao).toBe('Leve');
+    // e o TOTAL não se mexe por causa do auxiliar
+    expect(montarAuxiliares([auxiliar()])).toHaveLength(1);
+    expect(montarLinhas(resultados)[0].bruto).toBe(9);
   });
 });

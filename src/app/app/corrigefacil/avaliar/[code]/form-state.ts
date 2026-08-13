@@ -55,8 +55,13 @@ function pendenciaDatas(modelo: ModeloFormulario, estado: EstadoFormulario): Pen
 
 function pendenciaItens(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
   if (modelo.entryMode !== 'itens') return [];
+  // só item que PONTUA pode segurar o envio. É a mesma regra do servidor
+  // (`_itens_sem_resposta` no engine, e a gêmea da Edge): item auxiliar não
+  // entra em soma nenhuma, e exigi-lo travaria o formulário por um campo
+  // que não move escore. Divergir daqui faria a tela bloquear um envio que
+  // o servidor aceitaria — ou liberar um que ele recusaria.
   const faltam = modelo.itens
-    .filter((i) => !temValor(estado.respostas[i.numero]))
+    .filter((i) => !i.auxiliar && !temValor(estado.respostas[i.numero]))
     .map((i) => i.numero);
   return faltam.length ? [{ tipo: 'itens', faltam }] : [];
 }
@@ -158,10 +163,15 @@ export function progresso(
   estado: EstadoFormulario,
 ): { respondidos: number; total: number } | null {
   if (modelo.entryMode !== 'itens' || modelo.itens.length === 0) return null;
-  const respondidos = modelo.itens.filter((i) =>
+  // o contador conta o que o envio exige: os itens que PONTUAM. Incluir o
+  // auxiliar faria o PHQ-9 dizer "9 de 10" com o protocolo inteiro
+  // respondido, e o profissional procuraria um item que não falta.
+  const pontuados = modelo.itens.filter((i) => !i.auxiliar);
+  if (pontuados.length === 0) return null;
+  const respondidos = pontuados.filter((i) =>
     temValor(estado.respostas[i.numero]),
   ).length;
-  return { respondidos, total: modelo.itens.length };
+  return { respondidos, total: pontuados.length };
 }
 
 /** Data de nascimento posterior à data da avaliação.

@@ -24,6 +24,12 @@ export type CampoItem = {
   semEnunciado: boolean;
   opcoes: OpcaoResposta[];
   grupo: string | null;
+  /** Item que NÃO pontua. Ele é respondido e gravado como qualquer outro —
+   *  o que muda é só a APRESENTAÇÃO: sai da lista corrida dos itens
+   *  pontuados e ganha uma seção própria. */
+  auxiliar: boolean;
+  /** Título da seção do auxiliar. Só vem quando `auxiliar` é true. */
+  secao: string | null;
 };
 
 export type CampoEscala = {
@@ -92,6 +98,11 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
             // item com conjunto próprio usa a lista DELE; sem conjunto, a global
             opcoes: it.opcoes ?? detalhe.opcoes_resposta ?? [],
             grupo: grupoDoItem.get(it.numero) ?? null,
+            // as duas vêm da API e só existem no item auxiliar. Item que
+            // pontua sai `auxiliar: false, secao: null`, que é o estado de
+            // todos os itens de todos os outros instrumentos.
+            auxiliar: it.auxiliar === true,
+            secao: it.auxiliar === true ? (it.secao ?? null) : null,
           };
         })
       : [];

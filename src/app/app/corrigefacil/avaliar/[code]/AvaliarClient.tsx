@@ -13,6 +13,7 @@ import {
 } from '@/lib/corrigefacil/api';
 import { resolverNormaData } from '@/lib/corrigefacil/date-norm-api';
 import { ResultGraph } from '../../graphs/ResultGraph';
+import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import {
   identificacaoInicial,
   montarPedidoAvaliacao,
@@ -25,6 +26,7 @@ import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { montarModelo, TEXTO_BLOQUEIO, type ModeloFormulario } from './form-model';
+import type { CampoItem } from './form-model';
 import {
   COMPONENTES,
   escolherDimensao,
@@ -62,6 +64,75 @@ export type EstadoSalvamento =
   | { fase: 'salvando' }
   | { fase: 'salvo'; id: string }
   | { fase: 'erro'; mensagem: string };
+
+/** O corpo de UM item: enunciado e as alternativas dele.
+ *
+ *  Extraído para que o item AUXILIAR use exatamente a mesma marcação dos
+ *  itens pontuados — a diferença entre os dois é ONDE cada um aparece, e
+ *  não como se responde. Duplicar o JSX faria a seção auxiliar envelhecer
+ *  sozinha na primeira mudança de estilo.
+ *
+ *  `ordinal` é o "1." antes do enunciado. O auxiliar não recebe: ele não é
+ *  o décimo de uma lista de nove, é uma pergunta à parte. */
+function CorpoDoItem({
+  item,
+  valor,
+  aoEscolher,
+  ordinal,
+}: Readonly<{
+  item: CampoItem;
+  valor: number | undefined;
+  aoEscolher: (v: number) => void;
+  ordinal: boolean;
+}>) {
+  return (
+    <>
+      <p id={`item-${item.numero}`} className="text-pp-ink text-sm">
+        {ordinal && (
+          <span className="text-pp-ink-soft mr-2 tabular-nums">
+            {item.numero}.
+          </span>
+        )}
+        {item.semEnunciado ? (
+          <span className="text-pp-ink-soft italic">
+            sem enunciado neste instrumento
+          </span>
+        ) : (
+          item.texto
+        )}
+      </p>
+      <div
+        role="radiogroup"
+        aria-labelledby={`item-${item.numero}`}
+        className="flex flex-wrap gap-2"
+      >
+        {item.opcoes.map((o) => {
+          const marcado = valor === o.value;
+          return (
+            <button
+              key={`${item.numero}-${o.label}-${String(o.value)}`}
+              type="button"
+              role="radio"
+              aria-checked={marcado}
+              disabled={o.value === null}
+              onClick={() => {
+                if (o.value === null) return;
+                aoEscolher(o.value);
+              }}
+              className={`px-3 py-2 min-h-11 rounded-pill text-sm border transition disabled:opacity-40 disabled:cursor-not-allowed ${
+                marcado
+                  ? 'bg-pp-ink text-pp-canvas border-pp-ink'
+                  : 'bg-white/60 text-pp-ink border-pp-ink/15 hover:border-pp-ink/40'
+              }`}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
+    </>
+  );
+}
 
 export function AvaliarClient({ code }: { code: string }) {
   const [instrumento, setInstrumento] = useState<FaseInstrumento>({ fase: 'carregando' });
@@ -304,69 +375,83 @@ export function AvaliarClient({ code }: { code: string }) {
           )}
 
           {m.entryMode === 'itens' && (
-            <ol className="space-y-3">
-              {m.itens.map((item) => {
-                const respondido = estado.respostas[item.numero] !== undefined;
-                return (
-                  <li
-                    key={item.numero}
-                    className={`border rounded-block p-4 space-y-3 transition-colors ${
-                      respondido ? 'border-pp-ink/25' : 'border-pp-ink/10'
-                    }`}
-                  >
-                    <p id={`item-${item.numero}`} className="text-pp-ink text-sm">
-                      <span className="text-pp-ink-soft mr-2 tabular-nums">
-                        {item.numero}.
-                      </span>
-                      {item.semEnunciado ? (
-                        <span className="text-pp-ink-soft italic">
-                          sem enunciado neste instrumento
-                        </span>
-                      ) : (
-                        item.texto
+            <>
+              {/* Os itens que PONTUAM. A lista numerada é deles: o auxiliar
+                  não é o décimo de uma lista de nove. */}
+              <ol className="space-y-3">
+                {m.itens
+                  .filter((item) => !item.auxiliar)
+                  .map((item) => {
+                    const respondido = estado.respostas[item.numero] !== undefined;
+                    return (
+                      <li
+                        key={item.numero}
+                        className={`border rounded-block p-4 space-y-3 transition-colors ${
+                          respondido ? 'border-pp-ink/25' : 'border-pp-ink/10'
+                        }`}
+                      >
+                        <CorpoDoItem
+                          item={item}
+                          valor={estado.respostas[item.numero]}
+                          ordinal
+                          aoEscolher={(v) =>
+                            setEstado((st) => {
+                              const respostas = { ...st.respostas };
+                              if (respostas[item.numero] === v) {
+                                delete respostas[item.numero];
+                              } else {
+                                respostas[item.numero] = v;
+                              }
+                              return { ...st, respostas };
+                            })
+                          }
+                        />
+                      </li>
+                    );
+                  })}
+              </ol>
+
+              {/* E, abaixo, os AUXILIARES: cada um com o título da seção
+                  dele. Respondem-se igual; o que muda é que não somam, e a
+                  separação visual é justamente o que diz isso. Instrumento
+                  sem item auxiliar não renderiza nada aqui. */}
+              {m.itens
+                .filter((item) => item.auxiliar)
+                .map((item) => {
+                  const respondido = estado.respostas[item.numero] !== undefined;
+                  return (
+                    <section key={item.numero} className="space-y-3">
+                      {item.secao && (
+                        <h3 className="text-pp-ink text-sm font-medium">
+                          {item.secao}
+                        </h3>
                       )}
-                    </p>
-                    <div
-                      role="radiogroup"
-                      aria-labelledby={`item-${item.numero}`}
-                      className="flex flex-wrap gap-2"
-                    >
-                      {item.opcoes.map((o) => {
-                        const marcado = estado.respostas[item.numero] === o.value;
-                        return (
-                          <button
-                            key={`${item.numero}-${o.label}-${String(o.value)}`}
-                            type="button"
-                            role="radio"
-                            aria-checked={marcado}
-                            disabled={o.value === null}
-                            onClick={() =>
-                              setEstado((s) => {
-                                const respostas = { ...s.respostas };
-                                if (o.value === null) return s;
-                                if (respostas[item.numero] === o.value) {
-                                  delete respostas[item.numero];
-                                } else {
-                                  respostas[item.numero] = o.value;
-                                }
-                                return { ...s, respostas };
-                              })
-                            }
-                            className={`px-3 py-2 min-h-11 rounded-pill text-sm border transition disabled:opacity-40 disabled:cursor-not-allowed ${
-                              marcado
-                                ? 'bg-pp-ink text-pp-canvas border-pp-ink'
-                                : 'bg-white/60 text-pp-ink border-pp-ink/15 hover:border-pp-ink/40'
-                            }`}
-                          >
-                            {o.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+                      <div
+                        className={`border rounded-block p-4 space-y-3 transition-colors ${
+                          respondido ? 'border-pp-ink/25' : 'border-pp-ink/10'
+                        }`}
+                      >
+                        <CorpoDoItem
+                          item={item}
+                          valor={estado.respostas[item.numero]}
+                          ordinal={false}
+                          aoEscolher={(v) =>
+                            setEstado((st) => {
+                              const respostas = { ...st.respostas };
+                              if (respostas[item.numero] === v) {
+                                delete respostas[item.numero];
+                              } else {
+                                respostas[item.numero] = v;
+                              }
+                              return { ...st, respostas };
+                            })
+                          }
+                        />
+                      </div>
+                    </section>
+                  );
+                })}
+            </>
           )}
 
           {m.entryMode === 'bruto' && (
@@ -680,6 +765,11 @@ function ResultadoCorrecao({
           </article>
         ))}
       </div>
+
+      {/* FORA dos cards e FORA do gráfico: o auxiliar é resposta, não
+          resultado. O ResultGraph só desenha escala, e o auxiliar não é
+          uma — ele nem chega lá, porque não está em `resultados`. */}
+      <RespostasAuxiliares respostas={resposta.auxiliary_responses} />
 
       <ResultGraph detalhe={detalhe} resposta={resposta} />
 
