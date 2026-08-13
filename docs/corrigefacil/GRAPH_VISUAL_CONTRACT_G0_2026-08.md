@@ -294,7 +294,7 @@ gráfico acima **não depende disso** para existir.
 | campo | conteúdo |
 |---|---|
 | entry_mode | `itens` · score_type `percentil` |
-| escalas | P, E, N (`primaria`) + **S (`validade`)** |
+| escalas | P, E, N (`kind='primaria'`) + **S** (`kind='validade'` no catálogo — nome do campo, não leitura clínica da escala) |
 | resultado final | percentil + classificação, ambos da linha de norma |
 | raw / score / percentile / z / ci95 / classification | S / **N** / S / N / N / S |
 | métrica graficável | **percentil** |
@@ -305,7 +305,7 @@ gráfico acima **não depende disso** para existir.
 | componente | **StandardizedProfileChart ×2** — perfil principal + bloco complementar |
 | escalas incluídas | P, E, N no bloco **Perfil de traços**; **S** no bloco **Escala de Sinceridade**, abaixo e separado |
 | escalas excluídas | **S do PERFIL PRINCIPAL** — e só dele. S não sai da tela |
-| risco | S é escala de **validade**, não traço: `kind='validade'` no banco. Percentil alto em S não é "mais sinceridade" na mesma leitura de "mais neuroticismo" — é indicador da qualidade do protocolo. Como quarta barra ao lado de P/E/N vira quarta dimensão clínica falsa. **Separá-la em bloco próprio resolve o risco sem escondê-la**: o profissional continua vendo percentil e classificação de S, mas fora da régua comparativa dos traços |
+| risco | S é a **Escala de Sinceridade**, apresentada separadamente dos traços P/E/N. Ela auxilia na leitura da qualidade/sinceridade das respostas e **não** deve ser tratada como um quarto traço de personalidade nem, isoladamente, como veredito de protocolo válido/inválido. No catálogo ela carrega `kind='validade'` — dado técnico do campo, não conclusão que o gráfico possa afirmar. Percentil alto em S não se lê como "mais sinceridade" do mesmo modo que se lê "mais neuroticismo": as réguas não são a mesma. Como quarta barra ao lado de P/E/N viraria uma dimensão de personalidade falsa. **Separá-la em bloco próprio resolve o risco sem escondê-la**: o profissional continua vendo percentil e classificação de S, mas fora da régua comparativa dos traços |
 | decisão G0 | **APROVADO**. P/E/N = **Perfil de traços**. S = **Escala de Sinceridade**, apresentada **separadamente**, em bloco complementar próprio, na mesma métrica percentílica (0–100), `neutro`/`nao_avaliativa`. O título nomeia a **escala**, nunca um veredito: "Validade do protocolo" **não** é título autorizado |
 
 ---
@@ -601,7 +601,7 @@ onde a direção parece "óbvia".
 | CONFIAS | `neutro` | `ordinal` | `ascendente_favoravel` | faixas em `basis z`; as faixas em `percentual_acerto` são de tarefa e não entram |
 | DASS-21 | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | **a faixa é por escala.** O mesmo escore recebe cor diferente em Depressão, Ansiedade e Estresse — e é assim que tem de ser |
 | **DCDQ** | `neutro` | `nao_ordinal` | **`ascendente_favoravel`** | **invertido em relação aos instrumentos de risco usuais: pontuação alta é o resultado favorável.** O corte não chega ao cliente (R1), então o gráfico **não desenha faixa nenhuma** — e sem faixa não há de onde tirar cor semântica. `neutro` aqui não é preferência estética: é a consequência de não haver régua. Cor por magnitude continua proibida |
-| EPQ-J | `neutro` | `ordinal` | `nao_avaliativa` | percentil tem ordem, mas P/E/N são **traços**: não há polo bom. **S fica fora do perfil** e ganha bloco próprio; mesmo separada é `neutro`/`nao_avaliativa` — validade **não recebe cor clínica de gravidade** |
+| EPQ-J | `neutro` | `ordinal` | `nao_avaliativa` | percentil tem ordem, mas P/E/N são **traços**: não há polo bom. **S fica fora do perfil** e ganha bloco próprio; mesmo separada é `neutro`/`nao_avaliativa` — a Escala de Sinceridade **não recebe cor clínica de gravidade** |
 | ERA-A | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | 2 faixas globais (≤59 / ≥60) |
 | ERA-F | `semantico_por_faixa` | `ordinal` | `ascendente_sinalizador` | idem; fatores homônimos aos de ERA-A **não** são comparáveis entre instrumentos |
 | ETPC | `neutro` | `ordinal` | `nao_avaliativa` | **o quartil é ordinal** (Q25 < Q50 < Q75) e ainda assim o visual é **neutro**: traço de personalidade não representa bom/ruim. É o caso que mostra que ordinalidade e tom são eixos independentes |
@@ -626,10 +626,13 @@ onde a direção parece "óbvia".
   internos, para orientar eixo e ordem de leitura. Nenhum deles vira rótulo,
   mensagem ou legenda para o profissional.
 - **`nao_avaliativa` nunca recebe cor de gravidade** — ETPC e EPQ-J (P/E/N).
-- **EPQ-J/S** é validade de protocolo, não traço nem gravidade. Ela aparece
-  **separada**, no bloco **Escala de Sinceridade** — nunca como quarta barra de
-  P/E/N, e nunca sob o título "Validade do protocolo", que julgaria o protocolo
-  em vez de nomear a escala.
+- **EPQ-J/S** é a **Escala de Sinceridade**, apresentada separadamente dos
+  traços P/E/N. Ela auxilia na leitura da qualidade/sinceridade das respostas e
+  **não** deve ser tratada como um quarto traço de personalidade nem,
+  isoladamente, como veredito de protocolo válido/inválido. Por isso aparece
+  **separada**, em bloco próprio — nunca como quarta barra de P/E/N, e nunca sob
+  o título "Validade do protocolo", que anunciaria como conclusão o que a escala
+  sozinha não estabelece. Ela também não recebe cor de gravidade.
 - **SDQ-POR/PRO** nunca recebe a cor nem a direção das escalas de dificuldade.
 - **DCDQ não recebe cor semântica**: o gráfico dele não tem faixa, e cor só pode
   sair de faixa recebida. O corte etário (47/56/58) **nunca** vai ao frontend.
