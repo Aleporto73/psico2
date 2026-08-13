@@ -376,6 +376,14 @@ export function AvaliarClient({ code }: { code: string }) {
 
           {m.entryMode === 'itens' && (
             <>
+              {/* O enunciado dos itens PONTUADOS, uma vez, imediatamente
+                  antes deles. Fica fora do <ol> porque não é item, e antes
+                  da seção auxiliar porque não vale para ela — o impacto
+                  funcional pergunta outra coisa e traz o enunciado dele. */}
+              {m.instrucaoItens && (
+                <p className="text-pp-ink text-sm">{m.instrucaoItens}</p>
+              )}
+
               {/* Os itens que PONTUAM. A lista numerada é deles: o auxiliar
                   não é o décimo de uma lista de nove. */}
               <ol className="space-y-3">

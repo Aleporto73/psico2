@@ -15,7 +15,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { InstrumentoDetalhe } from '@/lib/corrigefacil/api';
-import { montarModelo } from '../form-model';
+import { INSTRUCAO_DOS_ITENS, montarModelo } from '../form-model';
 import { estadoInicial, pendencias, podeEnviar, progresso } from '../form-state';
 
 const FREQUENCIA = [
@@ -133,7 +133,7 @@ describe('PHQ-9 · o auxiliar no modelo do formulário', () => {
 describe('PHQ-9 · o auxiliar não segura o envio', () => {
   it('os nove respondidos bastam — o impacto em branco não é pendência', () => {
     const m = montarModelo(phq9());
-    const estado = { ...estadoInicial(m), respostas: nove(1) };
+    const estado = { ...estadoInicial(), respostas: nove(1) };
 
     expect(pendencias(m, estado)).toEqual([]);
     expect(podeEnviar(m, estado, false)).toBe(true);
@@ -143,7 +143,7 @@ describe('PHQ-9 · o auxiliar não segura o envio', () => {
     const m = montarModelo(phq9());
     const respostas = nove(1);
     delete respostas[7];
-    const estado = { ...estadoInicial(m), respostas };
+    const estado = { ...estadoInicial(), respostas };
 
     expect(podeEnviar(m, estado, false)).toBe(false);
     expect(pendencias(m, estado)).toEqual([{ tipo: 'itens', faltam: [7] }]);
@@ -153,8 +153,8 @@ describe('PHQ-9 · o auxiliar não segura o envio', () => {
 
   it('responder o impacto não muda nada no envio', () => {
     const m = montarModelo(phq9());
-    const sem = { ...estadoInicial(m), respostas: nove(1) };
-    const com = { ...estadoInicial(m), respostas: { ...nove(1), 10: 3 } };
+    const sem = { ...estadoInicial(), respostas: nove(1) };
+    const com = { ...estadoInicial(), respostas: { ...nove(1), 10: 3 } };
 
     expect(podeEnviar(m, sem, false)).toBe(podeEnviar(m, com, false));
     expect(pendencias(m, com)).toEqual(pendencias(m, sem));
@@ -164,7 +164,7 @@ describe('PHQ-9 · o auxiliar não segura o envio', () => {
 describe('PHQ-9 · o progresso conta os nove', () => {
   it('nove de nove com o impacto em branco', () => {
     const m = montarModelo(phq9());
-    const estado = { ...estadoInicial(m), respostas: nove(0) };
+    const estado = { ...estadoInicial(), respostas: nove(0) };
 
     // o que NÃO pode acontecer: "9 de 10" com o protocolo inteiro
     // respondido, mandando o profissional procurar um item que não falta
@@ -173,16 +173,71 @@ describe('PHQ-9 · o progresso conta os nove', () => {
 
   it('o impacto respondido não infla o contador', () => {
     const m = montarModelo(phq9());
-    const estado = { ...estadoInicial(m), respostas: { ...nove(0), 10: 2 } };
+    const estado = { ...estadoInicial(), respostas: { ...nove(0), 10: 2 } };
     expect(progresso(m, estado)).toEqual({ respondidos: 9, total: 9 });
   });
 
   it('meio protocolo conta certo', () => {
     const m = montarModelo(phq9());
     const estado = {
-      ...estadoInicial(m),
+      ...estadoInicial(),
       respostas: { 1: 0, 2: 1, 3: 2, 10: 3 },
     };
     expect(progresso(m, estado)).toEqual({ respondidos: 3, total: 9 });
+  });
+});
+
+// =====================================================================
+// O ENUNCIADO dos nove itens.
+//
+// Ele vale para os itens 1-9 e para mais nada: o impacto funcional
+// pergunta outra coisa, tem enunciado próprio e fica em seção separada.
+// Como o contrato do catálogo não transporta `instrument.instruction`, o
+// texto mora num mapa fechado por código de instrumento — e este bloco
+// existe para travar as duas metades disso: que o PHQ-9 tem, e que
+// nenhum outro instrumento ganhou.
+// =====================================================================
+
+const ENUNCIADO =
+  'Durante os últimos 14 dias, com que frequência você foi afetado(a) ' +
+  'por algum dos seguintes problemas?';
+
+describe('PHQ-9 · o enunciado dos nove itens', () => {
+  it('o texto é EXATAMENTE o da planilha corrigida', () => {
+    expect(montarModelo(phq9()).instrucaoItens).toBe(ENUNCIADO);
+    // literal, sem depender do mapa — se alguém reescrever a constante,
+    // este teste é que decide quem está certo
+    expect(montarModelo(phq9()).instrucaoItens).toBe(
+      'Durante os últimos 14 dias, com que frequência você foi afetado(a) ' +
+        'por algum dos seguintes problemas?',
+    );
+  });
+
+  it('o enunciado NÃO é o do impacto funcional', () => {
+    const m = montarModelo(phq9());
+    const auxiliar = m.itens.find((i) => i.auxiliar)!;
+
+    // são dois textos distintos, e o do auxiliar continua no item dele
+    expect(m.instrucaoItens).not.toBe(auxiliar.texto);
+    expect(m.instrucaoItens).not.toMatch(/dificultaram/);
+    expect(auxiliar.texto).toMatch(/dificultaram/);
+    // e a seção do auxiliar tem título próprio, que não é o enunciado
+    expect(auxiliar.secao).toBe('Impacto no dia a dia');
+    expect(auxiliar.secao).not.toBe(m.instrucaoItens);
+  });
+
+  it('SÓ o PHQ-9 tem enunciado: nenhum outro instrumento ganhou', () => {
+    // o mapa é fechado. Este teste é o que impede um texto de vazar para
+    // os outros vinte numa edição distraída.
+    expect(Object.keys(INSTRUCAO_DOS_ITENS)).toEqual(['PHQ-9']);
+    expect(montarModelo(semAuxiliar()).instrucaoItens).toBeNull();
+    expect(montarModelo(phq9({ code: 'CES-D' })).instrucaoItens).toBeNull();
+  });
+
+  it('instrumento que não é por itens não recebe enunciado de item', () => {
+    const bruto = montarModelo(
+      phq9({ code: 'PHQ-9', entry_mode: 'bruto', itens: [] }),
+    );
+    expect(bruto.instrucaoItens).toBeNull();
   });
 });

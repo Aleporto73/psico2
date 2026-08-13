@@ -63,9 +63,34 @@ export type ModeloFormulario = {
   escalas: CampoEscala[];
   dimensoes: CampoDimensao[];
   bloqueio: MotivoBloqueio | null;
+  /** Enunciado que vale para os itens PONTUADOS, mostrado uma vez antes
+   *  deles. Null em quase todos os instrumentos — ver INSTRUCAO_DOS_ITENS. */
+  instrucaoItens: string | null;
 };
 
 const MODOS_CONHECIDOS = new Set(['itens', 'bruto', 'componentes']);
+
+/** Enunciado dos itens, por instrumento.
+ *
+ *  Isto é APRESENTAÇÃO, e mora aqui por uma razão concreta: o contrato do
+ *  catálogo não transporta `instrument.instruction`. Levá-lo até a tela
+ *  exigiria coluna nova em `instruments`, migration e mudança de contrato
+ *  da Edge — custo grande para um texto fixo que não entra em cálculo,
+ *  não é norma e não muda por avaliação.
+ *
+ *  O mapa é fechado de propósito: só o código listado recebe enunciado, e
+ *  todo instrumento fora dele continua exatamente como estava. Quando (e
+ *  se) o catálogo passar a transportar o campo, esta constante sai e o
+ *  valor passa a vir de `detalhe`, sem que a tela mude.
+ *
+ *  O texto vale para os itens 1–9. Ele NÃO cobre o item auxiliar: o
+ *  impacto funcional pergunta outra coisa, tem enunciado próprio e fica
+ *  numa seção separada. */
+export const INSTRUCAO_DOS_ITENS: Readonly<Record<string, string>> = {
+  'PHQ-9':
+    'Durante os últimos 14 dias, com que frequência você foi afetado(a) ' +
+    'por algum dos seguintes problemas?',
+};
 
 /** Só dimensões com opções são escolhidas pelo profissional. Dimensão sem
  * opções é calculada a partir das datas pelo resolver server-side. */
@@ -143,6 +168,11 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
       opcoes: d.opcoes,
     })),
     bloqueio,
+    // só em entry_mode 'itens': onde não há item, não há enunciado de item
+    instrucaoItens:
+      detalhe.entry_mode === 'itens'
+        ? (INSTRUCAO_DOS_ITENS[detalhe.code] ?? null)
+        : null,
   };
 }
 
