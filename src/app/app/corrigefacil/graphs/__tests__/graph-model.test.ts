@@ -254,6 +254,65 @@ describe('montagem por instrumento', () => {
     expect(mTotal.blocos[0].pontos[0].excedente).toBeNull();
   });
 
+  it('EPQ-J: P/E/N no perfil, S só no complemento, e nada recalculado', () => {
+    const e = configDoInstrumento('EPQ-J');
+    if (e?.status !== 'aprovado') throw new Error('EPQ-J');
+
+    // o nome vem do CATÁLOGO, não do registro visual: é ele que faz a
+    // linha de S aparecer como "Sinceridade" ao lado do título do bloco
+    const catalogo: EscalaInstrumento[] = [
+      escala('P'), escala('E'), escala('N'),
+      { ...escala('S', 'validade'), name: 'Sinceridade' },
+    ];
+    const resultados: Record<string, ResultadoEscala> = {
+      P: resultado({ percentile: 40, classification: 'Média' }),
+      E: resultado({ percentile: 75, classification: 'Média' }),
+      N: resultado({ percentile: 90, classification: 'Alta' }),
+      S: resultado({ percentile: 15, classification: 'Baixa' }),
+    };
+
+    // PRIMEIRO modelo · os três traços, e só eles
+    const perfil = montarModelo(e.config, resultados, [], catalogo);
+    expect(perfil.blocos).toHaveLength(1);
+    expect(perfil.blocos[0].titulo).toBe('Perfil de traços');
+    expect(perfil.blocos[0].pontos.map((p) => p.escala)).toEqual(['P', 'E', 'N']);
+    expect(perfil.blocos[0].pontos.map((p) => p.escala)).not.toContain('S');
+    expect(perfil.bloqueio).toBeUndefined();
+
+    // SEGUNDO modelo · a Sinceridade sozinha, com título próprio
+    const sinceridade = montarModelo(e.complementos![0], resultados, [], catalogo);
+    expect(sinceridade.blocos).toHaveLength(1);
+    expect(sinceridade.blocos[0].titulo).toBe('Escala de Sinceridade');
+    expect(sinceridade.blocos[0].pontos.map((p) => p.escala)).toEqual(['S']);
+    expect(sinceridade.bloqueio).toBeUndefined();
+
+    // NADA é recalculado: percentil e classificação são os campos que o
+    // servidor mandou, transportados inteiros
+    const s = sinceridade.blocos[0].pontos[0];
+    expect(s.nome).toBe('Sinceridade');
+    expect(s.valor).toBe(15);
+    expect(s.classificacao).toBe('Baixa');
+    expect(s.disponivel).toBe(true);
+    expect(s.excedente).toBeNull();
+
+    // a régua percentílica é a mesma nos dois — separar não mudou o eixo
+    expect(sinceridade.blocos[0].range).toEqual({ min: 0, max: 100 });
+    expect(s.range).toEqual({ min: 0, max: 100 });
+    expect(perfil.blocos[0].range).toEqual({ min: 0, max: 100 });
+
+    for (const p of perfil.blocos[0].pontos) {
+      expect(p.valor, p.escala).toBe(resultados[p.escala].percentile);
+      expect(p.classificacao, p.escala).toBe(resultados[p.escala].classification);
+    }
+
+    // sem faixas no cliente (EPQ-J não tem classification_bands), nenhum
+    // segmento é inventado em nenhum dos dois modelos
+    expect(s.segmentos).toEqual([]);
+    for (const p of perfil.blocos[0].pontos) {
+      expect(p.segmentos, p.escala).toEqual([]);
+    }
+  });
+
   it('BAYLEY: IC95 só aparece onde veio', () => {
     const doms = [
       'DOM_Cognitivo', 'DOM_Linguagem', 'DOM_Motora',

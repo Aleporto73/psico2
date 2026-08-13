@@ -113,9 +113,55 @@ describe('escalas incluídas e excluídas', () => {
     expect(cfg('CONFIAS').metrica).toBe('z');
   });
 
-  it('8 · EPQ-J traz P/E/N e deixa S fora', () => {
+  it('8 · EPQ-J: o perfil principal é P/E/N, e S não entra nele', () => {
+    const c = cfg('EPQ-J');
+
+    // um bloco só, com os TRÊS traços e o título que os nomeia como tal
+    expect(c.blocos).toHaveLength(1);
+    expect(c.blocos[0].titulo).toBe('Perfil de traços');
     expect(escalasDe('EPQ-J')).toEqual(['P', 'E', 'N']);
+
+    // o que este teste existe para impedir: S virar a quarta barra
+    expect(escalasDe('EPQ-J')).not.toContain('S');
     expect(excluidasDe('EPQ-J')).toContain('S');
+
+    // e o motivo tem de dizer O QUE ela é e ONDE ela aparece — sair do
+    // perfil aqui não é sumir da tela
+    const motivo = c.excluidas!.find((x) => x.escala === 'S')!.motivo;
+    expect(motivo).toMatch(/Sinceridade/);
+    expect(motivo).toMatch(/separadamente/i);
+  });
+
+  it('8b · EPQ-J: S é UM complemento separado, com título próprio', () => {
+    const e = configDoInstrumento('EPQ-J');
+    if (e?.status !== 'aprovado') throw new Error('EPQ-J deveria estar aprovado');
+
+    // exatamente uma representação complementar: falha se alguém
+    // remover a Sinceridade da tela, e falha se aparecer uma segunda
+    expect(e.complementos, 'a Sinceridade sumiu da tela').toHaveLength(1);
+    const s = e.complementos![0];
+
+    expect(s.blocos).toHaveLength(1);
+    expect(s.blocos[0].escalas).toEqual(['S']);
+    expect(s.blocos[0].titulo).toBe('Escala de Sinceridade');
+
+    // mesma família e mesma régua do perfil: o que muda é estar
+    // SEPARADO, não a métrica
+    expect(s.familia).toBe('standardized_profile');
+    expect(s.metrica).toBe('percentile');
+    expect(s.range).toEqual({ min: 0, max: 100 });
+
+    // validade não recebe cor clínica nem polo bom (G0 §2.4)
+    expect(s.direcao).toBe('nao_avaliativa');
+    expect(s.tom).toBe('neutro');
+
+    // o título nomeia a ESCALA, nunca um veredito sobre o protocolo
+    expect(s.blocos[0].titulo).not.toMatch(/validade/i);
+
+    // e nenhum traço vaza para o bloco de S
+    for (const traco of ['P', 'E', 'N']) {
+      expect(s.blocos[0].escalas, traco).not.toContain(traco);
+    }
   });
 
   it('9 · ERA-A e ERA-F selecionam por kind (fail-closed)', () => {

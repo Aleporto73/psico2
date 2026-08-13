@@ -317,7 +317,7 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
     config: {
       familia: 'standardized_profile',
       metrica: 'percentile',
-      blocos: [{ escalas: ['P', 'E', 'N'] }],
+      blocos: [{ titulo: 'Perfil de traços', escalas: ['P', 'E', 'N'] }],
       // traço de personalidade não tem polo bom: percentil tem ordem, mas
       // não há gravidade a representar
       direcao: 'nao_avaliativa',
@@ -327,11 +327,31 @@ export const REGISTRO_GRAFICOS: Record<string, EntradaRegistro> = {
         {
           escala: 'S',
           motivo:
-            'escala de VALIDADE do protocolo, não traço: ao lado de P/E/N ' +
-            'viraria uma quarta dimensão clínica falsa',
+            'é a escala de Sinceridade, não um traço P/E/N: como quarta ' +
+            'barra ao lado de P/E/N viraria uma dimensão de personalidade ' +
+            'falsa. Fica fora do PERFIL PRINCIPAL e é apresentada ' +
+            'SEPARADAMENTE, no bloco Escala de Sinceridade',
         },
       ],
     },
+    // A Sinceridade sai do perfil de traços mas NÃO some da tela: vira uma
+    // SEGUNDA representação, com título próprio e a mesma régua
+    // percentílica. Separar é o ponto — junto de P/E/N ela seria lida como
+    // quarto traço; embaixo e nomeada, ela é o que é.
+    //
+    // O título diz a ESCALA, não um veredito sobre o protocolo: `neutro` e
+    // `nao_avaliativa` valem aqui pelo mesmo motivo que valem no perfil —
+    // percentil ordena, mas não há polo bom nem gravidade a pintar.
+    complementos: [
+      {
+        familia: 'standardized_profile',
+        metrica: 'percentile',
+        blocos: [{ titulo: 'Escala de Sinceridade', escalas: ['S'] }],
+        direcao: 'nao_avaliativa',
+        tom: 'neutro',
+        range: PERCENTIL,
+      },
+    ],
   },
 
   'ERA-A': {
