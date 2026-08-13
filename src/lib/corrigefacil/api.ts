@@ -40,6 +40,27 @@ export type ItemInstrumento = {
   numero: number;
   texto: string | null;
   opcoes?: OpcaoResposta[];
+  /** Item que NÃO pontua: zero vínculo em item_scales no servidor. É
+   *  capturado, gravado e apresentado, e fica fora de toda soma. Hoje só o
+   *  impacto funcional do PHQ-9. Ausente nos itens que pontuam — e por isso
+   *  ausente em todos os itens de todos os outros instrumentos. */
+  auxiliar?: boolean;
+  /** Título da seção do item auxiliar ("Impacto no dia a dia"). Só vem
+   *  acompanhado de `auxiliar`. */
+  secao?: string;
+};
+
+/** Uma resposta AUXILIAR, como a Edge devolve.
+ *
+ *  É resposta, nunca resultado: não tem escore, percentil nem classificação,
+ *  e não entra em `resultados`. `label` é o rótulo daquele valor no conjunto
+ *  de alternativas do item — null quando o servidor não encontrou rótulo,
+ *  que é ausência e não texto inventado. */
+export type RespostaAuxiliar = {
+  number: number;
+  text: string;
+  value: number | null;
+  label: string | null;
 };
 
 export type EscalaInstrumento = {
@@ -119,6 +140,10 @@ export type RespostaCorrecao = {
   instrument: string;
   norm_selector: Record<string, unknown>;
   resultados: Record<string, ResultadoEscala>;
+  /** ADITIVO: instrumento sem item auxiliar devolve lista vazia, e a Edge
+   *  antiga não devolve a chave. Por isso é opcional aqui — ler como
+   *  `?? []` mantém a tela funcionando contra as duas versões. */
+  auxiliary_responses?: RespostaAuxiliar[];
 };
 
 /** Corpo do POST /avaliacao: o mesmo do /corrigir MAIS identificação.
@@ -167,6 +192,10 @@ export type AvaliacaoDetalhe = {
   created_at: string;
   completed_at: string | null;
   resultados: Record<string, ResultadoEscala>;
+  /** ADITIVO, mesma leitura de RespostaCorrecao. É o que faz o impacto
+   *  funcional reaparecer no histórico sem recalcular nada: ele foi gravado
+   *  em assessment_responses na conclusão e é relido de lá. */
+  auxiliary_responses?: RespostaAuxiliar[];
 };
 
 /** Paginação real de GET /avaliacoes: a Edge prende `limit` em 1..100

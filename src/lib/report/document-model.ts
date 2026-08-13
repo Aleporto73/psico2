@@ -16,7 +16,10 @@
 // coluna que não deveria estar na tabela.
 // =====================================================================
 
-import type { ResultadoEscala } from '@/lib/corrigefacil/api';
+import type {
+  RespostaAuxiliar,
+  ResultadoEscala,
+} from '@/lib/corrigefacil/api';
 import {
   formatCredential,
   getCredentialLabel,
@@ -80,6 +83,35 @@ export function montarLinhas(
     disponivel: r.available,
     mensagem: r.message,
   }));
+}
+
+/** Uma resposta auxiliar como o DOCUMENTO a imprime. */
+export type LinhaAuxiliar = {
+  number: number;
+  pergunta: string;
+  resposta: string;
+};
+
+/** As respostas auxiliares prontas para o documento.
+ *
+ *  O documento imprime isto DETERMINISTICAMENTE: o valor sai aqui porque
+ *  foi respondido, e não porque a narrativa resolveu citá-lo. A IA pode
+ *  interpretar o dado no texto; alterá-lo ela não pode, porque não é ela
+ *  quem o imprime.
+ *
+ *  Nada é calculado nem reclassificado: `label` é o rótulo que o servidor
+ *  devolveu para o valor respondido. Sem rótulo, o valor cru — nunca um
+ *  texto inventado no cliente. Sem rótulo E sem valor, a linha não existe:
+ *  imprimir a pergunta com a resposta em branco diria que ela ficou sem
+ *  resposta, que é outra afirmação. */
+export function montarAuxiliares(
+  respostas: RespostaAuxiliar[] | undefined,
+): LinhaAuxiliar[] {
+  return (respostas ?? []).flatMap((r) => {
+    const resposta = r.label ?? (r.value !== null ? String(r.value) : null);
+    if (resposta === null || resposta === '') return [];
+    return [{ number: r.number, pergunta: r.text, resposta }];
+  });
 }
 
 export function colunasVisiveis(linhas: LinhaResultado[]): ColunasVisiveis {
