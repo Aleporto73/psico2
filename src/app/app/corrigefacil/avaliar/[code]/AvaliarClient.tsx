@@ -724,6 +724,22 @@ function ResultadoCorrecao({
             {r.available ? (
               <div className="space-y-5">
                 <div className="flex flex-wrap gap-x-10 gap-y-4">
+                  {/* A Média por item, quando o instrumento a declara. É a
+                      MESMA intensidade que já está na Pontuação bruta
+                      acima, na régua de 0 a 3 por item — vem antes dos
+                      Sintomas presentes porque é leitura do bruto, não do
+                      escore. Nos outros 20 `met.media` é null e nada é
+                      desenhado. */}
+                  {met.media && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+                        {met.media.rotulo}
+                      </p>
+                      <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
+                        {met.media.texto}
+                      </p>
+                    </div>
+                  )}
                   {met.escore && (
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">

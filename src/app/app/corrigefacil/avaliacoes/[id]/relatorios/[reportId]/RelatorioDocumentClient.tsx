@@ -526,6 +526,7 @@ export function RelatorioDocumentClient({
                   <tr className="text-left text-pp-ink-soft">
                     <th className="border border-pp-ink/15 px-3 py-2 font-medium">Escala</th>
                     {colunas.bruto && <th className="border border-pp-ink/15 px-3 py-2 font-medium">{cabecalhos.bruto}</th>}
+                    {colunas.media && cabecalhos.media && <th className="border border-pp-ink/15 px-3 py-2 font-medium">{cabecalhos.media}</th>}
                     {colunas.escore && <th className="border border-pp-ink/15 px-3 py-2 font-medium">{cabecalhos.escore}</th>}
                     {colunas.percentil && <th className="border border-pp-ink/15 px-3 py-2 font-medium">Percentil</th>}
                     {colunas.z && <th className="border border-pp-ink/15 px-3 py-2 font-medium">z</th>}
@@ -539,6 +540,7 @@ export function RelatorioDocumentClient({
                     // atravessar para não deixar células fantasma.
                     const numericas =
                       Number(colunas.bruto) +
+                      Number(colunas.media) +
                       Number(colunas.escore) +
                       Number(colunas.percentil) +
                       Number(colunas.z) +
@@ -564,6 +566,7 @@ export function RelatorioDocumentClient({
                         {l.disponivel ? (
                           <>
                             {colunas.bruto && <Celula valor={l.brutoTexto} />}
+                            {colunas.media && cabecalhos.media && <Celula valor={l.mediaTexto} />}
                             {colunas.escore && <Celula valor={l.escoreTexto} />}
                             {colunas.percentil && <Celula valor={l.percentil} />}
                             {colunas.z && <Celula valor={l.z} />}

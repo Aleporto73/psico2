@@ -146,6 +146,14 @@ export function DetalheClient({ id }: { id: string }) {
 
             {r.available ? (
               <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+                {/* mesma ordem da tela de correção: a média é leitura do
+                    bruto e vem antes da contagem. Null nos outros 20. */}
+                {met.media && (
+                  <p className="text-pp-ink">
+                    {met.media.rotulo}{' '}
+                    <span className="font-medium">{met.media.texto}</span>
+                  </p>
+                )}
                 {met.escore && (
                   <p className="text-pp-ink">
                     {met.escore.rotulo}{' '}
