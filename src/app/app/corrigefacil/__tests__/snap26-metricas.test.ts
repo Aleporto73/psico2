@@ -76,38 +76,62 @@ describe('as duas métricas do SNAP-IV-26', () => {
 });
 
 describe('os outros instrumentos não mudam', () => {
-  it('só o SNAP-IV-26 tem métrica própria', () => {
-    expect(Object.keys(METRICAS_POR_INSTRUMENTO)).toEqual([SNAP]);
+  it('as DUAS versões do SNAP têm métrica própria, e só elas', () => {
+    // o 18 entrou na rodada seguinte. A versão anterior deste teste
+    // afirmava que ele estava FORA — estava, naquela rodada; congelar isso
+    // faria o teste brigar com a decisão seguinte em vez de protegê-la.
+    expect(Object.keys(METRICAS_POR_INSTRUMENTO).sort()).toEqual([
+      'SNAP-IV-18',
+      'SNAP-IV-26',
+    ]);
   });
 
-  it('o SNAP-IV-18 fica FORA desta rodada', () => {
-    // ele tem a mesma estrutura de alternativas, e mesmo assim não entra:
-    // a decisão sobre ele é de outra rodada. Isto não afirma que a leitura
-    // dele esteja certa — afirma que não foi mexida.
-    expect(metricasDoInstrumento('SNAP-IV-18')).toBeNull();
-    expect(metodoDeCorrecao('SNAP-IV-18')).toBeNull();
+  it('a Média por item é SÓ do 18: o 26 não ganhou média', () => {
+    expect(metricasDoInstrumento('SNAP-IV-18')?.media).toEqual({
+      rotulo: 'Média por item',
+      divisor: 9,
+      teto: 3,
+      casas: 2,
+    });
+    expect(metricasDoInstrumento(SNAP)?.media).toBeUndefined();
+    // e nenhuma escala do 26 devolve média
+    for (const escala of ['DESATENCAO', 'HIPERATIVIDADE', 'TOD']) {
+      expect(metricasDaEscala(SNAP, escala, 12, 4).media, escala).toBeNull();
+    }
   });
 
   it('sem métrica própria, sai exatamente o que saía antes', () => {
-    for (const code of ['PHQ-9', 'SDQ-POR', 'SNAP-IV-18', 'DASS-21']) {
+    for (const code of ['PHQ-9', 'SDQ-POR', 'DASS-21', 'CES-D']) {
       const m = metricasDaEscala(code, 'TOTAL', 12, 4);
       expect(m.bruto, code).toEqual({ rotulo: 'bruto', texto: '12' });
       expect(m.escore, code).toEqual({ rotulo: 'escore', texto: '4' });
+      expect(m.media, code).toBeNull();
     }
     // e instrumento nenhum informado também não quebra
     expect(metricasDaEscala(undefined, 'TOTAL', 1, 1).bruto?.rotulo).toBe('bruto');
+    expect(metricasDaEscala(undefined, 'TOTAL', 1, 1).media).toBeNull();
   });
 });
 
 describe('a nota de método', () => {
   const metodo = metodoDeCorrecao(SNAP)!;
 
-  it('existe só para o SNAP-IV-26', () => {
+  it('existe nas duas versões do SNAP, e não nos outros', () => {
     expect(metodo).not.toBeNull();
     expect(metodo.titulo).toBe('Método de correção');
-    for (const code of ['PHQ-9', 'SDQ-POR', 'SNAP-IV-18']) {
+    // o 18 ganhou o dele na rodada seguinte, com texto próprio
+    expect(metodoDeCorrecao('SNAP-IV-18')?.titulo).toBe('Método de correção');
+    for (const code of ['PHQ-9', 'SDQ-POR', 'DASS-21']) {
       expect(metodoDeCorrecao(code), code).toBeNull();
     }
+  });
+
+  it('o texto do 26 NÃO mudou: ele não fala de Média por item', () => {
+    // o 26 está fechado. A média segue citada nele só como método
+    // existente na literatura, e não como número exibido.
+    expect(metodo.texto).toContain('média por dimensão');
+    expect(metodo.texto).not.toContain('Média por item');
+    expect(metodo.texto).not.toContain('dividida pelos');
   });
 
   it('diz a fonte, as duas métricas e qual delas interpreta o limiar', () => {
@@ -173,11 +197,15 @@ describe('o gráfico', () => {
     expect(bloco).not.toContain('max: 24');
   });
 
-  it('a legenda do SNAP-IV-26 diz sintomas, não escore', () => {
+  it('a legenda das duas versões diz sintomas, não escore', () => {
     expect(rotuloDeEscoreNoGrafico(SNAP, 'escore')).toBe('sintomas presentes');
+    // o 18 passou a dizer o mesmo ao entrar no mapa, e isso é desejado: o
+    // gráfico dele já plotava a contagem
+    expect(rotuloDeEscoreNoGrafico('SNAP-IV-18', 'escore')).toBe(
+      'sintomas presentes',
+    );
     // e nos outros o padrão passa intacto
     expect(rotuloDeEscoreNoGrafico('PHQ-9', 'escore')).toBe('escore');
-    expect(rotuloDeEscoreNoGrafico('SNAP-IV-18', 'escore')).toBe('escore');
     expect(rotuloDeEscoreNoGrafico(undefined, 'percentil')).toBe('percentil');
   });
 });

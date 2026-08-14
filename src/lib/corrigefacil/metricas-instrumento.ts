@@ -21,11 +21,32 @@
 /** Os tetos das duas métricas de UMA escala. */
 export type TetosDaEscala = { raw: number; score: number };
 
+/** Uma métrica DERIVADA na apresentação, a partir do `raw` que o servidor
+ *  devolveu. Hoje só a Média por item do SNAP-IV-18.
+ *
+ *  Ela não vem da Edge, não está em `assessment_results`, não é norma, não
+ *  é escala e não participa da classificação — é a MESMA intensidade que
+ *  já está em `raw`, lida noutra régua. Por isso mora aqui e não num campo
+ *  do resultado: derivar é apresentação, e apresentação não se persiste. */
+export type MediaDerivada = {
+  /** o nome dela na tela */
+  rotulo: string;
+  /** por quanto o `raw` é dividido. No SNAP-IV-18, os 9 itens do domínio */
+  divisor: number;
+  /** o teto da régua da média: 3, porque cada item vale no máximo 3 */
+  teto: number;
+  /** casas decimais na apresentação */
+  casas: number;
+};
+
 export type MetricasDoInstrumento = {
   /** o nome de `raw` na tela */
   rotuloRaw: string;
   /** o nome de `score` na tela */
   rotuloScore: string;
+  /** a métrica derivada, quando o instrumento tem uma. Ausente nos demais,
+   *  e é essa ausência que mantém a tela deles idêntica. */
+  media?: MediaDerivada;
   /** teto de cada métrica, por código de escala. Espelha data/snap_iv.json
    *  no CorrigeFacil, e é conferido nos testes. */
   tetos: Readonly<Record<string, TetosDaEscala>>;
@@ -45,6 +66,38 @@ export type MetricasDoInstrumento = {
 export const METRICAS_POR_INSTRUMENTO: Readonly<
   Record<string, MetricasDoInstrumento>
 > = {
+  'SNAP-IV-18': {
+    rotuloRaw: 'Pontuação bruta',
+    rotuloScore: 'Sintomas presentes',
+    // Média por item: a MESMA intensidade de `raw`, na régua de 0 a 3 por
+    // item. As duas escalas têm 9 itens, então o divisor é um só.
+    media: { rotulo: 'Média por item', divisor: 9, teto: 3, casas: 2 },
+    // 9 e 9 itens. Bruto = itens × 3; sintomas = um por item.
+    tetos: {
+      DESATENCAO: { raw: 27, score: 9 },
+      HIPERATIVIDADE: { raw: 27, score: 9 },
+    },
+    metodo: {
+      titulo: 'Método de correção',
+      texto:
+        'Versão brasileira do MTA-SNAP-IV: Mattos et al. (2006).\n\n' +
+        'Nesta aplicação são apresentados separadamente:\n\n' +
+        '• Pontuação bruta: soma das respostas de 0 a 3.\n' +
+        '• Média por item: Pontuação bruta dividida pelos 9 itens do ' +
+        'domínio.\n' +
+        '• Sintomas presentes: contagem dos itens marcados como ' +
+        '“Bastante” ou “Demais”.\n\n' +
+        'A interpretação do limiar utiliza a contagem de sintomas. A ' +
+        'Média por item é uma forma de apresentar a intensidade e não ' +
+        'participa da classificação.',
+    },
+    orientacaoParaIA:
+      'A interpretação do limiar utiliza a contagem de Sintomas ' +
+      'presentes, não a Pontuação bruta nem a Média por item. A Média ' +
+      'por item é uma apresentação derivada da Pontuação bruta e não ' +
+      'participa da classificação.',
+  },
+
   'SNAP-IV-26': {
     rotuloRaw: 'Pontuação bruta',
     rotuloScore: 'Sintomas presentes',
@@ -91,20 +144,44 @@ function comTeto(valor: number, teto: number | undefined): string {
   return teto === undefined ? String(valor) : `${valor} / ${teto}`;
 }
 
+/** A Média por item, como TEXTO: "1,67 / 3".
+ *
+ *  Duas casas e vírgula decimal, que é como se escreve número em português.
+ *  O arredondamento é só de APRESENTAÇÃO e não volta para conta nenhuma —
+ *  quem quiser o valor exato tem `raw` ao lado, e é dele que tudo deriva.
+ *
+ *  Esta é a ÚNICA divisão por `divisor` do produto. Tela, histórico,
+ *  documento, PDF e prompt do Relatório Pró consomem daqui; espalhar
+ *  `raw / 9` pelos componentes garantiria que um deles envelhecesse
+ *  sozinho. */
+export function formatarMedia(raw: number, media: MediaDerivada): string {
+  const valor = (raw / media.divisor).toFixed(media.casas).replace('.', ',');
+  return `${valor} / ${media.teto}`;
+}
+
 export type MetricaNaTela = { rotulo: string; texto: string };
 
-/** Como as duas métricas de UMA escala aparecem.
+/** Como as métricas de UMA escala aparecem.
  *
  *  Sem instrumento no mapa, devolve exatamente o que a tela mostrava antes:
- *  "bruto 12" e "escore 4", sem teto. Com instrumento no mapa, os nomes
- *  próprios e o teto de cada régua — que são diferentes, e é justamente por
- *  isso que os dois números precisam aparecer. */
+ *  "bruto 12" e "escore 4", sem teto e sem média. Com instrumento no mapa,
+ *  os nomes próprios e o teto de cada régua — que são diferentes, e é
+ *  justamente por isso que os números precisam aparecer separados.
+ *
+ *  `media` só existe onde o instrumento a declara, e deriva EXCLUSIVAMENTE
+ *  de `raw`. Sem `raw` não há média: ela não se reconstrói a partir de
+ *  `score`, que é outra medida — quatro sintomas presentes não dizem nada
+ *  sobre a intensidade com que apareceram. */
 export function metricasDaEscala(
   code: string | undefined,
   escala: string,
   raw: number | null,
   score: number | null,
-): { bruto: MetricaNaTela | null; escore: MetricaNaTela | null } {
+): {
+  bruto: MetricaNaTela | null;
+  media: MetricaNaTela | null;
+  escore: MetricaNaTela | null;
+} {
   const m = metricasDoInstrumento(code);
   const teto = m?.tetos[escala];
   return {
@@ -115,6 +192,10 @@ export function metricasDaEscala(
             rotulo: m ? m.rotuloRaw : 'bruto',
             texto: m ? comTeto(raw, teto?.raw) : String(raw),
           },
+    media:
+      m?.media && raw !== null
+        ? { rotulo: m.media.rotulo, texto: formatarMedia(raw, m.media) }
+        : null,
     escore:
       score === null
         ? null
@@ -133,11 +214,15 @@ export function metricasDaEscala(
  *  prompt nunca vão divergir. */
 export function rotulosDasColunas(code: string | undefined): {
   bruto: string;
+  media: string | null;
   escore: string;
 } {
   const m = metricasDoInstrumento(code);
   return {
     bruto: m ? m.rotuloRaw : 'Bruto',
+    // null onde não há média declarada: a coluna não existe, e não é uma
+    // coluna vazia. Cabeçalho sem dado embaixo sugere que algo se perdeu.
+    media: m?.media?.rotulo ?? null,
     escore: m ? m.rotuloScore : 'Escore',
   };
 }

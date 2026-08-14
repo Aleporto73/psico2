@@ -89,9 +89,11 @@ const DOC = readFileSync(
 // ---------------------------------------------------------------------
 
 describe('A · documento SNAP-IV-26', () => {
-  it('os cabeçalhos nomeiam as duas medidas', () => {
+  it('os cabeçalhos nomeiam as duas medidas, e o 26 não tem média', () => {
     expect(rotulosDasColunas(SNAP)).toEqual({
       bruto: 'Pontuação bruta',
+      // o 26 está fechado: a coluna de média é do 18 e não existe aqui
+      media: null,
       escore: 'Sintomas presentes',
     });
   });
@@ -141,10 +143,11 @@ describe('A · documento SNAP-IV-26', () => {
 // ---------------------------------------------------------------------
 
 describe('B · documento dos outros instrumentos', () => {
-  it('continua "Bruto" e "Escore"', () => {
-    for (const code of ['PHQ-9', 'SDQ-POR', 'SNAP-IV-18', 'DASS-21', undefined]) {
+  it('continua "Bruto" e "Escore", sem coluna de média', () => {
+    for (const code of ['PHQ-9', 'SDQ-POR', 'DASS-21', 'CES-D', undefined]) {
       expect(rotulosDasColunas(code), String(code)).toEqual({
         bruto: 'Bruto',
+        media: null,
         escore: 'Escore',
       });
     }
@@ -260,7 +263,9 @@ describe('D · prompt do Relatório Pró', () => {
   });
 
   it('os outros instrumentos NÃO recebem rótulo especial nem orientação', () => {
-    for (const code of ['PHQ-9', 'SDQ-POR', 'SNAP-IV-18', undefined]) {
+    // o SNAP-IV-18 saiu desta lista: ele passou a ter rótulos e orientação
+    // próprios, e a cobertura dele mora em snap18-metricas.test.ts
+    for (const code of ['PHQ-9', 'SDQ-POR', 'DASS-21', undefined]) {
       expect(orientacaoParaIA(code), String(code)).toBeNull();
       const t = formatClosedResults([linhaDoBanco('TOTAL', 12, 4)], code);
       expect(t, String(code)).toContain('- bruto: 12');

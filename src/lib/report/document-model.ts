@@ -56,6 +56,15 @@ export type LinhaResultado = {
    *  é o MESMO lugar de onde as telas tiram esses nomes. */
   brutoTexto: string | null;
   escoreTexto: string | null;
+  /** A Média por item, quando o instrumento a declara — hoje só o
+   *  SNAP-IV-18: "1,67 / 3".
+   *
+   *  É DERIVAÇÃO DE APRESENTAÇÃO, e por isso só existe como texto. Não há
+   *  `media: number` aqui de propósito: um número neste tipo pareceria ter
+   *  vindo do servidor, e ele não veio — não está em `assessment_results`,
+   *  não é norma, não é escala e não classifica nada. Quem divide é
+   *  `metricas-instrumento`, uma vez só. */
+  mediaTexto: string | null;
   percentil: number | null;
   z: number | null;
   ci95: string | null;
@@ -69,6 +78,7 @@ export type LinhaResultado = {
  *  sugere que algo foi perdido. */
 export type ColunasVisiveis = {
   bruto: boolean;
+  media: boolean;
   escore: boolean;
   percentil: boolean;
   z: boolean;
@@ -97,6 +107,9 @@ export function montarLinhas(
       escore,
       brutoTexto: met.bruto?.texto ?? null,
       escoreTexto: met.escore?.texto ?? null,
+      // a média sai da MESMA derivação central. Nenhuma divisão por 9 é
+      // escrita aqui nem no componente do documento.
+      mediaTexto: met.media?.texto ?? null,
       percentil: r.available ? r.percentile : null,
       z: r.available ? r.z : null,
       ci95: r.available ? (r.ci95 ?? null) : null,
@@ -146,6 +159,10 @@ export function montarAuxiliares(
 export function colunasVisiveis(linhas: LinhaResultado[]): ColunasVisiveis {
   return {
     bruto: linhas.some((l) => l.bruto !== null),
+    // a coluna da média existe só onde o instrumento a declara. Nos outros
+    // 20 nenhuma linha tem `mediaTexto`, então ela não é desenhada — e o
+    // documento deles sai com as mesmas colunas de sempre.
+    media: linhas.some((l) => l.mediaTexto !== null),
     escore: linhas.some((l) => l.escore !== null),
     percentil: linhas.some((l) => l.percentil !== null),
     z: linhas.some((l) => l.z !== null),
