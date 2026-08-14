@@ -31,6 +31,7 @@ import {
   type PontoEscala,
 } from './graph-model';
 import type { Metrica } from './graph-config';
+import { rotuloDeEscoreNoGrafico } from '@/lib/corrigefacil/metricas-instrumento';
 import { AvisoAmbiguo, FaixasDaRegua, Indisponivel, LegendaFaixas, MarcadorResultado } from './parts';
 
 /** ETPC: a categoria que o servidor nomeou, em degraus ordinais neutros.
@@ -147,8 +148,16 @@ export function CategoricalProfileChart({
                 <figcaption className="flex flex-wrap items-baseline justify-between gap-2">
                   <span className="text-pp-ink text-sm font-medium">{p.nome}</span>
                   <span className="text-pp-ink-soft text-xs">
+                    {/* SÓ a palavra muda. O gráfico continua plotando
+                        `score`, no mesmo eixo, com o mesmo range e as
+                        mesmas cores — "escore 4" ao lado de um card que
+                        diz "Pontuação bruta 12" é que convidava a ler os
+                        dois na mesma régua. */}
                     {p.disponivel && p.valor !== null && metrica !== 'classification'
-                      ? `${rotuloDaMetrica(metrica)} ${p.valor}`
+                      ? `${rotuloDeEscoreNoGrafico(
+                          instrumento,
+                          rotuloDaMetrica(metrica),
+                        )} ${p.valor}`
                       : ''}
                   </span>
                 </figcaption>

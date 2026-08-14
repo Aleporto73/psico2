@@ -12,6 +12,8 @@ import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
+import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
+import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
 import { formatarData } from '../historico-view';
 
 const AVISO =
@@ -126,18 +128,28 @@ export function DetalheClient({ id }: { id: string }) {
       </header>
 
       <section className="space-y-3">
-        {Object.entries(d.resultados).map(([escala, r]) => (
+        {Object.entries(d.resultados).map(([escala, r]) => {
+          // os mesmos nomes que a tela de correção usa, pela mesma função:
+          // o laudo entregue e o histórico não podem chamar a mesma medida
+          // de duas coisas diferentes
+          const met = metricasDaEscala(d.instrument, escala, r.raw, r.score);
+          return (
           <div key={escala} className="border border-pp-ink/10 rounded-block p-5 space-y-2">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <p className="text-pp-ink font-medium">{escala}</p>
-              {r.raw !== null && <p className="text-pp-ink-soft text-sm">bruto {r.raw}</p>}
+              {met.bruto && (
+                <p className="text-pp-ink-soft text-sm">
+                  {met.bruto.rotulo} {met.bruto.texto}
+                </p>
+              )}
             </div>
 
             {r.available ? (
               <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-                {r.score !== null && (
+                {met.escore && (
                   <p className="text-pp-ink">
-                    escore <span className="font-medium">{r.score}</span>
+                    {met.escore.rotulo}{' '}
+                    <span className="font-medium">{met.escore.texto}</span>
                     {r.ci95 ? ` (${r.ci95})` : ''}
                   </p>
                 )}
@@ -159,7 +171,8 @@ export function DetalheClient({ id }: { id: string }) {
               <p className="text-pp-ink-soft text-xs">revisar: {r.flags.join(', ')}</p>
             )}
           </div>
-        ))}
+          );
+        })}
       </section>
 
       {/* O que foi respondido e não foi pontuado. Vem GRAVADO da Edge, em
@@ -168,6 +181,10 @@ export function DetalheClient({ id }: { id: string }) {
           antes de o campo existir, simplesmente não traz a chave e não
           renderiza seção nenhuma. */}
       <RespostasAuxiliares respostas={d.auxiliary_responses} />
+
+      {/* UMA vez, depois dos resultados: qual método de correção está em
+          uso. Instrumento sem método declarado não renderiza nada. */}
+      <MetodoDeCorrecao instrumento={d.instrument} />
 
       <CorrigeFacilReportPanel assessmentId={d.assessment_id} />
 

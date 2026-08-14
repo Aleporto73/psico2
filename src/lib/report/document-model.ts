@@ -20,6 +20,7 @@ import type {
   RespostaAuxiliar,
   ResultadoEscala,
 } from '@/lib/corrigefacil/api';
+import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
 import {
   formatCredential,
   getCredentialLabel,
@@ -42,6 +43,19 @@ export type LinhaResultado = {
   escala: string;
   bruto: number | null;
   escore: number | null;
+  /** O bruto e o escore como o documento IMPRIME.
+   *
+   *  Nos 20 instrumentos em que as duas medidas são a mesma conta, é o
+   *  número e nada mais — "12". No SNAP-IV-26, em que `raw` é intensidade
+   *  (0 a 3) e `score` é contagem de sintomas, sai com a régua junto —
+   *  "12 / 27" e "4 / 9" —, porque os tetos são diferentes e o número
+   *  sozinho não diz qual das duas medidas está ali.
+   *
+   *  Nada é calculado: o teto é metadado do instrumento e o valor é o que
+   *  o servidor gravou. Ver `@/lib/corrigefacil/metricas-instrumento`, que
+   *  é o MESMO lugar de onde as telas tiram esses nomes. */
+  brutoTexto: string | null;
+  escoreTexto: string | null;
   percentil: number | null;
   z: number | null;
   ci95: string | null;
@@ -69,21 +83,36 @@ export type ColunasVisiveis = {
  *  catálogo já decidiu. */
 export function montarLinhas(
   resultados: Record<string, ResultadoEscala>,
+  instrumento?: string,
 ): LinhaResultado[] {
-  return Object.entries(resultados).map(([escala, r]) => ({
-    escala,
+  return Object.entries(resultados).map(([escala, r]) => {
     // indisponível não tem valor quantitativo NENHUM: nem o número que
     // por acaso tenha vindo junto. Mesma regra que o gráfico já aplica.
-    bruto: r.available ? r.raw : null,
-    escore: r.available ? r.score : null,
-    percentil: r.available ? r.percentile : null,
-    z: r.available ? r.z : null,
-    ci95: r.available ? (r.ci95 ?? null) : null,
-    classificacao: r.available ? r.classification : null,
-    disponivel: r.available,
-    mensagem: r.message,
-  }));
+    const bruto = r.available ? r.raw : null;
+    const escore = r.available ? r.score : null;
+    const met = metricasDaEscala(instrumento, escala, bruto, escore);
+    return {
+      escala,
+      bruto,
+      escore,
+      brutoTexto: met.bruto?.texto ?? null,
+      escoreTexto: met.escore?.texto ?? null,
+      percentil: r.available ? r.percentile : null,
+      z: r.available ? r.z : null,
+      ci95: r.available ? (r.ci95 ?? null) : null,
+      classificacao: r.available ? r.classification : null,
+      disponivel: r.available,
+      mensagem: r.message,
+    };
+  });
 }
+
+/** Os cabeçalhos das duas colunas numéricas do documento.
+ *
+ *  Reexportado do módulo compartilhado de propósito: o documento, o PDF, a
+ *  tela de correção, o histórico e o prompt do Relatório Pró leem a mesma
+ *  tabela. Um segundo mapa de rótulos aqui divergiria no primeiro ajuste. */
+export { rotulosDasColunas } from '@/lib/corrigefacil/metricas-instrumento';
 
 /** Uma resposta auxiliar como o DOCUMENTO a imprime. */
 export type LinhaAuxiliar = {

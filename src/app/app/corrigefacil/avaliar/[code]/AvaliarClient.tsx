@@ -14,6 +14,8 @@ import {
 import { resolverNormaData } from '@/lib/corrigefacil/date-norm-api';
 import { ResultGraph } from '../../graphs/ResultGraph';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
+import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
+import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
 import {
   identificacaoInicial,
   montarPedidoAvaliacao,
@@ -700,28 +702,35 @@ function ResultadoCorrecao({
   return (
     <section className="space-y-8">
       <div className="space-y-4">
-        {linhas.map(([escala, r]) => (
+        {linhas.map(([escala, r]) => {
+          // as duas métricas com o nome que ELAS têm neste instrumento. Nos
+          // 20 em que bruto e escore são a mesma conta, sai "bruto 12" e
+          // "escore 4", como sempre saiu.
+          const met = metricasDaEscala(detalhe.code, escala, r.raw, r.score);
+          return (
           <article
             key={escala}
             className="border border-pp-hairline bg-pp-block-lilac/15 rounded-block p-6 sm:p-7 space-y-5"
           >
             <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
               <h3 className="text-pp-ink text-base font-medium">{escala}</h3>
-              {r.raw !== null && (
-                <p className="text-pp-ink-soft text-xs">bruto {r.raw}</p>
+              {met.bruto && (
+                <p className="text-pp-ink-soft text-xs">
+                  {met.bruto.rotulo} {met.bruto.texto}
+                </p>
               )}
             </div>
 
             {r.available ? (
               <div className="space-y-5">
                 <div className="flex flex-wrap gap-x-10 gap-y-4">
-                  {r.score !== null && (
+                  {met.escore && (
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                        escore
+                        {met.escore.rotulo}
                       </p>
                       <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                        {r.score}
+                        {met.escore.texto}
                         {r.ci95 && (
                           <span className="text-pp-ink-soft text-sm font-normal">
                             {' '}
@@ -774,7 +783,8 @@ function ResultadoCorrecao({
               <p className="text-pp-ink-soft text-xs">revisar: {r.flags.join(', ')}</p>
             )}
           </article>
-        ))}
+          );
+        })}
       </div>
 
       {/* FORA dos cards e FORA do gráfico: o auxiliar é resposta, não
@@ -783,6 +793,12 @@ function ResultadoCorrecao({
       <RespostasAuxiliares respostas={resposta.auxiliary_responses} />
 
       <ResultGraph detalhe={detalhe} resposta={resposta} />
+
+      {/* UMA vez, depois dos resultados: qual método de correção está em
+          uso. Fora dos cards e fora do gráfico de propósito — é nota de
+          método, não classificação. Instrumento sem método declarado não
+          renderiza nada. */}
+      <MetodoDeCorrecao instrumento={detalhe.code} />
 
       <hr className="border-pp-hairline-soft" />
 

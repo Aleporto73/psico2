@@ -50,8 +50,10 @@ import {
   resolverDataAvaliacao,
   rotuloDestino,
   rotuloInstrumento,
+  rotulosDasColunas,
   type PerfilDocumento,
 } from '@/lib/report/document-model';
+import { metodoDeCorrecao } from '@/lib/corrigefacil/metricas-instrumento';
 import {
   narrativaVazia,
   parseNarrativa,
@@ -418,8 +420,12 @@ export function RelatorioDocumentClient({
 
   const { avaliacao, relatorio, perfil, evalDate } = estado.dados;
   const identidade = montarIdentidade(perfil);
-  const linhas = montarLinhas(avaliacao.resultados);
+  const linhas = montarLinhas(avaliacao.resultados, avaliacao.instrument);
   const colunas = colunasVisiveis(linhas);
+  // os MESMOS nomes que a tela de correção e o histórico usam. O documento é
+  // o que sai impresso e vira PDF: ele não pode chamar as duas medidas do
+  // SNAP-IV-26 de "Bruto" e "Escore" depois de a tela já as ter separado.
+  const cabecalhos = rotulosDasColunas(avaliacao.instrument);
   const destino = rotuloDestino(relatorio.report_type);
 
   const meta = avaliacao.subject_meta ?? {};
@@ -519,8 +525,8 @@ export function RelatorioDocumentClient({
                 <thead>
                   <tr className="text-left text-pp-ink-soft">
                     <th className="border border-pp-ink/15 px-3 py-2 font-medium">Escala</th>
-                    {colunas.bruto && <th className="border border-pp-ink/15 px-3 py-2 font-medium">Bruto</th>}
-                    {colunas.escore && <th className="border border-pp-ink/15 px-3 py-2 font-medium">Escore</th>}
+                    {colunas.bruto && <th className="border border-pp-ink/15 px-3 py-2 font-medium">{cabecalhos.bruto}</th>}
+                    {colunas.escore && <th className="border border-pp-ink/15 px-3 py-2 font-medium">{cabecalhos.escore}</th>}
                     {colunas.percentil && <th className="border border-pp-ink/15 px-3 py-2 font-medium">Percentil</th>}
                     {colunas.z && <th className="border border-pp-ink/15 px-3 py-2 font-medium">z</th>}
                     {colunas.ci95 && <th className="border border-pp-ink/15 px-3 py-2 font-medium">IC95</th>}
@@ -557,8 +563,8 @@ export function RelatorioDocumentClient({
 
                         {l.disponivel ? (
                           <>
-                            {colunas.bruto && <Celula valor={l.bruto} />}
-                            {colunas.escore && <Celula valor={l.escore} />}
+                            {colunas.bruto && <Celula valor={l.brutoTexto} />}
+                            {colunas.escore && <Celula valor={l.escoreTexto} />}
                             {colunas.percentil && <Celula valor={l.percentil} />}
                             {colunas.z && <Celula valor={l.z} />}
                             {colunas.ci95 && <Celula valor={l.ci95} />}
@@ -599,6 +605,17 @@ export function RelatorioDocumentClient({
             Devolve null sozinho quando a avaliação não tem auxiliar — o que
             inclui toda avaliação salva antes deste campo existir. */}
         <AuxiliaresDoDocumento respostas={avaliacao.auxiliary_responses} />
+
+        {/* ── MÉTODO DE CORREÇÃO ────────────────────────────────────── */}
+        {/* Uma vez, logo abaixo da tabela que ele explica, e fora dela: é
+            nota de método, não resultado nem classificação. Sem isso, quem
+            comparasse este documento com outra implementação do SNAP-IV —
+            uma que some 0 a 3, ou que use média por dimensão — concluiria
+            que os números estão errados.
+
+            Devolve null sozinho nos instrumentos sem método declarado, que
+            são todos os outros. */}
+        <MetodoDoDocumento instrumento={avaliacao.instrument} />
 
         {/* ── REPRESENTAÇÃO VISUAL ──────────────────────────────────── */}
         {/* Entre a tabela e a narrativa: o gráfico é releitura dos mesmos
@@ -786,6 +803,30 @@ function AuxiliaresDoDocumento({
       <p className="text-[11px] text-pp-ink-soft">
         Respondido junto do protocolo. Não entra na pontuação nem na
         classificação.
+      </p>
+    </section>
+  );
+}
+
+/** A nota de MÉTODO, na tipografia do documento.
+ *
+ *  O texto vem do mesmo lugar que a tela usa
+ *  (`@/lib/corrigefacil/metricas-instrumento`) — o que muda aqui é só o
+ *  estilo, para caber no papel. Duas versões do texto divergiriam, e a que
+ *  ficasse para trás sairia impressa. */
+function MetodoDoDocumento({
+  instrumento,
+}: Readonly<{ instrumento: string | undefined }>) {
+  const metodo = metodoDeCorrecao(instrumento);
+  if (!metodo) return null;
+
+  return (
+    <section className="space-y-2 print:break-inside-avoid">
+      <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+        {metodo.titulo}
+      </h2>
+      <p className="text-[11px] text-pp-ink-soft leading-relaxed whitespace-pre-line">
+        {metodo.texto}
       </p>
     </section>
   );
