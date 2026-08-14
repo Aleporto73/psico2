@@ -177,7 +177,13 @@ export function formatClosedResults(
       // da mesma função que a tela usa, e nenhuma divisão acontece aqui. O
       // modelo não é convidado a calculá-la; ele a recebe pronta, como
       // recebe todo o resto.
-      if (met.media && rotulos.media) {
+      //
+      // `row.available` é a guarda: a derivação funciona a partir de `raw`
+      // sozinho, então uma linha indisponível que tenha trazido um número
+      // junto renderia uma média com cara de resultado. O documento já
+      // suprime os quantitativos nesse caso — `montarLinhas` zera tudo
+      // quando `available` é false — e o prompt tem de dizer a mesma coisa.
+      if (row.available && met.media && rotulos.media) {
         lines.push(`- ${rotulos.media.toLowerCase()}: ${met.media.texto}`);
       }
       if (score !== null) {

@@ -254,6 +254,29 @@ describe('as superfícies consomem a mesma derivação', () => {
     expect(texto).not.toContain('- escore:');
   });
 
+  it('Relatório Pró: resultado indisponível NÃO leva média ao modelo', () => {
+    // A derivação funciona a partir de `raw` sozinho. Uma linha marcada
+    // indisponível que tenha trazido um número junto renderia "média por
+    // item: 1,67 / 3" com cara de resultado, ao lado de "disponível: não" —
+    // e o modelo teria um quantitativo para narrar onde não há resultado.
+    // O documento já suprime os quantitativos nesse caso; o prompt tem de
+    // dizer a mesma coisa.
+    const texto = formatClosedResults(
+      [
+        {
+          ...linhaDoBanco('DESATENCAO', 15, 4),
+          available: false,
+          message: 'resultado indisponível',
+        },
+      ],
+      SNAP18,
+    );
+    expect(texto).toContain('- disponível: não');
+    expect(texto).toContain('- mensagem: resultado indisponível');
+    expect(texto).not.toContain('média por item');
+    expect(texto).not.toContain('1,67 / 3');
+  });
+
   it('Relatório Pró: o 26 continua sem linha de média', () => {
     const texto = formatClosedResults(
       [linhaDoBanco('DESATENCAO', 12, 4)],
