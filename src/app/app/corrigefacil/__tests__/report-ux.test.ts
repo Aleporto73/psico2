@@ -239,7 +239,7 @@ describe('CorrigeFácil → card dos Relatórios Pro', () => {
 
   it('o card vem depois do resultado, nas duas telas que o exibem', () => {
     // correção: escalas → gráfico → card. Nada da oferta antes do dado.
-    const iResultados = avaliar.indexOf('{linhas.map(([escala, r]) => (');
+    const iResultados = avaliar.indexOf('{linhas.map(([escala, r]) => {');
     const iGrafico = avaliar.indexOf('<ResultGraph detalhe={detalhe}');
     const iCard = avaliar.indexOf('<CorrigeFacilReportPanel');
     expect(iResultados).toBeGreaterThan(-1);

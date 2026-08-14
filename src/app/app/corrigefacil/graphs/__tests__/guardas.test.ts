@@ -274,19 +274,37 @@ describe('20 · o resultado textual continua na tela', () => {
 
   it('o card textual por escala não foi removido', () => {
     // as EXPRESSÕES de valor, não os rótulos: é o que prova que o dado
-    // chega à tela, e não muda quando o layout muda
-    expect(tela).toContain('{r.score}');
+    // chega à tela, e não muda quando o layout muda.
+    //
+    // `raw` e `score` passam por `metricasDaEscala`, que só dá NOME às duas
+    // e devolve o número — é lá que o SNAP-IV-26 vira "Pontuação bruta" e
+    // "Sintomas presentes", e onde todos os outros continuam "bruto" e
+    // "escore". A guarda segue o caminho do dado até a tela.
+    expect(tela).toContain(
+      'metricasDaEscala(detalhe.code, escala, r.raw, r.score)',
+    );
+    expect(tela).toContain('{met.bruto.texto}');
+    expect(tela).toContain('{met.escore.texto}');
     expect(tela).toContain('{r.percentile}');
     expect(tela).toContain('{r.z}');
     expect(tela).toContain('{r.ci95}');
     expect(tela).toContain('{r.classification}');
-    expect(tela).toContain('{r.raw}');
     expect(tela).toContain("{r.message ?? 'Resultado indisponível.'}");
     expect(tela).toContain('{r.flags.join');
     // e os rótulos continuam nomeando cada número
-    for (const rotulo of ['escore', 'percentil', 'classificação']) {
+    expect(tela).toContain('{met.bruto.rotulo}');
+    expect(tela).toContain('{met.escore.rotulo}');
+    for (const rotulo of ['percentil', 'classificação']) {
       expect(tela, rotulo).toContain(rotulo);
     }
+    // os nomes PADRÃO, que valem para os 20 instrumentos sem métrica
+    // própria, moram no módulo — e continuam sendo os de sempre
+    const metricas = readFileSync(
+      join(DIR, '..', 'metricas-instrumento.ts'),
+      'utf8',
+    );
+    expect(metricas).toContain("'bruto'");
+    expect(metricas).toContain("'escore'");
   });
 
   it('o gráfico entra ENTRE o resultado e o salvamento', () => {
