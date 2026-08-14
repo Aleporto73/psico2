@@ -24,11 +24,17 @@ export type CampoItem = {
   semEnunciado: boolean;
   opcoes: OpcaoResposta[];
   grupo: string | null;
-  /** Item que NÃO pontua. Ele é respondido e gravado como qualquer outro —
-   *  o que muda é só a APRESENTAÇÃO: sai da lista corrida dos itens
-   *  pontuados e ganha uma seção própria. */
+  /** Item que NÃO pontua: zero vínculo com escala nenhuma no servidor. */
   auxiliar: boolean;
-  /** Título da seção do auxiliar. Só vem quando `auxiliar` é true. */
+  /** Título da seção a que o item pertence, quando pertence a alguma.
+   *
+   *  INDEPENDENTE de `auxiliar`, e tem de ser: a Seção de Impacto do SDQ
+   *  mistura os dois lados — o gate (26), a duração (27) e o peso (31) não
+   *  pontuam, e os itens 28, 29 e 30 pontuam na escala IMPACTO. Os seis são
+   *  a mesma seção na tela. Amarrar o título ao `auxiliar`, como era antes,
+   *  esconderia metade dela.
+   *
+   *  Quem agrupa é `secoesDeItens`; item sem seção fica na lista principal. */
   secao: string | null;
 };
 
@@ -66,7 +72,96 @@ export type ModeloFormulario = {
   /** Enunciado que vale para os itens PONTUADOS, mostrado uma vez antes
    *  deles. Null em quase todos os instrumentos — ver INSTRUCAO_DOS_ITENS. */
   instrucaoItens: string | null;
+  /** A seção com porta, quando o instrumento tem uma. Null nos outros 20. */
+  gate: GateDaSecao | null;
 };
+
+/** Seção cuja visibilidade depende de um item de triagem — o GATE.
+ *
+ *  ESPELHO de `GATES` em `engine/calc.py` e na Edge `corrigir`, e só para a
+ *  APRESENTAÇÃO. Esta tela NÃO calcula IMPACTO: quem pontua, aplica a porta
+ *  e classifica é o servidor, e ele o faz de novo por conta própria mesmo
+ *  que o cliente mande outra coisa.
+ *
+ *  O que mora aqui é o que DESENHAR e o que EXIGIR antes de deixar enviar.
+ *  Divergir do servidor faria a tela bloquear um envio que ele aceitaria —
+ *  ou, pior, liberar um que ele recusaria com 422 depois do clique. */
+export type GateDaSecao = {
+  /** o item de triagem: sempre visível e sempre obrigatório */
+  item: number;
+  /** a resposta que FECHA a seção */
+  fechado: number;
+  /** itens que só aparecem com a porta aberta */
+  dependentes: number[];
+  /** dos dependentes, os que passam a ser OBRIGATÓRIOS com a porta aberta */
+  exigidos: number[];
+};
+
+/** O mapa é fechado de propósito, como INSTRUCAO_DOS_ITENS: só o código
+ *  listado ganha porta, e todo instrumento fora dele continua exatamente
+ *  como estava. */
+export const GATE_POR_INSTRUMENTO: Readonly<Record<string, GateDaSecao>> = {
+  // SDQ-POR · "A criança tem alguma dificuldade?" (item 26). Respondido
+  // "Não" (0), a Seção de Impacto inteira não se aplica: só o gate fica na
+  // tela, e 28-30 deixam de ser exigidos. Respondido 1, 2 ou 3, aparecem a
+  // duração (27), as três parcelas do impacto (28-30) e o peso sobre o
+  // professor (31) — e as três parcelas passam a ser obrigatórias.
+  'SDQ-POR': {
+    item: 26,
+    fechado: 0,
+    dependentes: [27, 28, 29, 30, 31],
+    exigidos: [28, 29, 30],
+  },
+};
+
+/** Em que estado está a porta deste protocolo. */
+export type EstadoGate = 'sem_gate' | 'nao_respondido' | 'fechado' | 'aberto';
+
+export function estadoDoGate(
+  modelo: ModeloFormulario,
+  respostas: Readonly<Record<number, number | undefined>>,
+): EstadoGate {
+  const gate = modelo.gate;
+  if (!gate) return 'sem_gate';
+  const v = respostas[gate.item];
+  if (typeof v !== 'number' || !Number.isFinite(v)) return 'nao_respondido';
+  return v === gate.fechado ? 'fechado' : 'aberto';
+}
+
+/** Os itens que a tela desenha AGORA.
+ *
+ *  Antes de o gate ser respondido, e com ele fechado, os dependentes não
+ *  aparecem: perguntar "o quanto essa dificuldade atrapalha" a quem acabou
+ *  de dizer que não há dificuldade é pedir uma resposta que não existe. */
+export function itensVisiveis(
+  modelo: ModeloFormulario,
+  respostas: Readonly<Record<number, number | undefined>>,
+): CampoItem[] {
+  const gate = modelo.gate;
+  if (!gate) return modelo.itens;
+  if (estadoDoGate(modelo, respostas) === 'aberto') return modelo.itens;
+  const dependentes = new Set(gate.dependentes);
+  return modelo.itens.filter((i) => !dependentes.has(i.numero));
+}
+
+export type SecaoDeItens = { titulo: string; itens: CampoItem[] };
+
+/** Os itens agrupados por `secao`, na ordem em que vêm, com o título UMA
+ *  vez para o bloco inteiro — e não repetido a cada pergunta.
+ *
+ *  Item sem `secao` não entra aqui: ele fica na lista principal. No PHQ-9 o
+ *  resultado é uma seção com um item só, que é exatamente o que a tela já
+ *  desenhava; no SDQ é uma seção com até seis. */
+export function secoesDeItens(itens: readonly CampoItem[]): SecaoDeItens[] {
+  const out: SecaoDeItens[] = [];
+  for (const item of itens) {
+    if (!item.secao) continue;
+    const existente = out.find((s) => s.titulo === item.secao);
+    if (existente) existente.itens.push(item);
+    else out.push({ titulo: item.secao, itens: [item] });
+  }
+  return out;
+}
 
 const MODOS_CONHECIDOS = new Set(['itens', 'bruto', 'componentes']);
 
@@ -123,11 +218,13 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
             // item com conjunto próprio usa a lista DELE; sem conjunto, a global
             opcoes: it.opcoes ?? detalhe.opcoes_resposta ?? [],
             grupo: grupoDoItem.get(it.numero) ?? null,
-            // as duas vêm da API e só existem no item auxiliar. Item que
-            // pontua sai `auxiliar: false, secao: null`, que é o estado de
-            // todos os itens de todos os outros instrumentos.
+            // as duas vêm da API e são INDEPENDENTES: `auxiliar` diz que o
+            // item não pontua, `secao` diz a que bloco ele pertence. Item
+            // sem conjunto de alternativas rotulado sai `secao: null`, que é
+            // o estado de todos os itens de quase todos os instrumentos —
+            // inclusive os nove do PHQ-9.
             auxiliar: it.auxiliar === true,
-            secao: it.auxiliar === true ? (it.secao ?? null) : null,
+            secao: it.secao ?? null,
           };
         })
       : [];
@@ -172,6 +269,11 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
     instrucaoItens:
       detalhe.entry_mode === 'itens'
         ? (INSTRUCAO_DOS_ITENS[detalhe.code] ?? null)
+        : null,
+    // idem: sem item não há porta. Os outros 20 saem com null e nada muda.
+    gate:
+      detalhe.entry_mode === 'itens'
+        ? (GATE_POR_INSTRUMENTO[detalhe.code] ?? null)
         : null,
   };
 }

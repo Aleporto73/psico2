@@ -25,7 +25,13 @@ import {
 import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
-import { montarModelo, TEXTO_BLOQUEIO, type ModeloFormulario } from './form-model';
+import {
+  itensVisiveis,
+  montarModelo,
+  secoesDeItens,
+  TEXTO_BLOQUEIO,
+  type ModeloFormulario,
+} from './form-model';
 import type { CampoItem } from './form-model';
 import {
   COMPONENTES,
@@ -300,6 +306,21 @@ export function AvaliarClient({ code }: { code: string }) {
   const m = modelo!;
   const prog = progresso(m, estado);
   const barraFixa = (prog?.total ?? 0) >= LIMITE_BARRA_FIXA;
+  // Os itens que estão na tela AGORA: com uma seção de porta fechada, os
+  // dependentes dela não aparecem. Nos outros 20 instrumentos é a lista
+  // inteira, sempre.
+  const visiveis = itensVisiveis(m, estado.respostas);
+  const secoes = secoesDeItens(visiveis);
+
+  /** Marcar de novo a alternativa já marcada limpa a resposta — é como se
+   *  desmarca um item respondido por engano. */
+  const responder = (numero: number, v: number) =>
+    setEstado((st) => {
+      const respostas = { ...st.respostas };
+      if (respostas[numero] === v) delete respostas[numero];
+      else respostas[numero] = v;
+      return { ...st, respostas };
+    });
 
   return (
     <div className="max-w-3xl mx-auto space-y-8 pt-4">
@@ -384,11 +405,14 @@ export function AvaliarClient({ code }: { code: string }) {
                 <p className="text-pp-ink text-sm">{m.instrucaoItens}</p>
               )}
 
-              {/* Os itens que PONTUAM. A lista numerada é deles: o auxiliar
-                  não é o décimo de uma lista de nove. */}
+              {/* A lista numerada: os itens SEM seção. O que define o lugar
+                  é `secao`, não `auxiliar` — a Seção de Impacto do SDQ tem
+                  itens que pontuam, e eles pertencem ao bloco dela, não a
+                  esta lista. O ordinal continua sendo só de quem pontua: o
+                  auxiliar não é o décimo de uma lista de nove. */}
               <ol className="space-y-3">
-                {m.itens
-                  .filter((item) => !item.auxiliar)
+                {visiveis
+                  .filter((item) => !item.secao)
                   .map((item) => {
                     const respondido = estado.respostas[item.numero] !== undefined;
                     return (
@@ -401,40 +425,28 @@ export function AvaliarClient({ code }: { code: string }) {
                         <CorpoDoItem
                           item={item}
                           valor={estado.respostas[item.numero]}
-                          ordinal
-                          aoEscolher={(v) =>
-                            setEstado((st) => {
-                              const respostas = { ...st.respostas };
-                              if (respostas[item.numero] === v) {
-                                delete respostas[item.numero];
-                              } else {
-                                respostas[item.numero] = v;
-                              }
-                              return { ...st, respostas };
-                            })
-                          }
+                          ordinal={!item.auxiliar}
+                          aoEscolher={(v) => responder(item.numero, v)}
                         />
                       </li>
                     );
                   })}
               </ol>
 
-              {/* E, abaixo, os AUXILIARES: cada um com o título da seção
-                  dele. Respondem-se igual; o que muda é que não somam, e a
-                  separação visual é justamente o que diz isso. Instrumento
-                  sem item auxiliar não renderiza nada aqui. */}
-              {m.itens
-                .filter((item) => item.auxiliar)
-                .map((item) => {
-                  const respondido = estado.respostas[item.numero] !== undefined;
-                  return (
-                    <section key={item.numero} className="space-y-3">
-                      {item.secao && (
-                        <h3 className="text-pp-ink text-sm font-medium">
-                          {item.secao}
-                        </h3>
-                      )}
+              {/* E, abaixo, as SEÇÕES: o título aparece UMA vez para o bloco
+                  inteiro, não a cada pergunta. Instrumento sem item em seção
+                  não renderiza nada aqui; no PHQ-9 dá uma seção com um item
+                  só, que é o que a tela já desenhava. */}
+              {secoes.map((secao) => (
+                <section key={secao.titulo} className="space-y-3">
+                  <h3 className="text-pp-ink text-sm font-medium">
+                    {secao.titulo}
+                  </h3>
+                  {secao.itens.map((item) => {
+                    const respondido = estado.respostas[item.numero] !== undefined;
+                    return (
                       <div
+                        key={item.numero}
                         className={`border rounded-block p-4 space-y-3 transition-colors ${
                           respondido ? 'border-pp-ink/25' : 'border-pp-ink/10'
                         }`}
@@ -443,22 +455,13 @@ export function AvaliarClient({ code }: { code: string }) {
                           item={item}
                           valor={estado.respostas[item.numero]}
                           ordinal={false}
-                          aoEscolher={(v) =>
-                            setEstado((st) => {
-                              const respostas = { ...st.respostas };
-                              if (respostas[item.numero] === v) {
-                                delete respostas[item.numero];
-                              } else {
-                                respostas[item.numero] = v;
-                              }
-                              return { ...st, respostas };
-                            })
-                          }
+                          aoEscolher={(v) => responder(item.numero, v)}
                         />
                       </div>
-                    </section>
-                  );
-                })}
+                    );
+                  })}
+                </section>
+              ))}
             </>
           )}
 
