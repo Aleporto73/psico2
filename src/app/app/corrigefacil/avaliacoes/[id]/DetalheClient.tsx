@@ -13,7 +13,7 @@ import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
-import { metricasDaEscala } from '../../metricas-instrumento';
+import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
 import { formatarData } from '../historico-view';
 
 const AVISO =

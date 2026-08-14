@@ -300,7 +300,7 @@ describe('20 · o resultado textual continua na tela', () => {
     // os nomes PADRÃO, que valem para os 20 instrumentos sem métrica
     // própria, moram no módulo — e continuam sendo os de sempre
     const metricas = readFileSync(
-      join(DIR, '..', 'metricas-instrumento.ts'),
+      join(process.cwd(), 'src/lib/corrigefacil/metricas-instrumento.ts'),
       'utf8',
     );
     expect(metricas).toContain("'bruto'");

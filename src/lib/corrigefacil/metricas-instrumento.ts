@@ -27,10 +27,19 @@ export type MetricasDoInstrumento = {
   /** o nome de `score` na tela */
   rotuloScore: string;
   /** teto de cada métrica, por código de escala. Espelha data/snap_iv.json
-   *  e é conferido em __tests__/metricas-instrumento.test.ts. */
+   *  no CorrigeFacil, e é conferido nos testes. */
   tetos: Readonly<Record<string, TetosDaEscala>>;
   /** a nota de método, mostrada UMA vez abaixo dos resultados */
   metodo: { titulo: string; texto: string };
+  /** Uma frase para o gerador do Relatório Pró, dizendo QUAL das duas
+   *  medidas interpreta o limiar.
+   *
+   *  É orientação SEMÂNTICA, não autorização: as travas de dado fechado
+   *  continuam inteiras — o modelo não recalcula, não escolhe corte, não
+   *  reclassifica e preserva a classificação persistida. O que a frase
+   *  evita é a narrativa cruzar as duas réguas, do tipo "pontuação 12,
+   *  acima do corte 6". */
+  orientacaoParaIA: string;
 };
 
 export const METRICAS_POR_INSTRUMENTO: Readonly<
@@ -57,6 +66,9 @@ export const METRICAS_POR_INSTRUMENTO: Readonly<
         'Outros métodos de pontuação do SNAP-IV, como média por dimensão, ' +
         'também são descritos na literatura.',
     },
+    orientacaoParaIA:
+      'A interpretação do limiar utiliza a contagem de Sintomas ' +
+      'presentes, não a Pontuação bruta.',
   },
 };
 
@@ -111,6 +123,30 @@ export function metricasDaEscala(
             texto: m ? comTeto(score, teto?.score) : String(score),
           },
   };
+}
+
+/** Os CABEÇALHOS das duas colunas numéricas, para a tabela do documento
+ *  profissional e para os rótulos do prompt do Relatório Pró.
+ *
+ *  Maiúscula inicial porque é cabeçalho de tabela; o resto vem do mesmo
+ *  lugar que a tela usa, e é por isso que documento, PDF, histórico e
+ *  prompt nunca vão divergir. */
+export function rotulosDasColunas(code: string | undefined): {
+  bruto: string;
+  escore: string;
+} {
+  const m = metricasDoInstrumento(code);
+  return {
+    bruto: m ? m.rotuloRaw : 'Bruto',
+    escore: m ? m.rotuloScore : 'Escore',
+  };
+}
+
+/** A frase de orientação semântica para o Relatório Pró, ou null.
+ *
+ *  Null nos 20 — e é por isso que o system prompt geral não muda. */
+export function orientacaoParaIA(code: string | undefined): string | null {
+  return metricasDoInstrumento(code)?.orientacaoParaIA ?? null;
 }
 
 /** O nome de `score` na LEGENDA do gráfico.

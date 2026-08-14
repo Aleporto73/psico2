@@ -24,7 +24,7 @@ import {
   metricasDaEscala,
   metricasDoInstrumento,
   rotuloDeEscoreNoGrafico,
-} from '../metricas-instrumento';
+} from '@/lib/corrigefacil/metricas-instrumento';
 
 const SNAP = 'SNAP-IV-26';
 

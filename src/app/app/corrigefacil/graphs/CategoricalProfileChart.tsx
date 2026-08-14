@@ -31,7 +31,7 @@ import {
   type PontoEscala,
 } from './graph-model';
 import type { Metrica } from './graph-config';
-import { rotuloDeEscoreNoGrafico } from '../metricas-instrumento';
+import { rotuloDeEscoreNoGrafico } from '@/lib/corrigefacil/metricas-instrumento';
 import { AvisoAmbiguo, FaixasDaRegua, Indisponivel, LegendaFaixas, MarcadorResultado } from './parts';
 
 /** ETPC: a categoria que o servidor nomeou, em degraus ordinais neutros.

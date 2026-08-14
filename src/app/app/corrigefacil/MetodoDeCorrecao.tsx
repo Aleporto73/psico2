@@ -1,4 +1,4 @@
-import { metodoDeCorrecao } from './metricas-instrumento';
+import { metodoDeCorrecao } from '@/lib/corrigefacil/metricas-instrumento';
 
 // A nota de MÉTODO do instrumento, mostrada UMA vez abaixo dos resultados.
 //

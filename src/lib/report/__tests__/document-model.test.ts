@@ -46,6 +46,10 @@ describe('tabela determinística — linhas', () => {
         escala: 'ANS',
         bruto: 22,
         escore: 70,
+        // sem instrumento de métrica própria, o texto impresso é o número
+        // e nada mais: nenhum teto é inventado
+        brutoTexto: '22',
+        escoreTexto: '70',
         percentil: 95,
         z: 1.64,
         ci95: '65-75',

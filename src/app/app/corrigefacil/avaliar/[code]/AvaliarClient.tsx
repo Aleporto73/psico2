@@ -15,7 +15,7 @@ import { resolverNormaData } from '@/lib/corrigefacil/date-norm-api';
 import { ResultGraph } from '../../graphs/ResultGraph';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
-import { metricasDaEscala } from '../../metricas-instrumento';
+import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
 import {
   identificacaoInicial,
   montarPedidoAvaliacao,

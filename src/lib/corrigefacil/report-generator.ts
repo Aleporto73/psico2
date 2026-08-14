@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { callOpenAI } from '@/lib/openai';
 import { formatAgeAtEvaluation } from '@/lib/report/format-age';
 import {
+  metricasDaEscala,
+  orientacaoParaIA,
+  rotulosDasColunas,
+} from '@/lib/corrigefacil/metricas-instrumento';
+import {
   formatCredential,
   getCredentialLabel,
   getProfessionLabel,
@@ -130,7 +135,22 @@ function cleanScalar(value: number | string | null): string | null {
   return text ? text : null;
 }
 
-export function formatClosedResults(rows: ResultRow[]): string {
+/** Os resultados fechados, no formato que o modelo recebe.
+ *
+ *  `instrumento` muda apenas os RÓTULOS das duas colunas numéricas, e só
+ *  onde o instrumento separa as duas medidas: no SNAP-IV-26 elas viram
+ *  "pontuação bruta" e "sintomas presentes", com o teto de cada régua
+ *  junto. Sem isso chegam ao modelo como "bruto: 12" e "escore: 4", sem
+ *  dizer que 12 é de 27 e 4 é de 9 — e a narrativa cruza as duas.
+ *
+ *  Os nomes saem de `metricas-instrumento`, o MESMO módulo que a tela, o
+ *  histórico e o documento usam. Nada é recalculado: os números são os que
+ *  o servidor gravou, e continuam saindo daqui como vieram. */
+export function formatClosedResults(
+  rows: ResultRow[],
+  instrumento?: string,
+): string {
+  const rotulos = rotulosDasColunas(instrumento);
   return rows
     .map((row) => {
       const scale = oneRelation<ScaleData>(row.scales);
@@ -142,8 +162,22 @@ export function formatClosedResults(rows: ResultRow[]): string {
       const score = cleanScalar(row.score);
       const percentile = cleanScalar(row.percentile);
       const z = cleanScalar(row.z_score);
-      if (raw !== null) lines.push(`- bruto: ${raw}`);
-      if (score !== null) lines.push(`- escore: ${score}`);
+      // o teto acompanha o número onde as duas réguas são diferentes; onde
+      // não são, `metricasDaEscala` devolve o número puro, como sempre
+      const met = metricasDaEscala(
+        instrumento,
+        code ?? '',
+        raw === null ? null : Number(raw),
+        score === null ? null : Number(score),
+      );
+      if (raw !== null) {
+        lines.push(`- ${rotulos.bruto.toLowerCase()}: ${met.bruto?.texto ?? raw}`);
+      }
+      if (score !== null) {
+        lines.push(
+          `- ${rotulos.escore.toLowerCase()}: ${met.escore?.texto ?? score}`,
+        );
+      }
       if (percentile !== null) lines.push(`- percentil: ${percentile}`);
       if (z !== null) lines.push(`- z: ${z}`);
       if (row.classification?.trim()) lines.push(`- classificação: ${row.classification.trim()}`);
@@ -425,7 +459,16 @@ export async function generateCorrigeFacilReport(args: {
       ? subjectMeta.respondent_name.trim()
       : '';
 
-  const resultsText = formatClosedResults(rows);
+  const resultsText = formatClosedResults(rows, instrument.code);
+  // Orientação SEMÂNTICA, e só onde o instrumento tem duas medidas: diz
+  // qual delas interpreta o limiar. Não autoriza nada — as travas de dado
+  // fechado do system prompt continuam inteiras, e o modelo segue proibido
+  // de recalcular, escolher corte ou reclassificar. Vazio nos outros 20, e
+  // por isso o prompt deles não muda um caractere.
+  const orientacao = orientacaoParaIA(instrument.code);
+  const orientacaoText = orientacao
+    ? `\n\nLEITURA DAS MÉTRICAS DESTE INSTRUMENTO (não recalcule nada; é só para nomear corretamente no texto)\n${orientacao}`
+    : '';
   // Contexto do profissional NÃO é resultado do instrumento, e o rótulo diz
   // isso ao modelo: sem essa separação, observação subjetiva e dado
   // quantitativo entram no texto como se tivessem o mesmo peso de evidência.
@@ -446,7 +489,7 @@ Código: ${instrument.code}
 Nome: ${instrument.name}
 
 RESULTADOS FECHADOS DO CORRIGEFÁCIL
-${resultsText}${notesText}
+${resultsText}${orientacaoText}${notesText}
 
 Redija as cinco seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 

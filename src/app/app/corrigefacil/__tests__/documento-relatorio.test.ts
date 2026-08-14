@@ -133,8 +133,13 @@ describe('documento profissional — composição', () => {
   });
 
   it('a tabela sai do modelo puro, não de cálculo na tela', () => {
-    expect(documento).toContain('montarLinhas(avaliacao.resultados)');
+    // o instrumento entra junto porque é ele que decide COMO as duas
+    // colunas numéricas se chamam. O cálculo continua todo fora da tela.
+    expect(documento).toContain(
+      'montarLinhas(avaliacao.resultados, avaliacao.instrument)',
+    );
     expect(documento).toContain('colunasVisiveis(linhas)');
+    expect(documento).toContain('rotulosDasColunas(avaliacao.instrument)');
   });
 
   // Bug real: com TODAS as escalas indisponíveis, `colunasVisiveis` zera
