@@ -52,6 +52,10 @@ describe('tabela determinística — linhas', () => {
         escoreTexto: '70',
         mediaTexto: null,
         percentil: 95,
+        // o texto ao lado do número, pelo mesmo motivo de `brutoTexto`: o
+        // número é o que o servidor gravou, o texto é como ele se escreve.
+        // Sem instrumento de regra própria, são a mesma coisa.
+        percentilTexto: '95',
         z: 1.64,
         ci95: '65-75',
         classificacao: 'Elevado',

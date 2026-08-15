@@ -15,7 +15,10 @@ import { resolverNormaData } from '@/lib/corrigefacil/date-norm-api';
 import { ResultGraph } from '../../graphs/ResultGraph';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
-import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
+import {
+  metricasDaEscala,
+  textoDePercentil,
+} from '@/lib/corrigefacil/metricas-instrumento';
 import {
   identificacaoInicial,
   montarPedidoAvaliacao,
@@ -37,6 +40,7 @@ import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import {
   itensVisiveis,
   montarModelo,
+  resolvidaPelaIdade,
   secoesDeItens,
   TEXTO_BLOQUEIO,
   type ModeloFormulario,
@@ -221,7 +225,9 @@ export function AvaliarClient({ code }: { code: string }) {
         setIdentificacao((atual) => ({ ...atual, idadeCalculada: resolvida.age }));
       }
 
-      const resposta = await corrigirInstrumento(montarPedido(modelo, estadoParaEnvio));
+      const resposta = await corrigirInstrumento(
+        montarPedido(modelo, estadoParaEnvio, identificacao.idadeAnos),
+      );
       setResultado(resposta);
     } catch (err: unknown) {
       setErroEnvio(
@@ -374,9 +380,18 @@ export function AvaliarClient({ code }: { code: string }) {
 
           <DateNormFields modelo={m} estado={estado} setEstado={setEstado} />
 
-          {m.dimensoes.length > 0 && (
+          {m.dimensoes.some(
+            (d) => !resolvidaPelaIdade(m, estado.selector, d.code),
+          ) && (
             <section className="space-y-4">
               {m.dimensoes.map((d, i) => {
+                // Dimensão que a idade resolve não vira campo: perguntar a
+                // faixa etária de quem já informou a idade é pedir a mesma
+                // coisa duas vezes, e abre a porta para as duas discordarem.
+                // O índice é preservado de propósito — `opcoesDaDimensao` e
+                // `escolherDimensao` andam pela cascata por posição, e
+                // filtrar a lista deslocaria as seguintes.
+                if (resolvidaPelaIdade(m, estado.selector, d.code)) return null;
                 const opcoes = opcoesDaDimensao(m, detalhe.arvore, i, estado.selector);
                 return (
                   <label key={d.code} className="block space-y-1">
@@ -780,6 +795,9 @@ function ResultadoCorrecao({
           // 20 em que bruto e escore são a mesma conta, sai "bruto 12" e
           // "escore 4", como sempre saiu.
           const met = metricasDaEscala(detalhe.code, escala, r.raw, r.score);
+          // o percentil como TEXTO, da regra central: no BPA-2 o percentil
+          // ausente da primeira faixa é "< 1", e não campo vazio
+          const percentil = textoDePercentil(detalhe.code, r);
           return (
           <article
             key={escala}
@@ -829,13 +847,13 @@ function ResultadoCorrecao({
                       </p>
                     </div>
                   )}
-                  {r.percentile !== null && (
+                  {percentil !== null && (
                     <div>
                       <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
                         percentil
                       </p>
                       <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                        {r.percentile}
+                        {percentil}
                       </p>
                     </div>
                   )}

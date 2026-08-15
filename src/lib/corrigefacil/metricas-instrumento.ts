@@ -125,6 +125,78 @@ export const METRICAS_POR_INSTRUMENTO: Readonly<
   },
 };
 
+// ---------------------------------------------------------------------
+// PERCENTIL ABAIXO DO PRIMEIRO PONTO DA TABELA
+// ---------------------------------------------------------------------
+
+/** Instrumento em que percentil ausente na PRIMEIRA faixa não é ausência
+ *  de norma: é um percentil abaixo do primeiro ponto tabelado.
+ *
+ *  O BPA-2 é o caso. A tabela normativa começa no percentil 1, e o bruto
+ *  que fica abaixo dele sai da Edge com `percentile: null` e a
+ *  classificação da primeira faixa — `available` continua true, porque o
+ *  resultado EXISTE e é interpretável. Mostrar campo vazio ali esconde a
+ *  informação que o profissional precisa ler: o desempenho está abaixo do
+ *  primeiro percentil da amostra.
+ *
+ *  O que este mapa NÃO é: uma imputação de valor. Nada vira 0, 1 nem 0,5,
+ *  nada é gravado, nada é recalculado. É só como o `null` que o servidor
+ *  já gravou se ESCREVE na tela — e é por isso que mora neste módulo, com
+ *  o resto da apresentação, e não num campo do resultado.
+ *
+ *  O mapa é FECHADO, como METRICAS_POR_INSTRUMENTO: instrumento fora dele
+ *  continua exatamente como estava, com percentil ausente sem texto. */
+export type PercentilAbaixoDoPrimeiro = {
+  /** a classificação que CONFIRMA que é o piso da tabela, e não outra
+   *  coisa. Sem ela, qualquer percentil nulo viraria "< 1" */
+  classificacao: string;
+  /** o texto que aparece no lugar do número */
+  texto: string;
+};
+
+export const PERCENTIL_ABAIXO_DO_PRIMEIRO: Readonly<
+  Record<string, PercentilAbaixoDoPrimeiro>
+> = {
+  // A tabela do BPA-2 começa no percentil 1; abaixo dele a fonte diz
+  // apenas "< 1", e a classificação que acompanha é sempre a primeira.
+  'BPA-2': { classificacao: 'Muito inferior', texto: '< 1' },
+};
+
+/** O que UM resultado precisa ter para o percentil ser escrito. É o
+ *  subconjunto que tela, histórico, documento e Relatório Pró têm em
+ *  comum — nenhum dos quatro passa o objeto inteiro. */
+export type ResultadoParaPercentil = {
+  available: boolean;
+  percentile: number | string | null;
+  classification: string | null;
+};
+
+/** O percentil COMO TEXTO, ou null quando não há percentil a escrever.
+ *
+ *  Esta é a ÚNICA regra de apresentação de percentil do produto. Tela do
+ *  resultado, histórico, documento profissional/PDF e o dado fechado que
+ *  vai ao Relatório Pró consomem daqui; um `if` repetido em quatro
+ *  componentes garantiria que um deles envelhecesse sozinho.
+ *
+ *  O GRÁFICO NÃO consome: ele plota `percentile`, e "< 1" não tem posição
+ *  no eixo. Ponto sem barra continua sendo a leitura correta ali, e é de
+ *  propósito que este módulo não devolve número nenhum para ele. */
+export function textoDePercentil(
+  code: string | undefined,
+  r: ResultadoParaPercentil,
+): string | null {
+  // resultado indisponível não tem quantitativo nenhum, nem o número que
+  // por acaso tenha vindo junto. Mesma regra do gráfico e do documento.
+  if (!r.available) return null;
+  if (r.percentile !== null) {
+    const texto = String(r.percentile).trim();
+    if (texto) return texto;
+  }
+  const regra = code ? PERCENTIL_ABAIXO_DO_PRIMEIRO[code] : undefined;
+  if (!regra) return null;
+  return r.classification?.trim() === regra.classificacao ? regra.texto : null;
+}
+
 export function metricasDoInstrumento(
   code: string | undefined,
 ): MetricasDoInstrumento | null {

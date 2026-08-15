@@ -285,7 +285,13 @@ describe('20 · o resultado textual continua na tela', () => {
     );
     expect(tela).toContain('{met.bruto.texto}');
     expect(tela).toContain('{met.escore.texto}');
-    expect(tela).toContain('{r.percentile}');
+    // o percentil passa por `textoDePercentil` pelo mesmo motivo que
+    // `raw`/`score` passam por `metricasDaEscala`: a regra de como o
+    // número se ESCREVE mora no módulo comum, não no componente. É lá que
+    // o percentil nulo da primeira faixa do BPA-2 vira "< 1", e onde todos
+    // os outros continuam sendo o número que o servidor mandou.
+    expect(tela).toContain('textoDePercentil(detalhe.code, r)');
+    expect(tela).toContain('{percentil}');
     expect(tela).toContain('{r.z}');
     expect(tela).toContain('{r.ci95}');
     expect(tela).toContain('{r.classification}');

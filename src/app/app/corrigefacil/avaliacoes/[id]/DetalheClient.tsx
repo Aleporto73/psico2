@@ -14,7 +14,10 @@ import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
 import { TemposDeExecucao } from '../../TemposDeExecucao';
-import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
+import {
+  metricasDaEscala,
+  textoDePercentil,
+} from '@/lib/corrigefacil/metricas-instrumento';
 import { formatarData } from '../historico-view';
 
 const AVISO =
@@ -134,6 +137,9 @@ export function DetalheClient({ id }: { id: string }) {
           // o laudo entregue e o histórico não podem chamar a mesma medida
           // de duas coisas diferentes
           const met = metricasDaEscala(d.instrument, escala, r.raw, r.score);
+          // mesma regra central da tela de correção: o "< 1" do BPA-2 é
+          // apresentação, e apresentação mora num lugar só
+          const percentil = textoDePercentil(d.instrument, r);
           return (
           <div key={escala} className="border border-pp-ink/10 rounded-block p-5 space-y-2">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -162,7 +168,7 @@ export function DetalheClient({ id }: { id: string }) {
                     {r.ci95 ? ` (${r.ci95})` : ''}
                   </p>
                 )}
-                {r.percentile !== null && <p className="text-pp-ink">percentil {r.percentile}</p>}
+                {percentil !== null && <p className="text-pp-ink">percentil {percentil}</p>}
                 {r.z !== null && <p className="text-pp-ink">z {r.z}</p>}
                 {r.classification && (
                   <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink bg-white/60 rounded-pill">

@@ -20,7 +20,10 @@ import type {
   RespostaAuxiliar,
   ResultadoEscala,
 } from '@/lib/corrigefacil/api';
-import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
+import {
+  metricasDaEscala,
+  textoDePercentil,
+} from '@/lib/corrigefacil/metricas-instrumento';
 import {
   formatCredential,
   getCredentialLabel,
@@ -66,6 +69,14 @@ export type LinhaResultado = {
    *  `metricas-instrumento`, uma vez só. */
   mediaTexto: string | null;
   percentil: number | null;
+  /** O percentil COMO ele é impresso. Igual ao número em quase todos os
+   *  casos; no BPA-2, "< 1" onde o bruto fica abaixo do primeiro ponto
+   *  tabelado e o servidor gravou `percentile: null`.
+   *
+   *  Existe ao lado de `percentil` pelo mesmo motivo de `mediaTexto`: o
+   *  número é o que o servidor gravou e continua sendo, e o texto é como
+   *  ele se escreve. Quem decide é `textoDePercentil`, uma vez só. */
+  percentilTexto: string | null;
   z: number | null;
   ci95: string | null;
   classificacao: string | null;
@@ -111,6 +122,7 @@ export function montarLinhas(
       // escrita aqui nem no componente do documento.
       mediaTexto: met.media?.texto ?? null,
       percentil: r.available ? r.percentile : null,
+      percentilTexto: textoDePercentil(instrumento, r),
       z: r.available ? r.z : null,
       ci95: r.available ? (r.ci95 ?? null) : null,
       classificacao: r.available ? r.classification : null,
@@ -164,7 +176,10 @@ export function colunasVisiveis(linhas: LinhaResultado[]): ColunasVisiveis {
     // documento deles sai com as mesmas colunas de sempre.
     media: linhas.some((l) => l.mediaTexto !== null),
     escore: linhas.some((l) => l.escore !== null),
-    percentil: linhas.some((l) => l.percentil !== null),
+    // o TEXTO manda: no BPA-2 a coluna existe com percentil nulo, porque
+    // "< 1" é o valor daquela linha. Sem isso a coluna sumiria justamente
+    // onde ela tem o que dizer.
+    percentil: linhas.some((l) => l.percentilTexto !== null),
     z: linhas.some((l) => l.z !== null),
     ci95: linhas.some((l) => l.ci95 !== null && l.ci95 !== ''),
     classificacao: linhas.some((l) => Boolean(l.classificacao)),

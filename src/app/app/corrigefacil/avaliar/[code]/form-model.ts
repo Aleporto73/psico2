@@ -187,6 +187,69 @@ export const INSTRUCAO_DOS_ITENS: Readonly<Record<string, string>> = {
     'por algum dos seguintes problemas?',
 };
 
+// ---------------------------------------------------------------------
+// DIMENSÃO QUE A IDADE RESOLVE
+// ---------------------------------------------------------------------
+
+/** Uma dimensão de norma que a IDADE resolve no servidor, em vez de o
+ *  profissional escolher numa lista.
+ *
+ *  O BPA-2 é o caso: na conversão por idade, a faixa etária é função da
+ *  idade informada e pedi-la de novo é pedir que o profissional repita o
+ *  que já disse — com a chance de dizer diferente. A tela deixa de mostrar
+ *  o campo, deixa de exigi-lo e manda a idade como chave numérica.
+ *
+ *  A AUTORIDADE CONTINUA NO SERVIDOR. Esta tela não tem, e não pode ter, a
+ *  tabela de faixas: quem sabe que 25 anos cai em 21-30 é o `range_min`/
+ *  `range_max` dos `norm_sets`, e ele não chega ao browser. O que se manda
+ *  é a idade crua; a faixa é escolhida lá.
+ *
+ *  O mapa é FECHADO, como INSTRUCAO_DOS_ITENS e GATE_POR_INSTRUMENTO — e
+ *  aqui isso é mais que estilo. `manual_choice=false` no catálogo tem
+ *  história diferente em outros instrumentos, e transformar todos eles em
+ *  campo oculto de uma vez esconderia escolha que hoje é do profissional.
+ *  Só o código listado muda. */
+export type FaixaPelaIdade = {
+  /** a dimensão que sai da tela, das pendências e do corpo do envio */
+  dimensao: string;
+  /** a dimensão que LIGA a regra, e o valor dela que a liga */
+  quando: { dimensao: string; valor: string };
+  /** o nome da chave numérica que vai no `norm_selector` no lugar dela */
+  chave: string;
+};
+
+export const FAIXA_PELA_IDADE: Readonly<Record<string, FaixaPelaIdade>> = {
+  // BPA-2 · a dimensão 'Conversão' tem duas opções. Em 'idade' a faixa
+  // etária é a idade; em 'escolaridade' a faixa é a escolaridade e
+  // continua sendo escolha manual, exatamente como está hoje.
+  'BPA-2': {
+    dimensao: 'faixa',
+    quando: { dimensao: 'conversao', valor: 'idade' },
+    chave: 'chave',
+  },
+};
+
+/** A regra deste instrumento, quando o selector atual a LIGA. Null é o
+ *  caso dos outros 20, e também o do BPA-2 por escolaridade. */
+export function faixaPelaIdade(
+  modelo: ModeloFormulario,
+  selector: Record<string, string>,
+): FaixaPelaIdade | null {
+  const regra = FAIXA_PELA_IDADE[modelo.code];
+  if (!regra) return null;
+  return selector[regra.quando.dimensao] === regra.quando.valor ? regra : null;
+}
+
+/** Esta dimensão está sendo resolvida pela idade agora? Quem desenha e
+ *  quem cobra pendência perguntam daqui, para não haver dois critérios. */
+export function resolvidaPelaIdade(
+  modelo: ModeloFormulario,
+  selector: Record<string, string>,
+  code: string,
+): boolean {
+  return faixaPelaIdade(modelo, selector)?.dimensao === code;
+}
+
 /** Só dimensões com opções são escolhidas pelo profissional. Dimensão sem
  * opções é calculada a partir das datas pelo resolver server-side. */
 function escolhiveis(dimensoes: DimensaoNorma[]): DimensaoNorma[] {
