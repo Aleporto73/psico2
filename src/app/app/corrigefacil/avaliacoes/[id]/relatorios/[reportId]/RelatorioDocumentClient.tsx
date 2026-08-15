@@ -55,6 +55,11 @@ import {
 } from '@/lib/report/document-model';
 import { metodoDeCorrecao } from '@/lib/corrigefacil/metricas-instrumento';
 import {
+  lerTempos,
+  NOTA_TEMPOS,
+  TITULO_TEMPOS,
+} from '@/lib/corrigefacil/tempos-execucao';
+import {
   narrativaVazia,
   parseNarrativa,
   secoesEstruturadasVazias,
@@ -618,6 +623,15 @@ export function RelatorioDocumentClient({
 
             Devolve null sozinho nos instrumentos sem método declarado, que
             são todos os outros. */}
+        {/* ── TEMPO DE EXECUÇÃO ─────────────────────────────────────── */}
+        {/* Determinístico, e por isso FORA da narrativa e FORA da tabela,
+            pelo mesmo motivo das respostas auxiliares: a tabela tem colunas
+            de escore, percentil e classificação, e o tempo não tem nenhuma
+            das três. Uma linha dele ali seria lida como resultado.
+
+            Devolve null sozinho quando não há tempo gravado. */}
+        <TemposDoDocumento instrumento={avaliacao.instrument} meta={meta} />
+
         <MetodoDoDocumento instrumento={avaliacao.instrument} />
 
         {/* ── REPRESENTAÇÃO VISUAL ──────────────────────────────────── */}
@@ -831,6 +845,41 @@ function MetodoDoDocumento({
       <p className="text-[11px] text-pp-ink-soft leading-relaxed whitespace-pre-line">
         {metodo.texto}
       </p>
+    </section>
+  );
+}
+
+/** Os tempos de execução no documento impresso.
+ *
+ *  Lê do MESMO módulo que a tela e o histórico usam
+ *  (`@/lib/corrigefacil/tempos-execucao`) — o que muda aqui é só o estilo,
+ *  para caber no papel. A nota acompanha o número também no impresso: o PDF
+ *  circula sem o contexto da tela, e é justamente ali que "55 segundos"
+ *  corre mais risco de ser lido como classificação.
+ *
+ *  Bloco pequeno e de leitura única: cabe inteiro numa página e não deve
+ *  ser partido. */
+function TemposDoDocumento({
+  instrumento,
+  meta,
+}: Readonly<{
+  instrumento: string | undefined;
+  meta: Record<string, unknown> | null | undefined;
+}>) {
+  const tempos = lerTempos(instrumento, meta);
+  if (tempos.length === 0) return null;
+
+  return (
+    <section className="space-y-2 print:break-inside-avoid">
+      <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+        {TITULO_TEMPOS}
+      </h2>
+      <dl className="grid gap-x-8 gap-y-2 sm:grid-cols-2 text-sm">
+        {tempos.map((t) => (
+          <Campo key={t.rotulo} rotulo={t.rotulo} valor={`${t.segundos} segundos`} />
+        ))}
+      </dl>
+      <p className="text-[11px] text-pp-ink-soft leading-relaxed">{NOTA_TEMPOS}</p>
     </section>
   );
 }

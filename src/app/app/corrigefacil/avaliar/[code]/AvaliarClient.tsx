@@ -24,6 +24,13 @@ import {
   validarIdentificacao,
   type IdentificacaoAvaliado,
 } from './save-model';
+import {
+  metaDeTempos,
+  temposDoInstrumento,
+  NOTA_TEMPOS,
+  TITULO_TEMPOS,
+} from '@/lib/corrigefacil/tempos-execucao';
+import { TemposDeExecucao } from '../../TemposDeExecucao';
 import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
@@ -661,6 +668,16 @@ function IdentificacaoFields({
         </label>
       </div>
 
+      {/* Tempos de execução: REGISTRO DESCRITIVO, e a tela diz isso antes
+          de pedir o número. Só aparece no instrumento que declara tempo —
+          hoje o TRILHAS_PRE. Nos outros 19 `temposDoInstrumento` devolve
+          null e esta seção não existe. */}
+      <TemposFields
+        modelo={modelo}
+        identificacao={identificacao}
+        onIdentificacao={onIdentificacao}
+      />
+
       {modelo.exigeDataNascimento && (
         <p className="text-pp-ink-soft text-xs">
           A idade será calculada pelo servidor a partir das datas informadas abaixo.
@@ -673,6 +690,62 @@ function IdentificacaoFields({
         </p>
       )}
     </section>
+  );
+}
+
+/** Os tempos de execução do instrumento, quando ele declara algum.
+ *
+ *  OPCIONAIS: nunca bloqueiam o envio, nunca entram em `validarIdentificacao`
+ *  e nunca viram erro. Um protocolo sem tempo anotado é um protocolo válido.
+ *
+ *  A nota fica ACIMA dos campos, não abaixo: quem está digitando precisa
+ *  saber que o número não vai ser classificado ANTES de digitá-lo. */
+function TemposFields({
+  modelo,
+  identificacao,
+  onIdentificacao,
+}: {
+  modelo: ModeloFormulario;
+  identificacao: IdentificacaoAvaliado;
+  onIdentificacao: (d: IdentificacaoAvaliado) => void;
+}) {
+  const campos = temposDoInstrumento(modelo.code);
+  if (!campos) return null;
+
+  return (
+    <div className="space-y-2 border-t border-pp-ink/10 pt-4">
+      <div>
+        <p className="text-pp-ink text-sm font-medium">{TITULO_TEMPOS}</p>
+        <p className="text-pp-ink-soft text-xs mt-1">{NOTA_TEMPOS}</p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {campos.map((campo) => (
+          <label key={campo.chave} className="text-xs text-pp-ink-soft space-y-1">
+            <span className="block">
+              {campo.label} <span className="text-pp-ink">(opcional)</span>
+            </span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1}
+              value={identificacao.tempos?.[campo.chave] ?? ''}
+              onChange={(e) =>
+                onIdentificacao({
+                  ...identificacao,
+                  tempos: {
+                    ...(identificacao.tempos ?? {}),
+                    [campo.chave]: e.target.value,
+                  },
+                })
+              }
+              className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
+            />
+          </label>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -809,6 +882,23 @@ function ResultadoCorrecao({
       <RespostasAuxiliares respostas={resposta.auxiliary_responses} />
 
       <ResultGraph detalhe={detalhe} resposta={resposta} />
+
+      {/* Os tempos anotados na aplicação, no resultado que acabou de sair —
+          sem esperar o salvamento. Eles foram digitados nesta mesma tela e
+          sumiriam da vista justamente na hora em que o profissional lê o
+          resultado.
+
+          FORA dos cards e FORA do gráfico, pelo mesmo motivo do auxiliar:
+          tempo não tem escore, faixa nem classificação, e o ResultGraph só
+          desenha escala — ele nem chega lá, porque não está em `resultados`.
+
+          O MESMO componente do histórico, alimentado pela MESMA regra que
+          grava (`metaDeTempos`): o que se lê aqui é exatamente o que será
+          salvo. Campo vazio não vira linha. */}
+      <TemposDeExecucao
+        instrumento={detalhe.code}
+        meta={metaDeTempos(detalhe.code, identificacao.tempos)}
+      />
 
       {/* UMA vez, depois dos resultados: qual método de correção está em
           uso. Fora dos cards e fora do gráfico de propósito — é nota de

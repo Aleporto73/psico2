@@ -13,6 +13,7 @@ import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
+import { TemposDeExecucao } from '../../TemposDeExecucao';
 import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
 import { formatarData } from '../historico-view';
 
@@ -192,6 +193,12 @@ export function DetalheClient({ id }: { id: string }) {
 
       {/* UMA vez, depois dos resultados: qual método de correção está em
           uso. Instrumento sem método declarado não renderiza nada. */}
+      {/* Tempos de execução: registro descritivo, fora dos cards e fora do
+          gráfico. Devolve null sozinho quando não há tempo gravado — o que
+          inclui os outros 19 instrumentos e toda avaliação salva antes de
+          o campo existir. */}
+      <TemposDeExecucao instrumento={d.instrument} meta={meta} />
+
       <MetodoDeCorrecao instrumento={d.instrument} />
 
       <CorrigeFacilReportPanel assessmentId={d.assessment_id} />

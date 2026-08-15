@@ -1,5 +1,6 @@
 // Identificação do avaliado e montagem do POST /avaliacao. Puro.
 import type { PedidoAvaliacao } from '@/lib/corrigefacil/api';
+import { metaDeTempos } from '@/lib/corrigefacil/tempos-execucao';
 import type { ModeloFormulario } from './form-model';
 import { montarPedido, type EstadoFormulario } from './form-state';
 
@@ -20,10 +21,24 @@ export type IdentificacaoAvaliado = {
   idadeAnos: string;
   idadeCalculada: IdadeCalculada | null;
   respondente: string;
+  /** Tempos de execução, como TEXTO do campo — a conversão é de quem grava.
+   *
+   *  Indexado pela chave do `subject_meta` para não haver um segundo lugar
+   *  dizendo quais tempos existem: quem declara é TEMPOS_POR_INSTRUMENTO.
+   *  OPCIONAL: os 19 instrumentos que não declaram tempo nenhum nunca a
+   *  preenchem, e quem monta identificação sem saber que tempos existem
+   *  continua compilando. */
+  tempos?: Record<string, string>;
 };
 
 export function identificacaoInicial(): IdentificacaoAvaliado {
-  return { nome: '', idadeAnos: '', idadeCalculada: null, respondente: '' };
+  return {
+    nome: '',
+    idadeAnos: '',
+    idadeCalculada: null,
+    respondente: '',
+    tempos: {},
+  };
 }
 
 export type ErroIdentificacao = 'nome_vazio' | 'idade_vazia' | 'idade_invalida';
@@ -93,6 +108,18 @@ export function montarPedidoAvaliacao(
       meta.age_at_evaluation = { years: idade };
     }
   }
+
+  // Tempos de execução: REGISTRO DESCRITIVO. Entram no mesmo `subject_meta`
+  // que já carrega respondente e idade — nenhuma coluna, nenhuma tabela,
+  // nenhuma migration.
+  //
+  // Só o instrumento que DECLARA tempo grava tempo: valor digitado e depois
+  // trocado para outro instrumento não viaja junto. E campo vazio não vira
+  // chave — `subject_meta` sem a chave é "não informado", que é diferente
+  // de zero segundo.
+  // MESMA regra que a tela do resultado usa para mostrar os tempos antes de
+  // salvar: o que aparece lá é exatamente o que é gravado aqui.
+  Object.assign(meta, metaDeTempos(modelo.code, dados.tempos));
 
   return {
     ...montarPedido(modelo, estado),
