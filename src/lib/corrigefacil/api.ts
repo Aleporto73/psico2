@@ -130,7 +130,11 @@ export type ResultadoEscala = {
  *  respondente é POST /avaliacao, que não é desta etapa. */
 export type PedidoCorrecao = {
   instrument_code: string;
-  norm_selector: Record<string, string>;
+  /** As dimensões escolhidas, mais as chaves NUMÉRICAS de faixa quando o
+   *  instrumento resolve a norma por um número (a idade, no BPA-2). A Edge
+   *  lê as duas formas; o número vai como número para não depender de
+   *  coerção do outro lado. */
+  norm_selector: Record<string, string | number>;
   respostas?: Record<string, number>;
   brutos?: Record<string, number | Record<string, number>>;
 };

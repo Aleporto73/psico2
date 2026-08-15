@@ -5,6 +5,7 @@ import {
   metricasDaEscala,
   orientacaoParaIA,
   rotulosDasColunas,
+  textoDePercentil,
 } from '@/lib/corrigefacil/metricas-instrumento';
 import { temposParaTexto } from './tempos-execucao';
 import {
@@ -161,7 +162,20 @@ export function formatClosedResults(
 
       const raw = cleanScalar(row.raw);
       const score = cleanScalar(row.score);
-      const percentile = cleanScalar(row.percentile);
+      // O percentil que o servidor gravou, e — só quando ele é nulo — o
+      // texto da regra central. No BPA-2 o bruto abaixo do primeiro ponto
+      // tabelado chega aqui com `percentile: null` e classificação da
+      // primeira faixa, e o que o modelo tem de receber é "< 1": mandar
+      // `null` esconderia o achado, e mandar 0 ou 1 seria inventar um
+      // número que a fonte não dá. Nenhuma linha com número muda: o
+      // `??` só age onde não havia nada a escrever.
+      const percentile =
+        cleanScalar(row.percentile) ??
+        textoDePercentil(instrumento, {
+          available: row.available,
+          percentile: row.percentile,
+          classification: row.classification,
+        });
       const z = cleanScalar(row.z_score);
       // o teto acompanha o número onde as duas réguas são diferentes; onde
       // não são, `metricasDaEscala` devolve o número puro, como sempre

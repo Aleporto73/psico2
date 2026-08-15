@@ -122,7 +122,9 @@ export function montarPedidoAvaliacao(
   Object.assign(meta, metaDeTempos(modelo.code, dados.tempos));
 
   return {
-    ...montarPedido(modelo, estado),
+    // a MESMA idade que a correção usou para resolver a faixa: o que é
+    // gravado tem de ser o que foi corrigido, e não uma segunda leitura
+    ...montarPedido(modelo, estado, dados.idadeAnos),
     subject_label: dados.nome.trim(),
     subject_meta: meta,
   };

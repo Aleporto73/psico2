@@ -4,7 +4,13 @@
 // servidor. Quem calcula idade, escolhe norma, pontua e classifica é o servidor.
 import type { PedidoCorrecao } from '@/lib/corrigefacil/api';
 import type { RegraPrematuridade } from '@/lib/corrigefacil/date-norm-api';
-import { estadoDoGate, itensVisiveis, type ModeloFormulario } from './form-model';
+import {
+  estadoDoGate,
+  faixaPelaIdade,
+  itensVisiveis,
+  resolvidaPelaIdade,
+  type ModeloFormulario,
+} from './form-model';
 
 export type RespostasItens = Record<number, number>;
 export type BrutosEscalas = Record<string, number>;
@@ -119,6 +125,10 @@ function pendenciaComponentes(modelo: ModeloFormulario, estado: EstadoFormulario
 
 function pendenciaDimensoes(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
   const faltam = modelo.dimensoes
+    // dimensão que a idade resolve não está na tela, e exigir o que não se
+    // vê deixaria o botão desligado sem dizer por quê. A idade em si já é
+    // exigida por `validarIdentificacao`, que é quem cobra o campo certo.
+    .filter((d) => !resolvidaPelaIdade(modelo, estado.selector, d.code))
     .filter((d) => !estado.selector[d.code])
     .map((d) => d.label);
   return faltam.length ? [{ tipo: 'dimensoes', faltam }] : [];
@@ -235,13 +245,49 @@ export function podeEnviar(
 
 /** Estado -> corpo do POST /corrigir. O norm_selector derivado de datas já
  * chega preenchido no estado depois da chamada ao resolver server-side. */
+/** O `norm_selector` que VAI no corpo.
+ *
+ *  Igual ao estado em todos os instrumentos, menos onde a idade resolve
+ *  uma dimensão (ver FAIXA_PELA_IDADE). Ali acontecem duas coisas, e as
+ *  duas importam:
+ *
+ *    a dimensão SAI do corpo mesmo que tenha sobrado no estado. Trocar a
+ *    conversão já limpa a escolha seguinte, mas uma faixa antiga que
+ *    escapasse viajaria como se fosse desta correção — e o servidor a
+ *    obedeceria, porque selector explícito manda;
+ *
+ *    a idade CRUA entra como chave numérica. Nenhuma faixa é calculada
+ *    aqui: esta tela não tem a tabela de faixas e não deve ter. Quem
+ *    resolve 25 -> 21-30 são os ranges dos `norm_sets`, no servidor.
+ *
+ *  Idade em branco ou fora de formato não vira chave: o corpo sai sem ela
+ *  e o servidor responde que não consegue escolher a norma, que é a
+ *  verdade. Inventar 0 seria pior — 0 é uma idade. */
+export function selectorDoEnvio(
+  modelo: ModeloFormulario,
+  estado: EstadoFormulario,
+  idadeAnos?: string,
+): Record<string, string | number> {
+  const selector: Record<string, string | number> = { ...estado.selector };
+  const regra = faixaPelaIdade(modelo, estado.selector);
+  if (!regra) return selector;
+
+  delete selector[regra.dimensao];
+  const texto = (idadeAnos ?? '').trim();
+  if (!texto) return selector;
+  const anos = Number(texto);
+  if (Number.isInteger(anos) && anos >= 0) selector[regra.chave] = anos;
+  return selector;
+}
+
 export function montarPedido(
   modelo: ModeloFormulario,
   estado: EstadoFormulario,
+  idadeAnos?: string,
 ): PedidoCorrecao {
   const pedido: PedidoCorrecao = {
     instrument_code: modelo.code,
-    norm_selector: { ...estado.selector },
+    norm_selector: selectorDoEnvio(modelo, estado, idadeAnos),
   };
 
   if (modelo.entryMode === 'itens') {
