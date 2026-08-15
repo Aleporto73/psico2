@@ -1,9 +1,6 @@
 // Identificação do avaliado e montagem do POST /avaliacao. Puro.
 import type { PedidoAvaliacao } from '@/lib/corrigefacil/api';
-import {
-  segundosDoCampo,
-  temposDoInstrumento,
-} from '@/lib/corrigefacil/tempos-execucao';
+import { metaDeTempos } from '@/lib/corrigefacil/tempos-execucao';
 import type { ModeloFormulario } from './form-model';
 import { montarPedido, type EstadoFormulario } from './form-state';
 
@@ -120,10 +117,9 @@ export function montarPedidoAvaliacao(
   // trocado para outro instrumento não viaja junto. E campo vazio não vira
   // chave — `subject_meta` sem a chave é "não informado", que é diferente
   // de zero segundo.
-  for (const campo of temposDoInstrumento(modelo.code) ?? []) {
-    const segundos = segundosDoCampo(dados.tempos?.[campo.chave] ?? '');
-    if (segundos !== null) meta[campo.chave] = segundos;
-  }
+  // MESMA regra que a tela do resultado usa para mostrar os tempos antes de
+  // salvar: o que aparece lá é exatamente o que é gravado aqui.
+  Object.assign(meta, metaDeTempos(modelo.code, dados.tempos));
 
   return {
     ...montarPedido(modelo, estado),

@@ -25,10 +25,12 @@ import {
   type IdentificacaoAvaliado,
 } from './save-model';
 import {
+  metaDeTempos,
   temposDoInstrumento,
   NOTA_TEMPOS,
   TITULO_TEMPOS,
 } from '@/lib/corrigefacil/tempos-execucao';
+import { TemposDeExecucao } from '../../TemposDeExecucao';
 import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
@@ -880,6 +882,23 @@ function ResultadoCorrecao({
       <RespostasAuxiliares respostas={resposta.auxiliary_responses} />
 
       <ResultGraph detalhe={detalhe} resposta={resposta} />
+
+      {/* Os tempos anotados na aplicação, no resultado que acabou de sair —
+          sem esperar o salvamento. Eles foram digitados nesta mesma tela e
+          sumiriam da vista justamente na hora em que o profissional lê o
+          resultado.
+
+          FORA dos cards e FORA do gráfico, pelo mesmo motivo do auxiliar:
+          tempo não tem escore, faixa nem classificação, e o ResultGraph só
+          desenha escala — ele nem chega lá, porque não está em `resultados`.
+
+          O MESMO componente do histórico, alimentado pela MESMA regra que
+          grava (`metaDeTempos`): o que se lê aqui é exatamente o que será
+          salvo. Campo vazio não vira linha. */}
+      <TemposDeExecucao
+        instrumento={detalhe.code}
+        meta={metaDeTempos(detalhe.code, identificacao.tempos)}
+      />
 
       {/* UMA vez, depois dos resultados: qual método de correção está em
           uso. Fora dos cards e fora do gráfico de propósito — é nota de

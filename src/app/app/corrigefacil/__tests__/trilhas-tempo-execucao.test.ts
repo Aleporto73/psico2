@@ -33,6 +33,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatarTempo,
   lerTempos,
+  metaDeTempos,
   NOTA_TEMPOS,
   segundosDoCampo,
   TEMPOS_POR_INSTRUMENTO,
@@ -201,6 +202,63 @@ describe('C · o histórico relê o que foi gravado', () => {
     expect(lerTempos(TRILHAS, {})).toEqual([]);
     expect(lerTempos(TRILHAS, null)).toEqual([]);
     expect(lerTempos(TRILHAS, { respondent_name: 'Mãe' })).toEqual([]);
+  });
+
+  // REGRESSÃO · `Number('')` e `Number('   ')` devolvem 0. Sem a guarda de
+  // branco, uma chave gravada com string vazia virava "Parte A: 0 segundos"
+  // na tela, no PDF e no prompt — um tempo que ninguém cronometrou,
+  // apresentado como se tivesse sido.
+  it('string vazia ou só espaços é AUSENTE, nunca zero', () => {
+    expect(lerTempos(TRILHAS, { tempo_parte_a_segundos: '' })).toEqual([]);
+    expect(lerTempos(TRILHAS, { tempo_parte_a_segundos: '   ' })).toEqual([]);
+    expect(
+      lerTempos(TRILHAS, {
+        tempo_parte_a_segundos: '',
+        tempo_parte_b_segundos: '55',
+      }),
+    ).toEqual([{ rotulo: 'Parte B', segundos: B }]);
+  });
+
+  it('o que continua valendo: número, string numérica e o zero de verdade', () => {
+    expect(lerTempos(TRILHAS, { tempo_parte_a_segundos: 35 })).toEqual([
+      { rotulo: 'Parte A', segundos: A },
+    ]);
+    expect(lerTempos(TRILHAS, { tempo_parte_a_segundos: '35' })).toEqual([
+      { rotulo: 'Parte A', segundos: A },
+    ]);
+    // zero CRONOMETRADO continua aparecendo: o que some é o branco
+    expect(lerTempos(TRILHAS, { tempo_parte_a_segundos: 0 })).toEqual([
+      { rotulo: 'Parte A', segundos: 0 },
+    ]);
+    expect(lerTempos(TRILHAS, { tempo_parte_a_segundos: '0' })).toEqual([
+      { rotulo: 'Parte A', segundos: 0 },
+    ]);
+  });
+
+  it('o resultado ainda NÃO salvo mostra os tempos, pela regra que grava', () => {
+    // é o que o ResultadoCorrecao passa ao TemposDeExecucao
+    const meta = metaDeTempos(TRILHAS, {
+      tempo_parte_a_segundos: '35',
+      tempo_parte_b_segundos: '55',
+    });
+    expect(meta).toEqual(META_GOLDEN);
+    expect(lerTempos(TRILHAS, meta).map(formatarTempo)).toEqual([
+      'Parte A: 35 segundos',
+      'Parte B: 55 segundos',
+    ]);
+    // e o campo em branco não desenha linha nenhuma
+    expect(metaDeTempos(TRILHAS, { tempo_parte_a_segundos: '  ' })).toEqual({});
+  });
+
+  it('o ResultadoCorrecao renderiza o bloco sem exigir salvamento', () => {
+    const src = fonte('app', 'app', 'corrigefacil', 'avaliar', '[code]', 'AvaliarClient.tsx');
+    const corpo = src.slice(src.indexOf('function ResultadoCorrecao'));
+    expect(corpo).toContain('<TemposDeExecucao');
+    expect(corpo).toContain('metaDeTempos');
+    // nada de esperar `salvamento.fase === 'salvo'` para mostrar tempo
+    expect(corpo.slice(corpo.indexOf('<TemposDeExecucao'))).not.toMatch(
+      /salvamento\.fase[^]{0,80}<\/TemposDeExecucao>/,
+    );
   });
 
   it('o detalhe consome o módulo compartilhado, não uma segunda leitura', () => {

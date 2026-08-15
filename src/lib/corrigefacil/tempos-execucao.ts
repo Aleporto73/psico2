@@ -111,11 +111,42 @@ export function lerTempos(
   for (const campo of campos) {
     const v = meta[campo.chave];
     // aceita number gravado e string numérica: `subject_meta` é jsonb e
-    // avaliação antiga pode ter sido gravada por outro caminho
-    const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
+    // avaliação antiga pode ter sido gravada por outro caminho.
+    //
+    // String em BRANCO é AUSENTE, nunca zero. `Number('')` e `Number('  ')`
+    // devolvem 0, e um 0 aqui viraria "Parte A: 0 segundos" na tela, no PDF
+    // e no prompt — um tempo que ninguém cronometrou, apresentado como se
+    // tivesse sido. Ausente é o campo não existir, e é assim que ele some.
+    const n =
+      typeof v === 'number'
+        ? v
+        : typeof v === 'string' && v.trim() !== ''
+          ? Number(v)
+          : NaN;
     if (Number.isFinite(n) && n >= 0) {
       out.push({ rotulo: campo.rotulo, segundos: n });
     }
+  }
+  return out;
+}
+
+/** O que o formulário digitou, na forma em que o `subject_meta` guarda.
+ *
+ *  Existe para haver UMA regra: quem grava (`montarPedidoAvaliacao`) e quem
+ *  mostra o resultado ainda não salvo passam por aqui. Sem isso a tela do
+ *  resultado precisaria repetir a conversão, e as duas envelheceriam
+ *  separadas — o resultado na tela diria uma coisa e o que foi salvo, outra.
+ *
+ *  Campo vazio, inválido ou de instrumento que não declara tempo não vira
+ *  chave: o objeto devolvido tem só o que foi realmente informado. */
+export function metaDeTempos(
+  code: string | undefined,
+  tempos: Record<string, string> | undefined,
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const campo of temposDoInstrumento(code) ?? []) {
+    const segundos = segundosDoCampo(tempos?.[campo.chave] ?? '');
+    if (segundos !== null) out[campo.chave] = segundos;
   }
   return out;
 }
