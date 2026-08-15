@@ -107,8 +107,8 @@ describe('A · o TRILHAS_PRE declara os dois tempos', () => {
   it('os campos são OPCIONAIS: sem tempo o salvamento continua liberado', () => {
     const modelo = montarModelo(detalhe(TRILHAS));
     const semTempo = identificado({});
-    expect(validarIdentificacao(semTempo, modelo.exigeDataNascimento)).toEqual([]);
-    expect(podeSalvar(semTempo, modelo.exigeDataNascimento, false, false)).toBe(true);
+    expect(validarIdentificacao(semTempo, modelo)).toEqual([]);
+    expect(podeSalvar(semTempo, modelo, false, false)).toBe(true);
   });
 
   it('o formulário desenha os campos a partir do módulo, e diz a nota antes', () => {

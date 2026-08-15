@@ -74,6 +74,9 @@ export type ModeloFormulario = {
   instrucaoItens: string | null;
   /** A seção com porta, quando o instrumento tem uma. Null nos outros 20. */
   gate: GateDaSecao | null;
+  /** Como a idade é pedida quando NÃO há data de nascimento. Igual para
+   *  todos, menos os do mapa fechado IDADE_MANUAL — ver ali. */
+  idadeManual: IdadeManual;
 };
 
 /** Seção cuja visibilidade depende de um item de triagem — o GATE.
@@ -113,6 +116,56 @@ export const GATE_POR_INSTRUMENTO: Readonly<Record<string, GateDaSecao>> = {
     exigidos: [28, 29, 30],
   },
 };
+
+// ---------------------------------------------------------------------
+// IDADE MANUAL
+// ---------------------------------------------------------------------
+
+/** Como a idade é pedida no instrumento que NÃO resolve norma por data.
+ *
+ *  `decimal` não é um detalhe de máscara: ele diz que a idade daquele
+ *  instrumento admite fração de ano, e é o que separa "anos completos" de
+ *  "idade em anos". */
+export type IdadeManual = {
+  min: number;
+  max: number;
+  decimal: boolean;
+};
+
+/** O que valia para todo mundo antes deste mapa existir, e continua
+ *  valendo para todo mundo que não está nele. */
+export const IDADE_MANUAL_PADRAO: IdadeManual = {
+  min: 0,
+  max: 130,
+  decimal: false,
+};
+
+/** As EXCEÇÕES de idade manual, num lugar só.
+ *
+ *  Fechado como INSTRUCAO_DOS_ITENS, GATE_POR_INSTRUMENTO e
+ *  FAIXA_PELA_IDADE, e pelo mesmo motivo: quem não está listado não muda.
+ *  Estar aqui, e não espalhado em `if (code === ...)` pela tela, é o que
+ *  garante que campo, validação, mensagem de erro e persistência falem da
+ *  MESMA faixa — divergir entre eles é aceitar no campo o que a validação
+ *  recusa depois.
+ *
+ *  ISTO É IDENTIFICAÇÃO, NÃO NORMA. A idade aqui diz para quem o
+ *  instrumento se aplica; ela não escolhe tabela normativa e não entra no
+ *  `norm_selector`. Quem resolve dimensão de norma pela idade é
+ *  FAIXA_PELA_IDADE, que é outro mapa e continua só com o BPA-2. */
+export const IDADE_MANUAL: Readonly<Record<string, IdadeManual>> = {
+  // C-TRF 1.5-5 · o próprio nome do instrumento é a faixa: 1 ano e meio a
+  // 5 anos. A norma dele é por SEXO, então a idade não escolhe tabela —
+  // ela diz se a criança está na faixa em que o instrumento vale. Com a
+  // regra genérica (inteiro, 0 a 130), 1,5 era recusado e 8 era aceito:
+  // errado nos dois sentidos.
+  'C-TRF_1.5-5': { min: 1.5, max: 5, decimal: true },
+};
+
+/** A regra deste instrumento. Quem não está no mapa recebe a padrão. */
+export function idadeManualDe(code: string): IdadeManual {
+  return IDADE_MANUAL[code] ?? IDADE_MANUAL_PADRAO;
+}
 
 /** Em que estado está a porta deste protocolo. */
 export type EstadoGate = 'sem_gate' | 'nao_respondido' | 'fechado' | 'aberto';
@@ -338,6 +391,9 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
       detalhe.entry_mode === 'itens'
         ? (GATE_POR_INSTRUMENTO[detalhe.code] ?? null)
         : null,
+    // vale mesmo quando `requires_birthdate` é true: ali o campo de idade
+    // manual nem aparece, e a regra fica inerte em vez de ausente.
+    idadeManual: idadeManualDe(detalhe.code),
   };
 }
 

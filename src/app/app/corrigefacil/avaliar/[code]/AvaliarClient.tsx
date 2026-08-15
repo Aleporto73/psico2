@@ -23,7 +23,8 @@ import {
   identificacaoInicial,
   montarPedidoAvaliacao,
   podeSalvar,
-  TEXTO_ERRO_IDENTIFICACAO,
+  textoDoCampoIdade,
+  textoErroIdentificacao,
   validarIdentificacao,
   type IdentificacaoAvaliado,
 } from './save-model';
@@ -191,9 +192,7 @@ export function AvaliarClient({ code }: { code: string }) {
     instrumento.fase === 'ok' ? montarModelo(instrumento.detalhe) : null;
 
   const faltando = modelo ? pendencias(modelo, estado) : [];
-  const errosIdentificacao = modelo
-    ? validarIdentificacao(identificacao, modelo.exigeDataNascimento)
-    : [];
+  const errosIdentificacao = modelo ? validarIdentificacao(identificacao, modelo) : [];
   const habilitado = modelo
     ? podeEnviar(modelo, estado, enviando) && errosIdentificacao.length === 0
     : false;
@@ -244,12 +243,7 @@ export function AvaliarClient({ code }: { code: string }) {
     if (salvamento.fase === 'salvo') return salvamento.id;
     if (
       !modelo ||
-      !podeSalvar(
-        identificacao,
-        modelo.exigeDataNascimento,
-        salvamento.fase === 'salvando',
-        false,
-      )
+      !podeSalvar(identificacao, modelo, salvamento.fase === 'salvando', false)
     ) {
       return null;
     }
@@ -647,6 +641,9 @@ function IdentificacaoFields({
           />
         </label>
 
+        {/* Limites e passo saem de `modelo.idadeManual` — o mesmo objeto que
+            a validação usa. O campo aceitar o que o botão depois recusa é
+            precisamente o que o mapa único evita. */}
         {!modelo.exigeDataNascimento && (
           <label className="text-xs text-pp-ink-soft space-y-1">
             <span className="block">
@@ -654,10 +651,10 @@ function IdentificacaoFields({
             </span>
             <input
               type="number"
-              inputMode="numeric"
-              min={0}
-              max={130}
-              step={1}
+              inputMode={modelo.idadeManual.decimal ? 'decimal' : 'numeric'}
+              min={modelo.idadeManual.min}
+              max={modelo.idadeManual.max}
+              step={modelo.idadeManual.decimal ? 'any' : 1}
               required
               aria-required="true"
               value={identificacao.idadeAnos}
@@ -666,7 +663,9 @@ function IdentificacaoFields({
               }
               className="w-full rounded-pill border border-pp-ink/15 bg-white/60 px-4 py-2 text-sm text-pp-ink"
             />
-            <span className="block text-[11px]">Anos completos.</span>
+            <span className="block text-[11px]">
+              {textoDoCampoIdade(modelo.idadeManual)}
+            </span>
           </label>
         )}
 
@@ -701,7 +700,7 @@ function IdentificacaoFields({
 
       {erros.length > 0 && (
         <p className="text-pp-ink-soft text-xs">
-          {erros.map((e) => TEXTO_ERRO_IDENTIFICACAO[e]).join(' · ')}
+          {erros.map((e) => textoErroIdentificacao(e, modelo.idadeManual)).join(' · ')}
         </p>
       )}
     </section>
@@ -780,9 +779,11 @@ function ResultadoCorrecao({
   onSalvar: () => Promise<string | null>;
 }) {
   const linhas = Object.entries(resposta.resultados);
+  // o MESMO modelo que a tela de preenchimento montou: o botão de salvar
+  // desta tela cobra a mesma idade que o campo lá atrás aceitou
   const habilitado = podeSalvar(
     identificacao,
-    detalhe.requires_birthdate,
+    montarModelo(detalhe),
     salvamento.fase === 'salvando',
     salvamento.fase === 'salvo',
   );
