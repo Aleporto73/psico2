@@ -6,6 +6,7 @@ import {
   orientacaoParaIA,
   rotulosDasColunas,
 } from '@/lib/corrigefacil/metricas-instrumento';
+import { temposParaTexto } from './tempos-execucao';
 import {
   formatCredential,
   getCredentialLabel,
@@ -485,6 +486,21 @@ export async function generateCorrigeFacilReport(args: {
   // Contexto do profissional NÃO é resultado do instrumento, e o rótulo diz
   // isso ao modelo: sem essa separação, observação subjetiva e dado
   // quantitativo entram no texto como se tivessem o mesmo peso de evidência.
+  // Tempos de execução: REGISTRO DESCRITIVO do profissional, não resultado
+  // do instrumento. Vai ao modelo com a nota colada — sem ela, "55 segundos
+  // na Parte B" é exatamente o tipo de número que uma narrativa converte em
+  // "desempenho lento", que é interpretação que ninguém mediu.
+  //
+  // Null quando não há tempo gravado, e por isso o prompt dos outros 19
+  // instrumentos — e o de toda avaliação antiga — não muda um caractere.
+  const tempos = temposParaTexto(instrument.code, subjectMeta);
+  const temposText = tempos
+    ? `
+
+REGISTRO DESCRITIVO DE EXECUÇÃO (não é resultado normativo; não classifique, não compare com norma e não infira ritmo a partir dele)
+${tempos}`
+    : '';
+
   const notesText = additionalNotes
     ? `\n\nCONTEXTO FORNECIDO PELO PROFISSIONAL (não é resultado do instrumento; ao apoiar uma conclusão nele, deixe a origem clara no texto):\n${additionalNotes}`
     : '';
@@ -502,7 +518,7 @@ Código: ${instrument.code}
 Nome: ${instrument.name}
 
 RESULTADOS FECHADOS DO CORRIGEFÁCIL
-${resultsText}${orientacaoText}${notesText}
+${resultsText}${orientacaoText}${temposText}${notesText}
 
 Redija as cinco seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 
