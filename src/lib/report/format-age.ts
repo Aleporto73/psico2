@@ -32,6 +32,36 @@ function integerOrNull(value: unknown): number | null {
     : null;
 }
 
+/** Os anos da idade manual DECIMAL: número finito, não negativo e não
+ *  inteiro. Inteiro não passa por aqui — ele segue pelo caminho de sempre,
+ *  e é isso que mantém "5 anos" e "1 ano, 7 meses e 12 dias" idênticos ao
+ *  que sempre foram. */
+function decimalYearsOrNull(value: unknown): number | null {
+  return typeof value === 'number' &&
+    Number.isFinite(value) &&
+    !Number.isInteger(value) &&
+    value >= 0
+    ? value
+    : null;
+}
+
+/** Número em pt-BR, e a vírgula é posta AQUI de propósito.
+ *
+ *  `toLocaleString` depende do locale de quem roda, e o servidor que gera
+ *  o documento não é a máquina de quem lê: 1.5 sairia "1.5" num lugar e
+ *  "1,5" no outro para a mesma avaliação. A troca literal é determinística
+ *  e não tem esse risco.
+ *
+ *  Exportado porque a tela de identificação escreve a mesma faixa de idade
+ *  no campo e na mensagem de erro — uma regra de vírgula só no produto. */
+export function numeroPtBr(value: number): string {
+  return String(value).replace('.', ',');
+}
+
+function comCorrecao(base: string, age: AgeAtEvaluation): string {
+  return age.corrected === true ? `${base} (idade corrigida)` : base;
+}
+
 export function formatAgeAtEvaluation(raw: unknown): string | null {
   if (!raw || typeof raw !== 'object') return null;
   const age = raw as AgeAtEvaluation;
@@ -39,7 +69,18 @@ export function formatAgeAtEvaluation(raw: unknown): string | null {
   const months = integerOrNull(age.months);
   const days = integerOrNull(age.days);
 
-  if (years === null) return null;
+  if (years === null) {
+    // Idade manual em anos decimais — o C-TRF 1.5-5 é quem a coleta, e ela
+    // é IDENTIFICAÇÃO, não norma. 1.5 vira "1,5 anos" e não pode virar "1
+    // ano": arredondar aqui mudaria a idade que o profissional informou.
+    //
+    // Só vale sem meses/dias. Decimal COM meses é duas precisões para o
+    // mesmo fato — registro incoerente, e escolher uma delas seria
+    // exatamente a invenção que este arquivo não faz.
+    const decimal = decimalYearsOrNull(age.years);
+    if (decimal === null || months !== null || days !== null) return null;
+    return comCorrecao(`${numeroPtBr(decimal)} anos`, age);
+  }
 
   const parts: string[] = [`${years} ${years === 1 ? 'ano' : 'anos'}`];
   if (months !== null) parts.push(`${months} ${months === 1 ? 'mês' : 'meses'}`);
@@ -50,5 +91,5 @@ export function formatAgeAtEvaluation(raw: unknown): string | null {
       ? parts[0]
       : `${parts.slice(0, -1).join(', ')} e ${parts[parts.length - 1]}`;
 
-  return age.corrected === true ? `${base} (idade corrigida)` : base;
+  return comCorrecao(base, age);
 }

@@ -35,7 +35,21 @@ describe('idade na avaliação — formatação', () => {
     expect(formatAgeAtEvaluation({})).toBeNull();
     expect(formatAgeAtEvaluation({ months: 3 })).toBeNull();
     expect(formatAgeAtEvaluation({ years: -1 })).toBeNull();
-    expect(formatAgeAtEvaluation({ years: 8.5 })).toBeNull();
+    expect(formatAgeAtEvaluation({ years: Number.NaN })).toBeNull();
+    expect(formatAgeAtEvaluation({ years: Number.POSITIVE_INFINITY })).toBeNull();
+  });
+
+  // Anos decimais passaram a ser IDADE, e não lixo: o C-TRF 1.5-5 coleta
+  // 1,5 e o documento tem de mostrar 1,5. Os casos completos estão em
+  // app/corrigefacil/__tests__/ctrf-idade-manual.test.ts; aqui fica a
+  // fronteira do formatador.
+  it('anos decimais saem com vírgula, sem arredondar', () => {
+    expect(formatAgeAtEvaluation({ years: 8.5 })).toBe('8,5 anos');
+    expect(formatAgeAtEvaluation({ years: 1.5 })).toBe('1,5 anos');
+    expect(formatAgeAtEvaluation({ years: -1.5 })).toBeNull();
+    // decimal com meses é registro incoerente: duas precisões para o mesmo
+    // fato, e este arquivo não escolhe uma delas
+    expect(formatAgeAtEvaluation({ years: 1.5, months: 3 })).toBeNull();
   });
 
   // Zero é precisão INFORMADA, diferente de ausente: "0 meses" foi coletado,
@@ -54,6 +68,8 @@ describe('equivalência com o que o motor exporta', () => {
       { years: 1, months: 7, days: 12 },
       { years: 1, months: 7, days: 12, corrected: true },
       { years: 0, months: 0, days: 0 },
+      { years: 1.5 },
+      { years: 2.75 },
       {},
       null,
       'texto',
