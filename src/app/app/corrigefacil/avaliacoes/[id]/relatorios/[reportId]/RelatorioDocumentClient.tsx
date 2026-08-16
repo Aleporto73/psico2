@@ -67,6 +67,12 @@ import {
   TITULO_PERFIL,
 } from '@/lib/corrigefacil/confias-derivado';
 import {
+  derivadoPhq9,
+  NOTA_RASTREAMENTO,
+  TITULO_ALERTA,
+  TITULO_RASTREAMENTO,
+} from '@/lib/corrigefacil/phq9-derivado';
+import {
   narrativaVazia,
   parseNarrativa,
   secoesEstruturadasVazias,
@@ -623,6 +629,17 @@ export function RelatorioDocumentClient({
             do CONFIAS e em toda avaliação anterior ao campo. */}
         <ConfiasDoDocumento avaliacao={avaliacao} />
 
+        {/* ── RASTREAMENTO E ALERTA DO PHQ-9 ────────────────────────── */}
+        {/* Determinístico pelo mesmo motivo, e aqui o motivo é mais forte:
+            o alerta do item 9 sai impresso porque o item foi respondido
+            positivamente, NÃO porque a IA resolveu mencioná-lo. Se a
+            narrativa não falar dele, ele continua no PDF.
+
+            Fora da TABELA: aquela tem a coluna de classificação, que é uma
+            das cinco faixas. O rastreamento é outra leitura do mesmo total,
+            e uma linha dele ali seria lida como uma segunda escala. */}
+        <Phq9DoDocumento avaliacao={avaliacao} />
+
         {/* ── RESPOSTAS AUXILIARES ──────────────────────────────────── */}
         {/* Determinístico, e por isso FORA da narrativa: o valor aparece no
             documento porque foi respondido, não porque a IA resolveu
@@ -917,6 +934,50 @@ function ConfiasDoDocumento({
               </dl>
             </div>
           ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+/** O rastreamento e o alerta do item 9 no documento impresso.
+ *
+ *  Lê do MESMO módulo que a tela e o histórico usam
+ *  (`@/lib/corrigefacil/phq9-derivado`); o que muda aqui é só o estilo.
+ *
+ *  Bloco curto e de leitura única: não deve ser partido entre páginas —
+ *  separar o alerta do rótulo dele deixaria os dois ilegíveis, e é o pedaço
+ *  do documento em que isso menos pode acontecer. */
+function Phq9DoDocumento({
+  avaliacao,
+}: Readonly<{ avaliacao: AvaliacaoDetalhe }>) {
+  const derivado = derivadoPhq9(avaliacao);
+  if (!derivado) return null;
+
+  return (
+    <section className="space-y-4">
+      {derivado.rastreamento && (
+        <div className="space-y-1 print:break-inside-avoid">
+          <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+            {TITULO_RASTREAMENTO}
+          </h2>
+          <p className="text-pp-ink text-sm font-medium print:text-[11px]">
+            {derivado.rastreamento}
+          </p>
+          <p className="text-[11px] text-pp-ink-soft leading-relaxed">
+            {NOTA_RASTREAMENTO}
+          </p>
+        </div>
+      )}
+
+      {derivado.alerta_item_9 && (
+        <div className="space-y-1 border border-pp-ink/25 rounded-block p-4 print:break-inside-avoid">
+          <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+            {TITULO_ALERTA}
+          </h2>
+          <p className="text-pp-ink text-sm leading-relaxed print:text-[11px]">
+            {derivado.alerta_item_9}
+          </p>
         </div>
       )}
     </section>

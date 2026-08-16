@@ -166,11 +166,28 @@ export type DerivadoConfias = {
   perfil_habilidades: HabilidadeConfias[];
 };
 
+/** As duas leituras adicionais do PHQ-9, como a Edge devolve.
+ *
+ *  `rastreamento` NÃO é a classificação. As cinco faixas do instrumento
+ *  (Mínima ou nenhuma / Leve / Moderada / Moderadamente grave / Grave)
+ *  continuam saindo em `resultados.TOTAL.classification`; esta é uma
+ *  segunda leitura do MESMO total, com um corte só.
+ *
+ *  `alerta_item_9` NÃO é escore: vem preenchido quando o item 9 teve
+ *  resposta positiva, qualquer que seja o total. Null quando não há o que
+ *  alertar. As duas strings chegam PRONTAS — o cliente não compara total
+ *  com corte, não lê resposta de item e não monta frase. */
+export type DerivadoPhq9 = {
+  rastreamento: string | null;
+  alerta_item_9: string | null;
+};
+
 /** O envelope `derived`. Opcional em toda rota, e com a chave do
- *  instrumento também opcional: os outros 20 não a possuem, e a Edge nem
- *  devolve `derived` para eles. */
+ *  instrumento também opcional: os outros 19 não possuem nenhuma, e a Edge
+ *  nem devolve `derived` para eles. */
 export type DerivadosCorrigeFacil = {
   confias?: DerivadoConfias;
+  phq9?: DerivadoPhq9;
 };
 
 /** Corpo do POST /corrigir. São EXATAMENTE estes campos: `pedido()` na Edge

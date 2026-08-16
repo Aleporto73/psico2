@@ -49,6 +49,8 @@ import {
 } from './form-model';
 import { ConfiasDerivado } from '../../ConfiasDerivado';
 import { derivadoConfias } from '@/lib/corrigefacil/confias-derivado';
+import { Phq9Derivado } from '../../Phq9Derivado';
+import { derivadoPhq9 } from '@/lib/corrigefacil/phq9-derivado';
 import type { CampoItem } from './form-model';
 import {
   COMPONENTES,
@@ -960,6 +962,19 @@ function ResultadoCorrecao({
           protocolo estava incompleto — a Edge omite a chave nesse caso, em
           vez de mandar perfil pela metade. */}
       <ConfiasDerivado derivado={derivadoConfias(resposta)} />
+
+      {/* Mesma posição e mesma razão: o card do TOTAL carrega a
+          CLASSIFICAÇÃO — uma das cinco faixas —, e o rastreamento é outra
+          leitura do mesmo número, com um corte só. Lado a lado dentro do
+          card, a segunda seria lida como correção da primeira.
+
+          O alerta do item 9 aparece aqui porque o item foi respondido
+          positivamente, e não some quando o total é baixo — que é
+          justamente quando o escore não o denunciaria.
+
+          Devolve null sozinho fora do PHQ-9 e no PHQ-9 de protocolo
+          incompleto. */}
+      <Phq9Derivado derivado={derivadoPhq9(resposta)} />
 
       {/* FORA dos cards e FORA do gráfico: o auxiliar é resposta, não
           resultado. O ResultGraph só desenha escala, e o auxiliar não é
