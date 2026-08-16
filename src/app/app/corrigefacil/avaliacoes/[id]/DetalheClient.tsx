@@ -14,6 +14,8 @@ import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { ConfiasDerivado } from '../../ConfiasDerivado';
 import { derivadoConfias } from '@/lib/corrigefacil/confias-derivado';
+import { Phq9Derivado } from '../../Phq9Derivado';
+import { derivadoPhq9 } from '@/lib/corrigefacil/phq9-derivado';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
 import { TemposDeExecucao } from '../../TemposDeExecucao';
 import {
@@ -201,6 +203,12 @@ export function DetalheClient({ id }: { id: string }) {
           Avaliação salva antes de o campo existir não traz a chave e não
           renderiza seção nenhuma. */}
       <ConfiasDerivado derivado={derivadoConfias(d)} />
+
+      {/* O MESMO componente da tela de correção, sobre o snapshot
+          CONGELADO na conclusão. O alerta do item 9 reaparece aqui pelo
+          mesmo motivo que apareceu lá: ele foi gravado, e o histórico lê o
+          gravado. Avaliação salva antes do campo não traz a chave. */}
+      <Phq9Derivado derivado={derivadoPhq9(d)} />
 
       {/* O que foi respondido e não foi pontuado. Vem GRAVADO da Edge, em
           `auxiliary_responses` — nada é recalculado aqui, e o TOTAL acima

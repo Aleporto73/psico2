@@ -9,6 +9,7 @@ import {
 } from '@/lib/corrigefacil/metricas-instrumento';
 import { temposParaTexto } from './tempos-execucao';
 import { derivadoDoMeta, derivadoParaTexto } from './confias-derivado';
+import { derivadoPhq9DoMeta, phq9ParaTexto } from './phq9-derivado';
 import {
   formatCredential,
   getCredentialLabel,
@@ -238,12 +239,38 @@ O bloco "DADOS DERIVADOS CONGELADOS DO CONFIAS" tem exatamente a mesma força do
 O Perfil por Habilidade PODE ser usado para descrever o perfil observado — quais tarefas ficaram consolidadas, quais estão em desenvolvimento e quais ainda não se consolidaram —, sempre com os rótulos recebidos. Não nomeie habilidade que não esteja nas linhas recebidas, não crie categoria de agrupamento que ninguém forneceu e não converta o perfil em diagnóstico, causa ou prognóstico.
 `;
 
+/** A regra do derivado do PHQ-9.
+ *
+ *  Entra no system prompt SÓ quando a avaliação tem snapshot, pela mesma
+ *  razão de REGRA_DERIVADOS: regra sobre dado ausente é a forma mais fácil
+ *  de o modelo inventar o dado.
+ *
+ *  As três proibições do meio são o ponto todo desta regra. Um alerta de
+ *  item 9 posto diante de um modelo de linguagem é um convite a escrever
+ *  "risco suicida presente" — que é uma afirmação clínica que ninguém fez,
+ *  que o instrumento não mede e que o texto do alerta explicitamente não
+ *  faz. O que o dado diz é que houve resposta positiva e que cabe
+ *  investigar; a diferença entre as duas frases é o que separa um
+ *  rastreamento de um laudo. */
+const REGRA_PHQ9 = `
+DADOS DERIVADOS CONGELADOS DO PHQ-9:
+O bloco "DADOS DERIVADOS CONGELADOS DO PHQ-9" tem exatamente a mesma força dos resultados por escala. Não recalcule o ponto de corte, não recompare a pontuação total com ele e não reescreva a frase de rastreamento — reproduza-a como veio.
+O rastreamento NÃO é a classificação. As duas saem da mesma pontuação total e dizem coisas diferentes: a classificação é a faixa de intensidade, o rastreamento é uma leitura de triagem com um corte só. Apresente cada uma pelo que é e não trate a existência das duas como contradição.
+Rastreamento NÃO é diagnóstico. Não converta "igual ou acima do ponto de corte" em depressão, transtorno, quadro depressivo ou caso confirmado.
+ALERTA DO ITEM 9: quando o bloco trouxer o alerta, ele deve ser mencionado, e EXATAMENTE no que ele afirma — houve resposta positiva no item 9 e cabe investigação clínica adicional. NÃO declare risco suicida, ideação suicida ativa, gravidade ou urgência: o instrumento não mede nenhuma dessas coisas, e o item respondido positivamente é indicação de INVESTIGAR, não conclusão sobre risco. Não estime probabilidade, não classifique o risco e não prescreva conduta, encaminhamento ou protocolo específico. Quem avalia risco é o profissional, em entrevista.
+Quando o alerta NÃO vier no bloco, não mencione o item 9, não afirme ausência de ideação e não escreva que não há risco: o silêncio ali é ausência de resposta positiva, e não avaliação negativa de risco.
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
-  /** true só quando a avaliação traz derivados congelados. O padrão mantém
-   *  o prompt dos outros 20 instrumentos byte a byte como estava. */
+  /** true só quando a avaliação traz o derivado do CONFIAS. O padrão
+   *  mantém o prompt dos outros instrumentos byte a byte como estava. */
   comDerivado = false,
+  /** idem, para o derivado do PHQ-9. São dois sinalizadores e não um: cada
+   *  regra só entra quando o bloco dela existe, e um relatório de PHQ-9 não
+   *  tem por que receber instrução sobre perfil de habilidade. */
+  comPhq9 = false,
 ): string {
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -252,12 +279,12 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS : ''}
+${comDerivado ? REGRA_DERIVADOS : ''}${comPhq9 ? REGRA_PHQ9 : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
 - instrumento (código e nome);
-- resultados persistidos por escala;${comDerivado ? '\n- dados derivados congelados fornecidos abaixo;' : ''}
+- resultados persistidos por escala;${comDerivado || comPhq9 ? '\n- dados derivados congelados fornecidos abaixo;' : ''}
 - observações adicionais escritas pelo profissional.
 
 Não use respostas item a item, tabelas normativas, regras de pontuação, gráficos ou imagens como fonte de cálculo. Não faça diagnóstico. Não gere laudo formal definitivo. Não invente achados, contexto, funcionalidade, causalidade ou conclusão que não esteja sustentada pelos dados fornecidos.
@@ -559,6 +586,20 @@ DADOS DERIVADOS CONGELADOS DO CONFIAS (calculados e classificados pelo CorrigeF�
 ${derivado}`
     : '';
 
+  // O mesmo caminho, para o PHQ-9: o rastreamento e o alerta do item 9,
+  // lidos do MESMO snapshot `_corrigefacil` — nenhuma query nova, porque
+  // `subject_meta` já veio no SELECT acima.
+  //
+  // O alerta vai INTEIRO. Recortá-lo deixaria o modelo escrever a parte que
+  // falta, e é exatamente a parte em que ele não pode escrever nada.
+  const phq9 = phq9ParaTexto(derivadoPhq9DoMeta(subjectMeta));
+  const phq9Text = phq9
+    ? `
+
+DADOS DERIVADOS CONGELADOS DO PHQ-9 (calculados pelo CorrigeFácil; preserve exatamente como estão)
+${phq9}`
+    : '';
+
   const notesText = additionalNotes
     ? `\n\nCONTEXTO FORNECIDO PELO PROFISSIONAL (não é resultado do instrumento; ao apoiar uma conclusão nele, deixe a origem clara no texto):\n${additionalNotes}`
     : '';
@@ -576,7 +617,7 @@ Código: ${instrument.code}
 Nome: ${instrument.name}
 
 RESULTADOS FECHADOS DO CORRIGEFÁCIL
-${resultsText}${derivadoText}${orientacaoText}${temposText}${notesText}
+${resultsText}${derivadoText}${phq9Text}${orientacaoText}${temposText}${notesText}
 
 Redija as cinco seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 
@@ -589,6 +630,7 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
           reportType,
           avisoFinal,
           derivado !== null,
+          phq9 !== null,
         ),
       },
       { role: 'user', content: userText },
