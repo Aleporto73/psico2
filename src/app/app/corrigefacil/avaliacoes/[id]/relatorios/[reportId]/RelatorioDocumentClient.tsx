@@ -76,6 +76,7 @@ import {
   blocosFdt,
   derivadasAusentes,
   derivadoFdt,
+  ehFdt,
 } from '@/lib/corrigefacil/fdt-derivado';
 import {
   narrativaVazia,
@@ -534,6 +535,19 @@ export function RelatorioDocumentClient({
             Resultados
           </h2>
 
+          {/* O FDT imprime as dez medidas AQUI, no lugar da tabela — e não
+              além dela. A tabela genérica traz a coluna de classificação, e
+              no FDT ela sairia vazia: os cortes mudam a cada faixa etária e
+              a classificação vive no derivado. Ter as duas seria imprimir a
+              mesma lista duas vezes, metade dela sem classificação.
+
+              É a MESMA decisão da tela de correção e do histórico, e é por
+              isso que o bloco não aparece uma segunda vez mais abaixo. Os
+              outros instrumentos seguem na tabela de sempre. */}
+          {ehFdt(avaliacao.instrument) ? (
+            <FdtDoDocumento avaliacao={avaliacao} />
+          ) : (
+            <>
           {linhas.length === 0 ? (
             <p className="text-pp-ink-soft text-sm">
               Esta avaliação não possui resultados registrados.
@@ -615,6 +629,8 @@ export function RelatorioDocumentClient({
               </table>
             </div>
           )}
+            </>
+          )}
         </section>
 
         {/* ── DERIVADOS DO CONFIAS ──────────────────────────────────── */}
@@ -644,18 +660,6 @@ export function RelatorioDocumentClient({
             das cinco faixas. O rastreamento é outra leitura do mesmo total,
             e uma linha dele ali seria lida como uma segunda escala. */}
         <Phq9DoDocumento avaliacao={avaliacao} />
-
-        {/* ── AS DEZ MEDIDAS DO FDT ─────────────────────────────────── */}
-        {/* Determinístico pelo mesmo motivo dos dois acima, e aqui ele é
-            estrutural: a classificação do FDT NÃO está na tabela porque não
-            está em `resultados` — os cortes mudam a cada faixa etária e a
-            tabela de faixas do servidor não tem norm_set_id. Sem este
-            bloco, o documento do FDT sairia com bruto e z e sem uma única
-            classificação.
-
-            Vem do snapshot congelado, como os outros. Devolve null sozinho
-            fora do FDT. */}
-        <FdtDoDocumento avaliacao={avaliacao} />
 
         {/* ── RESPOSTAS AUXILIARES ──────────────────────────────────── */}
         {/* Determinístico, e por isso FORA da narrativa: o valor aparece no

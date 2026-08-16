@@ -53,6 +53,8 @@ import {
   pendencias,
   podeEnviar,
   selectorDoEnvio,
+  textoDaEntradaBruta,
+  textoIntervaloBruto,
   textoPendencia,
 } from '../avaliar/[code]/form-state';
 import {
@@ -564,5 +566,126 @@ describe('FDT · o que continua como estava', () => {
     expect(outro.escalas).toHaveLength(10);
     expect(outro.escalas.every((e) => e.entrada === null)).toBe(true);
     expect(selectorDoEnvio(outro, estadoInicial(), '30')).toEqual({});
+  });
+});
+
+// =====================================================================
+// O CAMPO REAL · a régua de `entrada` chega ao input, não só à validação
+//
+// O modelo pode estar certo e a tela continuar mentindo: um campo com
+// `inputMode="numeric"` e `min={0}` diz ao profissional que o tempo é
+// inteiro e que zero serve — e as duas coisas são falsas. Estas travas são
+// sobre o JSX, e não sobre o modelo, porque é ali que a mentira aparecia.
+// =====================================================================
+
+const AVALIAR = leia(
+  'src', 'app', 'app', 'corrigefacil', 'avaliar', '[code]', 'AvaliarClient.tsx',
+);
+const DOCUMENTO = leia(
+  'src', 'app', 'app', 'corrigefacil', 'avaliacoes', '[id]', 'relatorios',
+  '[reportId]', 'RelatorioDocumentClient.tsx',
+);
+
+describe('FDT · o campo desenhado', () => {
+  it('1 · os tempos pedem teclado DECIMAL, e o input lê de `entrada`', () => {
+    for (const code of TEMPOS) {
+      expect(entradaBrutaDe('FDT', code)?.decimal).toBe(true);
+    }
+    expect(AVALIAR).toContain(
+      "inputMode={e.entrada?.decimal === true ? 'decimal' : 'numeric'}",
+    );
+  });
+
+  it('2 · os tempos usam step "any"; o passo sai da mesma régua', () => {
+    expect(AVALIAR).toContain("e.entrada ? (e.entrada.decimal ? 'any' : 1) : undefined");
+  });
+
+  it('3 · o campo de tempo exibe a unidade em SEGUNDOS', () => {
+    for (const code of TEMPOS) {
+      const texto = textoDaEntradaBruta(entradaBrutaDe('FDT', code), 0, null);
+      expect(texto).toContain('segundos');
+    }
+    // e é essa frase que o JSX imprime, não a genérica de intervalo
+    expect(AVALIAR).toContain('textoDaEntradaBruta(e.entrada, e.min, e.max)');
+  });
+
+  it('4 · a regra visível NÃO anuncia zero como válido no tempo', () => {
+    for (const code of TEMPOS) {
+      const texto = textoDaEntradaBruta(entradaBrutaDe('FDT', code), 0, null);
+      expect(texto).toContain('maior que 0');
+      expect(texto).not.toContain('mínimo 0');
+      expect(texto).toContain('decimal permitido');
+    }
+    // e o atributo `min` não é escrito onde o piso é EXCLUSIVO: min={0}
+    // diria ao navegador que zero passa
+    expect(AVALIAR).toContain('e.entrada.pisoAberto ? undefined : e.entrada.minimo');
+  });
+
+  it('5 · os erros pedem inteiro, com passo 1 e mínimo 0', () => {
+    for (const code of ERROS) {
+      const regra = entradaBrutaDe('FDT', code);
+      expect(regra?.decimal).toBe(false);
+      const texto = textoDaEntradaBruta(regra, 0, null);
+      expect(texto).toContain('mínimo 0');
+      expect(texto).toContain('número inteiro');
+      expect(texto).not.toContain('maior que 0');
+    }
+  });
+
+  it('6 · instrumento sem `entrada` mantém o campo de antes', () => {
+    // a frase volta a ser a de intervalo, byte por byte
+    expect(textoDaEntradaBruta(null, 15, 75)).toBe(textoIntervaloBruto(15, 75));
+    expect(textoDaEntradaBruta(null, null, null)).toBeNull();
+    // e os atributos caem no comportamento anterior: teclado numérico, sem
+    // step, min/max do catálogo
+    expect(AVALIAR).toContain("(e.min ?? undefined)");
+    expect(AVALIAR).toContain('max={e.max ?? undefined}');
+    const outro = montarModelo(detalheFdt({ code: 'TRILHAS', dimensoes: [] }));
+    expect(outro.escalas.every((e) => e.entrada === null)).toBe(true);
+  });
+});
+
+// =====================================================================
+// O DOCUMENTO · uma apresentação só
+// =====================================================================
+
+describe('FDT · o documento impresso', () => {
+  it('7 · no FDT sai o bloco NO LUGAR da tabela, não além dela', () => {
+    // o ramo está DENTRO da seção de resultados, e a tabela é o `else`
+    const iSecao = DOCUMENTO.indexOf('── RESULTADOS ─');
+    const iRamo = DOCUMENTO.indexOf('{ehFdt(avaliacao.instrument) ? (');
+    const iTabela = DOCUMENTO.indexOf('<table');
+    expect(iSecao).toBeGreaterThan(-1);
+    expect(iRamo).toBeGreaterThan(iSecao);
+    expect(iTabela).toBeGreaterThan(iRamo);
+  });
+
+  it('8 · FdtDoDocumento é renderizado UMA única vez', () => {
+    // uma RENDERIZAÇÃO só. A declaração da função é outra coisa e
+    // continua onde estava.
+    const usos = DOCUMENTO.split('<FdtDoDocumento ').length - 1;
+    expect(usos).toBe(1);
+    expect(DOCUMENTO).toContain('function FdtDoDocumento(');
+  });
+
+  it('9 · os demais instrumentos continuam na tabela genérica', () => {
+    // a tabela não foi removida nem condicionada a outra coisa: ela é o
+    // ramo de quem não é FDT, e as colunas de sempre continuam lá
+    expect(DOCUMENTO).toContain('{colunas.classificacao &&');
+    expect(DOCUMENTO).toContain('{colunas.percentil &&');
+    expect(DOCUMENTO).toContain('Esta avaliação não possui resultados registrados.');
+  });
+
+  it('a tela imediata e o histórico não foram tocados por este ajuste', () => {
+    // as duas continuam com o bloco FORA da grade, cada uma com a sua
+    // guarda — o ajuste do documento não vazou para elas
+    expect(AVALIAR).toContain('<FdtDerivado');
+    expect(AVALIAR).toContain('ehFdt(detalhe.code)');
+    const detalhe = leia(
+      'src', 'app', 'app', 'corrigefacil', 'avaliacoes', '[id]',
+      'DetalheClient.tsx',
+    );
+    expect(detalhe).toContain('{!ehFdt(d.instrument) && (');
+    expect(detalhe).toContain('<FdtDerivado');
   });
 });

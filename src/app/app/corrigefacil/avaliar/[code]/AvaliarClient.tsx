@@ -63,7 +63,7 @@ import {
   pendencias,
   podeEnviar,
   progresso,
-  textoIntervaloBruto,
+  textoDaEntradaBruta,
   textoPendencia,
   type EstadoFormulario,
 } from './form-state';
@@ -550,16 +550,32 @@ export function AvaliarClient({ code }: { code: string }) {
                 >
                   <span className="text-pp-ink text-sm">
                     {e.nome} <span className="text-pp-ink-soft">({e.code})</span>
-                    {textoIntervaloBruto(e.min, e.max) && (
+                    {textoDaEntradaBruta(e.entrada, e.min, e.max) && (
                       <span className="block text-pp-ink-soft text-xs mt-0.5">
-                        {textoIntervaloBruto(e.min, e.max)}
+                        {textoDaEntradaBruta(e.entrada, e.min, e.max)}
                       </span>
                     )}
                   </span>
+                  {/* O campo obedece à MESMA `entrada` que valida e que
+                      escreve a frase acima. Sem `entrada` declarada, os
+                      atributos são os de antes — os outros instrumentos não
+                      mudam de comportamento.
+
+                      `min` só é escrito quando o piso é INCLUSIVO: num campo
+                      de tempo, `min={0}` diria ao navegador que zero serve, e
+                      ele não serve. Quem recusa é `brutoValido`, e quem
+                      recusa de verdade é o servidor. */}
                   <input
                     type="number"
-                    inputMode="numeric"
-                    min={e.min ?? undefined}
+                    inputMode={e.entrada?.decimal === true ? 'decimal' : 'numeric'}
+                    step={
+                      e.entrada ? (e.entrada.decimal ? 'any' : 1) : undefined
+                    }
+                    min={
+                      e.entrada
+                        ? (e.entrada.pisoAberto ? undefined : e.entrada.minimo)
+                        : (e.min ?? undefined)
+                    }
                     max={e.max ?? undefined}
                     value={estado.brutos[e.code] ?? ''}
                     onChange={(ev) =>

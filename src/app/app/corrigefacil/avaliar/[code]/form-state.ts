@@ -6,6 +6,7 @@ import type { PedidoCorrecao } from '@/lib/corrigefacil/api';
 import type { RegraPrematuridade } from '@/lib/corrigefacil/date-norm-api';
 import {
   brutoValido,
+  type EntradaBruta,
   estadoDoGate,
   faixaPelaIdade,
   itensVisiveis,
@@ -185,6 +186,33 @@ export function textoIntervaloBruto(
   if (min !== null) return `bruto mínimo ${min}`;
   if (max !== null) return `bruto máximo ${max}`;
   return null;
+}
+
+/** A régua do campo, em uma frase — para o profissional ver ANTES de
+ *  digitar o que o servidor recusaria depois.
+ *
+ *  Sai da MESMA `entrada` que `brutoValido` usa, e é por isso que ela não
+ *  pode mentir: se a regra diz que o piso é exclusivo, a frase diz "maior
+ *  que 0" e nunca "mínimo 0" — anunciar zero como válido num campo de
+ *  tempo convidaria a digitar o que seria recusado.
+ *
+ *  Sem `entrada` declarada, devolve exatamente o que devolvia antes: os
+ *  instrumentos fora do mapa continuam com a frase de intervalo de sempre. */
+export function textoDaEntradaBruta(
+  entrada: EntradaBruta | null,
+  min: number | null,
+  max: number | null,
+): string | null {
+  if (!entrada) return textoIntervaloBruto(min, max);
+  const partes: string[] = [];
+  if (entrada.unidade) partes.push(entrada.unidade);
+  partes.push(
+    entrada.pisoAberto
+      ? `maior que ${entrada.minimo}`
+      : `mínimo ${entrada.minimo}`,
+  );
+  partes.push(entrada.decimal ? 'decimal permitido' : 'número inteiro');
+  return partes.join(' · ');
 }
 
 /** Quantos números de item a mensagem de pendência cita antes de resumir.
