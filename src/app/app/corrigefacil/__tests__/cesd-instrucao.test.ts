@@ -16,10 +16,18 @@
 //
 //   · o PHQ-9 continua com o enunciado DELE, palavra por palavra;
 //   · instrumento fora do mapa continua com `null`;
-//   · os 20 itens da CES-D continuam 20, com os mesmos enunciados e as
-//     mesmas alternativas — o enunciado é do bloco, não dos itens;
+//   · o enunciado é do BLOCO: `montarModelo` devolve os itens como o
+//     catálogo os mandou, e o texto novo não entra em item nenhum;
 //   · o enunciado aparece UMA vez, fora da lista numerada;
 //   · nada de gráfico foi tocado.
+//
+// O QUE ELE NÃO PROVA, e é bom dizer em voz alta: os enunciados REAIS dos
+// 20 itens. Eles não moram neste repositório — vêm do catálogo, e quem os
+// trava é o CorrigeFacil, contra o JSON do instrumento. Os textos usados
+// aqui são marcadores; o que se prova com eles é que a tela não mexe no
+// que recebe. Copiar os 20 enunciados para cá criaria uma segunda fonte
+// da verdade sobre o conteúdo do instrumento, que é justamente o que a
+// arquitetura evita.
 // =====================================================================
 
 import { readFileSync } from 'node:fs';
@@ -45,11 +53,13 @@ const ALTERNATIVAS = [
   { label: 'Durante a maior parte do tempo', value: 3 },
 ];
 
-/** Os 20 itens, com texto próprio, como o catálogo os entrega. O conteúdo
- *  dos enunciados é do servidor: aqui basta que sejam 20 e distintos. */
+/** Vinte itens com texto MARCADOR. O enunciado real de cada um é do
+ *  catálogo e é travado lá; aqui eles precisam apenas ser 20 e distintos,
+ *  porque o que se prova é o trajeto — o que entra em `montarModelo` sai
+ *  igual do outro lado. */
 const ITENS = Array.from({ length: 20 }, (_, i) => ({
   numero: i + 1,
-  texto: `Afirmação ${i + 1} do CES-D`,
+  texto: `Item marcador ${i + 1}`,
 }));
 
 function detalheCesd(over: Partial<InstrumentoDetalhe> = {}): InstrumentoDetalhe {
@@ -124,11 +134,15 @@ describe('B · nada vazou para os outros instrumentos', () => {
 });
 
 // =====================================================================
-// C · os itens não foram tocados
+// C · o enunciado não mexe nos itens
+//
+// Os enunciados REAIS são do catálogo e são travados no CorrigeFacil. O
+// que se prova aqui é o trajeto: o que o catálogo manda chega à tela sem
+// alteração, e o texto novo fica fora dele.
 // =====================================================================
 
-describe('C · os 20 itens continuam os 20 itens', () => {
-  it('vinte itens, na ordem, com o texto que veio do catálogo', () => {
+describe('C · os itens atravessam `montarModelo` sem alteração', () => {
+  it('vinte entram, vinte saem, na ordem e com o mesmo texto', () => {
     expect(CESD.itens).toHaveLength(20);
     expect(CESD.itens.map((i) => i.numero)).toEqual(
       Array.from({ length: 20 }, (_, i) => i + 1),
@@ -140,12 +154,13 @@ describe('C · os 20 itens continuam os 20 itens', () => {
     for (const item of CESD.itens) {
       expect(item.texto).not.toBe(INSTRUCAO_CESD);
       expect(item.texto).not.toContain('última semana');
+      expect(item.texto).toBe(ITENS[item.numero - 1].texto);
       // e nenhum item virou seção com o enunciado por título
       expect(item.secao).toBeNull();
     }
   });
 
-  it('as quatro alternativas continuam as mesmas, item a item', () => {
+  it('as alternativas chegam ao item como vieram, item a item', () => {
     for (const item of CESD.itens) {
       expect(item.opcoes).toEqual(ALTERNATIVAS);
       expect(item.auxiliar).toBe(false);
