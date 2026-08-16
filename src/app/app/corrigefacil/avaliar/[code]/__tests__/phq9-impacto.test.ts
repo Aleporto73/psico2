@@ -226,12 +226,17 @@ describe('PHQ-9 · o enunciado dos nove itens', () => {
     expect(auxiliar.secao).not.toBe(m.instrucaoItens);
   });
 
-  it('SÓ o PHQ-9 tem enunciado: nenhum outro instrumento ganhou', () => {
-    // o mapa é fechado. Este teste é o que impede um texto de vazar para
-    // os outros vinte numa edição distraída.
-    expect(Object.keys(INSTRUCAO_DOS_ITENS)).toEqual(['PHQ-9']);
+  it('o mapa é fechado: só quem está nele tem enunciado', () => {
+    // Este teste é o que impede um texto de vazar para os outros numa
+    // edição distraída. A CES-D entrou com enunciado próprio, e o dela é
+    // travado em app/corrigefacil/__tests__/cesd-instrucao.test.ts.
+    expect(Object.keys(INSTRUCAO_DOS_ITENS)).toEqual(['PHQ-9', 'CES-D']);
     expect(montarModelo(semAuxiliar()).instrucaoItens).toBeNull();
-    expect(montarModelo(phq9({ code: 'CES-D' })).instrucaoItens).toBeNull();
+    expect(montarModelo(phq9({ code: 'DASS-21' })).instrucaoItens).toBeNull();
+    // e o da CES-D não é o do PHQ-9
+    expect(montarModelo(phq9({ code: 'CES-D' })).instrucaoItens).not.toBe(
+      ENUNCIADO,
+    );
   });
 
   it('instrumento que não é por itens não recebe enunciado de item', () => {
