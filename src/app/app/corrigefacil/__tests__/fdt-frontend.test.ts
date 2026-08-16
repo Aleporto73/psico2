@@ -26,6 +26,7 @@ import type {
   InstrumentoDetalhe,
   ResultadoEscala,
 } from '@/lib/corrigefacil/api';
+import { buildCorrigeFacilSystemPrompt } from '@/lib/corrigefacil/report-generator';
 import {
   blocosFdt,
   CODIGO_FDT,
@@ -689,3 +690,120 @@ describe('FDT · o documento impresso', () => {
     expect(detalhe).toContain('<FdtDerivado');
   });
 });
+
+
+// =====================================================================
+// O RELATÓRIO PRÓ · a whitelist do system prompt precisa conhecer o FDT
+//
+// O user prompt já levava o bloco "DADOS DERIVADOS CONGELADOS DO FDT", mas
+// o SYSTEM prompt recebia só dois sinalizadores — CONFIAS e PHQ-9. Num FDT
+// puro os dois eram false, e a whitelist não liberava a fonte de onde vem a
+// única classificação que o instrumento tem: mandar o dado e não autorizá-lo
+// é pedir para o modelo ignorá-lo ou reconstruí-lo.
+// =====================================================================
+
+const GERADOR = leia('src', 'lib', 'corrigefacil', 'report-generator.ts');
+
+const prompt = (
+  comConfias = false,
+  comPhq9 = false,
+  comFdt = false,
+): string =>
+  buildCorrigeFacilSystemPrompt(
+    'technical',
+    'Aviso final.',
+    comConfias,
+    comPhq9,
+    comFdt,
+  );
+
+const LINHA_WHITELIST = '- dados derivados congelados fornecidos abaixo;';
+const PROIBICAO_PONTOS = 'Não reconstrua P95, P75, P50, P25 ou P5.';
+
+describe('FDT · o system prompt do Relatório Pró', () => {
+  it('1 · FDT com snapshot recebe a REGRA_FDT', () => {
+    const p = prompt(false, false, true);
+    expect(p).toContain('DADOS DERIVADOS CONGELADOS DO FDT:');
+    expect(p).toContain('dados FECHADOS');
+    expect(p).toContain('Não recalcule Inibição nem Flexibilidade');
+    expect(p).toContain('Não recalcule o z.');
+    expect(p).toContain(PROIBICAO_PONTOS);
+    expect(p).toContain('Não selecione faixa etária.');
+    expect(p).toContain('Não crie percentil interpolado');
+    expect(p).toContain('Classificação não é diagnóstico.');
+  });
+
+  it('2 · FDT com snapshot libera a fonte na whitelist', () => {
+    expect(prompt(false, false, true)).toContain(LINHA_WHITELIST);
+  });
+
+  it('3 · a chamada real passa `fdt !== null`', () => {
+    // o sinalizador não adianta se o gerador não o passar
+    const i = GERADOR.indexOf('buildCorrigeFacilSystemPrompt(');
+    const j = GERADOR.indexOf('fdt !== null,', i);
+    expect(i).toBeGreaterThan(-1);
+    expect(j).toBeGreaterThan(i);
+    // e na ordem certa: depois do sinalizador do PHQ-9
+    expect(GERADOR.indexOf('phq9 !== null,', i)).toBeLessThan(j);
+  });
+
+  it('4 · FDT sem snapshot não recebe a regra nem a linha', () => {
+    const p = prompt(false, false, false);
+    expect(p).not.toContain('DADOS DERIVADOS CONGELADOS DO FDT:');
+    expect(p).not.toContain(LINHA_WHITELIST);
+  });
+
+  it('5 · CONFIAS sem FDT não recebe a REGRA_FDT', () => {
+    const p = prompt(true, false, false);
+    expect(p).toContain('DADOS DERIVADOS CONGELADOS:');
+    expect(p).not.toContain('DADOS DERIVADOS CONGELADOS DO FDT:');
+    expect(p).toContain(LINHA_WHITELIST);
+  });
+
+  it('6 · PHQ-9 sem FDT não recebe a REGRA_FDT', () => {
+    const p = prompt(false, true, false);
+    expect(p).toContain('DADOS DERIVADOS CONGELADOS DO PHQ-9:');
+    expect(p).not.toContain('DADOS DERIVADOS CONGELADOS DO FDT:');
+    expect(p).toContain(LINHA_WHITELIST);
+  });
+
+  it('7 · instrumento sem derivado nenhum tem o prompt de sempre', () => {
+    // o padrão dos três sinalizadores é false: chamar sem eles e chamar com
+    // eles em false tem de dar exatamente o mesmo texto, byte a byte
+    const semArgumentos = buildCorrigeFacilSystemPrompt(
+      'technical',
+      'Aviso final.',
+    );
+    expect(prompt(false, false, false)).toBe(semArgumentos);
+    expect(semArgumentos).not.toContain('DADOS DERIVADOS CONGELADOS');
+    expect(semArgumentos).not.toContain(LINHA_WHITELIST);
+  });
+
+  it('8 · nenhuma norma nem corte do FDT entrou no prompt', () => {
+    const p = prompt(true, true, true);
+    // os nomes dos pontos aparecem UMA vez, e só para PROIBIR que o modelo
+    // os reconstrua. Nenhum valor deles acompanha o nome.
+    expect(p.split('P95').length - 1).toBe(1);
+    expect(p).toContain(PROIBICAO_PONTOS);
+    // e nenhuma das nove faixas etárias é nomeada: quem resolve idade em
+    // faixa é o servidor, e a tabela dele não chega aqui
+    for (const faixa of FAIXAS_DO_SERVIDOR) {
+      expect(p).not.toContain(faixa);
+    }
+  });
+});
+
+/** As nove faixas do FDT existem NO SERVIDOR. Estão escritas aqui só para
+ *  serem PROCURADAS e não encontradas — é o teste de que a tabela não vazou
+ *  para o prompt. Nenhum código de produção as conhece. */
+const FAIXAS_DO_SERVIDOR = [
+  '6-8',
+  '9-10',
+  '11-12',
+  '13-15',
+  '16-18',
+  '19-34',
+  '35-59',
+  '60-75',
+  '76-92',
+];
