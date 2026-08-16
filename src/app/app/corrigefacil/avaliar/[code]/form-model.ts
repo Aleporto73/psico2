@@ -23,7 +23,16 @@ export type CampoItem = {
    *  do item, que é como o profissional acompanha pelo caderno impresso. */
   semEnunciado: boolean;
   opcoes: OpcaoResposta[];
-  grupo: string | null;
+  /** O grupo de itens a que ele pertence, quando o instrumento tem grupos.
+   *
+   *  Vem do catálogo (`item_groups`), com CÓDIGO e nome. O código é o que o
+   *  profissional lê no caderno de aplicação ("S1"), e sem ele o título do
+   *  bloco perderia a única referência que casa tela e caderno — antes só o
+   *  nome era preservado, e ele morria antes de chegar à renderização.
+   *
+   *  Não existe mapa manual de S1..F7 em lugar nenhum: quem sabe qual item
+   *  é de qual tarefa é o servidor, e ele já diz. */
+  grupo: { code: string; name: string } | null;
   /** Item que NÃO pontua: zero vínculo com escala nenhuma no servidor. */
   auxiliar: boolean;
   /** Título da seção a que o item pertence, quando pertence a alguma.
@@ -77,6 +86,9 @@ export type ModeloFormulario = {
   /** Como a idade é pedida quando NÃO há data de nascimento. Igual para
    *  todos, menos os do mapa fechado IDADE_MANUAL — ver ali. */
   idadeManual: IdadeManual;
+  /** true quando os itens são desenhados POR GRUPO, com o título da tarefa
+   *  acima de cada bloco. Só o CONFIAS — ver APRESENTACAO_AGRUPADA. */
+  itensAgrupados: boolean;
 };
 
 /** Seção cuja visibilidade depende de um item de triagem — o GATE.
@@ -195,6 +207,43 @@ export function itensVisiveis(
   if (estadoDoGate(modelo, respostas) === 'aberto') return modelo.itens;
   const dependentes = new Set(gate.dependentes);
   return modelo.itens.filter((i) => !dependentes.has(i.numero));
+}
+
+// ---------------------------------------------------------------------
+// APRESENTAÇÃO AGRUPADA
+// ---------------------------------------------------------------------
+
+/** Os instrumentos cujos itens são desenhados POR GRUPO, com o título da
+ *  tarefa acima de cada bloco.
+ *
+ *  Fechado de propósito, como INSTRUCAO_DOS_ITENS, GATE_POR_INSTRUMENTO e
+ *  IDADE_MANUAL — e aqui isso é mais que estilo. `item_groups` existe no
+ *  catálogo de qualquer instrumento que declare grupos, e ligar a
+ *  apresentação agrupada para todos de uma vez redesenharia telas que
+ *  ninguém pediu para redesenhar.
+ *
+ *  CONFIAS · os 70 itens são 16 tarefas com nome próprio (S1..S9, F1..F7),
+ *  e o profissional aplica tarefa a tarefa, pelo caderno. Uma lista corrida
+ *  de 70 linhas idênticas não diz onde uma tarefa acaba e a outra começa. */
+export const APRESENTACAO_AGRUPADA: ReadonlySet<string> = new Set(['CONFIAS']);
+
+export type GrupoDeItens = { code: string; nome: string; itens: CampoItem[] };
+
+/** Os itens agrupados por `grupo`, NA ORDEM EM QUE VÊM — que é a do
+ *  catálogo (`order by ig.ordinal, it.number` na Edge). Nada é reordenado
+ *  aqui, e nenhum número de item é reescrito.
+ *
+ *  Item sem grupo não some: quem chama continua desenhando a lista corrida
+ *  para ele. No CONFIAS não há esse caso — os 70 estão nos 16 grupos. */
+export function gruposDeItens(itens: readonly CampoItem[]): GrupoDeItens[] {
+  const out: GrupoDeItens[] = [];
+  for (const item of itens) {
+    if (!item.grupo) continue;
+    const existente = out.find((g) => g.code === item.grupo!.code);
+    if (existente) existente.itens.push(item);
+    else out.push({ code: item.grupo.code, nome: item.grupo.name, itens: [item] });
+  }
+  return out;
 }
 
 export type SecaoDeItens = { titulo: string; itens: CampoItem[] };
@@ -320,11 +369,13 @@ function escolhiveis(dimensoes: DimensaoNorma[]): DimensaoNorma[] {
 export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
   const dimensoes = detalhe.dimensoes ?? [];
 
-  // grupo de cada item, quando o instrumento tem grupos
-  const grupoDoItem = new Map<number, string>();
+  // grupo de cada item, quando o instrumento tem grupos. Guarda CÓDIGO e
+  // nome: o código é o que casa a tela com o caderno de aplicação, e antes
+  // ele era descartado aqui.
+  const grupoDoItem = new Map<number, { code: string; name: string }>();
   for (const g of detalhe.item_groups ?? []) {
     for (const numero of g.itens) {
-      grupoDoItem.set(numero, g.name);
+      grupoDoItem.set(numero, { code: g.code, name: g.name });
     }
   }
 
@@ -402,6 +453,14 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
     // vale mesmo quando `requires_birthdate` é true: ali o campo de idade
     // manual nem aparece, e a regra fica inerte em vez de ausente.
     idadeManual: idadeManualDe(detalhe.code),
+    // idem `instrucaoItens` e `gate`: sem item não há o que agrupar. E só
+    // liga com grupo de verdade no catálogo — instrumento listado que
+    // chegue sem `item_groups` cai na lista corrida de sempre, em vez de
+    // desenhar zero bloco e sumir com os itens.
+    itensAgrupados:
+      detalhe.entry_mode === 'itens' &&
+      APRESENTACAO_AGRUPADA.has(detalhe.code) &&
+      (detalhe.item_groups ?? []).length > 0,
   };
 }
 

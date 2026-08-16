@@ -8,6 +8,7 @@ import {
   textoDePercentil,
 } from '@/lib/corrigefacil/metricas-instrumento';
 import { temposParaTexto } from './tempos-execucao';
+import { derivadoDoMeta, derivadoParaTexto } from './confias-derivado';
 import {
   formatCredential,
   getCredentialLabel,
@@ -218,9 +219,31 @@ export function formatClosedResults(
     .join('\n\n');
 }
 
+/** A regra dos derivados congelados.
+ *
+ *  Entra no system prompt SÓ quando a avaliação tem snapshot. Sem isso ela
+ *  viajaria em todo relatório dos outros 20 instrumentos falando de um
+ *  bloco que não existe ali — e regra sobre dado ausente é a forma mais
+ *  fácil de o modelo inventar o dado.
+ *
+ *  Os três "não recalcule" são o eco exato da REGRA CENTRAL, aplicados às
+ *  três medidas que o bloco traz. A separação entre nível equivalente e
+ *  hipótese de escrita está aqui porque os dois usam a MESMA nomenclatura
+ *  de escrita: sem dizê-lo, a divergência entre eles é lida como erro do
+ *  sistema, e o modelo "conserta" um pelo outro. */
+const REGRA_DERIVADOS = `
+DADOS DERIVADOS CONGELADOS:
+O bloco "DADOS DERIVADOS CONGELADOS DO CONFIAS" tem exatamente a mesma força dos resultados por escala. Não recalcule o percentual de nenhuma habilidade, não recalcule a classificação de nenhuma habilidade e não recalcule o nível equivalente. Reproduza os rótulos exatamente como vieram, sem sinônimo e sem gradação própria.
+"Nível equivalente (escore sílaba)" NÃO é a hipótese de escrita escolhida pelo profissional para a seleção normativa. Os dois usam a mesma nomenclatura e podem divergir sem que nenhum esteja errado: o nível é leitura adicional do escore de Sílaba. Não o apresente como a hipótese informada, não o corrija pela hipótese e não trate a diferença entre os dois como inconsistência.
+O Perfil por Habilidade PODE ser usado para descrever o perfil observado — quais tarefas ficaram consolidadas, quais estão em desenvolvimento e quais ainda não se consolidaram —, sempre com os rótulos recebidos. Não nomeie habilidade que não esteja nas linhas recebidas, não crie categoria de agrupamento que ninguém forneceu e não converta o perfil em diagnóstico, causa ou prognóstico.
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
+  /** true só quando a avaliação traz derivados congelados. O padrão mantém
+   *  o prompt dos outros 20 instrumentos byte a byte como estava. */
+  comDerivado = false,
 ): string {
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -229,11 +252,12 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
+${comDerivado ? REGRA_DERIVADOS : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
 - instrumento (código e nome);
-- resultados persistidos por escala;
+- resultados persistidos por escala;${comDerivado ? '\n- dados derivados congelados fornecidos abaixo;' : ''}
 - observações adicionais escritas pelo profissional.
 
 Não use respostas item a item, tabelas normativas, regras de pontuação, gráficos ou imagens como fonte de cálculo. Não faça diagnóstico. Não gere laudo formal definitivo. Não invente achados, contexto, funcionalidade, causalidade ou conclusão que não esteja sustentada pelos dados fornecidos.
@@ -515,6 +539,26 @@ REGISTRO DESCRITIVO DE EXECUÇÃO (não é resultado normativo; não classifique
 ${tempos}`
     : '';
 
+  // Os derivados CONGELADOS do CONFIAS: o perfil das 16 tarefas e o nível
+  // equivalente pelo escore de Sílaba. Saem do snapshot que a Edge gravou
+  // em `subject_meta._corrigefacil` na conclusão — o mesmo objeto que a
+  // tela e o documento mostram. Nada é recalculado aqui, e nenhuma query
+  // nova é aberta: `subject_meta` já veio no SELECT acima.
+  //
+  // Vão como DADOS FECHADOS, com a mesma força dos resultados por escala:
+  // acertos, percentual e classificação chegam juntos em cada linha, para
+  // o modelo não ser convidado a classificar um percentual solto.
+  //
+  // Null nos outros 20 instrumentos e em toda avaliação CONFIAS anterior a
+  // este campo — e por isso o prompt deles não muda um caractere.
+  const derivado = derivadoParaTexto(derivadoDoMeta(subjectMeta));
+  const derivadoText = derivado
+    ? `
+
+DADOS DERIVADOS CONGELADOS DO CONFIAS (calculados e classificados pelo CorrigeFácil; preserve exatamente como estão)
+${derivado}`
+    : '';
+
   const notesText = additionalNotes
     ? `\n\nCONTEXTO FORNECIDO PELO PROFISSIONAL (não é resultado do instrumento; ao apoiar uma conclusão nele, deixe a origem clara no texto):\n${additionalNotes}`
     : '';
@@ -532,7 +576,7 @@ Código: ${instrument.code}
 Nome: ${instrument.name}
 
 RESULTADOS FECHADOS DO CORRIGEFÁCIL
-${resultsText}${orientacaoText}${temposText}${notesText}
+${resultsText}${derivadoText}${orientacaoText}${temposText}${notesText}
 
 Redija as cinco seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 
@@ -541,7 +585,11 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
     const result = await callOpenAI([
       {
         role: 'system',
-        content: buildCorrigeFacilSystemPrompt(reportType, avisoFinal),
+        content: buildCorrigeFacilSystemPrompt(
+          reportType,
+          avisoFinal,
+          derivado !== null,
+        ),
       },
       { role: 'user', content: userText },
     ]);

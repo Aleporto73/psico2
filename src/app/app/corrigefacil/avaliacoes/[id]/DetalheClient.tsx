@@ -12,6 +12,8 @@ import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
+import { ConfiasDerivado } from '../../ConfiasDerivado';
+import { derivadoConfias } from '@/lib/corrigefacil/confias-derivado';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
 import { TemposDeExecucao } from '../../TemposDeExecucao';
 import {
@@ -189,6 +191,16 @@ export function DetalheClient({ id }: { id: string }) {
           );
         })}
       </section>
+
+      {/* O MESMO componente da tela de correção, alimentado pelo snapshot
+          CONGELADO na conclusão. A Edge o gravou em
+          `subject_meta._corrigefacil` e o promove a `derived` na leitura —
+          aqui não se reconstrói perfil a partir de resposta, não se busca
+          catálogo e não se recalcula nada, exatamente como os cards acima.
+
+          Avaliação salva antes de o campo existir não traz a chave e não
+          renderiza seção nenhuma. */}
+      <ConfiasDerivado derivado={derivadoConfias(d)} />
 
       {/* O que foi respondido e não foi pontuado. Vem GRAVADO da Edge, em
           `auxiliary_responses` — nada é recalculado aqui, e o TOTAL acima
