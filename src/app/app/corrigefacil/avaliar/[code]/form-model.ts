@@ -172,6 +172,16 @@ export const IDADE_MANUAL: Readonly<Record<string, IdadeManual>> = {
   // regra genérica (inteiro, 0 a 130), 1,5 era recusado e 8 era aceito:
   // errado nos dois sentidos.
   'C-TRF_1.5-5': { min: 1.5, max: 5, decimal: true },
+  // CONFIAS · a fonte indica o instrumento a partir dos 4 anos. Só o PISO
+  // muda: não há teto declarado, então o teto genérico (130) fica, e o
+  // decimal continua recusado — a idade do CONFIAS é em anos completos,
+  // como na regra padrão. Com o piso genérico (0), a tela aceitava aplicar
+  // o instrumento a uma criança de 3 anos sem dizer nada.
+  //
+  // Continua sendo IDENTIFICAÇÃO, não norma: a norma do CONFIAS é a
+  // hipótese de escrita, escolhida pelo profissional, e a idade não entra
+  // no `norm_selector` nem aparece em FAIXA_PELA_IDADE.
+  CONFIAS: { min: 4, max: 130, decimal: false },
 };
 
 /** A regra deste instrumento. Quem não está no mapa recebe a padrão. */
