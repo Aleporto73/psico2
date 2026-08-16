@@ -231,13 +231,21 @@ const MODOS_CONHECIDOS = new Set(['itens', 'bruto', 'componentes']);
  *  se) o catálogo passar a transportar o campo, esta constante sai e o
  *  valor passa a vir de `detalhe`, sem que a tela mude.
  *
- *  O texto vale para os itens 1–9. Ele NÃO cobre o item auxiliar: o
- *  impacto funcional pergunta outra coisa, tem enunciado próprio e fica
- *  numa seção separada. */
+ *  O texto vale para os itens PONTUADOS. No PHQ-9 ele NÃO cobre o item
+ *  auxiliar: o impacto funcional pergunta outra coisa, tem enunciado
+ *  próprio e fica numa seção separada. */
 export const INSTRUCAO_DOS_ITENS: Readonly<Record<string, string>> = {
+  // PHQ-9 · vale para os itens 1–9
   'PHQ-9':
     'Durante os últimos 14 dias, com que frequência você foi afetado(a) ' +
     'por algum dos seguintes problemas?',
+  // CES-D · o período de referência do instrumento é a última semana, e é
+  // ele que dá sentido às quatro alternativas (de "menos de 1 dia" a "5 a
+  // 7 dias"). A fonte o escreve uma vez, antes dos 20 itens, e é assim que
+  // ele aparece aqui: repetir por item seria outra coisa.
+  'CES-D':
+    'Para responder, considere como a pessoa se sentiu ou se comportou ' +
+    'durante a última semana.',
 };
 
 // ---------------------------------------------------------------------
