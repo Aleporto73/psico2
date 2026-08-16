@@ -115,13 +115,26 @@ describe('A · a exceção é um mapa fechado, não um if espalhado', () => {
     expect(CTRF.idadeManual).toEqual({ min: 1.5, max: 5, decimal: true });
   });
 
-  it('o C-TRF é a ÚNICA exceção; todo o resto recebe a regra de sempre', () => {
-    expect(Object.keys(IDADE_MANUAL)).toEqual(['C-TRF_1.5-5']);
+  it('o mapa é fechado; todo o resto recebe a regra de sempre', () => {
+    // O CONFIAS entrou depois, com piso 4 e sem decimal — ver
+    // confias-idade-minima.test.ts. A lista continua escrita à mão de
+    // propósito: instrumento que ganhe faixa própria sem passar por aqui é
+    // exatamente o que este teste existe para acusar.
+    expect(Object.keys(IDADE_MANUAL).sort()).toEqual(['C-TRF_1.5-5', 'CONFIAS']);
     expect(IDADE_MANUAL_PADRAO).toEqual({ min: 0, max: 130, decimal: false });
     for (const code of ['PHQ-9', 'BPA-2', 'SDQ-POR', 'TRILHAS_PRE', 'DCDQ']) {
       expect(idadeManualDe(code)).toEqual(IDADE_MANUAL_PADRAO);
     }
     expect(OUTRO.idadeManual.decimal).toBe(false);
+  });
+
+  it('o C-TRF continua sendo a única exceção COM decimal', () => {
+    // é o decimal que muda campo, máscara e mensagem de erro; o CONFIAS
+    // não o ganhou, e nenhum instrumento pode ganhá-lo de carona
+    const comDecimal = Object.entries(IDADE_MANUAL)
+      .filter(([, regra]) => regra.decimal)
+      .map(([code]) => code);
+    expect(comDecimal).toEqual(['C-TRF_1.5-5']);
   });
 
   it('a tela lê a regra do modelo — não repete a faixa nem o código', () => {
