@@ -266,7 +266,11 @@ describe('D · a norma do CONFIAS continua sendo a hipótese de escrita', () => 
 
   it('o CONFIAS não está em FAIXA_PELA_IDADE — o mapa da norma é outro', () => {
     expect(FAIXA_PELA_IDADE.CONFIAS).toBeUndefined();
-    expect(Object.keys(FAIXA_PELA_IDADE)).toEqual(['BPA-2']);
+    // O FDT entrou no mapa em 2026-08: a idade é a ÚNICA chave
+    // normativa dele, e resolve sozinha uma entre nove faixas. A
+    // guarda continua fechada — quem entra aqui é decisão, não
+    // varredura de `manual_choice=false`.
+    expect(Object.keys(FAIXA_PELA_IDADE)).toEqual(['BPA-2', 'FDT']);
   });
 
   it('as quatro hipóteses continuam escolhíveis', () => {

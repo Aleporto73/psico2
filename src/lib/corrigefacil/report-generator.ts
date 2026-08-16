@@ -10,6 +10,7 @@ import {
 import { temposParaTexto } from './tempos-execucao';
 import { derivadoDoMeta, derivadoParaTexto } from './confias-derivado';
 import { derivadoPhq9DoMeta, phq9ParaTexto } from './phq9-derivado';
+import { derivadoFdtDoMeta, fdtParaTexto } from './fdt-derivado';
 import {
   formatCredential,
   getCredentialLabel,
@@ -261,6 +262,26 @@ ALERTA DO ITEM 9: quando o bloco trouxer o alerta, ele deve ser mencionado, e EX
 Quando o alerta NÃO vier no bloco, não mencione o item 9, não afirme ausência de ideação e não escreva que não há risco: o silêncio ali é ausência de resposta positiva, e não avaliação negativa de risco.
 `;
 
+/** A regra do derivado do FDT.
+ *
+ *  Entra no system prompt SÓ quando a avaliação tem snapshot, pela mesma
+ *  razão das duas de cima.
+ *
+ *  Aqui ela carrega mais peso do que nos outros dois: no FDT a
+ *  CLASSIFICAÇÃO só existe neste bloco. Os resultados por escala trazem
+ *  bruto e z e vêm com a classificação vazia — os cortes mudam a cada faixa
+ *  etária, e a tabela de faixas do servidor não tem norm_set_id. Sem a
+ *  regra, o modelo lê uma tabela sem classificação e um bloco com ela, e o
+ *  caminho mais curto para "resolver" a diferença é reclassificar por conta
+ *  própria. */
+const REGRA_FDT = `
+DADOS DERIVADOS CONGELADOS DO FDT:
+O bloco "DADOS DERIVADOS CONGELADOS DO FDT" tem exatamente a mesma força dos resultados persistidos por escala. Faixa percentílica e classificação são dados FECHADOS: reproduza os rótulos exatamente como vieram, sem sinônimo e sem gradação própria.
+No FDT a classificação vem NESTE bloco, e não na tabela por escala. A ausência dela na tabela não é resultado faltando nem inconsistência: não a preencha, não a deduza do z e não a recalcule.
+Não recalcule Inibição nem Flexibilidade — elas são diferenças entre condições, já calculadas pelo servidor. Não recalcule o z. Não reconstrua P95, P75, P50, P25 ou P5. Não selecione faixa etária. Não crie percentil interpolado, nem estime posição percentílica a partir do z.
+Classificação não é diagnóstico. Não converta "Deficitário", "Média inferior" ou qualquer outro rótulo em transtorno, déficit confirmado, quadro clínico ou conclusão sobre funcionamento executivo.
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -271,6 +292,10 @@ export function buildCorrigeFacilSystemPrompt(
    *  regra só entra quando o bloco dela existe, e um relatório de PHQ-9 não
    *  tem por que receber instrução sobre perfil de habilidade. */
   comPhq9 = false,
+  /** idem, para o derivado do FDT. Três sinalizadores e não um: cada regra
+   *  só entra quando o bloco dela existe, e um relatório de FDT não tem por
+   *  que receber instrução sobre perfil de habilidade nem sobre item 9. */
+  comFdt = false,
 ): string {
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -279,12 +304,12 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS : ''}${comPhq9 ? REGRA_PHQ9 : ''}
+${comDerivado ? REGRA_DERIVADOS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
 - instrumento (código e nome);
-- resultados persistidos por escala;${comDerivado || comPhq9 ? '\n- dados derivados congelados fornecidos abaixo;' : ''}
+- resultados persistidos por escala;${comDerivado || comPhq9 || comFdt ? '\n- dados derivados congelados fornecidos abaixo;' : ''}
 - observações adicionais escritas pelo profissional.
 
 Não use respostas item a item, tabelas normativas, regras de pontuação, gráficos ou imagens como fonte de cálculo. Não faça diagnóstico. Não gere laudo formal definitivo. Não invente achados, contexto, funcionalidade, causalidade ou conclusão que não esteja sustentada pelos dados fornecidos.
@@ -600,6 +625,23 @@ DADOS DERIVADOS CONGELADOS DO PHQ-9 (calculados pelo CorrigeFácil; preserve exa
 ${phq9}`
     : '';
 
+  // E o mesmo caminho para o FDT. Aqui ele carrega mais do que uma leitura
+  // adicional: a CLASSIFICAÇÃO das dez medidas só existe no snapshot, e não
+  // em `assessment_results` — os cortes do FDT mudam a cada faixa etária e
+  // a tabela de faixas do servidor não tem norm_set_id. Sem este bloco, o
+  // modelo receberia bruto e z e nenhuma classificação.
+  //
+  // Vai como TRANSCRIÇÃO, com os mesmos rótulos da tela e do documento. A
+  // tabela normativa não entra: nem médias, nem DPs, nem os pontos
+  // percentílicos. O que o modelo lê é o resultado, não a norma.
+  const fdt = fdtParaTexto(derivadoFdtDoMeta(subjectMeta));
+  const fdtText = fdt
+    ? `
+
+DADOS DERIVADOS CONGELADOS DO FDT (calculados pelo CorrigeFácil; preserve exatamente como estão)
+${fdt}`
+    : '';
+
   const notesText = additionalNotes
     ? `\n\nCONTEXTO FORNECIDO PELO PROFISSIONAL (não é resultado do instrumento; ao apoiar uma conclusão nele, deixe a origem clara no texto):\n${additionalNotes}`
     : '';
@@ -617,7 +659,7 @@ Código: ${instrument.code}
 Nome: ${instrument.name}
 
 RESULTADOS FECHADOS DO CORRIGEFÁCIL
-${resultsText}${derivadoText}${phq9Text}${orientacaoText}${temposText}${notesText}
+${resultsText}${derivadoText}${phq9Text}${fdtText}${orientacaoText}${temposText}${notesText}
 
 Redija as cinco seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 
@@ -631,6 +673,7 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
           avisoFinal,
           derivado !== null,
           phq9 !== null,
+          fdt !== null,
         ),
       },
       { role: 'user', content: userText },

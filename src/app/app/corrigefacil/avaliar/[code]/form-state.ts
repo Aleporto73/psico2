@@ -5,6 +5,8 @@
 import type { PedidoCorrecao } from '@/lib/corrigefacil/api';
 import type { RegraPrematuridade } from '@/lib/corrigefacil/date-norm-api';
 import {
+  brutoValido,
+  type EntradaBruta,
   estadoDoGate,
   faixaPelaIdade,
   itensVisiveis,
@@ -46,6 +48,7 @@ export function estadoInicial(): EstadoFormulario {
 export type Pendencia =
   | { tipo: 'itens'; faltam: number[] }
   | { tipo: 'escalas'; faltam: string[] }
+  | { tipo: 'escalas_invalidas'; faltam: string[] }
   | { tipo: 'componentes'; faltam: string[] }
   | { tipo: 'dimensoes'; faltam: string[] }
   | { tipo: 'datas'; faltam: string[] };
@@ -109,7 +112,22 @@ function pendenciaEscalas(modelo: ModeloFormulario, estado: EstadoFormulario): P
   const faltam = modelo.escalas
     .filter((e) => !temValor(estado.brutos[e.code]))
     .map((e) => e.code);
-  return faltam.length ? [{ tipo: 'escalas', faltam }] : [];
+  // Preenchido mas fora da régua do campo é OUTRA pendência, com outra
+  // frase: "preencha" manda procurar um campo vazio que não existe.
+  //
+  // Isto é UX e SÓ UX. A validação que vale é a do servidor, e ela roda de
+  // novo lá aconteça o que acontecer aqui — o que se ganha é o profissional
+  // ver o engano antes do clique, em vez de receber 422 depois.
+  const invalidos = modelo.escalas
+    .filter((e) => temValor(estado.brutos[e.code]))
+    .filter((e) => !brutoValido(estado.brutos[e.code], e.entrada))
+    .map((e) => e.code);
+  return [
+    ...(faltam.length ? [{ tipo: 'escalas' as const, faltam }] : []),
+    ...(invalidos.length
+      ? [{ tipo: 'escalas_invalidas' as const, faltam: invalidos }]
+      : []),
+  ];
 }
 
 function pendenciaComponentes(modelo: ModeloFormulario, estado: EstadoFormulario): Pendencia[] {
@@ -170,6 +188,33 @@ export function textoIntervaloBruto(
   return null;
 }
 
+/** A régua do campo, em uma frase — para o profissional ver ANTES de
+ *  digitar o que o servidor recusaria depois.
+ *
+ *  Sai da MESMA `entrada` que `brutoValido` usa, e é por isso que ela não
+ *  pode mentir: se a regra diz que o piso é exclusivo, a frase diz "maior
+ *  que 0" e nunca "mínimo 0" — anunciar zero como válido num campo de
+ *  tempo convidaria a digitar o que seria recusado.
+ *
+ *  Sem `entrada` declarada, devolve exatamente o que devolvia antes: os
+ *  instrumentos fora do mapa continuam com a frase de intervalo de sempre. */
+export function textoDaEntradaBruta(
+  entrada: EntradaBruta | null,
+  min: number | null,
+  max: number | null,
+): string | null {
+  if (!entrada) return textoIntervaloBruto(min, max);
+  const partes: string[] = [];
+  if (entrada.unidade) partes.push(entrada.unidade);
+  partes.push(
+    entrada.pisoAberto
+      ? `maior que ${entrada.minimo}`
+      : `mínimo ${entrada.minimo}`,
+  );
+  partes.push(entrada.decimal ? 'decimal permitido' : 'número inteiro');
+  return partes.join(' · ');
+}
+
 /** Quantos números de item a mensagem de pendência cita antes de resumir.
  *  Em C-TRF (100 itens) listar tudo faria uma parede de números. */
 const ITENS_CITADOS = 6;
@@ -189,6 +234,7 @@ export function textoPendencia(lista: Pendencia[]): string {
         return `${p.faltam.length} ${plural} sem resposta: ${citados}${reticencia}`;
       }
       if (p.tipo === 'dimensoes') return `escolha: ${p.faltam.join(', ')}`;
+      if (p.tipo === 'escalas_invalidas') return `corrija: ${p.faltam.join(', ')}`;
       return `preencha: ${p.faltam.join(', ')}`;
     })
     .join(' · ');
@@ -311,7 +357,10 @@ export function montarPedido(
     const brutos: Record<string, number> = {};
     for (const escala of modelo.escalas) {
       const v = estado.brutos[escala.code];
-      if (temValor(v)) brutos[escala.code] = v;
+      // `modelo.escalas` já exclui a que o servidor calcula: Inibição e
+      // Flexibilidade não são digitadas e não viajam daqui. O servidor as
+      // monta, e descarta o que o cliente mandar com esses nomes.
+      if (temValor(v) && brutoValido(v, escala.entrada)) brutos[escala.code] = v;
     }
     pedido.brutos = brutos;
     return pedido;

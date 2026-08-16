@@ -217,7 +217,11 @@ describe('BPA-2 por idade · a faixa é do servidor', () => {
     // o ponto que separa esta correção de uma varredura genérica: há
     // instrumentos com a mesma configuração histórica de catálogo, e eles
     // continuam pedindo a escolha
-    expect(Object.keys(FAIXA_PELA_IDADE)).toEqual(['BPA-2']);
+    // O FDT entrou no mapa em 2026-08: a idade é a ÚNICA chave
+    // normativa dele, e resolve sozinha uma entre nove faixas. A
+    // guarda continua fechada — quem entra aqui é decisão, não
+    // varredura de `manual_choice=false`.
+    expect(Object.keys(FAIXA_PELA_IDADE)).toEqual(['BPA-2', 'FDT']);
 
     const outro = montarModelo(
       detalheBpa2({

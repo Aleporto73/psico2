@@ -73,6 +73,12 @@ import {
   TITULO_RASTREAMENTO,
 } from '@/lib/corrigefacil/phq9-derivado';
 import {
+  blocosFdt,
+  derivadasAusentes,
+  derivadoFdt,
+  ehFdt,
+} from '@/lib/corrigefacil/fdt-derivado';
+import {
   narrativaVazia,
   parseNarrativa,
   secoesEstruturadasVazias,
@@ -529,6 +535,19 @@ export function RelatorioDocumentClient({
             Resultados
           </h2>
 
+          {/* O FDT imprime as dez medidas AQUI, no lugar da tabela — e não
+              além dela. A tabela genérica traz a coluna de classificação, e
+              no FDT ela sairia vazia: os cortes mudam a cada faixa etária e
+              a classificação vive no derivado. Ter as duas seria imprimir a
+              mesma lista duas vezes, metade dela sem classificação.
+
+              É a MESMA decisão da tela de correção e do histórico, e é por
+              isso que o bloco não aparece uma segunda vez mais abaixo. Os
+              outros instrumentos seguem na tabela de sempre. */}
+          {ehFdt(avaliacao.instrument) ? (
+            <FdtDoDocumento avaliacao={avaliacao} />
+          ) : (
+            <>
           {linhas.length === 0 ? (
             <p className="text-pp-ink-soft text-sm">
               Esta avaliação não possui resultados registrados.
@@ -609,6 +628,8 @@ export function RelatorioDocumentClient({
                 </tbody>
               </table>
             </div>
+          )}
+            </>
           )}
         </section>
 
@@ -935,6 +956,64 @@ function ConfiasDoDocumento({
             </div>
           ))}
         </div>
+      )}
+    </section>
+  );
+}
+
+/** As dez medidas do FDT no documento impresso.
+ *
+ *  Lê do MESMO módulo que a tela e o histórico usam
+ *  (`@/lib/corrigefacil/fdt-derivado`); o que muda aqui é só o estilo.
+ *
+ *  Bruto e z vêm do resultado congelado; faixa e classificação, do
+ *  derivado congelado. Nada é recalculado, e não existe percentil
+ *  interpolado — a V1 não o expõe. */
+function FdtDoDocumento({
+  avaliacao,
+}: Readonly<{ avaliacao: AvaliacaoDetalhe }>) {
+  const derivado = derivadoFdt(avaliacao);
+  const blocos = blocosFdt(avaliacao.instrument, derivado, avaliacao.resultados);
+  if (!blocos) return null;
+  const ausentes = derivadasAusentes(derivado);
+
+  return (
+    <section className="space-y-4">
+      {blocos.map((bloco) => (
+        <div key={bloco.titulo} className="space-y-2 print:break-inside-avoid">
+          <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+            {bloco.titulo}
+          </h2>
+          <ul className="space-y-1">
+            {bloco.linhas.map((linha) => (
+              <li
+                key={linha.code}
+                className="text-pp-ink text-sm print:text-[11px]"
+              >
+                <span className="font-medium">{linha.nome}</span>
+                {linha.indisponivel ? (
+                  <span className="text-pp-ink-soft"> — {linha.indisponivel}</span>
+                ) : (
+                  <span className="tabular-nums">
+                    {linha.bruto !== null && ` — bruto ${linha.bruto}`}
+                    {linha.z !== null && ` · z ${linha.z}`}
+                    {linha.faixa && ` · ${linha.faixa}`}
+                    {linha.classificacao && ` · ${linha.classificacao}`}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-pp-ink-soft leading-relaxed">
+            {bloco.nota}
+          </p>
+        </div>
+      ))}
+
+      {ausentes.length > 0 && (
+        <p className="text-[11px] text-pp-ink-soft leading-relaxed">
+          Não calculadas por falta de componente: {ausentes.join(', ')}.
+        </p>
       )}
     </section>
   );
