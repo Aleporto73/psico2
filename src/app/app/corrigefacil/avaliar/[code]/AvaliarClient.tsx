@@ -39,6 +39,7 @@ import { acaoSugerida } from '../../catalog-view';
 import { CorrigeFacilNav } from '../../CorrigeFacilNav';
 import { CorrigeFacilReportPanel } from '../../CorrigeFacilReportPanel';
 import {
+  gruposDeItens,
   itensVisiveis,
   montarModelo,
   resolvidaPelaIdade,
@@ -46,6 +47,8 @@ import {
   TEXTO_BLOQUEIO,
   type ModeloFormulario,
 } from './form-model';
+import { ConfiasDerivado } from '../../ConfiasDerivado';
+import { derivadoConfias } from '@/lib/corrigefacil/confias-derivado';
 import type { CampoItem } from './form-model';
 import {
   COMPONENTES,
@@ -99,11 +102,20 @@ function CorpoDoItem({
   valor,
   aoEscolher,
   ordinal,
+  avisarSemEnunciado = true,
 }: Readonly<{
   item: CampoItem;
   valor: number | undefined;
   aoEscolher: (v: number) => void;
   ordinal: boolean;
+  /** Mostrar "sem enunciado neste instrumento" no lugar do texto ausente.
+   *
+   *  Verdadeiro na lista corrida, que é como os instrumentos sem enunciado
+   *  aparecem hoje e continuam aparecendo. Falso na apresentação AGRUPADA:
+   *  ali o item já se identifica por "Item N" sob o título da tarefa, e
+   *  repetir o aviso setenta vezes transformaria o protocolo numa coluna de
+   *  advertências. A ausência é do instrumento inteiro, não de cada item. */
+  avisarSemEnunciado?: boolean;
 }>) {
   return (
     <>
@@ -113,7 +125,7 @@ function CorpoDoItem({
             {item.numero}.
           </span>
         )}
-        {item.semEnunciado ? (
+        {item.semEnunciado && avisarSemEnunciado ? (
           <span className="text-pp-ink-soft italic">
             sem enunciado neste instrumento
           </span>
@@ -320,6 +332,9 @@ export function AvaliarClient({ code }: { code: string }) {
   // inteira, sempre.
   const visiveis = itensVisiveis(m, estado.respostas);
   const secoes = secoesDeItens(visiveis);
+  // Só o CONFIAS: os 70 itens desenhados tarefa a tarefa, na ordem do
+  // catálogo. Lista vazia nos outros 20, e a lista corrida de sempre.
+  const grupos = m.itensAgrupados ? gruposDeItens(visiveis) : [];
 
   /** Marcar de novo a alternativa já marcada limpa a resposta — é como se
    *  desmarca um item respondido por engano. */
@@ -428,28 +443,67 @@ export function AvaliarClient({ code }: { code: string }) {
                   itens que pontuam, e eles pertencem ao bloco dela, não a
                   esta lista. O ordinal continua sendo só de quem pontua: o
                   auxiliar não é o décimo de uma lista de nove. */}
-              <ol className="space-y-3">
-                {visiveis
-                  .filter((item) => !item.secao)
-                  .map((item) => {
-                    const respondido = estado.respostas[item.numero] !== undefined;
-                    return (
-                      <li
-                        key={item.numero}
-                        className={`border rounded-block p-4 space-y-3 transition-colors ${
-                          respondido ? 'border-pp-ink/25' : 'border-pp-ink/10'
-                        }`}
-                      >
-                        <CorpoDoItem
-                          item={item}
-                          valor={estado.respostas[item.numero]}
-                          ordinal={!item.auxiliar}
-                          aoEscolher={(v) => responder(item.numero, v)}
-                        />
-                      </li>
-                    );
-                  })}
-              </ol>
+              {m.itensAgrupados ? (
+                /* AGRUPADO · um bloco por tarefa, com o título vindo do
+                   catálogo ("S1 — Síntese silábica"). Os números dos itens
+                   são os reais e a ordem é a que a API mandou: nada é
+                   renumerado, nada é reordenado, nenhum enunciado é
+                   inventado. Sem ordinal e sem o aviso de enunciado
+                   ausente — o item já se lê como "Item 4" logo abaixo do
+                   nome da tarefa a que pertence. */
+                <div className="space-y-8">
+                  {grupos.map((g) => (
+                    <section key={g.code} className="space-y-3">
+                      <h3 className="text-pp-ink text-sm font-medium">
+                        {g.code} — {g.nome}
+                      </h3>
+                      {g.itens.map((item) => {
+                        const respondido =
+                          estado.respostas[item.numero] !== undefined;
+                        return (
+                          <div
+                            key={item.numero}
+                            className={`border rounded-block p-4 space-y-3 transition-colors ${
+                              respondido ? 'border-pp-ink/25' : 'border-pp-ink/10'
+                            }`}
+                          >
+                            <CorpoDoItem
+                              item={item}
+                              valor={estado.respostas[item.numero]}
+                              ordinal={false}
+                              avisarSemEnunciado={false}
+                              aoEscolher={(v) => responder(item.numero, v)}
+                            />
+                          </div>
+                        );
+                      })}
+                    </section>
+                  ))}
+                </div>
+              ) : (
+                <ol className="space-y-3">
+                  {visiveis
+                    .filter((item) => !item.secao)
+                    .map((item) => {
+                      const respondido = estado.respostas[item.numero] !== undefined;
+                      return (
+                        <li
+                          key={item.numero}
+                          className={`border rounded-block p-4 space-y-3 transition-colors ${
+                            respondido ? 'border-pp-ink/25' : 'border-pp-ink/10'
+                          }`}
+                        >
+                          <CorpoDoItem
+                            item={item}
+                            valor={estado.respostas[item.numero]}
+                            ordinal={!item.auxiliar}
+                            aoEscolher={(v) => responder(item.numero, v)}
+                          />
+                        </li>
+                      );
+                    })}
+                </ol>
+              )}
 
               {/* E, abaixo, as SEÇÕES: o título aparece UMA vez para o bloco
                   inteiro, não a cada pergunta. Instrumento sem item em seção
@@ -894,6 +948,18 @@ function ResultadoCorrecao({
           );
         })}
       </div>
+
+      {/* Logo depois dos cards normativos — Sílaba, Fonema e Total — e
+          FORA deles: as 16 tarefas não são escalas (não têm norma, z nem
+          faixa normativa) e o nível equivalente não é a hipótese de
+          escrita. Um card destes entre os outros seria lido como um quarto
+          resultado normativo do instrumento.
+
+          Vem PRONTO do servidor. Nada é contado, dividido ou classificado
+          aqui. Devolve null sozinho fora do CONFIAS e no CONFIAS cujo
+          protocolo estava incompleto — a Edge omite a chave nesse caso, em
+          vez de mandar perfil pela metade. */}
+      <ConfiasDerivado derivado={derivadoConfias(resposta)} />
 
       {/* FORA dos cards e FORA do gráfico: o auxiliar é resposta, não
           resultado. O ResultGraph só desenha escala, e o auxiliar não é

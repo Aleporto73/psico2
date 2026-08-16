@@ -60,6 +60,13 @@ import {
   TITULO_TEMPOS,
 } from '@/lib/corrigefacil/tempos-execucao';
 import {
+  blocosDoPerfil,
+  derivadoConfias,
+  NOTA_NIVEL,
+  TITULO_NIVEL,
+  TITULO_PERFIL,
+} from '@/lib/corrigefacil/confias-derivado';
+import {
   narrativaVazia,
   parseNarrativa,
   secoesEstruturadasVazias,
@@ -599,6 +606,23 @@ export function RelatorioDocumentClient({
           )}
         </section>
 
+        {/* ── DERIVADOS DO CONFIAS ──────────────────────────────────── */}
+        {/* Determinístico, e por isso FORA da narrativa: o perfil das 16
+            habilidades sai impresso porque foi calculado e congelado na
+            conclusão, não porque a IA resolveu mencioná-lo. A IA
+            INTERPRETA; o documento IMPRIME. Se a narrativa citar só três
+            tarefas, as dezesseis continuam no PDF.
+
+            Fora da TABELA também: aquela tem colunas de escore, percentil
+            e classificação NORMATIVA, e as tarefas não têm nenhuma das
+            três. Uma linha delas ali seria lida como uma quarta escala do
+            instrumento, ao lado de Sílaba, Fonema e Total.
+
+            Vem de `avaliacao.derived`, que a Edge promoveu do snapshot
+            congelado — nada é recalculado aqui. Devolve null sozinho fora
+            do CONFIAS e em toda avaliação anterior ao campo. */}
+        <ConfiasDoDocumento avaliacao={avaliacao} />
+
         {/* ── RESPOSTAS AUXILIARES ──────────────────────────────────── */}
         {/* Determinístico, e por isso FORA da narrativa: o valor aparece no
             documento porque foi respondido, não porque a IA resolveu
@@ -821,6 +845,80 @@ function AuxiliaresDoDocumento({
         Respondido junto do protocolo. Não entra na pontuação nem na
         classificação.
       </p>
+    </section>
+  );
+}
+
+/** Os derivados do CONFIAS no documento impresso.
+ *
+ *  Lê do MESMO módulo que a tela e o histórico usam
+ *  (`@/lib/corrigefacil/confias-derivado`) — o que muda aqui é só o estilo,
+ *  para caber no papel. Duas versões do mesmo perfil divergiriam, e a que
+ *  ficasse para trás sairia impressa.
+ *
+ *  A nota do nível acompanha o valor também no impresso, e aqui ela importa
+ *  mais que na tela: o PDF circula sem o contexto do sistema, e é
+ *  justamente ali que "Alfabética" corre o risco de ser lido como a
+ *  hipótese de escrita que o profissional informou.
+ *
+ *  As dezesseis linhas não cabem sempre na mesma página, então o bloco NÃO
+ *  é protegido inteiro contra quebra — só cada tarefa, para que código,
+ *  acertos e classificação nunca se separem. */
+function ConfiasDoDocumento({
+  avaliacao,
+}: Readonly<{ avaliacao: AvaliacaoDetalhe }>) {
+  const derivado = derivadoConfias(avaliacao);
+  if (!derivado) return null;
+
+  const blocos = blocosDoPerfil(derivado);
+  const nivel = derivado.nivel_equivalente_silaba;
+  if (!nivel && blocos.length === 0) return null;
+
+  return (
+    <section className="space-y-5">
+      {nivel && (
+        <div className="space-y-1 print:break-inside-avoid">
+          <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+            {TITULO_NIVEL}
+          </h2>
+          <p className="text-pp-ink text-sm font-medium print:text-[11px]">
+            {nivel}
+          </p>
+          <p className="text-[11px] text-pp-ink-soft leading-relaxed">
+            {NOTA_NIVEL}
+          </p>
+        </div>
+      )}
+
+      {blocos.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+            {TITULO_PERFIL}
+          </h2>
+          {blocos.map((bloco) => (
+            <div key={bloco.titulo} className="space-y-1.5">
+              <h3 className="text-[11px] text-pp-ink-soft print:break-after-avoid">
+                {bloco.titulo}
+              </h3>
+              <dl className="space-y-1 text-sm print:text-[11px]">
+                {bloco.linhas.map((l) => (
+                  <div
+                    key={l.code}
+                    className="flex flex-wrap gap-x-2 print:break-inside-avoid"
+                  >
+                    <dt className="text-pp-ink-soft">{l.titulo}</dt>
+                    <dd className="text-pp-ink font-medium">
+                      {[l.acertos, l.percentual, l.classificacao]
+                        .filter((p): p is string => !!p)
+                        .join(' · ')}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

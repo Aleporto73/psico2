@@ -124,6 +124,55 @@ export type ResultadoEscala = {
   flags: string[];
 };
 
+// ---------------------------------------------------------------------
+// DERIVADOS · o que o servidor entrega ALÉM das escalas normativas
+//
+// Hoje só o CONFIAS tem: o perfil das 16 tarefas (S1..S9, F1..F7) e o
+// nível equivalente pelo escore de Sílaba. Os dois saem PRONTOS da Edge,
+// na chave `derived`, e são congelados em `subject_meta._corrigefacil` na
+// conclusão — o histórico relê o congelado em vez de recalcular.
+//
+// A trava central vale igual aqui: o cliente não conta acerto, não divide
+// percentual e não escolhe faixa. Ele FORMATA o número e imprime o rótulo
+// que veio. Contrato conferido em
+// CorrigeFacil/supabase/functions/corrigir/index.ts (derivadoConfias).
+// ---------------------------------------------------------------------
+
+/** Uma das 16 tarefas do CONFIAS, como a Edge devolve.
+ *
+ *  `percentual` é FRAÇÃO (0.75), não porcentagem: é a régua em que as
+ *  faixas do servidor foram carregadas, e é ela que a `classificacao`
+ *  ao lado já respeitou. Quem exibe formata; quem compara já comparou, do
+ *  outro lado. `classificacao` é o rótulo EXATO do servidor — nunca
+ *  recalculado, nunca traduzido aqui. */
+export type HabilidadeConfias = {
+  code: string;
+  name: string;
+  acertos: number;
+  max: number;
+  percentual: number | null;
+  classificacao: string | null;
+};
+
+/** O derivado do CONFIAS.
+ *
+ *  `nivel_equivalente_silaba` NÃO é a hipótese de escrita. A hipótese é
+ *  escolhida pelo profissional e continua sendo a única chave de seleção
+ *  normativa; este é leitura ADICIONAL do escore de Sílaba. Os rótulos
+ *  coincidem porque é a mesma nomenclatura de escrita, e é por isso que a
+ *  tela precisa dizer a diferença em voz alta. */
+export type DerivadoConfias = {
+  nivel_equivalente_silaba: string | null;
+  perfil_habilidades: HabilidadeConfias[];
+};
+
+/** O envelope `derived`. Opcional em toda rota, e com a chave do
+ *  instrumento também opcional: os outros 20 não a possuem, e a Edge nem
+ *  devolve `derived` para eles. */
+export type DerivadosCorrigeFacil = {
+  confias?: DerivadoConfias;
+};
+
 /** Corpo do POST /corrigir. São EXATAMENTE estes campos: `pedido()` na Edge
  *  lê instrument_code, norm_selector, respostas e brutos, e ignora o resto.
  *  Não existe identificação do avaliado aqui — quem grava rótulo e
@@ -148,6 +197,10 @@ export type RespostaCorrecao = {
    *  antiga não devolve a chave. Por isso é opcional aqui — ler como
    *  `?? []` mantém a tela funcionando contra as duas versões. */
   auxiliary_responses?: RespostaAuxiliar[];
+  /** ADITIVO, mesma leitura de `auxiliary_responses`: a chave só existe no
+   *  CONFIAS, e só com o protocolo completo — /corrigir é prévia e devolve
+   *  `resultados` pela metade, mas não devolve perfil pela metade. */
+  derived?: DerivadosCorrigeFacil;
 };
 
 /** Corpo do POST /avaliacao: o mesmo do /corrigir MAIS identificação.
@@ -168,6 +221,10 @@ export type AvaliacaoCriada = {
   norm_selector: Record<string, unknown>;
   status: string;
   resultados: Record<string, ResultadoEscala>;
+  /** ADITIVO. É o MESMO objeto que a Edge acabou de congelar em
+   *  `subject_meta._corrigefacil` — o que a conclusão devolve e o que o
+   *  histórico lê depois são um só. */
+  derived?: DerivadosCorrigeFacil;
 };
 
 /** Uma linha de GET /avaliacoes. A rota devolve um ARRAY puro, não envelope. */
@@ -200,6 +257,12 @@ export type AvaliacaoDetalhe = {
    *  funcional reaparecer no histórico sem recalcular nada: ele foi gravado
    *  em assessment_responses na conclusão e é relido de lá. */
   auxiliary_responses?: RespostaAuxiliar[];
+  /** ADITIVO e CONGELADO: a Edge promove aqui o snapshot que gravou em
+   *  `subject_meta._corrigefacil` na conclusão, e NÃO o recalcula. A chave
+   *  reservada não sai em `subject_meta` — o snapshot tem um lugar só na
+   *  resposta, que é este. Avaliação salva antes de o campo existir não
+   *  traz a chave. */
+  derived?: DerivadosCorrigeFacil;
 };
 
 /** Paginação real de GET /avaliacoes: a Edge prende `limit` em 1..100
