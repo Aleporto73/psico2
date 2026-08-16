@@ -16,6 +16,8 @@ import { ConfiasDerivado } from '../../ConfiasDerivado';
 import { derivadoConfias } from '@/lib/corrigefacil/confias-derivado';
 import { Phq9Derivado } from '../../Phq9Derivado';
 import { derivadoPhq9 } from '@/lib/corrigefacil/phq9-derivado';
+import { FdtDerivado } from '../../FdtDerivado';
+import { derivadoFdt, ehFdt } from '@/lib/corrigefacil/fdt-derivado';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
 import { TemposDeExecucao } from '../../TemposDeExecucao';
 import {
@@ -135,6 +137,13 @@ export function DetalheClient({ id }: { id: string }) {
         </p>
       </header>
 
+      {/* O FDT desenha as dez medidas no bloco próprio, mais abaixo, e não
+          nesta grade: a classificação dele não sai em `resultados` — os
+          cortes mudam a cada faixa etária e a tabela de faixas do servidor
+          não tem norm_set_id. As duas apresentações juntas seriam a mesma
+          lista duas vezes, metade dela sem classificação. Os outros 20
+          seguem exatamente na grade de sempre. */}
+      {!ehFdt(d.instrument) && (
       <section className="space-y-3">
         {Object.entries(d.resultados).map(([escala, r]) => {
           // os mesmos nomes que a tela de correção usa, pela mesma função:
@@ -193,6 +202,7 @@ export function DetalheClient({ id }: { id: string }) {
           );
         })}
       </section>
+      )}
 
       {/* O MESMO componente da tela de correção, alimentado pelo snapshot
           CONGELADO na conclusão. A Edge o gravou em
@@ -209,6 +219,17 @@ export function DetalheClient({ id }: { id: string }) {
           mesmo motivo que apareceu lá: ele foi gravado, e o histórico lê o
           gravado. Avaliação salva antes do campo não traz a chave. */}
       <Phq9Derivado derivado={derivadoPhq9(d)} />
+
+      {/* O MESMO bloco da tela de correção, alimentado pelo snapshot
+          CONGELADO: `derived` aqui é o que a Edge promoveu de
+          `subject_meta._corrigefacil` na conclusão, e não um recálculo.
+          Reabrir uma avaliação antiga mostra as mesmas faixas e as mesmas
+          classificações que o profissional leu no dia. */}
+      <FdtDerivado
+        code={d.instrument}
+        derivado={derivadoFdt(d)}
+        resultados={d.resultados}
+      />
 
       {/* O que foi respondido e não foi pontuado. Vem GRAVADO da Edge, em
           `auxiliary_responses` — nada é recalculado aqui, e o TOTAL acima

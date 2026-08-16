@@ -54,6 +54,9 @@ export type CampoEscala = {
   nome: string;
   min: number | null;
   max: number | null;
+  /** Como este campo é digitado, quando o instrumento declara. Null nos
+   *  demais, e é essa ausência que mantém a tela deles idêntica. */
+  entrada: EntradaBruta | null;
 };
 
 export type CampoDimensao = {
@@ -187,6 +190,115 @@ export const IDADE_MANUAL: Readonly<Record<string, IdadeManual>> = {
 /** A regra deste instrumento. Quem não está no mapa recebe a padrão. */
 export function idadeManualDe(code: string): IdadeManual {
   return IDADE_MANUAL[code] ?? IDADE_MANUAL_PADRAO;
+}
+
+const TEMPO_EM_SEGUNDOS: EntradaBruta = {
+  decimal: true,
+  minimo: 0,
+  pisoAberto: true,
+  unidade: 'segundos',
+};
+
+const CONTAGEM_DE_ERROS: EntradaBruta = {
+  decimal: false,
+  minimo: 0,
+  pisoAberto: false,
+  unidade: null,
+};
+
+// ---------------------------------------------------------------------
+// ESCALA QUE O SERVIDOR CALCULA
+// ---------------------------------------------------------------------
+
+/** Escalas que existem no resultado mas NÃO são digitadas.
+ *
+ *  `montarModelo` já tira as compostas do formulário, porque composta é
+ *  soma de outras e o servidor a monta. Falta o caso em que a escala é
+ *  `primaria` no catálogo e mesmo assim é calculada — e ele existe:
+ *
+ *  FDT · Inibição = Escolha − Leitura e Flexibilidade = Alternância −
+ *  Leitura. São SUBTRAÇÕES, e por isso não podiam ser `composta` no
+ *  servidor: `scale_components` soma os filhos, e somar Escolha com Leitura
+ *  daria outro número. Elas continuam sendo escala (o resultado delas é
+ *  gravado como o das outras), mas pedir os dois campos ao profissional
+ *  seria pedir uma conta que o servidor faz — e aceitar que ele digitasse
+ *  outra.
+ *
+ *  Fechado como os vizinhos: quem não está aqui desenha exatamente os
+ *  mesmos campos de antes. */
+export const ESCALAS_CALCULADAS: Readonly<Record<string, readonly string[]>> = {
+  FDT: ['INIBICAO', 'FLEXIBILIDADE'],
+};
+
+export function escalaCalculada(code: string, escala: string): boolean {
+  return (ESCALAS_CALCULADAS[code] ?? []).includes(escala);
+}
+
+// ---------------------------------------------------------------------
+// COMO O BRUTO É DIGITADO
+// ---------------------------------------------------------------------
+
+/** A régua de UM campo de bruto: o que ele aceita e como se chama.
+ *
+ *  Isto é UX, e a validação de verdade continua no servidor — ela roda de
+ *  novo lá, aconteça o que acontecer aqui. O que este tipo evita é o
+ *  profissional descobrir depois do clique que "1,5 erro" foi recusado.
+ *
+ *  `decimal`  aceita fração
+ *  `minimo`   o piso
+ *  `pisoAberto` true = o piso é EXCLUSIVO (maior que), false = inclusivo
+ *  `unidade`  o que o número mede, para o rótulo do campo */
+export type EntradaBruta = {
+  decimal: boolean;
+  minimo: number;
+  pisoAberto: boolean;
+  unidade: string | null;
+};
+
+/** Como cada campo de bruto é digitado, por instrumento.
+ *
+ *  Mora aqui pelo mesmo motivo de INSTRUCAO_DOS_ITENS: o contrato do
+ *  catálogo não transporta unidade nem casas decimais. `bruto_min` e
+ *  `bruto_max` dizem o intervalo, e não dizem se o número é contagem ou
+ *  segundos — e no FDT essa diferença é a que separa 28,4 (um tempo
+ *  legítimo) de 1,5 (um erro e meio, que não existe).
+ *
+ *  Fechado de propósito: instrumento fora do mapa mantém o campo genérico
+ *  que sempre teve. */
+export const ENTRADA_BRUTA: Readonly<
+  Record<string, Readonly<Record<string, EntradaBruta>>>
+> = {
+  // FDT · quatro tempos em SEGUNDOS, com decimal (cronômetro dá 28,4) e
+  // maiores que zero — ninguém lê os cinquenta dígitos em zero segundo, e
+  // um zero digitado é campo em branco disfarçado. E quatro contagens de
+  // ERRO, inteiras e a partir de zero: não errar é o normal em várias
+  // faixas etárias.
+  FDT: {
+    T_LEITURA: TEMPO_EM_SEGUNDOS,
+    T_CONTAGEM: TEMPO_EM_SEGUNDOS,
+    T_ESCOLHA: TEMPO_EM_SEGUNDOS,
+    T_ALTERNANCIA: TEMPO_EM_SEGUNDOS,
+    E_LEITURA: CONTAGEM_DE_ERROS,
+    E_CONTAGEM: CONTAGEM_DE_ERROS,
+    E_ESCOLHA: CONTAGEM_DE_ERROS,
+    E_ALTERNANCIA: CONTAGEM_DE_ERROS,
+  },
+};
+
+export function entradaBrutaDe(code: string, escala: string): EntradaBruta | null {
+  return ENTRADA_BRUTA[code]?.[escala] ?? null;
+}
+
+/** O texto digitado -> o número, ou null se a régua não o aceita.
+ *
+ *  É a ÚNICA leitura de bruto digitado, como `idadeManualValida` é a da
+ *  idade: campo, validação e envio perguntam daqui. Não arredonda e não
+ *  conserta — 1,5 erro entra 1,5 ou não entra. */
+export function brutoValido(valor: number, regra: EntradaBruta | null): boolean {
+  if (!Number.isFinite(valor)) return false;
+  if (!regra) return true;
+  if (!regra.decimal && !Number.isInteger(valor)) return false;
+  return regra.pisoAberto ? valor > regra.minimo : valor >= regra.minimo;
 }
 
 /** Em que estado está a porta deste protocolo. */
@@ -332,8 +444,12 @@ export const INSTRUCAO_DOS_ITENS: Readonly<Record<string, string>> = {
 export type FaixaPelaIdade = {
   /** a dimensão que sai da tela, das pendências e do corpo do envio */
   dimensao: string;
-  /** a dimensão que LIGA a regra, e o valor dela que a liga */
-  quando: { dimensao: string; valor: string };
+  /** A dimensão que LIGA a regra, e o valor dela que a liga.
+   *
+   *  `null` = a regra vale SEMPRE, que é o caso do instrumento cuja única
+   *  chave normativa é a idade. Onde há condição (BPA-2), ela continua
+   *  valendo só quando o profissional escolheu aquela conversão. */
+  quando: { dimensao: string; valor: string } | null;
   /** o nome da chave numérica que vai no `norm_selector` no lugar dela */
   chave: string;
 };
@@ -347,6 +463,17 @@ export const FAIXA_PELA_IDADE: Readonly<Record<string, FaixaPelaIdade>> = {
     quando: { dimensao: 'conversao', valor: 'idade' },
     chave: 'chave',
   },
+  // FDT · a idade em anos é a ÚNICA chave normativa, e resolve sozinha uma
+  // entre nove faixas contíguas (6-8 … 76-92). Não há condição: vale
+  // sempre. A tela não mostra seletor de faixa, e não poderia — ela não
+  // tem, e não deve ter, a tabela que diz que 30 anos cai em 19-34. O que
+  // sai daqui é a idade CRUA; quem resolve são os `range_min`/`range_max`
+  // dos `norm_sets`, no servidor.
+  //
+  // Idade fora de 6..92 é enviada do mesmo jeito, e o servidor responde que
+  // não há norma publicada. Recusar aqui, ou escolher a faixa vizinha,
+  // seria a tela decidindo norma.
+  FDT: { dimensao: 'idade', quando: null, chave: 'idade' },
 };
 
 /** A regra deste instrumento, quando o selector atual a LIGA. Null é o
@@ -357,6 +484,7 @@ export function faixaPelaIdade(
 ): FaixaPelaIdade | null {
   const regra = FAIXA_PELA_IDADE[modelo.code];
   if (!regra) return null;
+  if (!regra.quando) return regra;
   return selector[regra.quando.dimensao] === regra.quando.valor ? regra : null;
 }
 
@@ -414,17 +542,21 @@ export function montarModelo(detalhe: InstrumentoDetalhe): ModeloFormulario {
         })
       : [];
 
-  // Escala composta é DERIVADA das primárias: não se digita bruto dela.
+  // Escala composta é DERIVADA das primárias: não se digita bruto dela. E
+  // escala que o servidor CALCULA sai pelo mesmo motivo, mesmo sendo
+  // `primaria` no catálogo — ver ESCALAS_CALCULADAS.
   const escalas: CampoEscala[] =
     detalhe.entry_mode === 'bruto' || detalhe.entry_mode === 'componentes'
       ? (detalhe.escalas ?? [])
           .filter((e) => e.kind !== 'composta')
+          .filter((e) => !escalaCalculada(detalhe.code, e.code))
           .map((e) => ({
             tipo: detalhe.entry_mode as 'bruto' | 'componentes',
             code: e.code,
             nome: e.name,
             min: e.bruto_min,
             max: e.bruto_max,
+            entrada: entradaBrutaDe(detalhe.code, e.code),
           }))
       : [];
 

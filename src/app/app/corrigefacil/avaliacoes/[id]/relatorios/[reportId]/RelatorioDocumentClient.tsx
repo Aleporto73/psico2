@@ -73,6 +73,11 @@ import {
   TITULO_RASTREAMENTO,
 } from '@/lib/corrigefacil/phq9-derivado';
 import {
+  blocosFdt,
+  derivadasAusentes,
+  derivadoFdt,
+} from '@/lib/corrigefacil/fdt-derivado';
+import {
   narrativaVazia,
   parseNarrativa,
   secoesEstruturadasVazias,
@@ -640,6 +645,18 @@ export function RelatorioDocumentClient({
             e uma linha dele ali seria lida como uma segunda escala. */}
         <Phq9DoDocumento avaliacao={avaliacao} />
 
+        {/* ── AS DEZ MEDIDAS DO FDT ─────────────────────────────────── */}
+        {/* Determinístico pelo mesmo motivo dos dois acima, e aqui ele é
+            estrutural: a classificação do FDT NÃO está na tabela porque não
+            está em `resultados` — os cortes mudam a cada faixa etária e a
+            tabela de faixas do servidor não tem norm_set_id. Sem este
+            bloco, o documento do FDT sairia com bruto e z e sem uma única
+            classificação.
+
+            Vem do snapshot congelado, como os outros. Devolve null sozinho
+            fora do FDT. */}
+        <FdtDoDocumento avaliacao={avaliacao} />
+
         {/* ── RESPOSTAS AUXILIARES ──────────────────────────────────── */}
         {/* Determinístico, e por isso FORA da narrativa: o valor aparece no
             documento porque foi respondido, não porque a IA resolveu
@@ -935,6 +952,64 @@ function ConfiasDoDocumento({
             </div>
           ))}
         </div>
+      )}
+    </section>
+  );
+}
+
+/** As dez medidas do FDT no documento impresso.
+ *
+ *  Lê do MESMO módulo que a tela e o histórico usam
+ *  (`@/lib/corrigefacil/fdt-derivado`); o que muda aqui é só o estilo.
+ *
+ *  Bruto e z vêm do resultado congelado; faixa e classificação, do
+ *  derivado congelado. Nada é recalculado, e não existe percentil
+ *  interpolado — a V1 não o expõe. */
+function FdtDoDocumento({
+  avaliacao,
+}: Readonly<{ avaliacao: AvaliacaoDetalhe }>) {
+  const derivado = derivadoFdt(avaliacao);
+  const blocos = blocosFdt(avaliacao.instrument, derivado, avaliacao.resultados);
+  if (!blocos) return null;
+  const ausentes = derivadasAusentes(derivado);
+
+  return (
+    <section className="space-y-4">
+      {blocos.map((bloco) => (
+        <div key={bloco.titulo} className="space-y-2 print:break-inside-avoid">
+          <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+            {bloco.titulo}
+          </h2>
+          <ul className="space-y-1">
+            {bloco.linhas.map((linha) => (
+              <li
+                key={linha.code}
+                className="text-pp-ink text-sm print:text-[11px]"
+              >
+                <span className="font-medium">{linha.nome}</span>
+                {linha.indisponivel ? (
+                  <span className="text-pp-ink-soft"> — {linha.indisponivel}</span>
+                ) : (
+                  <span className="tabular-nums">
+                    {linha.bruto !== null && ` — bruto ${linha.bruto}`}
+                    {linha.z !== null && ` · z ${linha.z}`}
+                    {linha.faixa && ` · ${linha.faixa}`}
+                    {linha.classificacao && ` · ${linha.classificacao}`}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] text-pp-ink-soft leading-relaxed">
+            {bloco.nota}
+          </p>
+        </div>
+      ))}
+
+      {ausentes.length > 0 && (
+        <p className="text-[11px] text-pp-ink-soft leading-relaxed">
+          Não calculadas por falta de componente: {ausentes.join(', ')}.
+        </p>
       )}
     </section>
   );

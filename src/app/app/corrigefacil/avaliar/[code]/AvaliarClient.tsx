@@ -51,6 +51,8 @@ import { ConfiasDerivado } from '../../ConfiasDerivado';
 import { derivadoConfias } from '@/lib/corrigefacil/confias-derivado';
 import { Phq9Derivado } from '../../Phq9Derivado';
 import { derivadoPhq9 } from '@/lib/corrigefacil/phq9-derivado';
+import { FdtDerivado } from '../../FdtDerivado';
+import { derivadoFdt, ehFdt } from '@/lib/corrigefacil/fdt-derivado';
 import type { CampoItem } from './form-model';
 import {
   COMPONENTES,
@@ -834,7 +836,13 @@ function ResultadoCorrecao({
   salvamento: EstadoSalvamento;
   onSalvar: () => Promise<string | null>;
 }) {
-  const linhas = Object.entries(resposta.resultados);
+  // O FDT desenha as dez medidas no bloco próprio, e não na grade: a
+  // classificação dele não sai em `resultados` (ver FdtDerivado), e as duas
+  // apresentações lado a lado seriam a mesma lista duas vezes. Os outros 20
+  // seguem exatamente na grade de sempre.
+  const linhas = ehFdt(detalhe.code)
+    ? []
+    : Object.entries(resposta.resultados);
   // o MESMO modelo que a tela de preenchimento montou: o botão de salvar
   // desta tela cobra a mesma idade que o campo lá atrás aceitou
   const habilitado = podeSalvar(
@@ -975,6 +983,20 @@ function ResultadoCorrecao({
           Devolve null sozinho fora do PHQ-9 e no PHQ-9 de protocolo
           incompleto. */}
       <Phq9Derivado derivado={derivadoPhq9(resposta)} />
+
+      {/* As dez medidas do FDT, em dois blocos: tempo e erros. Bruto e z
+          vêm do resultado normativo; faixa e classificação, do derivado —
+          é lá que elas cabem, porque os cortes do FDT mudam a cada faixa
+          etária. Inibição e Flexibilidade aparecem como RESULTADO, e o
+          formulário nunca as pediu.
+
+          Devolve null sozinho fora do FDT e no FDT cuja idade caiu fora de
+          6 a 92, onde a Edge omite a chave por não haver norma. */}
+      <FdtDerivado
+        code={detalhe.code}
+        derivado={derivadoFdt(resposta)}
+        resultados={resposta.resultados}
+      />
 
       {/* FORA dos cards e FORA do gráfico: o auxiliar é resposta, não
           resultado. O ResultGraph só desenha escala, e o auxiliar não é

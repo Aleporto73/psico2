@@ -182,12 +182,47 @@ export type DerivadoPhq9 = {
   alerta_item_9: string | null;
 };
 
+/** UMA medida do FDT, como a Edge devolve dentro de `derived.fdt`.
+ *
+ *  As duas leituras que o motor normativo não tem onde guardar: os cortes
+ *  do FDT mudam a cada faixa etária, e `classification_bands` não tem
+ *  norm_set_id. Por isso `resultados.<medida>.classification` sai NULA no
+ *  FDT e a classificação vem daqui — não são duas classificações, é uma só,
+ *  no lugar em que coube.
+ *
+ *  O `z` NÃO se repete aqui: ele já vem em `resultados.<medida>.z`, com a
+ *  direção invertida que o FDT usa (menos tempo e menos erro é melhor
+ *  desempenho). Duplicá-lo criaria dois números com o mesmo nome.
+ *
+ *  Não existe percentil interpolado. A controladora tem duas réguas para o
+ *  mesmo bruto e elas discordam na fronteira; a V1 entrega a dos pontos
+ *  empíricos, que é a que classifica. */
+export type MedidaFdt = {
+  bruto: number;
+  faixa_percentilica: string | null;
+  classificacao: string | null;
+};
+
+/** O derivado do FDT.
+ *
+ *  `medidas` traz só o que o servidor conseguiu ler: medida sem bruto e
+ *  medida sem norma não entram. `derivadas` diz se Inibição e
+ *  Flexibilidade foram montadas — elas são subtrações feitas no SERVIDOR
+ *  (Escolha − Leitura e Alternância − Leitura) e nunca são pedidas ao
+ *  profissional. Faltando componente, a medida não sai e a chave vem
+ *  `false`, para a ausência ser legível em vez de silenciosa. */
+export type DerivadoFdt = {
+  medidas: Record<string, MedidaFdt>;
+  derivadas: Record<string, boolean>;
+};
+
 /** O envelope `derived`. Opcional em toda rota, e com a chave do
- *  instrumento também opcional: os outros 19 não possuem nenhuma, e a Edge
+ *  instrumento também opcional: os outros 18 não possuem nenhuma, e a Edge
  *  nem devolve `derived` para eles. */
 export type DerivadosCorrigeFacil = {
   confias?: DerivadoConfias;
   phq9?: DerivadoPhq9;
+  fdt?: DerivadoFdt;
 };
 
 /** Corpo do POST /corrigir. São EXATAMENTE estes campos: `pedido()` na Edge

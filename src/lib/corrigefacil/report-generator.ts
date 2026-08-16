@@ -10,6 +10,7 @@ import {
 import { temposParaTexto } from './tempos-execucao';
 import { derivadoDoMeta, derivadoParaTexto } from './confias-derivado';
 import { derivadoPhq9DoMeta, phq9ParaTexto } from './phq9-derivado';
+import { derivadoFdtDoMeta, fdtParaTexto } from './fdt-derivado';
 import {
   formatCredential,
   getCredentialLabel,
@@ -600,6 +601,23 @@ DADOS DERIVADOS CONGELADOS DO PHQ-9 (calculados pelo CorrigeFácil; preserve exa
 ${phq9}`
     : '';
 
+  // E o mesmo caminho para o FDT. Aqui ele carrega mais do que uma leitura
+  // adicional: a CLASSIFICAÇÃO das dez medidas só existe no snapshot, e não
+  // em `assessment_results` — os cortes do FDT mudam a cada faixa etária e
+  // a tabela de faixas do servidor não tem norm_set_id. Sem este bloco, o
+  // modelo receberia bruto e z e nenhuma classificação.
+  //
+  // Vai como TRANSCRIÇÃO, com os mesmos rótulos da tela e do documento. A
+  // tabela normativa não entra: nem médias, nem DPs, nem os pontos
+  // percentílicos. O que o modelo lê é o resultado, não a norma.
+  const fdt = fdtParaTexto(derivadoFdtDoMeta(subjectMeta));
+  const fdtText = fdt
+    ? `
+
+DADOS DERIVADOS CONGELADOS DO FDT (calculados pelo CorrigeFácil; preserve exatamente como estão)
+${fdt}`
+    : '';
+
   const notesText = additionalNotes
     ? `\n\nCONTEXTO FORNECIDO PELO PROFISSIONAL (não é resultado do instrumento; ao apoiar uma conclusão nele, deixe a origem clara no texto):\n${additionalNotes}`
     : '';
@@ -617,7 +635,7 @@ Código: ${instrument.code}
 Nome: ${instrument.name}
 
 RESULTADOS FECHADOS DO CORRIGEFÁCIL
-${resultsText}${derivadoText}${phq9Text}${orientacaoText}${temposText}${notesText}
+${resultsText}${derivadoText}${phq9Text}${fdtText}${orientacaoText}${temposText}${notesText}
 
 Redija as cinco seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 
