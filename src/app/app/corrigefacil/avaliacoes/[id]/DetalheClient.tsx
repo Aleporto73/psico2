@@ -20,10 +20,9 @@ import { FdtDerivado } from '../../FdtDerivado';
 import { derivadoFdt, ehFdt } from '@/lib/corrigefacil/fdt-derivado';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
 import { TemposDeExecucao } from '../../TemposDeExecucao';
-import {
-  metricasDaEscala,
-  textoDePercentil,
-} from '@/lib/corrigefacil/metricas-instrumento';
+import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
+import { celulasDoResultado } from '@/lib/corrigefacil/resultado-celulas';
+import { ResultadoMetricas } from '../../ResultadoMetricas';
 import { formatarData } from '../historico-view';
 
 const AVISO =
@@ -150,11 +149,9 @@ export function DetalheClient({ id }: { id: string }) {
           // o laudo entregue e o histórico não podem chamar a mesma medida
           // de duas coisas diferentes
           const met = metricasDaEscala(d.instrument, escala, r.raw, r.score);
-          // mesma regra central da tela de correção: o "< 1" do BPA-2 é
-          // apresentação, e apresentação mora num lugar só
-          const percentil = textoDePercentil(d.instrument, r);
+          const celulas = celulasDoResultado(d.instrument, escala, r);
           return (
-          <div key={escala} className="border border-pp-ink/10 rounded-block p-5 space-y-2">
+          <div key={escala} className="border border-pp-ink/10 rounded-block p-5 space-y-4">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <p className="text-pp-ink font-medium">{escala}</p>
               {met.bruto && (
@@ -165,30 +162,14 @@ export function DetalheClient({ id }: { id: string }) {
             </div>
 
             {r.available ? (
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-                {/* mesma ordem da tela de correção: a média é leitura do
-                    bruto e vem antes da contagem. Null nos outros 20. */}
-                {met.media && (
-                  <p className="text-pp-ink">
-                    {met.media.rotulo}{' '}
-                    <span className="font-medium">{met.media.texto}</span>
-                  </p>
-                )}
-                {met.escore && (
-                  <p className="text-pp-ink">
-                    {met.escore.rotulo}{' '}
-                    <span className="font-medium">{met.escore.texto}</span>
-                    {r.ci95 ? ` (${r.ci95})` : ''}
-                  </p>
-                )}
-                {percentil !== null && <p className="text-pp-ink">percentil {percentil}</p>}
-                {r.z !== null && <p className="text-pp-ink">z {r.z}</p>}
-                {r.classification && (
-                  <span className="inline-block px-3 py-1 text-xs font-medium text-pp-ink bg-white/60 rounded-pill">
-                    {r.classification}
-                  </span>
-                )}
-              </div>
+              // As MESMAS colunas da tela de correção, pela mesma função e
+              // no mesmo desenho: a avaliação salva e o resultado
+              // recém-corrigido são o mesmo resultado, e mostrá-los
+              // diferente fazia parecer que um deles trazia menos.
+              <ResultadoMetricas
+                metricas={celulas.metricas}
+                classificacao={celulas.classificacao}
+              />
             ) : (
               <p className="text-pp-ink-soft text-sm">
                 {r.message ?? 'Resultado indisponível.'}

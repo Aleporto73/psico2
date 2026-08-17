@@ -35,6 +35,7 @@ import {
   rotuloDeEscoreNoGrafico,
   rotulosDasColunas,
 } from '@/lib/corrigefacil/metricas-instrumento';
+import { celulasDoResultado } from '@/lib/corrigefacil/resultado-celulas';
 import { montarLinhas, colunasVisiveis } from '@/lib/report/document-model';
 import { formatClosedResults } from '@/lib/corrigefacil/report-generator';
 import type { ResultadoEscala } from '@/lib/corrigefacil/api';
@@ -319,12 +320,32 @@ describe('as superfícies consomem a mesma derivação', () => {
       join(raiz, 'src/app/app/corrigefacil/avaliacoes/[id]/DetalheClient.tsx'),
       'utf8',
     );
+    // O bruto continua no cabeçalho do card, direto de `metricasDaEscala`.
+    // A Média por item e os Sintomas presentes viraram COLUNAS, e quem as
+    // monta é `celulasDoResultado` — a mesma função nas duas telas, que é
+    // o que este caso sempre guardou: as três medidas chegam às duas
+    // superfícies por um caminho só.
     for (const [nome, tela] of [['avaliar', avaliar], ['detalhe', detalhe]] as const) {
       expect(tela, nome).toContain('metricasDaEscala(');
       expect(tela, nome).toContain('met.bruto');
-      expect(tela, nome).toContain('met.media');
-      expect(tela, nome).toContain('met.escore');
+      expect(tela, nome).toContain('celulasDoResultado(');
     }
+    const celulas = readFileSync(
+      join(raiz, 'src/lib/corrigefacil/resultado-celulas.ts'),
+      'utf8',
+    );
+    expect(celulas).toContain('met.media');
+    expect(celulas).toContain('met.escore');
+    // e as três aparecem de verdade num resultado do 18
+    const { metricas } = celulasDoResultado(SNAP18, 'DESATENCAO', {
+      raw: 15, score: 4, percentile: null, z: null,
+      classification: 'Sugestivo', ci95: null, available: true,
+      message: null, flags: [],
+    } as never);
+    expect(metricas.map((c) => c.rotulo)).toEqual([
+      'Média por item',
+      'Sintomas presentes',
+    ]);
   });
 });
 

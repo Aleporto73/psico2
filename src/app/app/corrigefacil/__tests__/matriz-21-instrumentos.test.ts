@@ -1,15 +1,20 @@
 import { describe, expect, it } from 'vitest';
 import { montarCartao, linkAplicar } from '../catalog-view';
-import { montarModelo } from '../../corrigefacil/avaliar/[code]/form-model';
+import {
+  brutoValido,
+  escalaCalculada,
+  montarModelo,
+} from '../../corrigefacil/avaliar/[code]/form-model';
 import {
   estadoInicial,
   pendencias,
   podeEnviar,
   progresso,
 } from '../../corrigefacil/avaliar/[code]/form-state';
+import type { CampoEscala } from '../../corrigefacil/avaliar/[code]/form-model';
 import type { InstrumentoDetalhe, InstrumentoResumo } from '@/lib/corrigefacil/api';
 
-// MATRIZ DOS 21 INSTRUMENTOS PUBLICADOS
+// MATRIZ DOS 21 INSTRUMENTOS PUBLICADOS · o catálogo ATIVO
 //
 // A tela é a mesma para todos, e é justamente por isso que este teste existe:
 // "usa componente compartilhado" não prova que nenhum dos 21 cai numa
@@ -22,6 +27,15 @@ import type { InstrumentoDetalhe, InstrumentoResumo } from '@/lib/corrigefacil/a
 // supports_prematurity, número de itens, itens sem enunciado, dimensões e
 // dimensões com opções. Nada foi inventado, e nenhum enunciado é reproduzido:
 // o que importa aqui é a FORMA, não o conteúdo clínico.
+//
+// O QUE ESTA MATRIZ FOTOGRAFA É `is_active = true`, e não "tudo que existe
+// na tabela". O TDF saiu daqui porque saiu do catálogo publicado
+// (`is_active = false`), e o FDT entrou no lugar dele. Os dois são
+// instrumentos DIFERENTES, com formas diferentes — o TDF é uma pontuação
+// padrão de uma escala só, o FDT são dez medidas de tempo e erro —, e
+// trocar um pelo outro por semelhança de sigla teria deixado a fotografia
+// errada de um jeito que nenhum teste pegaria. A forma abaixo foi lida do
+// mesmo banco, instrumento por instrumento.
 
 type Linha = {
   code: string;
@@ -35,8 +49,23 @@ type Linha = {
   dimsComOpcoes: number;
   itens: number;
   semTexto: number;
+  /** escalas DECLARADAS no catálogo */
   escalas: number;
+  /** os códigos REAIS das escalas, quando o código muda o que a tela faz.
+   *  Só o FDT precisa: `ESCALAS_CALCULADAS` casa por código, e com
+   *  `E1..E10` genéricos o filtro não rodaria — o teste passaria sem
+   *  exercer a regra que ele existe para guardar. */
+  codigosEscala?: readonly string[];
+  /** escalas que o profissional DIGITA. Difere de `escalas` só onde o
+   *  servidor calcula alguma: no FDT, Inibição e Flexibilidade são
+   *  subtrações e não viram campo. */
+  escalasDigitadas?: number;
 };
+
+/** As escalas que o formulário deve pedir nesta linha. */
+function escalasDigitadas(l: Linha): number {
+  return l.escalasDigitadas ?? l.escalas;
+}
 
 const MATRIZ: Linha[] = [
   { code: 'BAYLEY-III', entryMode: 'bruto', scoreType: 'composta', nasc: true, prem: true, dims: 1, dimsComOpcoes: 0, itens: 0, semTexto: 0, escalas: 16 },
@@ -51,13 +80,20 @@ const MATRIZ: Linha[] = [
   { code: 'ERA-A', entryMode: 'itens', scoreType: 'percentil', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 75, semTexto: 75, escalas: 4 },
   { code: 'ERA-F', entryMode: 'itens', scoreType: 'percentil', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 34, semTexto: 34, escalas: 4 },
   { code: 'ETPC', entryMode: 'itens', scoreType: 'quartil', nasc: false, prem: false, dims: 1, dimsComOpcoes: 1, itens: 30, semTexto: 30, escalas: 4 },
+  // FDT · dez escalas no catálogo, OITO campos na tela: Inibição e
+  // Flexibilidade são subtrações feitas no servidor. A dimensão 'idade'
+  // existe e NÃO tem opções — os `norm_sets` do FDT são faixas contíguas
+  // (range_min/range_max) e a idade crua as resolve, então não há seletor
+  // a desenhar. É o que a separa do TDF, cuja dimensão de mesmo nome tinha
+  // uma opção por ano.
+  { code: 'FDT', entryMode: 'bruto', scoreType: 'escore_bruto', nasc: false, prem: false, dims: 1, dimsComOpcoes: 0, itens: 0, semTexto: 0, escalas: 10, escalasDigitadas: 8,
+    codigosEscala: ['T_LEITURA', 'T_CONTAGEM', 'T_ESCOLHA', 'T_ALTERNANCIA', 'E_LEITURA', 'E_CONTAGEM', 'E_ESCOLHA', 'E_ALTERNANCIA', 'INIBICAO', 'FLEXIBILIDADE'] },
   { code: 'PHQ-9', entryMode: 'itens', scoreType: 'escore_bruto', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 9, semTexto: 0, escalas: 1 },
   { code: 'QA-ADULTO', entryMode: 'itens', scoreType: 'escore_bruto', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 50, semTexto: 0, escalas: 1 },
   { code: 'SCARED-C', entryMode: 'itens', scoreType: 'escore_bruto', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 41, semTexto: 0, escalas: 5 },
   { code: 'SDQ-POR', entryMode: 'itens', scoreType: 'escore_bruto', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 25, semTexto: 0, escalas: 5 },
   { code: 'SNAP-IV-18', entryMode: 'itens', scoreType: 'escore_bruto', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 18, semTexto: 0, escalas: 2 },
   { code: 'SNAP-IV-26', entryMode: 'itens', scoreType: 'escore_bruto', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 26, semTexto: 0, escalas: 3 },
-  { code: 'TDF', entryMode: 'bruto', scoreType: 'pontuacao_padrao', nasc: false, prem: false, dims: 1, dimsComOpcoes: 1, itens: 0, semTexto: 0, escalas: 1 },
   { code: 'TRACO-ANSIEDADE', entryMode: 'itens', scoreType: 'escore_bruto', nasc: false, prem: false, dims: 0, dimsComOpcoes: 0, itens: 34, semTexto: 0, escalas: 1 },
   { code: 'TRILHAS_PRE', entryMode: 'bruto', scoreType: 'pontuacao_padrao', nasc: false, prem: false, dims: 1, dimsComOpcoes: 1, itens: 0, semTexto: 0, escalas: 4 },
 ];
@@ -75,8 +111,8 @@ function detalheDe(l: Linha): InstrumentoDetalhe {
     requires_birthdate: l.nasc,
     supports_prematurity: l.prem,
     escalas: Array.from({ length: l.escalas }, (_, i) => ({
-      code: `E${i + 1}`,
-      name: `Escala ${i + 1}`,
+      code: l.codigosEscala?.[i] ?? `E${i + 1}`,
+      name: l.codigosEscala?.[i] ?? `Escala ${i + 1}`,
       kind: 'primaria',
       bruto_min: 0,
       bruto_max: 100,
@@ -99,6 +135,20 @@ function detalheDe(l: Linha): InstrumentoDetalhe {
     arvore: {},
     faixas_classificacao: [],
   } as unknown as InstrumentoDetalhe;
+}
+
+/** O MENOR valor que a régua deste campo aceita.
+ *
+ *  Zero em quase todo lugar — e é de propósito que ele seja a primeira
+ *  escolha, porque zero ser recusado como se fosse campo vazio é
+ *  exatamente o engano que a matriz existe para pegar. Onde o piso é
+ *  ABERTO, porém, zero é inválido de verdade: os quatro tempos do FDT são
+ *  cronômetro, e ninguém lê cinquenta dígitos em zero segundo. Pedir o
+ *  valor à mesma `entrada` que a tela usa evita a matriz afirmar que um
+ *  protocolo passa quando a tela o recusaria.  */
+function valorAceito(entrada: CampoEscala['entrada']): number {
+  if (!entrada) return 0;
+  return entrada.pisoAberto ? entrada.minimo + 1 : entrada.minimo;
 }
 
 describe('matriz dos 21 instrumentos publicados', () => {
@@ -147,7 +197,12 @@ describe('matriz dos 21 instrumentos publicados', () => {
         });
       } else {
         expect(m.itens).toHaveLength(0);
-        expect(m.escalas).toHaveLength(l.escalas);
+        // o que a TELA pede, que não é o que o catálogo declara onde o
+        // servidor calcula alguma escala
+        expect(m.escalas).toHaveLength(escalasDigitadas(l));
+        expect(m.escalas.every((e) => !escalaCalculada(l.code, e.code))).toBe(
+          true,
+        );
         expect(progresso(m, estadoInicial())).toBeNull();
       }
 
@@ -177,7 +232,7 @@ describe('matriz dos 21 instrumentos publicados', () => {
       const estado = estadoInicial();
       for (const item of m.itens) estado.respostas[item.numero] = 0;
       for (const e of m.escalas) {
-        if (l.entryMode === 'bruto') estado.brutos[e.code] = 0;
+        if (l.entryMode === 'bruto') estado.brutos[e.code] = valorAceito(e.entrada);
         else estado.componentes[e.code] = { acertos: 0, erros: 0, omissoes: 0 };
       }
       for (const d of m.dimensoes) estado.selector[d.code] = d.opcoes[0];
@@ -192,10 +247,37 @@ describe('matriz dos 21 instrumentos publicados', () => {
   );
 
   it('zero é resposta válida nos três modos de entrada', () => {
-    // O protocolo do teste acima é preenchido inteiro com ZERO. Se zero
+    // O protocolo do teste acima é preenchido com o MENOR valor aceito, e
+    // ele é zero em toda parte menos nos campos de piso aberto. Se zero
     // fosse tratado como vazio em qualquer modo, aquele bloco falharia — e
     // este caso deixa a intenção explícita.
     const modos = new Set(MATRIZ.map((l) => l.entryMode));
     expect([...modos].sort()).toEqual(['bruto', 'componentes', 'itens']);
+
+    for (const l of MATRIZ) {
+      for (const e of montarModelo(detalheDe(l)).escalas) {
+        // sem régua declarada, zero passa — que é o caso dos outros 20
+        if (!e.entrada) expect(valorAceito(e.entrada)).toBe(0);
+        expect(brutoValido(valorAceito(e.entrada), e.entrada)).toBe(true);
+      }
+    }
+  });
+
+  it('só o FDT recusa zero, e só nos quatro campos de tempo', () => {
+    // A exceção é do INSTRUMENTO, não da tela: tempo de cronômetro tem
+    // piso aberto e contagem de erro não. Se um dia a régua dos erros
+    // virasse aberta junto, este caso cai — e é o que se quer, porque não
+    // errar é o desempenho normal em várias faixas etárias.
+    const recusamZero = MATRIZ.flatMap((l) =>
+      montarModelo(detalheDe(l))
+        .escalas.filter((e) => !brutoValido(0, e.entrada))
+        .map((e) => `${l.code}/${e.code}`),
+    );
+    expect(recusamZero.sort()).toEqual([
+      'FDT/T_ALTERNANCIA',
+      'FDT/T_CONTAGEM',
+      'FDT/T_ESCOLHA',
+      'FDT/T_LEITURA',
+    ]);
   });
 });

@@ -15,10 +15,9 @@ import { resolverNormaData } from '@/lib/corrigefacil/date-norm-api';
 import { ResultGraph } from '../../graphs/ResultGraph';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
-import {
-  metricasDaEscala,
-  textoDePercentil,
-} from '@/lib/corrigefacil/metricas-instrumento';
+import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
+import { celulasDoResultado } from '@/lib/corrigefacil/resultado-celulas';
+import { ResultadoMetricas } from '../../ResultadoMetricas';
 import {
   identificacaoInicial,
   montarPedidoAvaliacao,
@@ -872,13 +871,14 @@ function ResultadoCorrecao({
     <section className="space-y-8">
       <div className="space-y-4">
         {linhas.map(([escala, r]) => {
-          // as duas métricas com o nome que ELAS têm neste instrumento. Nos
-          // 20 em que bruto e escore são a mesma conta, sai "bruto 12" e
-          // "escore 4", como sempre saiu.
+          // o bruto do cabeçalho do card, com o nome que ELE tem neste
+          // instrumento: "Pontuação bruta 12" no SNAP-IV, "bruto 12" nos
+          // que não declaram nome próprio
           const met = metricasDaEscala(detalhe.code, escala, r.raw, r.score);
-          // o percentil como TEXTO, da regra central: no BPA-2 o percentil
-          // ausente da primeira faixa é "< 1", e não campo vazio
-          const percentil = textoDePercentil(detalhe.code, r);
+          // as colunas deste resultado, na ordem, da MESMA regra que o
+          // histórico usa — inclusive a classificação, que é a última
+          // delas e não um bloco à parte
+          const celulas = celulasDoResultado(detalhe.code, escala, r);
           return (
           <article
             key={escala}
@@ -894,73 +894,10 @@ function ResultadoCorrecao({
             </div>
 
             {r.available ? (
-              <div className="space-y-5">
-                <div className="flex flex-wrap gap-x-10 gap-y-4">
-                  {/* A Média por item, quando o instrumento a declara. É a
-                      MESMA intensidade que já está na Pontuação bruta
-                      acima, na régua de 0 a 3 por item — vem antes dos
-                      Sintomas presentes porque é leitura do bruto, não do
-                      escore. Nos outros 20 `met.media` é null e nada é
-                      desenhado. */}
-                  {met.media && (
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                        {met.media.rotulo}
-                      </p>
-                      <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                        {met.media.texto}
-                      </p>
-                    </div>
-                  )}
-                  {met.escore && (
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                        {met.escore.rotulo}
-                      </p>
-                      <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                        {met.escore.texto}
-                        {r.ci95 && (
-                          <span className="text-pp-ink-soft text-sm font-normal">
-                            {' '}
-                            ({r.ci95})
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  )}
-                  {percentil !== null && (
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                        percentil
-                      </p>
-                      <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                        {percentil}
-                      </p>
-                    </div>
-                  )}
-                  {r.z !== null && (
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                        z
-                      </p>
-                      <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                        {r.z}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {r.classification && (
-                  <div className="space-y-1.5">
-                    <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                      classificação
-                    </p>
-                    <span className="inline-block max-w-full break-words bg-pp-block-lilac text-pp-ink px-4 py-2 rounded-pill text-sm font-medium print:border print:border-pp-ink">
-                      {r.classification}
-                    </span>
-                  </div>
-                )}
-              </div>
+              <ResultadoMetricas
+                metricas={celulas.metricas}
+                classificacao={celulas.classificacao}
+              />
             ) : (
               <p className="text-pp-ink-soft text-sm">
                 {r.message ?? 'Resultado indisponível.'}
