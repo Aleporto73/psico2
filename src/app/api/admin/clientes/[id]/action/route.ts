@@ -33,7 +33,7 @@ export async function POST(
       return NextResponse.json({ message: 'Cliente não encontrado.' }, { status: 404 });
     }
 
-    const destructiveActions = ['bloquear', 'cancelar-vitalicio', 'cancelar-pro', 'cancelar-flow'];
+    const destructiveActions = ['bloquear', 'cancelar-vitalicio', 'cancelar-pro', 'cancelar-flow', 'cancelar-corrigefacil'];
 
     if (destructiveActions.includes(action)) {
       if (clientProfile.id === adminUser?.id) {
@@ -74,6 +74,14 @@ export async function POST(
       .from('products')
       .select('id')
       .eq('slug', 'psicoplanilhas-flow')
+      .maybeSingle();
+
+    // maybeSingle pelo mesmo motivo do Flow: ausência do produto vira 400 limpo
+    // apenas nos cases do CorrigeFácil, sem derrubar as demais ações da rota.
+    const { data: corrigeFacilProduct } = await adminSupabase
+      .from('products')
+      .select('id')
+      .eq('slug', 'corrigefacil')
       .maybeSingle();
 
     // ==========================================
@@ -320,6 +328,90 @@ export async function POST(
         });
 
         return NextResponse.json({ message: 'Acesso manual ao PsicoPlanilhas Flow cancelado com sucesso!' });
+      }
+
+      case 'liberar-corrigefacil': {
+        if (!corrigeFacilProduct) {
+          return NextResponse.json({ message: 'Produto corrigefacil não cadastrado.' }, { status: 400 });
+        }
+
+        // Só cria/reativa se ainda não houver acesso ativo (paid OU manual).
+        // limit(1)+maybeSingle evita erro de múltiplas linhas: purchases não tem
+        // unique por (user_id, product_id), e o webhook de pagamento grava aqui.
+        const { data: activeCorrigeFacil } = await adminSupabase
+          .from('purchases')
+          .select('id')
+          .eq('user_id', clientId)
+          .eq('product_id', corrigeFacilProduct.id)
+          .in('payment_status', ['paid', 'manual'])
+          .limit(1)
+          .maybeSingle();
+
+        if (!activeCorrigeFacil) {
+          // Reativa uma compra anterior cancelada/estornada, se existir; senão cria nova manual.
+          // A reativação é SEMPRE como 'manual': o admin nunca fabrica uma compra 'paid'.
+          const { data: inactiveCorrigeFacil } = await adminSupabase
+            .from('purchases')
+            .select('id')
+            .eq('user_id', clientId)
+            .eq('product_id', corrigeFacilProduct.id)
+            .limit(1)
+            .maybeSingle();
+
+          if (inactiveCorrigeFacil) {
+            const { error: reactErr } = await adminSupabase
+              .from('purchases')
+              .update({ payment_status: 'manual' })
+              .eq('id', inactiveCorrigeFacil.id);
+            if (reactErr) throw new Error(`Erro ao reativar acesso CorrigeFácil: ${reactErr.message}`);
+          } else {
+            const { error: insErr } = await adminSupabase.from('purchases').insert({
+              user_id: clientId,
+              product_id: corrigeFacilProduct.id,
+              payment_status: 'manual',
+              source: 'admin',
+            });
+            if (insErr) throw new Error(`Erro ao liberar acesso CorrigeFácil: ${insErr.message}`);
+          }
+        }
+
+        await adminSupabase.from('admin_logs').insert({
+          admin_id: adminUser?.id,
+          action: 'liberar acesso corrigefacil',
+          target_table: 'purchases',
+          target_id: clientId,
+          metadata: { product_slug: 'corrigefacil' },
+        });
+
+        return NextResponse.json({ message: 'Acesso ao CorrigeFácil liberado com sucesso!' });
+      }
+
+      case 'cancelar-corrigefacil': {
+        if (!corrigeFacilProduct) {
+          return NextResponse.json({ message: 'Produto corrigefacil não cadastrado.' }, { status: 400 });
+        }
+
+        // PROTEÇÃO: cancela APENAS acesso manual. O filtro .eq('payment_status','manual')
+        // garante que compras pagas ('paid') NÃO são tocadas — elas devem seguir o
+        // fluxo de pagamento/estorno oficial, nunca cancelamento administrativo manual.
+        const { error: cancelErr = null } = await adminSupabase
+          .from('purchases')
+          .update({ payment_status: 'cancelled' })
+          .eq('user_id', clientId)
+          .eq('product_id', corrigeFacilProduct.id)
+          .eq('payment_status', 'manual');
+
+        if (cancelErr) throw new Error(`Erro ao cancelar acesso CorrigeFácil: ${cancelErr.message}`);
+
+        await adminSupabase.from('admin_logs').insert({
+          admin_id: adminUser?.id,
+          action: 'cancelar acesso corrigefacil',
+          target_table: 'purchases',
+          target_id: clientId,
+          metadata: { product_slug: 'corrigefacil' },
+        });
+
+        return NextResponse.json({ message: 'Acesso manual ao CorrigeFácil revogado com sucesso!' });
       }
 
       case 'ativar-pro': {
