@@ -129,7 +129,7 @@ type NavGroup = {
   items: NavItem[];
 };
 
-export function AppShell({ children, hasDocStudioAccess, hasCorrigeFacilAccess = false }: Readonly<{ children: React.ReactNode; hasDocStudioAccess: boolean; hasCorrigeFacilAccess?: boolean }>) {
+export function AppShell({ children, hasDocStudioAccess }: Readonly<{ children: React.ReactNode; hasDocStudioAccess: boolean }>) {
   const pathname = usePathname();
   const router = useRouter();
   const supabase = createClient();
@@ -146,21 +146,22 @@ export function AppShell({ children, hasDocStudioAccess, hasCorrigeFacilAccess =
       { name: 'Minhas Planilhas', path: '/app/planilhas', icon: <IconPlanilhas /> },
     ] },
     { label: 'Ferramentas incluídas', items: [
-      { name: 'Studio DOC', path: '/app/doc-studio', icon: <IconDoc />, badge: 'Novo', badgeTone: 'pink' },
+      { name: 'Studio DOC', path: '/app/doc-studio', icon: <IconDoc /> },
       { name: 'Relatório', path: '/app/assistente-gpt', icon: <IconChat /> },
       { name: 'ABA', path: '/app/assistente-aba', icon: <IconChat /> },
     ] },
+    // O selo `Novo` é escasso de propósito. Quando três itens o carregam ao
+    // mesmo tempo ele para de sinalizar novidade e vira decoração; o
+    // CorrigeFácil é o lançamento desta fase, então é o único do menu a
+    // usá-lo — no tom verde padrão, que é o default de `badgeClass`.
     { separatorBefore: true, label: 'Ferramentas upgrade', items: [
-      { name: 'Relatório Pró', path: '/app/assistente-pro', icon: <IconSpark />, badge: 'Novo' },
-      { name: 'Psico Flow', path: '/app/flow', icon: <IconFlow />, badge: 'Novo' },
-      // CorrigeFácil aparece SÓ para quem já tem direito. Os vizinhos deste
-      // grupo aparecem para todos porque têm página de venda com checkout; o
-      // produto `corrigefacil` ainda não tem, e um item que leva a "compra
-      // indisponível" é pior que item nenhum. Quando o checkout existir,
-      // basta remover a condição.
-      ...(hasCorrigeFacilAccess
-        ? [{ name: 'CorrigeFácil', path: '/app/corrigefacil', icon: <IconChecklist />, badge: 'Novo' as const }]
-        : []),
+      { name: 'Relatório Pró', path: '/app/assistente-pro', icon: <IconSpark /> },
+      { name: 'Psico Flow', path: '/app/flow', icon: <IconFlow /> },
+      // CorrigeFácil aparece para TODO usuário autenticado: a fase de testes
+      // terminou e a descoberta agora faz parte da venda. Ver o item NÃO é
+      // ter direito — quem não comprou cai na página interna de venda, e o
+      // gate real continua no Server Component de cada rota do módulo.
+      { name: 'CorrigeFácil', path: '/app/corrigefacil', icon: <IconChecklist />, badge: 'Novo' },
     ] },
     { separatorBefore: true, items: [
       { name: 'Produtos', path: '/app/produtos', icon: <IconProducts /> },

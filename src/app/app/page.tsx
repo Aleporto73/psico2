@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { HeroBanner } from '@/components/ui/hero-banner';
-import { FileText, MessageSquare, Sparkles, Lock, Play, X, ArrowRight, Workflow } from 'lucide-react';
+import { FileText, ClipboardCheck, Sparkles, Lock, Play, X, ArrowRight, Workflow } from 'lucide-react';
 
 interface ClientStats {
   name: string | null;
@@ -186,26 +186,36 @@ export default function AppDashboardPage() {
           </div>
         </article>
 
-        {/* Card 2: Assistente GPT (bônus) — block-mint */}
+        {/* Card 2: CorrigeFácil — block-mint
+            Ocupa o espaço que era do Assistente GPT. O assistente continua
+            existindo em /app/assistente-gpt e no menu (Ferramentas incluídas);
+            só deixa de gastar um dos três lugares nobres do Dashboard, que
+            agora anuncia o lançamento da fase.
+
+            O Dashboard NÃO descobre se o usuário comprou, e é de propósito:
+            /app/corrigefacil já decide entre catálogo e página de venda.
+            Repetir a regra comercial aqui criaria uma segunda fonte de verdade
+            para o mesmo direito. Sem preço no card também é deliberado — o
+            valor do CorrigeFácil mora no catálogo, nunca no componente. */}
         <article className="bg-pp-block-mint rounded-block p-8 md:p-10 flex flex-col gap-6 min-h-[280px]">
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-pp-ink-soft">
-              <MessageSquare className="w-5 h-5" aria-hidden="true" />
-              <p className="font-serif italic text-sm">Bônus incluso</p>
+              <ClipboardCheck className="w-5 h-5" aria-hidden="true" />
+              <p className="font-serif italic text-sm">Novo</p>
             </div>
             <h2 className="text-2xl md:text-[28px] text-pp-ink font-medium leading-tight">
-              Assistente GPT
+              CorrigeFácil
             </h2>
             <p className="text-pp-ink-soft text-base leading-relaxed">
-              Apoio textual para estruturar relatórios a partir dos seus dados.
+              Correção digital de instrumentos com resultados organizados e avaliações salvas.
             </p>
           </div>
           <div className="mt-auto">
             <Link
-              href="/app/assistente-gpt"
+              href="/app/corrigefacil"
               className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
             >
-              Abrir assistente
+              Acessar CorrigeFácil
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
           </div>
