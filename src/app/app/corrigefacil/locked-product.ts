@@ -82,7 +82,8 @@ export function montarVisaoBloqueada(
 // visual. Duplicar os códigos numa constante desta tela criaria uma
 // segunda fonte, que envelheceria em silêncio no dia em que o vigésimo
 // segundo instrumento entrasse. O que mora aqui é só a APRESENTAÇÃO —
-// ordem e cor —, que é o que a tela de venda decide.
+// ordem, cor e a troca de vitrine documentada mais abaixo —, que é o que
+// a tela de venda decide.
 
 /** Tons pastéis da paleta do PsicoPlanilhas usados nos badges.
  *
@@ -124,6 +125,29 @@ export function ordenarInstrumentos(codigos: readonly string[]): string[] {
 // caso comum — rótulo igual ao código, sem selo —, então a ausência de
 // linha aqui não é esquecimento, é a regra.
 
+/** Troca de vitrine: quem sai da lista e quem entra no lugar.
+ *
+ *  O FDT entrou no catálogo do CorrigeFácil e o TDF saiu da vitrine. A
+ *  fonte soberana da LISTA continua sendo o registro visual — mexer nele
+ *  por causa de uma página de venda mudaria GRÁFICO, que é outro assunto
+ *  e não é o que esta tela decide. O que muda aqui é só quem a vitrine
+ *  mostra.
+ *
+ *  A troca é um-para-um de propósito: é assim que o total continua
+ *  saindo da contagem, sem ninguém escrever 21 à mão. Por isso um mapa
+ *  de substituição, e não uma lista de exclusões somada a outra de
+ *  inclusões — duas listas separadas poderiam divergir em número. */
+const SUBSTITUICOES: Record<string, string> = {
+  TDF: 'FDT',
+};
+
+/** Os códigos que a vitrine desenha: a fonte soberana com a troca
+ *  aplicada, em ordem alfabética. Quem não está no mapa passa direto,
+ *  que é o caso dos outros vinte. */
+export function codigosDaVitrine(codigos: readonly string[]): string[] {
+  return ordenarInstrumentos(codigos.map((c) => SUBSTITUICOES[c] ?? c));
+}
+
 /** Rótulo exibido quando ele difere do código técnico.
  *
  *  TRACO-ANSIEDADE continua sendo TRACO-ANSIEDADE em graph-config, no
@@ -155,8 +179,8 @@ const SELOS: Record<string, SeloVitrine> = {
   'ERA-A': 'novo',
   'ERA-F': 'novo',
   ETPC: 'novo',
+  FDT: 'novo',
   'SCARED-C': 'novo',
-  TDF: 'novo',
   'BPA-2': 'brasil',
 };
 
@@ -179,7 +203,7 @@ export type ItemVitrine = {
  *  Recebe os códigos em vez de importar CODIGOS_DOS_21 aqui para manter
  *  este módulo puro e testável sem arrastar o registro visual junto. */
 export function montarVitrine(codigos: readonly string[]): ItemVitrine[] {
-  return ordenarInstrumentos(codigos).map((codigo, i) => ({
+  return codigosDaVitrine(codigos).map((codigo, i) => ({
     codigo,
     rotulo: ROTULOS[codigo] ?? codigo,
     selo: SELOS[codigo] ?? null,
@@ -188,8 +212,11 @@ export function montarVitrine(codigos: readonly string[]): ItemVitrine[] {
 }
 
 /** Expostos para o teste provar que a APRESENTAÇÃO não inventou
- *  instrumento: todo código com rótulo ou selo precisa existir na fonte
- *  soberana. Um erro de digitação aqui viraria, sem isto, um selo que
- *  simplesmente nunca aparece — falha silenciosa. */
+ *  instrumento: todo código com rótulo ou selo precisa aparecer NA
+ *  VITRINE, e todo código substituído precisa existir na fonte soberana.
+ *  Um erro de digitação aqui viraria, sem isto, um selo que simplesmente
+ *  nunca aparece — ou uma troca que nunca acontece. Falha silenciosa nos
+ *  dois casos. */
 export const CODIGOS_COM_ROTULO = Object.keys(ROTULOS);
 export const CODIGOS_COM_SELO = Object.keys(SELOS);
+export const CODIGOS_SUBSTITUIDOS = Object.keys(SUBSTITUICOES);

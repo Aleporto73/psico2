@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   CODIGOS_COM_ROTULO,
   CODIGOS_COM_SELO,
+  CODIGOS_SUBSTITUIDOS,
+  codigosDaVitrine,
   DESCRICAO_FALLBACK,
   montarVisaoBloqueada,
   montarVitrine,
@@ -116,21 +118,44 @@ describe('tela bloqueada do CorrigeFácil', () => {
 });
 
 describe('vitrine de instrumentos da tela de venda', () => {
-  const exibidos = ordenarInstrumentos(CODIGOS_DOS_21);
+  const exibidos = codigosDaVitrine(CODIGOS_DOS_21);
+  /** A fonte soberana COM a troca de vitrine aplicada. É contra esta
+   *  lista que a exibição é conferida — escrita aqui à mão de propósito,
+   *  para o teste afirmar a expectativa em vez de repetir a implementação. */
+  const esperados = CODIGOS_DOS_21.map((c) => (c === 'TDF' ? 'FDT' : c));
 
   it('exibe exatamente os 21, sem faltar nem sobrar', () => {
     expect(CODIGOS_DOS_21).toHaveLength(21);
     expect(exibidos).toHaveLength(21);
-    // conjunto idêntico ao da fonte soberana, nos dois sentidos
-    expect([...exibidos].sort()).toEqual([...CODIGOS_DOS_21].sort());
-    for (const codigo of CODIGOS_DOS_21) {
+    // conjunto idêntico ao esperado, nos dois sentidos
+    expect([...exibidos].sort()).toEqual([...esperados].sort());
+    for (const codigo of esperados) {
       expect(exibidos, codigo).toContain(codigo);
     }
     expect(new Set(exibidos).size).toBe(21);
   });
 
+  // A troca é comercial e é só da vitrine: o registro visual continua com
+  // o TDF, porque lá o assunto é gráfico, não catálogo de venda.
+  it('o FDT entra no lugar do TDF e o total continua 21', () => {
+    expect(exibidos).toContain('FDT');
+    expect(exibidos).not.toContain('TDF');
+    expect(exibidos).toHaveLength(21);
+
+    // um-para-um: os outros vinte continuam exatamente como estavam
+    const outros = CODIGOS_DOS_21.filter((c) => c !== 'TDF');
+    expect(outros).toHaveLength(20);
+    for (const codigo of outros) {
+      expect(exibidos, codigo).toContain(codigo);
+    }
+
+    // e a fonte soberana não foi reescrita por causa de uma tela de venda
+    expect(CODIGOS_DOS_21).toContain('TDF');
+    expect(CODIGOS_DOS_21).not.toContain('FDT');
+  });
+
   it('a ordem exibida é alfabética, não a ordem do registro', () => {
-    const alfabetica = [...CODIGOS_DOS_21].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+    const alfabetica = [...esperados].sort((a, b) => a.localeCompare(b, 'pt-BR'));
     expect(exibidos).toEqual(alfabetica);
     for (let i = 1; i < exibidos.length; i += 1) {
       expect(exibidos[i - 1].localeCompare(exibidos[i], 'pt-BR')).toBeLessThan(0);
@@ -140,9 +165,10 @@ describe('vitrine de instrumentos da tela de venda', () => {
     expect(exibidos).not.toEqual([...CODIGOS_DOS_21]);
   });
 
-  it('não muta a fonte soberana ao ordenar', () => {
+  it('não muta a fonte soberana ao ordenar nem ao trocar', () => {
     const antes = [...CODIGOS_DOS_21];
     ordenarInstrumentos(CODIGOS_DOS_21);
+    codigosDaVitrine(CODIGOS_DOS_21);
     expect([...CODIGOS_DOS_21]).toEqual(antes);
   });
 
@@ -163,18 +189,24 @@ describe('apresentação comercial da vitrine', () => {
 
   it('monta os 21 na ordem alfabética, com tom e rótulo', () => {
     expect(itens).toHaveLength(21);
-    expect(itens.map((i) => i.codigo)).toEqual(ordenarInstrumentos(CODIGOS_DOS_21));
+    expect(itens.map((i) => i.codigo)).toEqual(codigosDaVitrine(CODIGOS_DOS_21));
     for (const item of itens) {
       expect(item.rotulo.length).toBeGreaterThan(0);
       expect(TONS_VITRINE).toContain(item.tom);
     }
   });
 
-  // Uma linha de metadado para um código que não existe na fonte soberana
-  // não quebra nada em runtime: o selo simplesmente nunca aparece. É o tipo
+  // Uma linha de metadado para um código que a vitrine não desenha não
+  // quebra nada em runtime: o selo simplesmente nunca aparece. É o tipo
   // de erro que só um teste pega.
-  it('nenhum metadado aponta para instrumento fora da fonte soberana', () => {
+  it('nenhum metadado aponta para instrumento fora da vitrine', () => {
+    const naVitrine = codigosDaVitrine(CODIGOS_DOS_21);
     for (const codigo of [...CODIGOS_COM_ROTULO, ...CODIGOS_COM_SELO]) {
+      expect(naVitrine, codigo).toContain(codigo);
+    }
+    // e a troca só acontece se quem sai existir mesmo na fonte soberana:
+    // um TDF digitado errado deixaria a substituição sem efeito nenhum
+    for (const codigo of CODIGOS_SUBSTITUIDOS) {
       expect(CODIGOS_DOS_21, codigo).toContain(codigo);
     }
   });
@@ -190,10 +222,14 @@ describe('apresentação comercial da vitrine', () => {
       'ERA-A',
       'ERA-F',
       'ETPC',
+      'FDT',
       'SCARED-C',
-      'TDF',
     ]);
     expect(novos).toHaveLength(10);
+    // o FDT é a novidade que entrou no lugar do TDF, e chega selado
+    expect(por('FDT').selo).toBe('novo');
+    expect(TEXTO_SELO.novo).toBe('Novo');
+    expect(itens.find((i) => i.codigo === 'TDF')).toBeUndefined();
   });
 
   it('BPA-2 é o único com selo Brasil', () => {
