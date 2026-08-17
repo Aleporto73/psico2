@@ -25,7 +25,11 @@
 // =====================================================================
 
 import type { DerivadoFdt, ResultadoEscala } from '@/lib/corrigefacil/api';
-import { blocosFdt, derivadasAusentes } from '@/lib/corrigefacil/fdt-derivado';
+import {
+  blocosFdt,
+  derivadasAusentes,
+  zFormatado,
+} from '@/lib/corrigefacil/fdt-derivado';
 
 export function FdtDerivado({
   code,
@@ -83,7 +87,7 @@ export function FdtDerivado({
                             z
                           </p>
                           <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                            {linha.z}
+                            {zFormatado(linha.z)}
                           </p>
                         </div>
                       )}

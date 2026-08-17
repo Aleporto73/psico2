@@ -77,6 +77,7 @@ import {
   derivadasAusentes,
   derivadoFdt,
   ehFdt,
+  zFormatado,
 } from '@/lib/corrigefacil/fdt-derivado';
 import {
   narrativaVazia,
@@ -996,7 +997,7 @@ function FdtDoDocumento({
                 ) : (
                   <span className="tabular-nums">
                     {linha.bruto !== null && ` — bruto ${linha.bruto}`}
-                    {linha.z !== null && ` · z ${linha.z}`}
+                    {linha.z !== null && ` · z ${zFormatado(linha.z)}`}
                     {linha.faixa && ` · ${linha.faixa}`}
                     {linha.classificacao && ` · ${linha.classificacao}`}
                   </span>

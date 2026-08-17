@@ -37,6 +37,7 @@ import {
   fdtParaTexto,
   MEDIDAS_ERRO,
   MEDIDAS_TEMPO,
+  zFormatado,
 } from '@/lib/corrigefacil/fdt-derivado';
 import {
   brutoValido,
@@ -807,3 +808,82 @@ const FAIXAS_DO_SERVIDOR = [
   '60-75',
   '76-92',
 ];
+
+// =====================================================================
+// A APRESENTAÇÃO DO Z · duas casas, vírgula, e um formatador só
+//
+// Bug encontrado em teste de produção, idade 40: o servidor devolveu
+// z = 0.13846153846153825 e a tela imprimiu o número cru. O valor está
+// certo; o que estava errado era a régua com que ele era mostrado.
+//
+// A correção é de FORMATAÇÃO e só: `blocosFdt` continua carregando o z
+// integral que o servidor mandou, e é ele que qualquer comparação usa.
+// =====================================================================
+
+const FDT_DERIVADO_FONTE = leia('src', 'lib', 'corrigefacil', 'fdt-derivado.ts');
+const FDT_COMPONENTE = leia(
+  'src', 'app', 'app', 'corrigefacil', 'FdtDerivado.tsx',
+);
+
+describe('FDT · o z na tela', () => {
+  it('os quatro z reais do teste de produção saem com duas casas', () => {
+    // idade 40 · faixa 35-59, exatamente como voltaram da Edge
+    expect(zFormatado(0.13846153846153825)).toBe('0,14');
+    expect(zFormatado(-0.5416666666666666)).toBe('-0,54');
+    expect(zFormatado(0.11724137931034484)).toBe('0,12');
+    expect(zFormatado(0.5217391304347826)).toBe('0,52');
+  });
+
+  it('zero sai com as duas casas, e null continua null', () => {
+    expect(zFormatado(0)).toBe('0,00');
+    expect(zFormatado(null)).toBeNull();
+    expect(zFormatado(undefined)).toBeNull();
+  });
+
+  it('z negativo minúsculo não vira "-0,00"', () => {
+    // acontece sempre que o bruto passa a média por muito pouco: o sinal
+    // sobrevive ao arredondamento e o zero fica com cara de defeito
+    expect(zFormatado(-0.001)).toBe('0,00');
+    expect(zFormatado(-0.004999)).toBe('0,00');
+    // e o negativo de verdade continua negativo
+    expect(zFormatado(-0.005)).toBe('-0,01');
+  });
+
+  it('valor que não é número finito não vira texto', () => {
+    expect(zFormatado(Number.NaN)).toBeNull();
+    expect(zFormatado(Number.POSITIVE_INFINITY)).toBeNull();
+  });
+
+  it('a tela e o histórico usam o formatador, e não o número cru', () => {
+    expect(FDT_COMPONENTE).toContain('{zFormatado(linha.z)}');
+    expect(FDT_COMPONENTE).not.toContain('{linha.z}');
+  });
+
+  it('o documento usa o MESMO formatador', () => {
+    expect(DOCUMENTO).toContain('z ${zFormatado(linha.z)}');
+    expect(DOCUMENTO).not.toContain('z ${linha.z}');
+    // um formatador só: duas cópias divergiriam no arredondamento, e a
+    // mesma avaliação sairia com um z na tela e outro no PDF
+    expect(FDT_DERIVADO_FONTE.split('export function zFormatado').length - 1).toBe(1);
+  });
+
+  it('o valor GUARDADO continua sendo o do servidor, sem arredondar', () => {
+    const cru = 0.13846153846153825;
+    const res = { ...RESULTADOS, T_LEITURA: resultado(35, cru) };
+    const linha = blocosFdt('FDT', DERIVADO, res)?.[0].linhas[0];
+    // integral em `blocosFdt`; arredondado só na hora de imprimir
+    expect(linha?.z).toBe(cru);
+    expect(zFormatado(linha?.z ?? null)).toBe('0,14');
+  });
+
+  it('nenhum cálculo do FDT mudou junto', () => {
+    // a formatação não encostou em subtração, z, corte nem faixa: as
+    // varreduras de sempre continuam valendo
+    const codigo = semComentarios(FDT_DERIVADO_FONTE);
+    expect(codigo).not.toMatch(/T_ESCOLHA\s*-\s*T_LEITURA/);
+    expect(codigo).not.toMatch(/\bmean\b|\bsd\b/i);
+    expect(codigo).not.toMatch(/\bP(95|75|50|25|5)\b/);
+    // e `blocosFdt` continua lendo o z do resultado, não recalculando
+    expect(FDT_DERIVADO_FONTE).toContain('z: resultado?.z ?? null');
+  });
+});
