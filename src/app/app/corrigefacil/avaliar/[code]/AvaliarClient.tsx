@@ -862,7 +862,9 @@ function TemposFields({
  *  O nome do instrumento é PARÂMETRO e não literal: hoje só o FDT é
  *  gratuito, mas quem decide isso é `instruments.is_free_demo` no banco, e
  *  liberar um segundo instrumento não pode exigir editar esta frase. */
-function OfertaCorrigeFacilCompleto({ instrumento }: { instrumento: string }) {
+function OfertaCorrigeFacilCompleto({
+  instrumento,
+}: Readonly<{ instrumento: string }>) {
   return (
     <section className="bg-pp-block-lilac rounded-block p-6 md:p-8 space-y-4 print:hidden">
       <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
