@@ -79,6 +79,7 @@ export default function AdminClienteDetalhePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [purchase, setPurchase] = useState<Purchase | null>(null);
   const [flowPurchase, setFlowPurchase] = useState<Purchase | null>(null);
+  const [corrigeFacilPurchase, setCorrigeFacilPurchase] = useState<Purchase | null>(null);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [logs, setLogs] = useState<AdminLog[]>([]);
 
@@ -150,6 +151,21 @@ export default function AdminClienteDetalhePage() {
         .limit(1);
 
       setFlowPurchase(flowRows?.[0] ?? null);
+
+      // 2c. Fetch CorrigeFácil Purchase (pagamento único, usa purchases)
+      // Estado próprio, e NÃO a RPC has_corrigefacil_access: a RPC devolve só
+      // boolean e o painel precisa distinguir compra paga, acesso manual e
+      // ausência de acesso para saber o que pode ou não ser revogado aqui.
+      const { data: corrigeFacilRows } = await supabase
+        .from('purchases')
+        .select('id, payment_status, source, purchased_at, products!inner(slug)')
+        .eq('user_id', clientId)
+        .eq('products.slug', 'corrigefacil')
+        .in('payment_status', ['paid', 'manual'])
+        .order('purchased_at', { ascending: false })
+        .limit(1);
+
+      setCorrigeFacilPurchase(corrigeFacilRows?.[0] ?? null);
 
       // 3. Fetch Subscription
       const { data: subRows } = await supabase
@@ -486,6 +502,52 @@ export default function AdminClienteDetalhePage() {
                       className="px-4 py-2.5 text-sm font-bold bg-[#34D399]/10 hover:bg-[#34D399]/20 text-[#34D399] border border-[#34D399]/20 rounded-xl transition"
                     >
                       Liberar acesso Flow
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="border-t border-[#1F4D5C]"></div>
+
+              {/* CorrigeFácil Panel */}
+              <div className="space-y-3">
+                <div className="flex justify-between items-start gap-3 flex-wrap">
+                  <div className="space-y-1">
+                    <h4 className="font-semibold text-[#F8FAFC] text-base">Acesso ao CorrigeFácil</h4>
+                    <p className="text-sm text-[#CBD5E1] leading-relaxed">Libera o acesso vitalício ao CorrigeFácil para correção digital de instrumentos.</p>
+                  </div>
+                  <span className={`px-3 py-1 text-xs font-bold rounded-full ${corrigeFacilPurchase && ['paid', 'manual'].includes(corrigeFacilPurchase.payment_status) ? 'text-[#34D399] bg-[#34D399]/10 border border-[#34D399]/20' : 'text-[#94A3B8] bg-[#0E2A38] border border-[#1F4D5C]'}`}>
+                    {corrigeFacilPurchase && ['paid', 'manual'].includes(corrigeFacilPurchase.payment_status) ? `Liberado (${corrigeFacilPurchase.payment_status === 'manual' ? 'manual' : 'pago'})` : 'Sem acesso'}
+                  </span>
+                </div>
+                <div className="flex space-x-3 pt-1">
+                  {corrigeFacilPurchase && corrigeFacilPurchase.payment_status === 'manual' ? (
+                    <button
+                      disabled={actionLoading}
+                      onClick={() => triggerConfirmation(
+                        'cancelar-corrigefacil',
+                        'Revogar Acesso ao CorrigeFácil',
+                        'Tem certeza que deseja revogar o acesso manual ao CorrigeFácil para este cliente?'
+                      )}
+                      className="px-4 py-2.5 text-sm font-bold bg-[#FB7185]/10 hover:bg-[#FB7185]/20 text-[#FB7185] border border-[#FB7185]/20 rounded-xl transition"
+                    >
+                      Revogar acesso CorrigeFácil
+                    </button>
+                  ) : corrigeFacilPurchase && corrigeFacilPurchase.payment_status === 'paid' ? (
+                    <p className="text-xs text-[#94A3B8]">
+                      Compra paga detectada. Alterações e cancelamento devem seguir o fluxo de pagamento oficial.
+                    </p>
+                  ) : (
+                    <button
+                      disabled={actionLoading}
+                      onClick={() => triggerConfirmation(
+                        'liberar-corrigefacil',
+                        'Liberar Acesso ao CorrigeFácil',
+                        'Tem certeza que deseja liberar manualmente o acesso vitalício ao CorrigeFácil para este cliente?'
+                      )}
+                      className="px-4 py-2.5 text-sm font-bold bg-[#34D399]/10 hover:bg-[#34D399]/20 text-[#34D399] border border-[#34D399]/20 rounded-xl transition"
+                    >
+                      Liberar acesso CorrigeFácil
                     </button>
                   )}
                 </div>
