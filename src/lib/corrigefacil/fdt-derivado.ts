@@ -110,6 +110,35 @@ export type LinhaFdt = {
 
 export type BlocoFdt = { titulo: string; nota: string; linhas: LinhaFdt[] };
 
+/** As COLUNAS de uma linha do FDT, na ordem em que a tela as mostra.
+ *
+ *  As do FDT são as DELE — bruto, z e faixa percentílica —, e é por isso
+ *  que esta função existe em vez de o FDT usar `celulasDoResultado`: os
+ *  instrumentos comuns mostram escore e percentil, que aqui não há. O que
+ *  os três lugares compartilham é o DESENHO, não o conjunto de medidas.
+ *
+ *  COLUNA SEM VALOR NÃO EXISTE, e o `z` é o caso que exige cuidado: o
+ *  filtro é o TEXTO formatado, não o número. Um z não finito devolve null
+ *  em `zFormatado`, e testar `z !== null` deixaria passar um rótulo "Z"
+ *  com nada embaixo — que é justamente o que se quer evitar.
+ *
+ *  Não formata nada por conta própria: `zFormatado` é a mesma função que o
+ *  PDF usa, e a faixa vem escrita do servidor. */
+export function celulasDaLinhaFdt(
+  linha: LinhaFdt,
+): { rotulo: string; texto: string; complemento: null }[] {
+  const z = zFormatado(linha.z);
+  return [
+    ...(linha.bruto === null
+      ? []
+      : [{ rotulo: 'bruto', texto: String(linha.bruto), complemento: null }]),
+    ...(z === null ? [] : [{ rotulo: 'z', texto: z, complemento: null }]),
+    ...(linha.faixa
+      ? [{ rotulo: 'faixa percentílica', texto: linha.faixa, complemento: null }]
+      : []),
+  ];
+}
+
 /** O z como o profissional lê: duas casas, vírgula decimal.
  *
  *  FORMATAÇÃO, e só. O número guardado continua sendo o que o servidor

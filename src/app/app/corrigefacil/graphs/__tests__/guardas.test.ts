@@ -283,26 +283,34 @@ describe('20 · o resultado textual continua na tela', () => {
     expect(tela).toContain(
       'metricasDaEscala(detalhe.code, escala, r.raw, r.score)',
     );
+    // o bruto continua nomeado e escrito no cabeçalho do card
+    expect(tela).toContain('{met.bruto.rotulo}');
     expect(tela).toContain('{met.bruto.texto}');
-    expect(tela).toContain('{met.escore.texto}');
-    // o percentil passa por `textoDePercentil` pelo mesmo motivo que
-    // `raw`/`score` passam por `metricasDaEscala`: a regra de como o
-    // número se ESCREVE mora no módulo comum, não no componente. É lá que
-    // o percentil nulo da primeira faixa do BPA-2 vira "< 1", e onde todos
-    // os outros continuam sendo o número que o servidor mandou.
-    expect(tela).toContain('textoDePercentil(detalhe.code, r)');
-    expect(tela).toContain('{percentil}');
-    expect(tela).toContain('{r.z}');
-    expect(tela).toContain('{r.ci95}');
-    expect(tela).toContain('{r.classification}');
+
+    // As DEMAIS medidas viraram colunas de um bloco só, e quem as monta é
+    // `celulasDoResultado`. O caminho do dado ganhou um passo — a guarda
+    // segue por ele em vez de sumir: escore, percentil, z e IC95% saem de
+    // lá, e é lá que `textoDePercentil` escreve o "< 1" da primeira faixa
+    // do BPA-2.
+    expect(tela).toContain('celulasDoResultado(detalhe.code, escala, r)');
+    expect(tela).toContain('metricas={celulas.metricas}');
+    expect(tela).toContain('classificacao={celulas.classificacao}');
+
+    const celulas = readFileSync(
+      join(process.cwd(), 'src/lib/corrigefacil/resultado-celulas.ts'),
+      'utf8',
+    );
+    expect(celulas).toContain('textoDePercentil(code, r)');
+    expect(celulas).toContain('met.escore.rotulo');
+    expect(celulas).toContain('met.escore.texto');
+    expect(celulas).toContain("celula('percentil', percentil)");
+    expect(celulas).toContain("celula('z', String(r.z))");
+    expect(celulas).toContain('r.ci95');
+    expect(celulas).toContain('r.classification');
+
+    // o que continua sendo desenhado pelo próprio card
     expect(tela).toContain("{r.message ?? 'Resultado indisponível.'}");
     expect(tela).toContain('{r.flags.join');
-    // e os rótulos continuam nomeando cada número
-    expect(tela).toContain('{met.bruto.rotulo}');
-    expect(tela).toContain('{met.escore.rotulo}');
-    for (const rotulo of ['percentil', 'classificação']) {
-      expect(tela, rotulo).toContain(rotulo);
-    }
     // os nomes PADRÃO, que valem para os 20 instrumentos sem métrica
     // própria, moram no módulo — e continuam sendo os de sempre
     const metricas = readFileSync(

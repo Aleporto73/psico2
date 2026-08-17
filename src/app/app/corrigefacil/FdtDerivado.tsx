@@ -27,9 +27,10 @@
 import type { DerivadoFdt, ResultadoEscala } from '@/lib/corrigefacil/api';
 import {
   blocosFdt,
+  celulasDaLinhaFdt,
   derivadasAusentes,
-  zFormatado,
 } from '@/lib/corrigefacil/fdt-derivado';
+import { ResultadoMetricas } from './ResultadoMetricas';
 
 export function FdtDerivado({
   code,
@@ -69,46 +70,16 @@ export function FdtDerivado({
                 {linha.indisponivel ? (
                   <p className="text-pp-ink-soft text-sm">{linha.indisponivel}</p>
                 ) : (
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap gap-x-10 gap-y-3">
-                      {linha.bruto !== null && (
-                        <div>
-                          <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                            bruto
-                          </p>
-                          <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                            {linha.bruto}
-                          </p>
-                        </div>
-                      )}
-                      {linha.z !== null && (
-                        <div>
-                          <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                            z
-                          </p>
-                          <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                            {zFormatado(linha.z)}
-                          </p>
-                        </div>
-                      )}
-                      {linha.faixa && (
-                        <div>
-                          <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-                            faixa percentílica
-                          </p>
-                          <p className="text-pp-ink text-2xl font-medium tabular-nums leading-tight">
-                            {linha.faixa}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {linha.classificacao && (
-                      <span className="inline-block max-w-full break-words bg-pp-block-lilac text-pp-ink px-4 py-2 rounded-pill text-sm font-medium print:border print:border-pp-ink">
-                        {linha.classificacao}
-                      </span>
-                    )}
-                  </div>
+                  // Mesmo desenho da tela de correção e do histórico: as
+                  // medidas numa linha e a classificação como última
+                  // coluna. As COLUNAS continuam sendo as do FDT — bruto, z
+                  // e faixa percentílica —, e continuam vindo de
+                  // `blocosFdt`. O que se compartilha é a apresentação; o
+                  // FDT não virou instrumento comum por desenhar igual.
+                  <ResultadoMetricas
+                    metricas={celulasDaLinhaFdt(linha)}
+                    classificacao={linha.classificacao}
+                  />
                 )}
               </article>
             ))}

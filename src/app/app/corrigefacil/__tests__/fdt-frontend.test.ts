@@ -37,6 +37,7 @@ import {
   fdtParaTexto,
   MEDIDAS_ERRO,
   MEDIDAS_TEMPO,
+  celulasDaLinhaFdt,
   zFormatado,
 } from '@/lib/corrigefacil/fdt-derivado';
 import {
@@ -854,9 +855,36 @@ describe('FDT · o z na tela', () => {
     expect(zFormatado(Number.POSITIVE_INFINITY)).toBeNull();
   });
 
+  /** Uma linha pronta, com z de verdade — a mesma que `blocosFdt` monta. */
+  const LINHA_COM_Z = {
+    code: 'T_LEITURA',
+    nome: 'Leitura',
+    bruto: 35,
+    z: 0.13846153846153825,
+    faixa: 'P25 a P75',
+    classificacao: 'Média',
+    indisponivel: null,
+  };
+
   it('a tela e o histórico usam o formatador, e não o número cru', () => {
-    expect(FDT_COMPONENTE).toContain('{zFormatado(linha.z)}');
+    // O componente passou a montar as colunas por `celulasDaLinhaFdt`, e é
+    // LÁ que `zFormatado` roda — o caminho ganhou um passo, e o passo é
+    // testado: o que não pode existir é o z cru chegando à tela.
+    expect(FDT_COMPONENTE).toContain('celulasDaLinhaFdt(linha)');
     expect(FDT_COMPONENTE).not.toContain('{linha.z}');
+    expect(FDT_DERIVADO_FONTE).toContain('const z = zFormatado(linha.z);');
+    expect(celulasDaLinhaFdt(LINHA_COM_Z)).toContainEqual({
+      rotulo: 'z',
+      texto: '0,14',
+      complemento: null,
+    });
+  });
+
+  it('coluna de z só existe quando há z que se escreva', () => {
+    // o filtro é o TEXTO, não o número: z não finito não deixa rótulo com
+    // nada embaixo
+    const semZ = { ...LINHA_COM_Z, z: Number.NaN };
+    expect(celulasDaLinhaFdt(semZ).some((c) => c.rotulo === 'z')).toBe(false);
   });
 
   it('o documento usa o MESMO formatador', () => {
