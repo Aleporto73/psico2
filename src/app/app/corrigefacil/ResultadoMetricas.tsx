@@ -64,9 +64,11 @@ export function ResultadoMetricas({
       ))}
 
       {classe && (
-        // `min-w-0` no container e `break-words` na pílula: sem os dois, um
-        // rótulo longo estoura a largura do card em vez de quebrar.
-        <div className="min-w-0">
+        // A classificação ganha um respiro extra só a partir de telas
+        // médias. Assim escore e significado continuam no mesmo bloco,
+        // mas não parecem colados; no mobile o espaço adicional desaparece
+        // e o wrap segue natural. `min-w-0` + `break-words` impedem overflow.
+        <div className="min-w-0 md:ml-4">
           <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
             classificação
           </p>
