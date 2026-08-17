@@ -110,6 +110,36 @@ export type LinhaFdt = {
 
 export type BlocoFdt = { titulo: string; nota: string; linhas: LinhaFdt[] };
 
+/** O z como o profissional lê: duas casas, vírgula decimal.
+ *
+ *  FORMATAÇÃO, e só. O número guardado continua sendo o que o servidor
+ *  mandou — `LinhaFdt.z` segue com o valor integral, e é ele que qualquer
+ *  comparação usa. O que esta função devolve é texto para a tela.
+ *
+ *  Existe porque o z do servidor chega com a precisão da divisão:
+ *  0.13846153846153825 impresso cru ocupa a linha inteira e sugere uma
+ *  exatidão que a medida não tem. Duas casas é a régua em que a
+ *  controladora escreve o z, e é a mesma dos outros números da tela.
+ *
+ *  Uma função só, usada pela tela, pelo histórico e pelo documento: duas
+ *  formatações independentes divergiriam na primeira casa de arredondamento,
+ *  e a mesma avaliação sairia com um z na tela e outro no PDF.
+ *
+ *  `-0,00` não é impresso. Ele aparece quando o z é negativo e minúsculo, e
+ *  parece defeito sem dizer nada que `0,00` não diga.
+ *
+ *  Null continua null: sem z — DP zero na faixa, por exemplo — não há o que
+ *  formatar, e inventar "0,00" afirmaria uma medida que não existe. */
+export function zFormatado(z: number | null | undefined): string | null {
+  if (typeof z !== 'number' || !Number.isFinite(z)) return null;
+  const texto = z.toFixed(CASAS_DO_Z);
+  return (texto === '-0.00' ? '0.00' : texto).replace('.', ',');
+}
+
+/** Duas casas: é como a controladora escreve o z, e como o produto já
+ *  escreve os outros decimais (ver `metricas-instrumento`). */
+const CASAS_DO_Z = 2;
+
 /** O derivado do FDT, quando existe.
  *
  *  Devolve null para: instrumento sem `derived`, FDT cuja idade caiu fora
