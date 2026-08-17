@@ -515,13 +515,21 @@ describe('página interna de venda do CorrigeFácil', () => {
     expect(vitrine()).not.toContain('href');
     expect(vitrine()).not.toContain('/avaliar/');
     expect(vitrine()).not.toContain('Aplicar');
-    // a tela não monta rota de aplicação em lugar nenhum
+    // a tela não escreve rota de aplicação à mão: a base vem do modelo do
+    // catálogo, que é o único lugar que diz onde se aplica um instrumento
     expect(LOCKED).not.toContain('/app/corrigefacil/avaliar');
-    // e o ÚNICO Link do arquivo é o do Relatórios Pró — se aparecer um
-    // segundo, alguém abriu um caminho novo sem passar por aqui
+    expect(LOCKED).toContain("import { BASE_APLICAR } from './catalog-view'");
+  });
+
+  it('são DOIS Links, e cada um tem dono conhecido', () => {
+    // Se aparecer um terceiro, alguém abriu um caminho novo sem passar por
+    // aqui — que é exatamente o que esta trava existe para pegar.
     const links = LOCKED.match(/<Link\b/g) ?? [];
-    expect(links).toHaveLength(1);
+    expect(links).toHaveLength(2);
     expect(LOCKED).toContain('href={ROTA_RELATORIOS_PRO}');
+    expect(LOCKED).toContain(
+      'href={`${BASE_APLICAR}/${INSTRUMENTO_GRATUITO}`}',
+    );
   });
 
   it('a lista de instrumentos vem da fonte soberana, não de cópia local', () => {
