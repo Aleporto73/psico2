@@ -211,13 +211,22 @@ describe('navegação', () => {
     const AVALIAR_PAGE = semComentarios(
       ler('app/app/corrigefacil/avaliar/[code]/page.tsx'),
     );
-    for (const fonte of [PAGE, AVALIAR_PAGE]) {
-      expect(fonte).toContain('temAcessoCorrigeFacil');
-    }
+    // As duas continuam perguntando o direito do PRODUTO ao mesmo módulo.
+    // A raiz usa o wrapper booleano; a rota de aplicação usa a versão
+    // tri-state, porque só ela precisa distinguir 'negado' de 'erro' — mas
+    // as duas perguntam a mesma coisa, no mesmo lugar.
+    expect(PAGE).toContain('temAcessoCorrigeFacil');
+    expect(AVALIAR_PAGE).toContain('consultarAcessoCorrigeFacil');
+
     expect(PAGE).toContain('if (!temAcesso)');
     expect(PAGE).toContain('<CorrigeFacilLocked />');
     // o catálogo funcional segue atrás do gate
     expect(PAGE).toContain('<CorrigeFacilCatalogClient />');
+
+    // e a rota de aplicação continua caindo na página de venda quando o
+    // direito não é confirmado — inclusive quando o banco não respondeu
+    expect(AVALIAR_PAGE).toContain("produto === 'erro'");
+    expect(AVALIAR_PAGE).toContain('<CorrigeFacilLocked />');
   });
 });
 

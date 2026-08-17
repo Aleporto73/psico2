@@ -177,10 +177,10 @@ function CorpoDoItem({
 export function AvaliarClient({
   code,
   modoDemo,
-}: {
+}: Readonly<{
   code: string;
   modoDemo: boolean;
-}) {
+}>) {
   const [instrumento, setInstrumento] = useState<FaseInstrumento>({ fase: 'carregando' });
   const [estado, setEstado] = useState<EstadoFormulario>(estadoInicial);
   const [enviando, setEnviando] = useState(false);
@@ -895,7 +895,7 @@ function ResultadoCorrecao({
   salvamento,
   onSalvar,
   modoDemo,
-}: {
+}: Readonly<{
   resposta: RespostaCorrecao;
   detalhe: InstrumentoDetalhe;
   onCorrigirNovamente: () => void;
@@ -903,7 +903,7 @@ function ResultadoCorrecao({
   salvamento: EstadoSalvamento;
   onSalvar: () => Promise<string | null>;
   modoDemo: boolean;
-}) {
+}>) {
   // O FDT desenha as dez medidas no bloco próprio, e não na grade: a
   // classificação dele não sai em `resultados` (ver FdtDerivado), e as duas
   // apresentações lado a lado seriam a mesma lista duas vezes. Os outros 20

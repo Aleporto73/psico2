@@ -24,8 +24,10 @@ vi.mock('@/utils/supabase/server', () => ({
 }));
 
 import {
+  consultarAcessoCorrigeFacil,
   RPC_ACESSO,
   RPC_ACESSO_INSTRUMENTO,
+  temAcessoCorrigeFacil,
   temAcessoInstrumentoCorrigeFacil,
   type ClienteDeAcesso,
 } from '../../../access';
@@ -61,6 +63,7 @@ const RAIZ = source('app/app/corrigefacil/page.tsx');
 function clienteDuplo(opts: {
   user?: { id: string } | null;
   produto?: unknown;
+  erroProduto?: unknown;
   instrumento?: unknown;
   erroInstrumento?: unknown;
   lancar?: unknown;
@@ -79,7 +82,7 @@ function clienteDuplo(opts: {
     rpc: async (fn: string, args: Record<string, unknown>) => {
       chamadas.push({ fn, args });
       if (fn === RPC_ACESSO) {
-        return { data: opts.produto ?? null, error: null };
+        return { data: opts.produto ?? null, error: opts.erroProduto ?? null };
       }
       if (fn === RPC_ACESSO_INSTRUMENTO) {
         return {
@@ -187,6 +190,114 @@ describe('gate por instrumento', () => {
 // 3 · FAIL-CLOSED
 // ---------------------------------------------------------------------
 
+// ---------------------------------------------------------------------
+// 2b · NEGADO NÃO É ERRO
+//
+// A regressão que estes testes trancam: a função por instrumento também
+// devolve true para quem tem o produto. Se a primeira pergunta colapsar
+// "não tem" e "não deu para saber" no mesmo false, um erro transitório
+// manda o COMPRADOR para a segunda porta — e ela o deixa passar, como
+// demonstração. Ele perderia o painel de relatórios e receberia oferta
+// para comprar o que já comprou.
+// ---------------------------------------------------------------------
+
+describe('erro na pergunta do produto não vira demonstração', () => {
+  it('4) erro no produto + instrumento liberado: página de venda', async () => {
+    mocks.clientRef.current = clienteDuplo({
+      erroProduto: { message: 'connection reset' },
+      instrumento: true,
+    });
+    const el = await AvaliarPage({ params: params('FDT') });
+    expect(el.type).toBe(CorrigeFacilLocked);
+    expect(el.type).not.toBe(AvaliarClient);
+  });
+
+  it('5) e a segunda RPC NÃO chega a ser feita', async () => {
+    const c = clienteDuplo({
+      erroProduto: { message: 'connection reset' },
+      instrumento: true,
+    });
+    mocks.clientRef.current = c;
+    await AvaliarPage({ params: params('FDT') });
+    expect(c.chamadas.map((x) => x.fn)).toEqual([RPC_ACESSO]);
+  });
+
+  it('6) exceção de rede na primeira pergunta: locked, sem segunda RPC', async () => {
+    const c = clienteDuplo({ lancar: new TypeError('fetch failed') });
+    mocks.clientRef.current = c;
+    const el = await AvaliarPage({ params: params('FDT') });
+    expect(el.type).toBe(CorrigeFacilLocked);
+    expect(c.chamadas).toHaveLength(0);
+  });
+
+  it('8) truthy inesperado é NEGADO, não erro: segue para o instrumento', async () => {
+    // Distinção fina e proposital: um `data` estranho é resposta ruim do
+    // banco, não falha técnica. Ele nega o produto — e o caminho gratuito
+    // continua valendo, porque a pergunta FOI respondida.
+    for (const valor of ['true', 1, {}, 'FDT']) {
+      const c = clienteDuplo({ produto: valor, instrumento: true });
+      mocks.clientRef.current = c;
+      const el = await AvaliarPage({ params: params('FDT') });
+      expect(el.type, JSON.stringify(valor)).toBe(AvaliarClient);
+      expect(el.props.modoDemo, JSON.stringify(valor)).toBe(true);
+      expect(c.chamadas.map((x) => x.fn)).toEqual([
+        RPC_ACESSO,
+        RPC_ACESSO_INSTRUMENTO,
+      ]);
+    }
+  });
+
+  it('o tri-state distingue os três casos na origem', async () => {
+    expect(
+      await consultarAcessoCorrigeFacil(clienteDuplo({ produto: true })),
+    ).toBe('permitido');
+    expect(
+      await consultarAcessoCorrigeFacil(clienteDuplo({ produto: false })),
+    ).toBe('negado');
+    expect(
+      await consultarAcessoCorrigeFacil(clienteDuplo({ produto: null })),
+    ).toBe('negado');
+    expect(
+      await consultarAcessoCorrigeFacil(clienteDuplo({ produto: 'true' })),
+    ).toBe('negado');
+    expect(
+      await consultarAcessoCorrigeFacil(clienteDuplo({ user: null })),
+    ).toBe('negado');
+    expect(
+      await consultarAcessoCorrigeFacil(
+        clienteDuplo({ erroProduto: { message: 'boom' } }),
+      ),
+    ).toBe('erro');
+    expect(
+      await consultarAcessoCorrigeFacil(
+        clienteDuplo({ lancar: new TypeError('fetch failed') }),
+      ),
+    ).toBe('erro');
+  });
+
+  it('o wrapper booleano continua fail-closed para a página raiz', async () => {
+    // A raiz não ganhou tri-state: só 'permitido' abre, e erro fecha.
+    expect(await temAcessoCorrigeFacil(clienteDuplo({ produto: true }))).toBe(true);
+    expect(await temAcessoCorrigeFacil(clienteDuplo({ produto: false }))).toBe(false);
+    expect(
+      await temAcessoCorrigeFacil(clienteDuplo({ erroProduto: { message: 'x' } })),
+    ).toBe(false);
+
+    mocks.clientRef.current = clienteDuplo({ erroProduto: { message: 'x' } });
+    const el = await CorrigeFacilPage();
+    expect(el.type).toBe(CorrigeFacilLocked);
+  });
+
+  it('9) NEXT_REDIRECT continua sendo relançado pelo tri-state', async () => {
+    const sinal = Object.assign(new Error('NEXT_REDIRECT'), {
+      digest: 'NEXT_REDIRECT;replace;/entrar;307;',
+    });
+    await expect(
+      consultarAcessoCorrigeFacil(clienteDuplo({ lancar: sinal })),
+    ).rejects.toBe(sinal);
+  });
+});
+
 describe('fail-closed na autorização por instrumento', () => {
   it('8) usuário ausente bloqueia, e nem consulta', async () => {
     const c = clienteDuplo({ user: null, instrumento: true });
@@ -278,11 +389,25 @@ describe('nenhum literal de instrumento autoriza', () => {
   });
 
   it('a decisão vem das duas RPCs, e de nada mais', () => {
-    expect(PAGINA).toContain('temAcessoCorrigeFacil');
+    expect(PAGINA).toContain('consultarAcessoCorrigeFacil');
     expect(PAGINA).toContain('temAcessoInstrumentoCorrigeFacil');
     expect(CODIGO).toContain(
       "export const RPC_ACESSO_INSTRUMENTO = 'can_access_corrigefacil_instrument'",
     );
+  });
+
+  it('a rota usa o tri-state, e trata os três casos', () => {
+    // O booleano fail-closed NÃO serve aqui: ele colapsaria 'negado' e
+    // 'erro', e o comprador entraria como demonstração num erro transitório.
+    expect(PAGINA).toContain("produto === 'permitido'");
+    expect(PAGINA).toContain("produto === 'erro'");
+    expect(PAGINA).not.toContain('await temAcessoCorrigeFacil');
+
+    // e o ramo de erro fecha ANTES da segunda pergunta
+    const posErro = PAGINA.indexOf("produto === 'erro'");
+    const posInstrumento = PAGINA.indexOf('temAcessoInstrumentoCorrigeFacil(');
+    expect(posErro).toBeGreaterThan(-1);
+    expect(posErro).toBeLessThan(posInstrumento);
   });
 
   it('não existe fallback que abra por código quando a RPC falha', () => {
