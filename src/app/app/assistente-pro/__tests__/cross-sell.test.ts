@@ -7,10 +7,11 @@ import { temAcessoCorrigeFacil, RPC_ACESSO, type ClienteDeAcesso } from '../../c
 // fonte já usado em corrigefacil/__tests__ (o Vitest deste repositório roda
 // em `node`, sem DOM).
 //
-// O que elas protegem é COMERCIAL e, sobretudo, de EXPOSIÇÃO. A página passou
-// a citar o CorrigeFácil para vender o fluxo conjunto — e o CorrigeFácil está
-// em fase de testes, escondido do menu para quem não tem direito. Esta página
-// não pode virar a porta dos fundos dessa decisão.
+// O que elas protegem é COMERCIAL e, sobretudo, de EXPOSIÇÃO. A página cita o
+// CorrigeFácil para vender o fluxo conjunto. O produto já é público — aparece
+// no menu para todos —, mas o DIREITO de usá-lo continua sendo pago: esta
+// página não pode virar a porta dos fundos do gate nem oferecer o produto a
+// quem já o tem.
 
 const RAIZ = join(process.cwd(), 'src');
 const ler = (caminho: string) => readFileSync(join(RAIZ, caminho), 'utf8');
@@ -28,7 +29,7 @@ const frases = (fonte: string) => fonte.replace(/\s+/g, ' ');
 const PAGINA = semComentarios(ler('app/app/assistente-pro/page.tsx'));
 const TEXTO = frases(PAGINA);
 const APPSHELL = semComentarios(ler('app/app/AppShell.tsx'));
-const LAYOUT = semComentarios(ler('app/app/layout.tsx'));
+const ROTA_CORRIGEFACIL = semComentarios(ler('app/app/corrigefacil/page.tsx'));
 
 /** Recorte do ramo SEM direito ao CorrigeFácil dentro de `copyIntegracao`.
  *  É o texto que chega a quem não tem o produto. */
@@ -147,8 +148,9 @@ describe('Relatórios Pró — o CorrigeFácil em fase de testes não vaza', () 
     expect(PAGINA).not.toContain("rpc('has_corrigefacil_access'");
     expect(PAGINA).not.toContain('has_corrigefacil_access');
     expect(PAGINA).not.toContain('products_public');
-    // e o helper continua sendo o mesmo que o layout usa
-    expect(LAYOUT).toContain('temAcessoCorrigeFacil');
+    // e o helper continua sendo o mesmo que a ROTA usa — o layout deixou de
+    // consultá-lo quando o item do menu virou público
+    expect(ROTA_CORRIGEFACIL).toContain('temAcessoCorrigeFacil');
   });
 
   it('4) fail-closed: começa negado e erro não abre o caminho', () => {
@@ -197,15 +199,12 @@ describe('Relatórios Pró — o CorrigeFácil em fase de testes não vaza', () 
     }
   });
 
-  it('5) menu e gate do CorrigeFácil permanecem intocados', () => {
-    // o item do menu continua condicionado ao direito
-    expect(APPSHELL).toContain('hasCorrigeFacilAccess');
-    const semCondicional = APPSHELL.replace(
-      /\.\.\.\(hasCorrigeFacilAccess[\s\S]*?: \[\]\),/g,
-      '',
-    );
-    expect(semCondicional).not.toContain("path: '/app/corrigefacil'");
-    // e esta página não reimplementa nem afrouxa o gate da rota
+  it('5) o gate do CorrigeFácil permanece intocado por esta página', () => {
+    // O item do menu deixou de ser condicionado ao direito: o CorrigeFácil é
+    // público desde a liberação comercial. O que esta página não pode fazer é
+    // reimplementar ou afrouxar o gate da ROTA, que é onde ele mora.
+    expect(APPSHELL).toContain("path: '/app/corrigefacil'");
+    expect(APPSHELL).not.toContain('hasCorrigeFacilAccess');
     expect(PAGINA).not.toContain('CorrigeFacilLocked');
     expect(PAGINA).not.toContain('CorrigeFacilCatalogClient');
   });

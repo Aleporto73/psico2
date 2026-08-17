@@ -31,6 +31,7 @@ const HISTORICO_CLIENT = semComentarios(
 );
 const LOCKED = semComentarios(ler('app/app/corrigefacil/CorrigeFacilLocked.tsx'));
 const LAYOUT = semComentarios(ler('app/app/layout.tsx'));
+const DASHBOARD = semComentarios(ler('app/app/page.tsx'));
 
 describe('salvamento: invariantes de tela', () => {
   it('16) o botão de salvar vive dentro do bloco de resultado', () => {
@@ -135,22 +136,44 @@ describe('navegação', () => {
     }
   });
 
-  // 40) O produto está em FASE DE TESTES e o menu volta a ser condicionado ao
-  // direito: quem não tem `has_corrigefacil_access` não vê o item. A página
-  // interna de venda existe e é boa, mas ela é para teste e para a venda
-  // futura — não para descoberta pública ainda. Esta guarda é o que impede
-  // que uma limpeza de código "solte" o item sem decisão comercial.
-  it('40) o CorrigeFácil no menu depende do direito durante a fase de testes', () => {
-    expect(APPSHELL).toContain('hasCorrigeFacilAccess');
-    // o item vive dentro do spread condicional, não solto na lista
-    const semCondicional = APPSHELL.replace(
-      /\.\.\.\(hasCorrigeFacilAccess[\s\S]*?: \[\]\),/g,
-      '',
+  // 40) A FASE DE TESTES ACABOU. O CorrigeFácil é público: todo usuário
+  // autenticado vê o item, e quem não tem direito cai na página interna de
+  // venda. A guarda inverteu de lado — antes provava que o item estava
+  // escondido, agora prova que nenhum gate cosmético voltou a esconder a
+  // descoberta sem decisão comercial.
+  it('40) o CorrigeFácil no menu aparece para todos, sem gate cosmético', () => {
+    expect(APPSHELL).toContain("path: '/app/corrigefacil'");
+    // o item está solto na lista, não dentro de condicional de acesso
+    expect(APPSHELL).not.toContain('hasCorrigeFacilAccess');
+    // e o AppShell não recebe mais a prop
+    const assinatura = APPSHELL.slice(
+      APPSHELL.indexOf('export function AppShell('),
+      APPSHELL.indexOf('const pathname = usePathname()'),
     );
-    expect(semCondicional).not.toContain("path: '/app/corrigefacil'");
+    expect(assinatura).toContain('hasDocStudioAccess');
+    expect(assinatura).not.toContain('CorrigeFacil');
   });
 
-  it('40a) quando aparece, fica em Ferramentas upgrade depois de Pró e Flow', () => {
+  // 40-selo) O `Novo` verde é único no menu. Três itens com selo ao mesmo
+  // tempo é o mesmo que selo nenhum, e o CorrigeFácil é o lançamento da fase.
+  it('40-selo) o Novo do menu é só do CorrigeFácil, no verde padrão', () => {
+    const itens =
+      APPSHELL.match(/\{ name: '[^']+', path: '[^']+'[^}]*\}/g) ?? [];
+    const comSelo = itens.filter((item) => item.includes("badge: 'Novo'"));
+    expect(comSelo).toHaveLength(1);
+    expect(comSelo[0]).toContain("path: '/app/corrigefacil'");
+    // verde é o default de badgeClass: o item não pede tom nenhum
+    expect(comSelo[0]).not.toContain('badgeTone');
+    expect(APPSHELL).toContain("'bg-green-500 text-white'");
+    // e os três vizinhos que tinham selo não têm mais
+    for (const rota of ['/app/doc-studio', '/app/assistente-pro', '/app/flow']) {
+      const item = itens.find((i) => i.includes(`path: '${rota}'`));
+      expect(item, rota).toBeDefined();
+      expect(item, rota).not.toContain('badge');
+    }
+  });
+
+  it('40a) fica em Ferramentas upgrade, depois de Pró e Flow', () => {
     const grupo = APPSHELL.slice(
       APPSHELL.indexOf("label: 'Ferramentas upgrade'"),
       APPSHELL.indexOf('{ separatorBefore: true, items: ['),
@@ -163,18 +186,19 @@ describe('navegação', () => {
     expect(corrige).toBeGreaterThan(flow);
   });
 
-  it('40b) o direito vem do helper único, não de regra reescrita no layout', () => {
-    expect(LAYOUT).toContain('temAcessoCorrigeFacil');
-    // nada de consultar compra ou entitlement à mão
+  it('40b) o layout não paga mais consulta de acesso só para pintar o menu', () => {
+    // O item é público, então não há nada a resolver: a consulta global saiu
+    // de TODAS as páginas de /app. Ela sobrevive onde é gate de verdade.
+    expect(LAYOUT).not.toContain('temAcessoCorrigeFacil');
+    expect(LAYOUT).not.toContain('has_corrigefacil_access');
+    // nada de reimplementar entitlement à mão como substituto
     expect(LAYOUT).not.toContain("from('purchases')");
-    expect(LAYOUT).not.toContain('has_corrigefacil_access =');
     // e o Doc Studio continua sendo resolvido do lado dele
     expect(LAYOUT).toContain('has_doc_studio_access');
   });
 
-  it('40c) o layout é fail-closed: erro não revela o item', () => {
+  it('40c) o layout segue fail-closed no acesso que ainda resolve', () => {
     const captura = LAYOUT.split('catch (err)')[1] ?? '';
-    expect(captura).toContain('hasCorrigeFacilAccess = false');
     expect(captura).toContain('hasDocStudioAccess = false');
     expect(captura).toContain('unstable_rethrow');
   });
@@ -194,6 +218,58 @@ describe('navegação', () => {
     expect(PAGE).toContain('<CorrigeFacilLocked />');
     // o catálogo funcional segue atrás do gate
     expect(PAGE).toContain('<CorrigeFacilCatalogClient />');
+  });
+});
+
+// ── Dashboard: o CorrigeFácil ocupa um dos três lugares nobres ──────────
+describe('Dashboard anuncia o CorrigeFácil', () => {
+  /** Recorte da grade dos três cards principais. */
+  const grade = () =>
+    DASHBOARD.slice(
+      DASHBOARD.indexOf('grid grid-cols-1 md:grid-cols-3'),
+      DASHBOARD.indexOf('PsicoPlanilhas Flow'),
+    );
+
+  it('41) o card central é o CorrigeFácil e leva para a rota', () => {
+    const cards = grade();
+    expect(cards).toContain('CorrigeFácil');
+    expect(cards).toContain('href="/app/corrigefacil"');
+    expect(cards).toContain('Acessar CorrigeFácil');
+  });
+
+  it('41a) o Assistente GPT não ocupa mais um dos três cards', () => {
+    expect(grade()).not.toContain('Assistente GPT');
+    // e os dois vizinhos que ficaram continuam de pé
+    expect(grade()).toContain('Minhas Planilhas');
+    expect(grade()).toContain('Assistente de Relatórios IA');
+  });
+
+  it('41b) a rota do Assistente GPT não foi apagada do projeto', () => {
+    // Trocar o card NÃO era remover o produto: a página existe e o menu
+    // continua levando a ela pelo grupo Ferramentas incluídas.
+    expect(() => ler('app/app/assistente-gpt/page.tsx')).not.toThrow();
+    expect(APPSHELL).toContain("path: '/app/assistente-gpt'");
+  });
+
+  it('41c) o card do CorrigeFácil não escreve preço nenhum', () => {
+    // O preço do CorrigeFácil vem do catálogo e só aparece na página de
+    // venda. O R$57/ano do card vizinho é do Assistente IA Pro — outro
+    // produto, copy antiga — então a varredura é ESCOPADA a este card.
+    const cards = grade();
+    const inicio = cards.indexOf('<ClipboardCheck');
+    const card = cards.slice(inicio, cards.indexOf('</article>', inicio));
+    expect(inicio).toBeGreaterThan(-1);
+    expect(card).toContain('CorrigeFácil');
+    expect(card).not.toMatch(/R\$\s*\d/);
+    expect(card).not.toContain('57');
+  });
+
+  it('41d) o Dashboard não reimplementa a regra comercial do módulo', () => {
+    // Quem decide entre catálogo e venda é /app/corrigefacil. Um segundo
+    // lugar consultando o direito é um segundo lugar para ele divergir.
+    expect(DASHBOARD).not.toContain('has_corrigefacil_access');
+    expect(DASHBOARD).not.toContain('temAcessoCorrigeFacil');
+    expect(DASHBOARD).not.toContain('CorrigeFacilLocked');
   });
 });
 

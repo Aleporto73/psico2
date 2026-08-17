@@ -11,10 +11,10 @@ import { CorrigeFacilLocked } from './CorrigeFacilLocked';
 // A consulta acontece AQUI e só aqui. Não entra no layout: uma verificação
 // global sobrecarregaria todas as páginas de /app para atender uma rota.
 //
-// A rota não aparece no AppShell nesta etapa. Ela existe, responde e é
-// navegável por URL, mas não é anunciada enquanto a Edge não estiver em
-// produção, o produto não estiver cadastrado e as telas de aplicação não
-// estiverem integradas.
+// A rota é anunciada no AppShell para TODO usuário autenticado e tem card
+// próprio no Dashboard. Isso é descoberta, não autorização: a decisão entre
+// catálogo e página de venda continua sendo tomada aqui, no servidor, a cada
+// requisição.
 export default async function CorrigeFacilPage() {
   const supabase = await createClient();
   const temAcesso = await temAcessoCorrigeFacil(
