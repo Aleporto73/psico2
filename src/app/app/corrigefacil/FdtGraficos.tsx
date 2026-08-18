@@ -34,6 +34,7 @@
 // =====================================================================
 
 import {
+  fracaoDoTick,
   ORDEM_CLASSIFICACAO_TEMPO,
   NOTA_PERFIL,
   SUBTITULO_ERROS_TAREFA,
@@ -259,11 +260,37 @@ export function ErrosPorTarefaFdt({
       {/* O eixo começa em zero e vai até a maior contagem presente. As
           marcas são INTEIRAS: erro é contagem, e meia marca sugeriria meio
           erro. `pr-11` desconta a coluna do valor, para as marcas caírem
-          debaixo da barra e não debaixo do número. */}
-      <div className="flex justify-between text-[11px] text-pp-ink-soft tabular-nums pr-11">
-        {dados.ticks.map((t) => (
-          <span key={t}>{t}</span>
-        ))}
+          debaixo da barra e não debaixo do número.
+
+          CADA MARCA FICA NA PRÓPRIA FRAÇÃO, e não em espaços iguais. As
+          marcas nem sempre são equidistantes: com topo ímpar elas são
+          0, ceil(topo/2) e topo — em topo 7, 0, 4 e 7 —, e espaçá-las
+          igualmente punha o 4 em 50% enquanto a barra de 4 termina em
+          57,14%. A marca deixava de marcar a barra.
+
+          Os extremos encostam nas pontas em vez de centrarem sobre elas:
+          centrado, metade do glifo do 0 cairia fora do trilho à esquerda.
+          As de dentro ficam centradas na posição exata que marcam. */}
+      <div className="pr-11">
+        <div className="relative h-4 text-[11px] text-pp-ink-soft tabular-nums">
+          {dados.ticks.map((t) => (
+            <span
+              key={t}
+              className="absolute top-0"
+              style={{
+                left: `${fracaoDoTick(t, dados.topo) * 100}%`,
+                transform:
+                  t === 0
+                    ? 'translateX(0)'
+                    : t === dados.topo
+                      ? 'translateX(-100%)'
+                      : 'translateX(-50%)',
+              }}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
       </div>
     </Cartao>
   );

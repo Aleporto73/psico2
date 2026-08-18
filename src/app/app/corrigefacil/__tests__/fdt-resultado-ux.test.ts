@@ -40,6 +40,7 @@ import {
   colunasDaLinhaFdt,
   degrauDaClassificacao,
   errosPorTarefaFdt,
+  fracaoDoTick,
   MEDIDAS_ERRO,
   MEDIDAS_TEMPO,
   NOTA_PERFIL,
@@ -520,6 +521,73 @@ describe('19 · FDT · Erros por tarefa', () => {
     expect(todosZero.topo).toBe(1);
     expect(todosZero.barras.every((b) => b.fracao === 0)).toBe(true);
     expect(todosZero.barras.every((b) => b.bruto === 0)).toBe(true);
+  });
+
+  it('a marca do eixo cai na fração dela — topo 7 põe o 4 em 57,14%, não em 50%', () => {
+    // A REGRESSÃO: as marcas eram distribuídas em espaços iguais, o que
+    // supõe que elas são equidistantes. Com topo ímpar elas não são.
+    const topo = 7;
+    const eixo = errosPorTarefaFdt(
+      blocosFdt(
+        'FDT',
+        {
+          medidas: {
+            E_LEITURA: { bruto: 7, faixa_percentilica: null, classificacao: 'Deficitário' },
+            E_CONTAGEM: { bruto: 4, faixa_percentilica: null, classificacao: 'Média inferior' },
+          },
+          derivadas: {},
+        },
+        { E_LEITURA: res(7, null), E_CONTAGEM: res(4, null) },
+      ),
+    )!;
+    expect(eixo.topo).toBe(topo);
+    expect(eixo.ticks).toEqual([0, 4, 7]);
+
+    // a marca do meio NÃO fica na metade
+    expect(fracaoDoTick(4, topo)).not.toBe(0.5);
+    expect(fracaoDoTick(4, topo)).toBeCloseTo(0.5714285714, 9);
+    expect(fracaoDoTick(0, topo)).toBe(0);
+    expect(fracaoDoTick(7, topo)).toBe(1);
+
+    // E O PONTO: a marca cai exatamente onde a barra daquele valor
+    // termina. Uma régua cuja marca não marca a barra é pior que nenhuma.
+    const barra4 = eixo.barras.find((b) => b.code === 'E_CONTAGEM')!;
+    expect(barra4.fracao).toBe(fracaoDoTick(4, topo));
+    const barra7 = eixo.barras.find((b) => b.code === 'E_LEITURA')!;
+    expect(barra7.fracao).toBe(fracaoDoTick(7, topo));
+
+    // o desenho usa a função, e não mais espaços iguais
+    expect(GRAFICOS).toContain('fracaoDoTick(t, dados.topo)');
+    expect(GRAFICOS).not.toContain('justify-between text-[11px]');
+  });
+
+  it('a marca e a barra concordam em todo topo, par ou ímpar', () => {
+    // o erro só aparecia com topo ímpar acima de seis, o que o tornava
+    // fácil de não notar: em topo 8 espaço igual e fração coincidem
+    for (const topo of [1, 2, 3, 5, 6, 7, 8, 9, 11, 12, 25]) {
+      const eixo = errosPorTarefaFdt(
+        blocosFdt(
+          'FDT',
+          {
+            medidas: {
+              E_LEITURA: { bruto: topo, faixa_percentilica: null, classificacao: 'Média' },
+            },
+            derivadas: {},
+          },
+          { E_LEITURA: res(topo, null) },
+        ),
+      )!;
+      expect(eixo.topo).toBe(topo);
+      for (const t of eixo.ticks) {
+        const f = fracaoDoTick(t, topo);
+        expect(f).toBeCloseTo(t / topo, 12);
+        expect(f).toBeGreaterThanOrEqual(0);
+        expect(f).toBeLessThanOrEqual(1);
+      }
+    }
+    // topo inválido não devolve Infinity para dentro do estilo
+    expect(fracaoDoTick(3, 0)).toBe(0);
+    expect(fracaoDoTick(3, Number.NaN)).toBe(0);
   });
 
   it('18 · a classificação vem do servidor e não é recalculada', () => {

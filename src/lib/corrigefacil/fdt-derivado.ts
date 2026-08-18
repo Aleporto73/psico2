@@ -551,10 +551,34 @@ export type ErrosPorTarefa = {
 
 /** As marcas do eixo para um topo inteiro. Poucas medidas e contagens
  *  baixas: até seis, todas as marcas; acima disso, três, para o eixo não
- *  virar uma régua de milímetros. */
+ *  virar uma régua de milímetros.
+ *
+ *  A marca do meio é `ceil(topo/2)`, e com topo ÍMPAR ela não cai na
+ *  metade: em topo 7 ela é 4, que vale 57,14% do eixo. Quem posiciona é
+ *  `fracaoDoTick`, e é por isso que ela existe. */
 function ticksDoEixo(topo: number): number[] {
   if (topo <= 6) return Array.from({ length: topo + 1 }, (_, i) => i);
   return [0, Math.ceil(topo / 2), topo];
+}
+
+/** ONDE uma marca do eixo fica, de 0 a 1.
+ *
+ *  É a MESMA razão que dá o comprimento da barra — contagem sobre topo —,
+ *  e tem de ser, senão a marca deixa de marcar a barra. Uma barra de 4
+ *  num eixo de topo 7 termina em 57,14%; a marca "4" precisa cair ali.
+ *
+ *  Existe porque distribuir as marcas em espaços iguais é o mesmo que
+ *  supor que elas são equidistantes, e com topo ímpar elas não são: em
+ *  topo 7 as marcas são 0, 4 e 7, e espaçá-las igualmente põe o 4 em 50%
+ *  — sete pontos percentuais à esquerda da barra que ele deveria marcar.
+ *  Com topo par ou até seis o erro não aparece, o que torna a falha
+ *  especialmente fácil de não notar.
+ *
+ *  Topo não positivo devolve 0 para todas: não há eixo a dividir, e
+ *  dividir por zero devolveria Infinity para dentro do estilo. */
+export function fracaoDoTick(tick: number, topo: number): number {
+  if (!Number.isFinite(topo) || topo <= 0) return 0;
+  return Math.min(1, Math.max(0, tick / topo));
 }
 
 /** Erros por tarefa: as quatro condições, na ordem do controlador.
