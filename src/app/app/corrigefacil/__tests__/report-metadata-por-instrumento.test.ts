@@ -208,9 +208,20 @@ describe('hotfix · o gerador não foi contornado', () => {
     expect(GERADOR).toContain(".eq('user_id', userId)");
   });
 
-  it('Relatórios Pró continua exigindo assinatura ativa na rota', () => {
+  it('Relatórios Pró continua sendo o gate da rota', () => {
+    // `not.toContain('billing_origin')` valia enquanto a coluna existia sem
+    // caminho de código. O PR3 ligou o caminho, e a garantia que importa
+    // deixou de ser "a rota não conhece a origem" e passou a ser "a rota
+    // DECIDE a origem, e o cliente não opina" — verificada logo abaixo.
     expect(ROTA).toContain('has_active_assistant');
-    expect(ROTA).not.toContain('billing_origin');
+  });
+
+  it('a origem é decidida no servidor, nunca pelo corpo do request', () => {
+    expect(ROTA).toMatch(
+      /hasActivePro\s*\?\s*'subscription'\s*:\s*'free_demo'/,
+    );
+    expect(ROTA).not.toContain('body.billing_origin');
+    expect(ROTA).not.toContain('body.billingOrigin');
   });
 
   it('os embeds seguem pedindo só metadado de apresentação', () => {

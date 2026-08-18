@@ -242,13 +242,20 @@ describe('PR2 · a aplicação continua exatamente como antes', () => {
   const ROTA = source('src/app/api/assistant/generate/route.ts');
   const GERADOR = source('src/lib/corrigefacil/report-generator.ts');
 
-  it('nenhum caminho de código conhece billing_origin', () => {
-    // É esta a garantia de que a fundação é inerte: sem menção à coluna,
-    // NENHUMA linha 'free_demo' pode ser criada pela aplicação hoje.
+  it('o CLIENTE nunca escolhe a origem', () => {
+    // Enquanto o PR2 era só fundação, a garantia era "nenhum código menciona
+    // a coluna". O PR3 ligou o caminho e a garantia ficou mais forte: o
+    // código conhece a origem, mas ela é DECIDIDA no servidor. O que não
+    // pode existir é o cliente mandando a própria origem no payload.
     for (const fonte of [ROTA, GERADOR]) {
-      expect(fonte).not.toContain('billing_origin');
-      expect(fonte).not.toContain('free_demo');
+      expect(fonte).not.toContain('body.billing_origin');
+      expect(fonte).not.toContain('body.billingOrigin');
+      expect(fonte).not.toContain("body['billing_origin']");
     }
+    // A rota decide por has_active_assistant, e só por isso.
+    expect(ROTA).toMatch(
+      /hasActivePro\s*\?\s*'subscription'\s*:\s*'free_demo'/,
+    );
   });
 
   it('os dois INSERTs continuam omitindo a coluna — e caem no default', () => {
@@ -285,15 +292,21 @@ describe('PR2 · a migration é a única fonte da coluna', () => {
 
   const EU = '20260818120000_ai_reports_billing_origin.sql';
 
-  it('nenhuma outra migration define billing_origin', () => {
-    // Duas definições seriam duas regras com o mesmo nome, e a última a rodar
-    // venceria em silêncio.
+  it('nenhuma outra migration DEFINE billing_origin ou o índice', () => {
+    // CONSUMIR a coluna é esperado — o PR3 a lê nas policies e nas RPCs, e é
+    // assim que a regra fica com um dono só. O que não pode existir é uma
+    // segunda DEFINIÇÃO: aí passariam a ser duas verdades sobre a mesma
+    // coluna, e a última a rodar venceria em silêncio. Mesma distinção que
+    // fdt-free-foundation.test.ts já faz para is_free_demo.
     for (const arquivo of TODAS.filter((f) => f !== EU)) {
       const corpo = semComentarios(
         source(join('supabase/migrations', arquivo)),
       ).toLowerCase();
-      expect(corpo, arquivo).not.toContain('billing_origin');
-      expect(corpo, arquivo).not.toContain('ai_reports_user_free_demo_uidx');
+      expect(corpo, arquivo).not.toContain('add column if not exists billing_origin');
+      expect(corpo, arquivo).not.toContain('drop column billing_origin');
+      expect(corpo, arquivo).not.toContain('add constraint ai_reports_billing_origin_check');
+      expect(corpo, arquivo).not.toContain('create unique index if not exists ai_reports_user_free_demo_uidx');
+      expect(corpo, arquivo).not.toContain('drop index ai_reports_user_free_demo_uidx');
     }
   });
 
