@@ -5,6 +5,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Copy, Sparkles } from 'lucide-react';
 import { createClient } from '@/utils/supabase/client';
+import {
+  acaoAposFalhaDaDemo,
+  decidirCabecalho,
+  decidirOferta,
+  estadoAposReconsultaSemPro,
+  freeDemoStateFromRpc,
+  podeGerarDemo,
+  precisaRecarregarRelatorios,
+  precisaReconsultarGate,
+  type FreeDemoState,
+} from './free-demo-view';
 
 type ReportType = 'family' | 'school' | 'technical' | 'internal';
 
@@ -71,12 +82,77 @@ async function responseMessage(response: Response): Promise<string> {
   }
 }
 
+/**
+ * O gate do Relatório Pró pago — o MESMO endpoint de sempre, agora num
+ * lugar só. Ele é consultado de dois pontos (a montagem da avaliação salva
+ * e o clique em gerar), e duplicar o `fetch` seria duplicar a chance de os
+ * dois divergirem. Continua havendo um gate, e 403 continua sendo o único
+ * sinal de "sem acesso".
+ */
+type AcessoPro =
+  | { tipo: 'ativo'; monthlyCount: number; monthlyLimit: number }
+  | { tipo: 'sem_acesso' }
+  | { tipo: 'erro'; message: string | null };
+
+async function consultarAcessoPro(): Promise<AcessoPro> {
+  try {
+    const response = await fetch('/api/assistant/generate', { method: 'GET' });
+
+    if (response.status === 403) return { tipo: 'sem_acesso' };
+    if (!response.ok) return { tipo: 'erro', message: await responseMessage(response) };
+
+    const body = await response.json();
+    return {
+      tipo: 'ativo',
+      monthlyCount: typeof body.monthly_count === 'number' ? body.monthly_count : 0,
+      monthlyLimit: typeof body.monthly_limit === 'number' ? body.monthly_limit : 50,
+    };
+  } catch {
+    return { tipo: 'erro', message: null };
+  }
+}
+
+/**
+ * A consulta READ-ONLY de status. NÃO reserva, não gera, não consome: a
+ * reserva continua acontecendo só no POST, imediatamente antes da IA.
+ *
+ * Fica fora do componente e DEVOLVE o estado em vez de gravá-lo. Quem decide
+ * o que fazer com a resposta é quem chamou — e é isso que permite ao efeito
+ * de montagem tocar o estado só dentro de callbacks.
+ */
+async function consultarStatusDemo(id: string): Promise<FreeDemoState> {
+  try {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc(
+      'corrigefacil_free_demo_report_status',
+      { assessment_uuid: id },
+    );
+    // Erro NÃO vira `available`: sem resposta do banco a tela não promete
+    // relatório grátis nenhum.
+    return error ? 'error' : freeDemoStateFromRpc(data);
+  } catch {
+    return 'error';
+  }
+}
+
 export function CorrigeFacilReportPanel({
   assessmentId,
   ensureAssessmentId,
+  /** Esta tela é o SEGUNDO contato — a avaliação já salva, reaberta pelo
+   *  histórico —, onde a demonstração gratuita pode ser oferecida.
+   *
+   *  A prop não autoriza nada e não fala de instrumento: quem decide se a
+   *  avaliação é elegível é a RPC, por `is_free_demo`. Testar
+   *  `instrument === 'FDT'` aqui amarraria o funil a um código e quebraria
+   *  no dia em que outro instrumento for marcado como gratuito.
+   *
+   *  Ausente por padrão: a tela do resultado recém-corrigido (AvaliarClient)
+   *  não a passa, e continua exatamente como está. */
+  freeDemoContext = false,
 }: {
   assessmentId: string | null;
   ensureAssessmentId?: () => Promise<string | null>;
+  freeDemoContext?: boolean;
 }) {
   const [resolvedAssessmentId, setResolvedAssessmentId] = useState<string | null>(assessmentId);
   const [access, setAccess] = useState<AccessState>('idle');
@@ -90,6 +166,12 @@ export function CorrigeFacilReportPanel({
   const [reports, setReports] = useState<AiReport[]>([]);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  /** Estado da demonstração gratuita. Nasce em `checking` quando esta é a
+   *  tela do segundo contato: até a consulta responder, a tela não afirma
+   *  nem oferta paga nem gratuidade. */
+  const [demo, setDemo] = useState<FreeDemoState>(
+    freeDemoContext ? 'checking' : 'idle',
+  );
   /** FALLBACK DE ERRO, não uma segunda UX. Só existe quando a IA gerou e o
    *  INSERT em ai_reports falhou: a unidade já foi cobrada, o texto veio na
    *  resposta e não há rota canônica para ele. Some na próxima geração. */
@@ -128,6 +210,96 @@ export function CorrigeFacilReportPanel({
     if (resolvedAssessmentId) void loadReports(resolvedAssessmentId);
   }, [resolvedAssessmentId, loadReports]);
 
+  /** Reconsulta o status a pedido da tela (botões "Verificar novamente" e
+   *  "Tentar novamente", e o reposicionamento depois de uma falha). */
+  const verificarDemo = useCallback(
+    async (id: string) => {
+      setDemo('checking');
+      let estado = await consultarStatusDemo(id);
+
+      if (precisaReconsultarGate(estado)) {
+        // O banco vê Pró ativo e o gate tinha dito 403: provavelmente a
+        // assinatura foi ativada entre as duas consultas. Mostrar checkout a
+        // quem acabou de comprar é o pior desfecho possível.
+        //
+        // UMA reconsulta, e a segunda resposta é final — é isso que impede
+        // o laço.
+        const acesso = await consultarAcessoPro();
+
+        if (acesso.tipo === 'ativo') {
+          setMonthlyCount(acesso.monthlyCount);
+          setMonthlyLimit(acesso.monthlyLimit);
+          setAccess('active');
+          setDemo('use_subscription');
+          return;
+        }
+
+        estado = estadoAposReconsultaSemPro(acesso.tipo);
+      }
+
+      setDemo(estado);
+
+      // A chance já usada pode ter nascido NESTA avaliação — inclusive no
+      // 503, em que o backend não conseguiu confirmar a conclusão. Se ela
+      // aconteceu, o relatório aparece na lista sem exigir reload da página.
+      //
+      // Recarregar é a ação segura; navegar não seria: `already_used` é
+      // vitalício por CONTA, e a chance pode ter sido gasta em outra
+      // avaliação.
+      if (precisaRecarregarRelatorios(estado)) {
+        await loadReports(id);
+      }
+    },
+    [loadReports],
+  );
+
+  /** Na avaliação salva, o estado é descoberto sozinho: o profissional não
+   *  deveria precisar clicar para saber o que a tela tem a oferecer.
+   *
+   *  O gate pago responde primeiro — 200 é assinante e encerra o assunto;
+   *  403 é quem pode ver a demonstração. Só então se consulta o status.
+   *
+   *  Em cadeia de promessas, e não em função async chamada direto: todo
+   *  `setState` daqui acontece dentro de callback, como no efeito de
+   *  DetalheClient. `ativo` evita gravar estado depois de desmontar. */
+  useEffect(() => {
+    if (!freeDemoContext || !resolvedAssessmentId) return;
+
+    const id = resolvedAssessmentId;
+    let ativo = true;
+
+    consultarAcessoPro()
+      .then(async (acesso) => {
+        if (!ativo) return;
+
+        if (acesso.tipo === 'erro') {
+          setAccess('error');
+          setDemo('error');
+          return;
+        }
+
+        if (acesso.tipo === 'ativo') {
+          setMonthlyCount(acesso.monthlyCount);
+          setMonthlyLimit(acesso.monthlyLimit);
+          setAccess('active');
+          return;
+        }
+
+        // Sem Pró: é aqui que se descobre se há demonstração a oferecer.
+        setAccess('inactive');
+        if (ativo) await verificarDemo(id);
+      })
+      .catch(() => {
+        if (!ativo) return;
+        setAccess('error');
+        setDemo('error');
+      });
+
+    return () => {
+      ativo = false;
+    };
+  }, [freeDemoContext, resolvedAssessmentId, verificarDemo]);
+
   async function resolveAssessment(): Promise<string | null> {
     if (resolvedAssessmentId) return resolvedAssessmentId;
     if (!ensureAssessmentId) return null;
@@ -148,21 +320,27 @@ export function CorrigeFacilReportPanel({
         return;
       }
 
-      const response = await fetch('/api/assistant/generate', { method: 'GET' });
-      if (response.status === 403) {
+      const acesso = await consultarAcessoPro();
+
+      if (acesso.tipo === 'sem_acesso') {
         setAccess('inactive');
         setComposerOpen(false);
+        // Sem Pró na tela do segundo contato: aqui é que se descobre se há
+        // demonstração a oferecer.
+        if (freeDemoContext) await verificarDemo(id);
         return;
       }
-      if (!response.ok) {
+      if (acesso.tipo === 'erro') {
         setAccess('error');
-        setMessage(await responseMessage(response));
+        setMessage(
+          acesso.message ??
+            'Não foi possível verificar o Relatório Pró agora. Tente novamente.',
+        );
         return;
       }
 
-      const body = await response.json();
-      setMonthlyCount(typeof body.monthly_count === 'number' ? body.monthly_count : 0);
-      setMonthlyLimit(typeof body.monthly_limit === 'number' ? body.monthly_limit : 50);
+      setMonthlyCount(acesso.monthlyCount);
+      setMonthlyLimit(acesso.monthlyLimit);
       setAccess('active');
       setComposerOpen(true);
     } catch {
@@ -173,6 +351,11 @@ export function CorrigeFacilReportPanel({
 
   async function generateReport() {
     if (!reportType || generating) return;
+    // Sem demonstração disponível não há POST. `in_progress` e
+    // `indeterminado` são justamente os estados em que gerar de novo
+    // duplicaria trabalho que talvez já esteja em curso — e o backend, que é
+    // quem decide, devolveria `in_progress` de qualquer modo.
+    if (freeDemoContext && access === 'inactive' && !podeGerarDemo(demo)) return;
     setMessage(null);
     // Geração nova zera o resgate anterior: se aquele texto não foi copiado,
     // ele já se perdeu, e mantê-lo na tela ao lado de um relatório novo só
@@ -197,7 +380,12 @@ export function CorrigeFacilReportPanel({
         }),
       });
 
-      if (response.status === 403) {
+      // Fora do fluxo da demonstração, 403 continua sendo só "não tem
+      // acesso" e some sem mensagem — é o gate de sempre. DENTRO dele, um
+      // 403 pode significar coisas muito diferentes (a chance acabou, o
+      // perfil mudou, a avaliação deixou de ser elegível), e engolir a
+      // mensagem esconderia justamente o que o profissional precisa ler.
+      if (response.status === 403 && !freeDemoContext) {
         setAccess('inactive');
         setComposerOpen(false);
         return;
@@ -211,6 +399,23 @@ export function CorrigeFacilReportPanel({
             : 'Não foi possível gerar o relatório agora.',
         );
         if (typeof body?.monthly_count === 'number') setMonthlyCount(body.monthly_count);
+
+        if (freeDemoContext) {
+          setComposerOpen(false);
+          // NUNCA um segundo POST automático, em nenhum dos ramos.
+          //
+          // 503 é o estado indeterminado do backend: ele chamou a IA e não
+          // conseguiu confirmar se a linha ficou concluída. Reconsultar
+          // poderia devolver `available` e a tela convidaria a gerar de novo
+          // algo que talvez já esteja no histórico. Nos demais erros o estado
+          // é conhecível, e perguntar ao banco reposiciona a tela sozinho.
+          if (acaoAposFalhaDaDemo(response.status) === 'indeterminado') {
+            setDemo('indeterminado');
+          } else {
+            const atual = await resolveAssessment();
+            if (atual) await verificarDemo(atual);
+          }
+        }
         return;
       }
 
@@ -234,7 +439,14 @@ export function CorrigeFacilReportPanel({
       setAdditionalNotes('');
       setReportType('');
       setComposerOpen(false);
-      setAccess('active');
+      // A demonstração NÃO transforma a conta em assinante: quem estava sem
+      // Pró continua sem Pró, e a chance passa a estar usada. Nada disso é
+      // gravado no navegador — na volta, o banco volta a ser a verdade.
+      if (freeDemoContext && access === 'inactive') {
+        setDemo('already_used');
+      } else {
+        setAccess('active');
+      }
 
       // O relatório já está gravado e a cota já foi consumida por ESTE POST.
       // Abrir o documento é só navegação — nenhuma segunda requisição, nenhuma
@@ -294,6 +506,21 @@ export function CorrigeFacilReportPanel({
   const actionLabel =
     reports.length > 0 ? 'Gerar outro relatório completo' : 'Gerar relatório completo';
 
+  const oferta = decidirOferta({ access, composerOpen, freeDemoContext, demo });
+  const cabecalho = decidirCabecalho({ access, freeDemoContext, demo });
+
+  async function reverificarDemo() {
+    // A mensagem pertence à tentativa ANTERIOR — inclusive a do 503. Pedir
+    // uma verificação nova a torna passado: deixá-la na tela ao lado do
+    // resultado atualizado diria duas coisas diferentes ao mesmo tempo.
+    //
+    // Só aqui, no pedido manual. Depois de uma geração que falhou, a
+    // mensagem do backend é justamente o que o profissional precisa ler.
+    setMessage(null);
+    const id = await resolveAssessment();
+    if (id) await verificarDemo(id);
+  }
+
   return (
     <section className="space-y-5">
       {reports.length > 0 && (
@@ -352,26 +579,148 @@ export function CorrigeFacilReportPanel({
           <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
             Relatórios Pro
           </p>
-          <h2 className="text-pp-ink text-lg sm:text-xl font-medium leading-snug">
-            Transforme esta avaliação em um relatório profissional.
-          </h2>
-          <p className="text-pp-ink text-sm leading-relaxed max-w-prose">
-            Gere um relatório completo a partir deste resultado, com análise
-            organizada, considerações para o contexto e recomendações prontas
-            para revisar, editar e salvar.
-          </p>
-          <p className="text-pp-ink-soft text-xs leading-relaxed">
-            Ideal para escola, família, equipe multiprofissional ou registro
-            interno.
-          </p>
-          {access === 'active' && monthlyCount !== null && (
-            <p className="text-xs text-pp-ink-soft tabular-nums pt-1">
-              {monthlyCount} de {monthlyLimit} relatórios utilizados neste mês.
-            </p>
+          {cabecalho === 'padrao' && (
+            <>
+              <h2 className="text-pp-ink text-lg sm:text-xl font-medium leading-snug">
+                Transforme esta avaliação em um relatório profissional.
+              </h2>
+              <p className="text-pp-ink text-sm leading-relaxed max-w-prose">
+                Gere um relatório completo a partir deste resultado, com análise
+                organizada, considerações para o contexto e recomendações prontas
+                para revisar, editar e salvar.
+              </p>
+              <p className="text-pp-ink-soft text-xs leading-relaxed">
+                Ideal para escola, família, equipe multiprofissional ou registro
+                interno.
+              </p>
+              {access === 'active' && monthlyCount !== null && (
+                <p className="text-xs text-pp-ink-soft tabular-nums pt-1">
+                  {monthlyCount} de {monthlyLimit} relatórios utilizados neste mês.
+                </p>
+              )}
+            </>
+          )}
+
+          {cabecalho === 'demo_disponivel' && (
+            <>
+              <h2 className="text-pp-ink text-lg sm:text-xl font-medium leading-snug">
+                Experimente o Relatório Pró gratuitamente.
+              </h2>
+              <p className="text-pp-ink text-sm leading-relaxed max-w-prose">
+                Gere 1 relatório profissional a partir desta avaliação e veja
+                como o resultado fica organizado para uso profissional.
+              </p>
+              <p className="text-pp-ink-soft text-xs leading-relaxed">
+                1 relatório gratuito por conta · sem cobrança.
+              </p>
+            </>
+          )}
+
+          {cabecalho === 'demo_ja_usada' && (
+            <>
+              <h2 className="text-pp-ink text-lg sm:text-xl font-medium leading-snug">
+                Você já experimentou o Relatório Pró.
+              </h2>
+              <p className="text-pp-ink text-sm leading-relaxed max-w-prose">
+                Continue transformando suas avaliações em relatórios
+                profissionais.
+              </p>
+            </>
+          )}
+
+          {cabecalho === 'demo_andamento' && (
+            <>
+              <h2 className="text-pp-ink text-lg sm:text-xl font-medium leading-snug">
+                Seu relatório gratuito está sendo processado.
+              </h2>
+              <p className="text-pp-ink text-sm leading-relaxed max-w-prose">
+                Já existe uma geração em andamento. Aguarde alguns instantes
+                antes de tentar novamente.
+              </p>
+            </>
           )}
         </div>
 
-        {access === 'inactive' ? (
+        {/* Blocos mutuamente exclusivos: `decidirOferta` escolhe UM. A
+            decisão mora em free-demo-view.ts, onde pode ser provada caso a
+            caso — e não espalhada em ternários dentro do JSX. */}
+
+        {oferta === 'demo_verificando' && (
+          /* Enquanto a consulta está em voo a tela não afirma nada: nem
+             oferta paga, nem gratuidade. Copy neutra de propósito — ela
+             aparece também para quem tem Pró, por um instante. */
+          <output className="block text-sm text-pp-ink-soft">
+            Verificando seu acesso ao Relatório Pró…
+          </output>
+        )}
+
+        {oferta === 'demo_disponivel' && (
+          /* CTA ÚNICA. O checkout não aparece aqui como concorrente do mesmo
+             peso: a esteira é experimentar → ver valor → comprar, e duas
+             ofertas primárias na mesma tela não convertem nem uma. */
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMessage(null);
+                setComposerOpen(true);
+              }}
+              className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+            >
+              <Sparkles className="w-4 h-4" aria-hidden="true" />
+              Gerar relatório grátis
+            </button>
+            <p className="text-xs text-pp-ink-soft">
+              Edite o texto antes de imprimir ou salvar em PDF.
+            </p>
+          </div>
+        )}
+
+        {oferta === 'demo_andamento' && (
+          /* Verificar NÃO gera e NÃO reserva: só reconsulta o status. */
+          <button
+            type="button"
+            onClick={reverificarDemo}
+            className="rounded-pill border border-pp-ink/15 px-5 py-3 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+          >
+            Verificar novamente
+          </button>
+        )}
+
+        {oferta === 'demo_indeterminado' && (
+          /* O backend não conseguiu confirmar se o relatório ficou pronto.
+             Ele PODE ter ficado. Nenhum POST novo daqui, nenhum checkout
+             imediato, nenhuma conclusão sobre a chance: a mensagem do
+             backend fica na tela e o caminho é verificar. */
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={reverificarDemo}
+              className="rounded-pill border border-pp-ink/15 px-5 py-3 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+            >
+              Verificar novamente
+            </button>
+          </div>
+        )}
+
+        {oferta === 'demo_erro' && (
+          /* FAIL CLOSED: sem resposta do banco, nada de "você ganhou um
+             relatório grátis". */
+          <div className="space-y-2">
+            <p className="text-sm text-pp-ink">
+              Não foi possível verificar sua demonstração gratuita agora.
+            </p>
+            <button
+              type="button"
+              onClick={reverificarDemo}
+              className="rounded-pill border border-pp-ink/15 px-5 py-3 text-sm text-pp-ink hover:border-pp-ink/40 transition"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        )}
+
+        {oferta === 'checkout' && (
           /* SEM ACESSO. Mesmo gate e mesmo checkout de antes — só o rótulo e
              a microcopy mudaram. O plano continua sendo exibido como está
              cadastrado: esta etapa não decide preço. */
@@ -397,7 +746,9 @@ export function CorrigeFacilReportPanel({
               </p>
             </div>
           </div>
-        ) : composerOpen && access === 'active' ? (
+        )}
+
+        {oferta === 'composer' && (
           <div className="space-y-4">
             <fieldset className="space-y-2">
               <legend className="text-sm text-pp-ink font-medium mb-2">
@@ -468,7 +819,9 @@ export function CorrigeFacilReportPanel({
               </button>
             </div>
           </div>
-        ) : (
+        )}
+
+        {oferta === 'padrao' && (
           /* COM ACESSO (e também o estado inicial, antes de o gate responder).
              Mesmo `openGenerator` de sempre: ele salva a avaliação, consulta o
              endpoint único de acesso e abre o compositor. Não há fluxo
