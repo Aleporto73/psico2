@@ -424,6 +424,66 @@ Não recalcule Inibição nem Flexibilidade — elas são diferenças entre cond
 Classificação não é diagnóstico. Não converta "Deficitário", "Média inferior" ou qualquer outro rótulo em transtorno, déficit confirmado, quadro clínico ou conclusão sobre funcionamento executivo.
 `;
 
+/** O PERFIL INTERPRETATIVO do FDT — o que a REGRA_FDT acima não faz.
+ *
+ *  As travas dizem ao modelo o que ele NÃO pode fazer com dez medidas
+ *  fechadas, e fazem isso bem. Nenhuma delas diz o que ele PODE fazer, e o
+ *  resultado é um texto seguro e burocrático: repete classificação, escreve
+ *  "houve variação entre condições", enfileira cautela e produz
+ *  recomendação que serviria para qualquer instrumento.
+ *
+ *  A causa é estrutural. Nos outros 20 instrumentos a leitura conjunta é
+ *  quase automática — poucas escalas, um construto. No FDT há dez medidas
+ *  em duas dimensões (tempo e erro) e três conjuntos com significados
+ *  diferentes, e sem um mapa o modelo trata as dez como uma lista plana.
+ *  Lista plana só comporta duas saídas: recitar a tabela ou generalizar.
+ *
+ *  O que este bloco acrescenta é VOCABULÁRIO e ORDEM DE LEITURA, não
+ *  permissão: o que era proibido continua proibido, e nada aqui abre
+ *  cálculo, classificação, causa, sintoma ou conclusão sobre a pessoa.
+ *  Ele também não pede texto mais longo — o pedido é raciocínio melhor
+ *  dentro do mesmo limite editorial, e por isso ele repete o teto em vez
+ *  de afrouxá-lo.
+ *
+ *  Entra colado na REGRA_FDT e sob o MESMO sinalizador: os dois só existem
+ *  quando a avaliação traz o snapshot do FDT. Com `comFdt` false o prompt
+ *  dos outros instrumentos continua byte a byte o que era — há sha256 dos
+ *  quatro destinos no teste provando isso.
+ *
+ *  Nenhum número entra aqui: nenhuma faixa etária, nenhum ponto empírico,
+ *  nenhum corte e nenhum valor de caso real. O mapa é semântico, e os
+ *  resultados continuam vindo só do bloco congelado. */
+const PERFIL_INTERPRETATIVO_FDT = `
+COMO LER O FDT — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não afrouxa nenhuma trava acima: nada aqui autoriza recalcular, reclassificar, estimar posição, explicar causa ou concluir sobre a pessoa. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra a tabela e não acrescente cautela nova.
+
+O QUE CADA CONDIÇÃO REPRESENTA (vocabulário do instrumento, não característica do avaliado):
+- Leitura e Contagem são as condições mais AUTOMÁTICAS do FDT. Dentro do instrumento elas se relacionam a velocidade de processamento simples e a componentes atencionais automáticos. NÃO converta isso em "atenção prejudicada", "lentidão cognitiva", "problema de processamento", "dificuldade de leitura" nem "dificuldade matemática". O que cabe dizer é que as condições mais automáticas apresentaram determinada classificação, ou que o desempenho nelas se situou em determinada faixa.
+- Escolha é a condição que introduz INTERFERÊNCIA e demanda de controle inibitório. Ela serve para discutir o padrão do FDT: "na condição que introduz demanda de controle inibitório, o resultado situou-se...". NÃO escreva "possui bom controle inibitório" nem "o controle inibitório está preservado" como característica geral da pessoa.
+- Alternância é a condição que introduz MUDANÇA ENTRE REGRAS e demanda de flexibilidade cognitiva. Prefira "na condição de alternância entre regras...". NÃO transforme a tarefa em afirmação global do tipo "é cognitivamente flexível".
+- Inibição e Flexibilidade são ÍNDICES DERIVADOS calculados pelo servidor, e não tarefas cronometradas independentes. Dentro do FDT elas permitem observar o custo relativo associado, respectivamente, à condição que exige controle inibitório e à alternância entre regras. Não as recalcule, não explique por que ficaram altas ou baixas e não as converta em descrição de personalidade, adaptação ou funcionamento cotidiano.
+- Os ERROS são a SEGUNDA dimensão de desempenho do instrumento e são lidos EM PARALELO ao tempo, nunca no lugar dele. É permitido apontar convergência entre as classificações de tempo e de erro, divergência entre elas e distribuição diferente entre as condições. É proibido EXPLICAR a discrepância: nada de "trade-off velocidade-precisão", "impulsividade", "desatenção", "priorizou velocidade", "perdeu precisão" ou "respondeu sem cuidado" — isso é causalidade inventada.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. DISTRIBUIÇÃO — como as classificações recebidas se distribuem: homogêneas, predominantemente baixas, predominantemente médias, predominantemente altas ou heterogêneas. Use somente as classificações existentes.
+2. AGRUPAMENTOS — verifique se os resultados se agrupam entre as condições mais automáticas (Leitura e Contagem), as condições com maior demanda de controle (Escolha e Alternância) e os índices derivados (Inibição e Flexibilidade). NÃO force agrupamento que os resultados não sustentem.
+3. CONTRASTES — procure contraste realmente visível entre esses conjuntos. Quando ele estiver nos dados, é permitido nomeá-lo: "perfil contrastante", "distribuição heterogênea", "diferença marcada entre grupos de condições". Sem evidência adicional é PROIBIDO chamá-lo de compensação, preservação, superação, estratégia ou mecanismo, e é proibido explicar POR QUE o contraste apareceu.
+4. TEMPO E ERROS — leia as duas dimensões juntas: elas apontam na mesma direção? Há diferença de classificação entre tempo e erro? Em quais condições essa diferença ocorre? Descreva a ESTRUTURA e não atribua mecanismo.
+5. MENSAGEM CENTRAL — escolha UMA leitura central do protocolo e deixe que ela organize a Síntese e a Análise. Ela pode ser a heterogeneidade entre as condições, a homogeneidade do conjunto ou a concentração das classificações numa região da régua — o que os dados realmente mostrarem, e nada além disso.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, resuma o PADRÃO em vez de repetir a tabela. Responda "qual é a configuração principal deste FDT?" em um ou dois parágrafos curtos: padrão dominante, contraste importante quando houver, e classificações citadas somente onde forem necessárias para sustentar a leitura. Não percorra as dez medidas uma a uma.
+- Na Análise e interpretação, que é a seção mais densa do FDT, explique o padrão encontrado, relacione com cuidado as condições automáticas, as condições com maior demanda de controle, os índices derivados e os erros, diga o que o padrão permite afirmar NO ÂMBITO DO FDT e delimite o que não pode ser extrapolado. Não reescreva a síntese e não recite os números outra vez.
+- Nas Considerações para o contexto, use a mensagem central para explicar como INTEGRAR este perfil, em lugar de acumular avisos abstratos. Um protocolo com diferenças importantes entre condições, por exemplo, pede que a utilização preserve essa heterogeneidade e evite resumir o resultado a um rótulo único. Continua proibido nomear o que o destinatário deve observar na pessoa.
+- Nas Recomendações e acompanhamento, pelo menos UM item deve nascer da configuração real deste perfil quando houver algo interpretável: integrar o padrão às demais informações da avaliação sem reduzi-lo a uma medida única, considerar separadamente condições automáticas, condições controladas e índices derivados quando o perfil for heterogêneo, ou confrontar a distribuição de tempo e erros com as outras fontes disponíveis. Dois a quatro itens costumam bastar, e podem ser menos. Não repita a mesma recomendação em sinônimos diferentes.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL. Não resuma a tabela, não repita as recomendações e não escreva um segundo aviso.
+
+DESEMPENHO NO TESTE NÃO É CARACTERÍSTICA DA PESSOA, e isso vale mesmo com classificação extrema:
+Não escreva "possui excelente flexibilidade cognitiva", "apresenta déficit de processamento", "há prejuízo executivo", "possui dificuldade atencional", "o controle inibitório está preservado", "o desempenho indica TDAH" nem "o padrão sugere transtorno". Não infira, a partir de nenhuma classificação do FDT, sintoma, funcionamento cotidiano, dificuldade escolar, rendimento, comportamento em sala de aula ou transtorno.
+Prefira "o resultado da condição...", "o desempenho observado nesta condição...", "o índice derivado situou-se...", "a configuração encontrada...", e ancore as afirmações com "neste protocolo", "nesta avaliação", "no FDT" ou "nas condições avaliadas".
+Havendo observação escrita pelo profissional, ela pode enriquecer bastante a leitura, desde que o texto distinga o RESULTADO DO FDT do CONTEXTO INFORMADO — "segundo a observação registrada pelo profissional", "no contexto adicional informado" — e nunca converta a observação em dado psicométrico.
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -436,7 +496,12 @@ export function buildCorrigeFacilSystemPrompt(
   comPhq9 = false,
   /** idem, para o derivado do FDT. Três sinalizadores e não um: cada regra
    *  só entra quando o bloco dela existe, e um relatório de FDT não tem por
-   *  que receber instrução sobre perfil de habilidade nem sobre item 9. */
+   *  que receber instrução sobre perfil de habilidade nem sobre item 9.
+   *
+   *  Este é o único dos três que liga DOIS blocos: a REGRA_FDT, que fecha o
+   *  dado, e o PERFIL_INTERPRETATIVO_FDT, que diz como lê-lo. São um par —
+   *  mapa sem trava vira extrapolação, trava sem mapa vira burocracia — e
+   *  por isso saem juntos do mesmo sinalizador. */
   comFdt = false,
 ): string {
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
@@ -446,7 +511,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT : ''}
+${comDerivado ? REGRA_DERIVADOS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
