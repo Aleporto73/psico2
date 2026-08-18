@@ -172,13 +172,21 @@ describe('hotfix · o que ele NÃO pode ter feito', () => {
     }
   });
 
-  it('ordena depois da última migration', () => {
+  it('entra em ordem: depois de tudo que existia antes dela', () => {
+    // Supabase aplica por ordem lexical do nome. O que precisa ser verdade é
+    // o hotfix não entrar ANTES das migrations que ele pressupõe aplicadas —
+    // ele RECRIA policies nascidas lá atrás. Ser a ÚLTIMA nunca foi a regra,
+    // e deixou de ser o fato: a fundação de billing_origin veio depois.
+    // Mesma checagem do irmão em fdt-free-foundation.test.ts.
     const todas = readdirSync(join(process.cwd(), 'supabase/migrations'))
       .filter((f) => f.endsWith('.sql'))
       .sort();
-    expect(todas[todas.length - 1]).toBe(
-      '20260817230000_corrigefacil_report_metadata_por_instrumento.sql',
+    const eu = '20260817230000_corrigefacil_report_metadata_por_instrumento.sql';
+    const anteriores = todas.filter((f) => f < eu);
+    expect(anteriores).toContain(
+      '20260817120000_corrigefacil_free_demo_instrument.sql',
     );
+    expect(todas.indexOf(eu)).toBe(anteriores.length);
   });
 });
 
