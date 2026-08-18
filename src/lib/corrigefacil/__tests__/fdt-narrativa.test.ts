@@ -909,3 +909,178 @@ describe('FDT narrativa · perfil homogêneo', () => {
     expect(P).toContain('sem criar hierarquia que os dados não sustentam');
   });
 });
+
+// =====================================================================
+// 13 · O ÚLTIMO POLIMENTO — o que o FDT HOMOGÊNEO real ensinou
+//
+// O caso homogêneo passou no que importava: reconheceu a homogeneidade,
+// não inventou contraste, não recitou percentil, encurtou o texto e não
+// extrapolou nada. Sobraram dois defeitos, os dois de LINGUAGEM.
+//
+//   "INTEGRAR O RESULTADO GLOBAL DO FDT". O FDT não tem resultado global
+//   neste produto: não há escore composto, não há total, não há síntese
+//   numérica única. A expressão promete ao leitor um número que não
+//   existe — e promete pior justamente no perfil homogêneo, onde a
+//   uniformidade das dez medidas mais se parece com uma medida só.
+//
+//   A RECOMENDAÇÃO GENÉRICA SOBREVIVEU AO FILTRO. "Registrar e discutir o
+//   resultado com a família e a equipe, preservando a confidencialidade e
+//   evitando rotulação" é verdadeira, é boa prática e caberia inteira num
+//   PHQ-9, num SNAP-IV ou num SCARED. Por isso não é recomendação DESTE
+//   protocolo, e por isso o filtro passou a ser um teste de substituição.
+//
+// Nenhuma trava técnica mudou. Os dois ajustes são de como NOMEAR e de
+// quando OMITIR.
+// =====================================================================
+
+describe('FDT narrativa · o FDT não tem resultado único', () => {
+  it('55 · "resultado global do FDT" está proibido', () => {
+    expect(P).toContain('O FDT NÃO TEM RESULTADO ÚNICO:');
+    expect(P).toContain('"resultado global do FDT"');
+    expect(P).toContain(
+      'quando a expressão sugerir uma medida única que não existe',
+    );
+  });
+
+  it('56 · as quatro variantes também', () => {
+    for (const variacao of [
+      '"escore global do FDT"',
+      '"resultado total do FDT"',
+      '"índice global do FDT"',
+      '"pontuação global do FDT"',
+    ]) {
+      expect(P, variacao).toContain(variacao);
+    }
+    // e o prompt diz por que nenhuma delas existe
+    expect(P).toContain(
+      'não devolve escore global, índice composto, pontuação total nem síntese numérica única do FDT',
+    );
+    expect(P).toContain('o que existe entre elas é CONFIGURAÇÃO, não soma');
+  });
+
+  it('57 · as alternativas semânticas estão oferecidas', () => {
+    for (const alternativa of [
+      'o conjunto dos resultados do FDT',
+      'o perfil observado no FDT',
+      'a configuração dos resultados',
+      'o conjunto das condições avaliadas',
+      'o padrão observado no protocolo',
+    ]) {
+      expect(P, alternativa).toContain(alternativa);
+    }
+    expect(P).toContain('Diga o que existe, conforme o caso');
+  });
+
+  it('58 · a regra é semântica, não uma lista de palavras banidas', () => {
+    expect(P).toContain(
+      'a regra é SEMÂNTICA: qualquer outra formulação que leve o leitor a esperar um número único do FDT tem o mesmo defeito',
+    );
+  });
+
+  it('59 · e a proibição não encosta no que continua permitido', () => {
+    // as dez medidas seguem sendo dez, e o derivado continua entregando
+    // cada uma por si — a trava é sobre nomear, não sobre esconder
+    const texto = fdtParaTexto(CENARIOS.homogeneo)!;
+    expect(Object.keys(CENARIOS.homogeneo.medidas)).toHaveLength(10);
+    expect(texto).toContain('Desempenho · tempo');
+    expect(texto).toContain('Erros');
+    // e "Inibição"/"Flexibilidade" continuam nomeáveis como índices
+    expect(P).toContain('índices derivados (Inibição e Flexibilidade)');
+  });
+});
+
+describe('FDT narrativa · o filtro da recomendação genérica', () => {
+  it('60 · o teste da substituição está escrito, com instrumentos nomeados', () => {
+    expect(P).toContain(
+      'APLIQUE O TESTE ITEM A ITEM, ANTES DE ESCREVER: troque FDT por PHQ-9, SNAP-IV ou SCARED',
+    );
+    expect(P).toContain(
+      'se a recomendação continuaria praticamente igual, ela não é deste protocolo e não entra',
+    );
+    // o filtro anterior continua, e agora é o primeiro dos dois
+    expect(P).toContain('ele existe POR CAUSA da configuração deste protocolo?');
+  });
+
+  it('61 · os seis temas genéricos são nomeados dentro da reprovação', () => {
+    const reprovam = P.slice(
+      P.indexOf('Reprovam nesse teste'),
+      P.indexOf('esses temas já têm lugar'),
+    );
+    expect(reprovam.length).toBeGreaterThan(0);
+    for (const tema of [
+      'comunicar com a família ou a equipe',
+      'preservar a confidencialidade',
+      'evitar rotulação',
+      'registrar informações',
+      'manter acompanhamento',
+      'discutir com outros profissionais',
+    ]) {
+      expect(reprovam, tema).toContain(tema);
+    }
+  });
+
+  it('62 · barrados como bullet, mas não apagados do relatório', () => {
+    expect(P).toContain(
+      'esses temas já têm lugar nas Considerações para o contexto e no parágrafo final de responsabilidade, e não precisam virar item aqui',
+    );
+    // e continuam mesmo, na seção global que os hospeda
+    expect(P).toContain('tratar a informação com confidencialidade');
+    expect(P).toContain(
+      'evitar exposição ou rotulação a partir de um resultado isolado',
+    );
+  });
+
+  it('63 · quantidade mínima continua inexistente', () => {
+    expect(P).toContain('NÃO EXISTE QUANTIDADE MÍNIMA');
+    expect(P).not.toContain('Dois a quatro itens');
+    expect(P).not.toMatch(/\b(dois|três|quatro|cinco)\s+itens\b/i);
+    expect(P).toContain('Não crie itens para encher');
+  });
+
+  it('64 · perfil homogêneo pode gerar UMA recomendação, e isso é completo', () => {
+    // no cenário B não há contraste de onde tirar um segundo item
+    const valores = new Set(
+      Object.values(CENARIOS.homogeneo.medidas).map((m) => m.classificacao),
+    );
+    expect(valores.size).toBe(1);
+    expect(P).toContain(
+      'num perfil homogêneo UMA recomendação específica é resposta certa e completa, não item faltando',
+    );
+  });
+
+  it('65 · perfil contrastante pode gerar mais de uma, se nascerem do padrão', () => {
+    // no cenário A há dois conjuntos com direções diferentes
+    const c = CENARIOS.contrastante.medidas;
+    expect(c.T_LEITURA.classificacao).not.toBe(c.INIBICAO.classificacao);
+    // e as três fortes continuam disponíveis — sempre condicionadas
+    expect(P).toContain('Quando o perfil real os sustentar, cabem itens como');
+    expect(P).toContain('e só quando ele os sustentar');
+    expect(P).toContain(
+      'Não repita a mesma recomendação em sinônimos diferentes',
+    );
+  });
+});
+
+describe('FDT narrativa · o polimento não vazou para fora do FDT', () => {
+  it('66 · sem FDT nada disso existe, e o sha continua o do baseline', () => {
+    for (const destino of DESTINOS) {
+      const p = prompt(false, destino);
+      expect(p, destino).not.toContain('O FDT NÃO TEM RESULTADO ÚNICO:');
+      expect(p, destino).not.toContain('APLIQUE O TESTE ITEM A ITEM');
+      expect(p, destino).not.toContain('resultado global do FDT');
+      expect(p, destino).not.toContain('SCARED');
+      expect(
+        createHash('sha256').update(p, 'utf8').digest('hex'),
+        destino,
+      ).toBe(SHA_SEM_DERIVADO[destino]);
+    }
+  });
+
+  it('67 · e continuam sendo cinco seções, sem norma vazada', () => {
+    expect((P.match(/^## /gm) ?? []).length).toBe(5);
+    expect(P.split('P95').length - 1).toBe(1);
+    for (const faixa of FAIXAS_DO_SERVIDOR) {
+      expect(P, faixa).not.toContain(faixa);
+    }
+  });
+});
