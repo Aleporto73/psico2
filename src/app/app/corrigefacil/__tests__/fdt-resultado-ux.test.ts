@@ -47,6 +47,8 @@ import {
   SEM_VALOR,
   TITULO_ERRO,
   TITULO_TEMPO,
+  TOM_NEUTRO,
+  tomDaClassificacao,
 } from '@/lib/corrigefacil/fdt-derivado';
 
 function leia(...partes: string[]): string {
@@ -525,9 +527,171 @@ describe('19 · FDT · Erros por tarefa', () => {
         DERIVADO.medidas[b.code].classificacao,
       );
     }
-    // a cor da barra é uma só: não se escolhe tom por magnitude de erro
-    const barras = GRAFICOS.split('Erros por tarefa')[1] ?? GRAFICOS;
-    expect(barras).not.toMatch(/text-red|bg-red|text-amber|bg-amber|bg-green/);
+    // o tom sai do MAPA, pela classificação — nunca de um hex escolhido
+    // dentro do componente nem de uma paleta paralela
+    expect(GRAFICOS).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(GRAFICOS).not.toMatch(/\b(rgb|hsl|oklch)\(/);
+    expect(GRAFICOS).not.toMatch(/text-red|bg-red|bg-amber|bg-green|bg-yellow/);
+    expect(GRAFICOS).toContain('tomDaClassificacao(b.classificacao)');
+  });
+});
+
+// =====================================================================
+// O TOM PASTEL — a cor entrou para a faixa ativa ser identificada de
+// relance. Ela ACOMPANHA a classificação; não mede, não posiciona e não
+// encurta nada.
+// =====================================================================
+
+describe('cor por classificação · o mesmo mapa nos dois gráficos', () => {
+  it('cada uma das cinco classificações tem seu tom, e são distintos', () => {
+    const tons = ORDEM_CLASSIFICACAO_TEMPO.map((c) => tomDaClassificacao(c)!);
+    expect(tons.every((t) => t !== null)).toBe(true);
+    // cinco fundos diferentes: dois degraus com o mesmo pastel não seriam
+    // distinguíveis, que é justamente o que este polimento veio resolver
+    expect(new Set(tons.map((t) => t.fundo)).size).toBe(5);
+  });
+
+  it('o tom vem de TOKEN do produto, nunca de hex solto', () => {
+    for (const c of ORDEM_CLASSIFICACAO_TEMPO) {
+      const tom = tomDaClassificacao(c)!;
+      expect(tom.fundo).toMatch(/^bg-pp-/);
+      expect(tom.borda).toMatch(/^border-pp-/);
+    }
+    // e os tokens existem mesmo em globals.css
+    const globals = leia('src', 'app', 'globals.css');
+    for (const c of ORDEM_CLASSIFICACAO_TEMPO) {
+      const nome = tomDaClassificacao(c)!.fundo.replace('bg-', '--color-');
+      expect(globals).toContain(nome);
+    }
+    // nenhum token global foi criado ou alterado para isto
+    expect(globals).not.toContain('fdt');
+    expect(globals).not.toContain('FDT');
+  });
+
+  it('rótulo desconhecido NÃO ganha cor inventada', () => {
+    expect(tomDaClassificacao('Categoria que não existe')).toBeNull();
+    expect(tomDaClassificacao(null)).toBeNull();
+    expect(tomDaClassificacao(undefined)).toBeNull();
+    expect(tomDaClassificacao('')).toBeNull();
+    // quem desenha cai no neutro, que também é token
+    expect(TOM_NEUTRO.fundo).toMatch(/^bg-pp-/);
+  });
+
+  it('Perfil · a faixa ativa recebe o tom da classificação', () => {
+    // o componente pinta o degrau aceso com o tom da medida...
+    expect(GRAFICOS).toContain('tomDaClassificacao(m.classificacao)');
+    expect(GRAFICOS).toContain('`${tom.fundo} ${tom.contorno} outline-2');
+    // ...e os inativos continuam neutros e IGUAIS entre si
+    expect(GRAFICOS).toContain(": 'bg-pp-ink/[0.05]'");
+    // o alternado antigo saiu: ele criava um segundo padrão competindo
+    // com a única coisa que a cor precisa dizer
+    expect(GRAFICOS).not.toContain('bg-pp-ink/[0.04]');
+    expect(GRAFICOS).not.toContain('bg-pp-ink/[0.09]');
+  });
+
+  it('Perfil · o degrau aceso não fica MAIOR que os outros quatro', () => {
+    // `border-2` num filho `flex-1` entra na base do flex e engorda a
+    // caixa em ~3px. Num gráfico ordinal o degrau ativo não é maior — é o
+    // ativo —, então o realce é `outline`, que não participa do layout.
+    const regua = GRAFICOS.slice(
+      GRAFICOS.indexOf('function Regua'),
+      GRAFICOS.indexOf('export function PerfilExecutivoFdt'),
+    );
+    expect(regua).toContain('outline-2');
+    expect(regua).toContain('-outline-offset-2');
+    expect(regua).not.toMatch(/border-2/);
+    // a divisória é a MESMA nos cinco degraus, e é ela que os iguala —
+    // inclusive no último, que a mantém transparente em vez de removê-la
+    expect(regua).toContain(
+      "'flex-1 border-r border-pp-ink/15 last:border-r-transparent'",
+    );
+    expect(regua).not.toContain('last:border-r-0');
+  });
+
+  it('Perfil · a POSIÇÃO ordinal não mudou com a cor', () => {
+    // o mesmo resultado do bloco 19, conferido depois do polimento
+    const perfil = perfilExecutivoFdt(BLOCOS)!;
+    expect(perfil.map((m) => m.degrau)).toEqual([4, 2, 1, 0, 3, 2]);
+    // e a posição continua saindo da classificação, não do tom
+    expect(perfil.map((m) => m.degrau)).toEqual(
+      perfil.map((m) => degrauDaClassificacao(m.classificacao)),
+    );
+  });
+
+  it('Erros · raw igual dá comprimento igual, mesmo com classificação diferente', () => {
+    // O CASO DE ACEITE: quatro tarefas com 2 erros cada, classificadas
+    // diferente porque a régua dos erros muda a cada faixa etária.
+    const classes = ['Deficitário', 'Média inferior', 'Média', 'Média'];
+    const caso = errosPorTarefaFdt(
+      blocosFdt(
+        'FDT',
+        {
+          medidas: Object.fromEntries(
+            MEDIDAS_ERRO.map(([c], i) => [
+              c,
+              { bruto: 2, faixa_percentilica: null, classificacao: classes[i] },
+            ]),
+          ),
+          derivadas: {},
+        },
+        Object.fromEntries(MEDIDAS_ERRO.map(([c]) => [c, res(2, null)])),
+      ),
+    )!;
+
+    // COMPRIMENTO: os quatro idênticos, porque os quatro brutos são 2
+    expect(caso.barras.map((b) => b.bruto)).toEqual([2, 2, 2, 2]);
+    expect(new Set(caso.barras.map((b) => b.fracao)).size).toBe(1);
+    expect(caso.barras.every((b) => b.fracao === 1)).toBe(true);
+
+    // COR: três tons distintos, porque são três classificações distintas
+    const tons = caso.barras.map(
+      (b) => (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).fundo,
+    );
+    expect(new Set(tons).size).toBe(3);
+    // e as duas "Média" saem com o MESMO tom
+    expect(tons[2]).toBe(tons[3]);
+    // a primeira e a segunda, com tons diferentes
+    expect(tons[0]).not.toBe(tons[1]);
+  });
+
+  it('Erros · a cor nunca altera o comprimento', () => {
+    // mesma contagem, classificações trocadas: a fração não se mexe
+    const comClasse = (classificacao: string | null) =>
+      errosPorTarefaFdt(
+        blocosFdt(
+          'FDT',
+          {
+            medidas: {
+              E_LEITURA: { bruto: 3, faixa_percentilica: null, classificacao },
+              E_CONTAGEM: { bruto: 1, faixa_percentilica: null, classificacao },
+            },
+            derivadas: {},
+          },
+          { E_LEITURA: res(3, null), E_CONTAGEM: res(1, null) },
+        ),
+      )!.barras.map((b) => b.fracao);
+
+    const base = comClasse('Deficitário');
+    for (const outra of ['Média', 'Média inferior', 'Muito superior', null]) {
+      expect(comClasse(outra)).toEqual(base);
+    }
+    // e o comprimento continua sendo a razão da contagem
+    expect(base).toEqual([1, 1 / 3]);
+
+    // o modelo não conhece cor: `BarraErro` não carrega classe nenhuma
+    const uma = errosPorTarefaFdt(BLOCOS)!.barras[0];
+    expect(Object.keys(uma).sort()).toEqual(
+      ['bruto', 'classificacao', 'code', 'fracao', 'nome'].sort(),
+    );
+  });
+
+  it('a cor não é a única portadora: a classificação continua escrita', () => {
+    // quem não distingue os tons lê o resultado inteiro do mesmo jeito
+    expect(GRAFICOS).toContain('{m.classificacao}');
+    expect(GRAFICOS).toContain('{b.classificacao}');
+    // e o leitor de tela recebe a classificação nas duas descrições
+    expect(GRAFICOS).toContain('${m.nome}: ${m.classificacao}');
+    expect(GRAFICOS).toContain('${b.classificacao}');
   });
 });
 

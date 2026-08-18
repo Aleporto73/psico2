@@ -401,6 +401,92 @@ export function degrauDaClassificacao(
   return i < 0 ? null : i;
 }
 
+/** As classes de UMA classificação: o pastel do preenchimento e o tom
+ *  fechado que o delimita, em duas formas.
+ *
+ *  `borda` e `contorno` pintam a MESMA cor e existem os dois porque os
+ *  dois desenhos têm geometrias diferentes:
+ *
+ *    borda     a barra de erros, que tem largura própria em `%`. Com
+ *              `box-sizing: border-box` a borda cabe DENTRO dela e não
+ *              altera o comprimento — que é o que a barra significa.
+ *
+ *    contorno  o degrau do perfil, que é `flex-1`. Ali borda ENGORDA a
+ *              caixa: com `flex-basis: 0`, a espessura entra na base e o
+ *              degrau aceso ficava ~3px mais largo que os outros quatro.
+ *              Num gráfico ordinal isso é uma mentira pequena e gratuita
+ *              — o degrau ativo não é MAIOR, é o ativo. `outline` não
+ *              participa do layout e resolve sem tocar na largura. */
+export type TomFdt = { fundo: string; borda: string; contorno: string };
+
+/** O TOM PASTEL DE CADA CLASSIFICAÇÃO — um mapa só, para os dois desenhos.
+ *
+ *  São TOKENS DO PRODUTO, não hex solto: os pastel narrativos
+ *  (`pp-block-*`) e os semânticos (`pp-danger`, `pp-warning`,
+ *  `pp-success`) já existem em `globals.css` e já são usados pelo resto
+ *  do sistema. Nada global foi alterado para isto.
+ *
+ *  O PAR existe porque pastel sozinho não sobrevive a duas coisas: ao
+ *  papel, onde `background-color` não é pintado sem background graphics, e
+ *  ao olho, num fundo já claro. A borda no tom fechado é o que faz a faixa
+ *  ativa saltar na tela e continuar legível impressa.
+ *
+ *  A COR NÃO É A ÚNICA PORTADORA: os dois gráficos escrevem a
+ *  classificação ao lado da medida. Quem não distingue os tons continua
+ *  lendo o resultado inteiro.
+ *
+ *  A cor tampouco MEDE. No Perfil executivo ela acompanha a posição
+ *  ordinal que já existia; nos Erros ela é a classificação do servidor
+ *  pintada, e o comprimento continua sendo só a contagem. */
+const TONS: Readonly<Record<string, TomFdt>> = {
+  Deficitário: {
+    fundo: 'bg-pp-block-coral',
+    borda: 'border-pp-danger',
+    contorno: 'outline-pp-danger',
+  },
+  'Média inferior': {
+    fundo: 'bg-pp-block-cream',
+    borda: 'border-pp-warning',
+    contorno: 'outline-pp-warning',
+  },
+  Média: {
+    fundo: 'bg-pp-block-lilac',
+    borda: 'border-pp-ink-soft',
+    contorno: 'outline-pp-ink-soft',
+  },
+  'Média superior': {
+    fundo: 'bg-pp-block-mint',
+    borda: 'border-pp-success',
+    contorno: 'outline-pp-success',
+  },
+  'Muito superior': {
+    fundo: 'bg-pp-block-lime',
+    borda: 'border-pp-success',
+    contorno: 'outline-pp-success',
+  },
+};
+
+/** O tom neutro: classificação que não está no mapa, ou que não veio.
+ *
+ *  Não se escolhe cor por conta própria para um rótulo desconhecido —
+ *  inventar tom seria afirmar uma gravidade que ninguém devolveu. */
+export const TOM_NEUTRO: TomFdt = {
+  fundo: 'bg-pp-ink/[0.12]',
+  borda: 'border-pp-ink-soft',
+  contorno: 'outline-pp-ink-soft',
+};
+
+/** O tom de uma classificação, ou null quando não há tom para ela.
+ *
+ *  Mesma entrada de `degrauDaClassificacao`: o rótulo que o servidor
+ *  escreveu, e nada mais. Não olha bruto, não olha z, não olha faixa. */
+export function tomDaClassificacao(
+  classificacao: string | null | undefined,
+): TomFdt | null {
+  if (typeof classificacao !== 'string') return null;
+  return TONS[classificacao.trim()] ?? null;
+}
+
 /** Uma medida no Perfil executivo. `degrau` null = sem posição, e quem
  *  desenha NÃO põe barra: põe a ausência por escrito. */
 export type DegrauPerfil = {

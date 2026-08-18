@@ -40,6 +40,8 @@ import {
   SUBTITULO_PERFIL,
   TITULO_ERROS_TAREFA,
   TITULO_PERFIL,
+  TOM_NEUTRO,
+  tomDaClassificacao,
   type DegrauPerfil,
   type ErrosPorTarefa,
 } from '@/lib/corrigefacil/fdt-derivado';
@@ -65,12 +67,21 @@ function Cartao({
 
 /** A régua de cinco degraus de UMA medida.
  *
- *  O degrau nomeado pelo servidor recebe o lilás do produto. No papel ele
- *  recebe MOLDURA, porque `background-color` não é pintado sem background
- *  graphics e o lilás sumiria — aqui a moldura pode existir sem disputar
- *  atenção com nada, já que esta régua não tem marcador. */
+ *  OS INATIVOS SÃO NEUTROS E IGUAIS ENTRE SI. Eles eram alternados em dois
+ *  tons de tinta, o que dava ritmo mas criava um segundo padrão visual
+ *  competindo com o que importa: qual degrau está aceso. Quem separa os
+ *  cinco continua sendo a divisória, que é borda e sobrevive ao papel.
+ *
+ *  O DEGRAU ATIVO recebe o pastel da classificação MAIS a borda no tom
+ *  fechado dela. O pastel sozinho, num cartão já claro, não saltava; a
+ *  borda é o que faz a faixa ser identificada de relance — e é também o
+ *  que sobrevive à impressão, onde o fundo não é pintado.
+ *
+ *  A posição continua sendo a de antes: `m.degrau`, que vem da
+ *  classificação do servidor. A cor ACOMPANHA a posição, não a decide. */
 function Regua({ m }: Readonly<{ m: DegrauPerfil }>) {
   const total = ORDEM_CLASSIFICACAO_TEMPO.length;
+  const tom = tomDaClassificacao(m.classificacao) ?? TOM_NEUTRO;
   return (
     <div
       role="img"
@@ -84,13 +95,16 @@ function Regua({ m }: Readonly<{ m: DegrauPerfil }>) {
         <div
           key={rotulo}
           className={[
-            'flex-1 border-r border-pp-ink/15 last:border-r-0',
-            'print:border-pp-ink/30',
+            // a divisória é IGUAL nos cinco: é ela que mantém os degraus
+            // exatamente do mesmo tamanho. O último a mantém TRANSPARENTE
+            // em vez de removê-la — sem largura, ele ficava 1px menor que
+            // os outros quatro, e os degraus de uma régua ordinal têm de
+            // ser idênticos.
+            'flex-1 border-r border-pp-ink/15 last:border-r-transparent',
+            'print:border-pp-ink/30 print:last:border-r-transparent',
             i === m.degrau
-              ? 'bg-pp-block-lilac print:border-2 print:border-pp-ink'
-              : i % 2 === 0
-                ? 'bg-pp-ink/[0.04]'
-                : 'bg-pp-ink/[0.09]',
+              ? `${tom.fundo} ${tom.contorno} outline-2 -outline-offset-2 print:outline-pp-ink`
+              : 'bg-pp-ink/[0.05]',
           ].join(' ')}
         />
       ))}
@@ -131,16 +145,29 @@ export function PerfilExecutivoFdt({
 
       {/* O EIXO: os cinco degraus escritos, uma vez só, embaixo das réguas.
           São PALAVRAS, e não 0–25–50–75–100 — o FDT não tem percentil
-          pontual, e um eixo numérico afirmaria um que não existe. */}
+          pontual, e um eixo numérico afirmaria um que não existe.
+
+          Cada rótulo vem no PRÓPRIO pastel, nas mesmas cinco colunas das
+          réguas acima. Assim o eixo é também a legenda: a cor acesa na
+          régua encontra o nome dela na vertical, sem o olho ter de
+          procurar. É o mesmo mapa dos dois gráficos. */}
       <ul className="grid grid-cols-5 gap-1">
-        {ORDEM_CLASSIFICACAO_TEMPO.map((rotulo) => (
-          <li
-            key={rotulo}
-            className="text-[10px] text-pp-ink-soft text-center leading-tight break-words"
-          >
-            {rotulo}
-          </li>
-        ))}
+        {ORDEM_CLASSIFICACAO_TEMPO.map((rotulo) => {
+          const tom = tomDaClassificacao(rotulo) ?? TOM_NEUTRO;
+          return (
+            <li
+              key={rotulo}
+              className={[
+                'text-[10px] text-pp-ink text-center leading-tight break-words',
+                'rounded-block border px-1 py-1',
+                tom.fundo,
+                tom.borda,
+              ].join(' ')}
+            >
+              {rotulo}
+            </li>
+          );
+        })}
       </ul>
 
       <p className="text-pp-ink-soft text-xs leading-relaxed">{NOTA_PERFIL}</p>
@@ -171,14 +198,30 @@ export function ErrosPorTarefaFdt({
               <div className="flex items-center gap-3">
                 <div
                   role="img"
-                  aria-label={`${b.nome}: ${b.bruto} de ${dados.topo} no eixo.`}
+                  aria-label={
+                    `${b.nome}: ${b.bruto} de ${dados.topo} no eixo` +
+                    `${b.classificacao ? `, ${b.classificacao}` : ''}.`
+                  }
                   className="relative h-5 flex-1 rounded-pill bg-pp-ink/[0.05] border border-pp-hairline print:border-pp-ink"
                 >
-                  {/* CONTAGEM ZERO É COMPRIMENTO ZERO — e o valor 0 continua
-                      escrito ao lado. No bloco de erros não errar é
-                      resultado, não ausência. */}
+                  {/* COMPRIMENTO E COR SÃO COISAS DIFERENTES, e é o ponto
+                      deste desenho: o comprimento é `fracao`, que vem só da
+                      CONTAGEM; a cor é a classificação que o servidor já
+                      devolveu. Duas tarefas com o mesmo número de erros
+                      saem do mesmo tamanho ainda que classifiquem
+                      diferente — a norma dos erros muda a cada faixa
+                      etária, e é isso que a cor mostra.
+
+                      CONTAGEM ZERO É COMPRIMENTO ZERO — e o valor 0
+                      continua escrito ao lado. No bloco de erros não errar
+                      é resultado, não ausência. */}
                   <div
-                    className="absolute inset-y-[3px] left-0 bg-pp-ink/70 rounded-pill print:border print:border-pp-ink"
+                    className={[
+                      'absolute inset-y-[3px] left-0 rounded-pill border',
+                      (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).fundo,
+                      (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).borda,
+                      'print:border-pp-ink',
+                    ].join(' ')}
                     style={{ width: `${b.fracao * 100}%` }}
                   />
                 </div>
