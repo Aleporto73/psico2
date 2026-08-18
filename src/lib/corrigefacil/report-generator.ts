@@ -594,6 +594,59 @@ Classificação inferior — "Muito inferior" ou "Inferior" — não vira "défi
 Ancore as afirmações com "no BPA-2", "neste protocolo" ou "nas medidas avaliadas".
 `;
 
+/** O código da DASS-21 no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que o BPA-2 já usa. */
+const CODIGO_DASS21 = 'DASS-21';
+
+/** O PERFIL INTERPRETATIVO da DASS-21 — quarto piloto da mesma
+ *  arquitetura, e o segundo (depois do BPA-2) a reusar `instrumentCode`
+ *  em vez de abrir um `comDass21` na assinatura.
+ *
+ *  MESMA FAMÍLIA ESTRUTURAL DO BPA-2: a DASS-21 também não tem snapshot.
+ *  As três escalas — Depressão, Ansiedade, Estresse — chegam com bruto,
+ *  percentil (quando houver) e classificação já na tabela de resultados
+ *  de sempre. Não há REGRA_DASS21 pelo mesmo motivo que não há
+ *  REGRA_BPA2: nada para congelar.
+ *
+ *  A DIFERENÇA QUE IMPORTA AQUI NÃO É ESTRUTURAL, É SEMÂNTICA: a DASS-21
+ *  não soma. O controlador registra isso como CORREÇÃO deliberada — "não
+ *  há escore total: as três escalas são independentes e a planilha não
+ *  soma uma na outra" — e é exatamente o tipo de ausência que um modelo
+ *  de linguagem tende a preencher sozinho, inventando "resultado geral"
+ *  ou "gravidade global" a partir de três números que estão lado a lado.
+ *  O bloco entra dizendo isso ANTES do mapa, não depois, porque foi
+ *  precisar de um commit de correção para o FDT aprender essa lição
+ *  (PERFIL_INTERPRETATIVO_FDT ganhou "O FDT NÃO TEM RESULTADO ÚNICO"
+ *  só depois de um relatório real produzir "resultado global do FDT").
+ *  Aqui a mesma trava nasce dentro do primeiro commit. */
+const PERFIL_INTERPRETATIVO_DASS21 = `
+COMO LER A DASS-21 — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, somar escalas ou concluir sobre a pessoa fora do que estas três dimensões sustentam. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva Depressão, Ansiedade e Estresse como tabela em prosa e não acrescente cautela nova.
+
+A DASS-21 NÃO TEM ESCORE TOTAL. Depressão, Ansiedade e Estresse são escalas INDEPENDENTES: o instrumento não soma uma na outra, não produz gravidade global, não produz classificação geral e não produz índice composto das três. NÃO escreva "resultado global da DASS-21", "gravidade global", "escore total da DASS-21", "perfil geral severo" nem "quadro geral moderado" quando a expressão sugerir soma ou classificação única — e a regra é SEMÂNTICA: qualquer formulação que leve o leitor a esperar um número único da DASS-21 tem o mesmo defeito. Diga o que existe, conforme o caso: o conjunto dos resultados, a configuração das três dimensões, o perfil observado nas escalas ou a distribuição entre as dimensões.
+
+O QUE CADA ESCALA REPRESENTA (vocabulário do instrumento, não característica da pessoa):
+Depressão, Ansiedade e Estresse são dimensões SEPARADAS dentro da DASS-21, cada uma com sua própria classificação — Normal, Leve, Moderado, Severo ou Extremamente severo. O rótulo pertence À ESCALA, não à pessoa. NÃO escreva "tem depressão", "apresenta transtorno de ansiedade", "está severamente estressado", "quadro depressivo" nem "transtorno ansioso". Prefira "na escala de Depressão da DASS-21, o resultado foi classificado como..." ou "neste protocolo, a dimensão de Ansiedade apresentou classificação...". "Severo" e "Extremamente severo" são classificação da dimensão NESTE instrumento — não significam automaticamente transtorno severo, quadro grave, risco, urgência ou incapacidade funcional, e o rótulo recebido deve ser preservado exatamente como veio, sem gradação própria.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. DISTRIBUIÇÃO — como Depressão, Ansiedade e Estresse se distribuem: mesma classificação, classificações próximas, heterogêneas, uma dimensão claramente mais elevada ou uma claramente mais baixa. Use somente as classificações recebidas.
+2. CONVERGÊNCIA — as três dimensões apontam para região classificatória semelhante? Se sim, a convergência pode ser nomeada, sem inventar significado além disso.
+3. DIVERGÊNCIA — existe contraste real? Quando existir, é permitido dizer que as três dimensões apresentam distribuição heterogênea, com maior elevação relativa numa delas — só quando os dados sustentarem. NÃO diga que uma dimensão está causando outra, nem escreva qualquer explicação causal entre elas.
+4. DIMENSÃO DE DESTAQUE — se uma escala realmente destoar das outras duas, ela pode ser destacada, sempre ancorada em "no instrumento", "nesta escala" ou "neste protocolo". Não a transforme em característica global da pessoa.
+5. MENSAGEM CENTRAL — escolha UMA configuração para organizar Síntese e Análise: homogênea, heterogênea, concentração nas faixas inferiores, concentração nas faixas superiores ou uma dimensão destacada. Só o que os dados realmente mostrarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal desta DASS-21?" priorizando convergência, divergência e direção das classificações — não "Depressão = X, Ansiedade = Y, Estresse = Z" como tabela em prosa. Perfil homogêneo pede síntese CURTA; perfil contrastante destaca só o contraste principal. As pontuações exatas não precisam ser repetidas quando a tabela já as apresenta.
+- Na Análise e interpretação, relacione as três dimensões entre si — comparar classificações, destacar concentração, destacar diferença relativa, nomear a dimensão mais elevada ou mais baixa. NÃO é permitido explicar causa, inferir diagnóstico, inferir duração, inferir etiologia, inferir funcionamento cotidiano, inferir risco, inferir prejuízo escolar ou profissional, nem afirmar transtorno. Não reescreva a síntese.
+- Nas Considerações para o contexto, use a configuração real. Havendo heterogeneidade, pode orientar que as três dimensões sejam consideradas SEPARADAMENTE; perfil homogêneo não inventa diferença. O destino ajusta a LINGUAGEM, nunca a interpretação psicométrica. Não prescreva psicoterapia, psiquiatria, medicação, afastamento, intervenção escolar ou protocolo clínico só a partir da classificação da DASS-21, a menos que isso venha de contexto escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração da DASS-21? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente as três dimensões quando houver heterogeneidade; evitar resumir a DASS-21 numa única gravidade; integrar a dimensão de maior elevação com outras fontes da avaliação. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente. Não fabrique conduta clínica.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL. Não crie escore global, não crie diagnóstico, não resuma as três linhas de novo e não escreva um segundo aviso.
+
+O QUE NUNCA SE FAZ COM AS ESCALAS DA DASS-21, mesmo com classificação extrema:
+Não infira depressão clínica, transtorno de ansiedade ou transtorno relacionado ao estresse a partir de nenhuma classificação. Não infira risco, urgência, funcionamento cotidiano nem causalidade entre as dimensões — "Extremamente severo" não vira conclusão de urgência, e uma classificação elevada numa escala não explica a de outra. A DASS-21 tem 21 itens, mas este perfil trabalha com as três escalas já calculadas: não crie leitura item a item, não destaque conteúdo de item específico e não invente regra de item para a DASS-21 — este instrumento não tem nenhuma nesta arquitetura.
+Ancore as afirmações com "na DASS-21", "neste protocolo" ou "nesta escala".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -631,6 +684,7 @@ export function buildCorrigeFacilSystemPrompt(
   instrumentCode = '',
 ): string {
   const comBpa2 = instrumentCode === CODIGO_BPA2;
+  const comDass21 = instrumentCode === CODIGO_DASS21;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -639,7 +693,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
