@@ -258,9 +258,18 @@ describe('documento profissional — impressão A4 (Bloco 7B)', () => {
   });
 
   it('protege unidades pequenas contra quebra, não blocos inteiros', () => {
-    // linha da tabela, item de lista, cabeçalho e identificação: pequenos.
+    // linha da tabela, item de lista, parágrafo, cabeçalho e identificação:
+    // todos pequenos. O PARÁGRAFO entrou depois — o PDF abria página com
+    // meia frase, e meia frase no topo da folha custa mais leitura do que o
+    // espaço que sobra no pé da anterior.
     expect(documento).toContain('print:break-inside-avoid');
-    expect(css).toMatch(/tr,\s*\n?\s*body\.pp-print-document \.pp-doc li \{\s*\n?\s*break-inside: avoid/);
+    expect(css).toMatch(
+      /\.pp-doc tr,\s*\n?\s*body\.pp-print-document \.pp-doc li,\s*\n?\s*body\.pp-print-document \.pp-doc p \{\s*\n?\s*break-inside: avoid/,
+    );
+    // e a degradação continua existindo: parágrafo maior que a folha quebra
+    // assim mesmo, e são `orphans`/`widows` que agem nesse caso
+    expect(css).toMatch(/orphans:\s*2/);
+    expect(css).toMatch(/widows:\s*2/);
 
     // a narrativa e a seção de resultados podem ocupar várias páginas e
     // NÃO podem ser protegidas inteiras — produziria folhas quase vazias.

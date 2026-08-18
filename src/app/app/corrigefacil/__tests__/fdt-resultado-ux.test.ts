@@ -849,23 +849,34 @@ describe('20 · FDT · o escopo da Fase 1', () => {
     expect(COMPONENTE).toContain('blocos.map(');
   });
 
-  it('22 e 23 · o relatório e a ilha de gráficos não souberam desta fase', () => {
+  it('22 e 23 · o documento recebe os MESMOS componentes, e a ilha segue cega ao FDT', () => {
+    // NA FASE 1 esta trava dizia o oposto: o documento não podia conhecer
+    // nada disto. A Fase 2A é exatamente a fase que abre essa porta — e a
+    // abre por IMPORTAÇÃO DIRETA dos mesmos componentes, na variante
+    // compacta, e não registrando o FDT no sistema genérico.
     for (const nome of [
-      'FdtGraficos',
       'PerfilExecutivoFdt',
       'ErrosPorTarefaFdt',
       'colunasDaLinhaFdt',
       'perfilExecutivoFdt',
       'errosPorTarefaFdt',
     ]) {
-      expect(DOCUMENTO).not.toContain(nome);
+      expect(DOCUMENTO).toContain(nome);
     }
+    expect(DOCUMENTO).toContain("variante=\"documento\"");
+
+    // A ILHA continua sem saber que o FDT existe. É ela que carrega o
+    // catálogo e devolve o nome do instrumento ao cabeçalho, e é isso que
+    // não pode quebrar; o gráfico do FDT chega por outro caminho, e o
+    // `ResultGraph` genérico continua devolvendo null para ele.
     const ilha = leia(
       'src', 'app', 'app', 'corrigefacil', 'avaliacoes', '[id]', 'relatorios',
       '[reportId]', 'ReportGraphIsland.tsx',
     );
     expect(ilha).not.toContain('Fdt');
     expect(ilha).not.toContain('FDT');
+    expect(ilha).toContain('onNomeDoInstrumento');
+    expect(ilha).toContain('<ResultGraph');
   });
 
   it('24 · o FDT não foi registrado no sistema genérico de gráficos', () => {

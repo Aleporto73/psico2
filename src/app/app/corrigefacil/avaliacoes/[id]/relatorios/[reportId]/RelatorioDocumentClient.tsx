@@ -28,7 +28,7 @@
 // Bloco 7B, e por isso nada de `graphs/` é importado aqui.
 // =====================================================================
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Copy, Pencil, Printer } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -74,11 +74,22 @@ import {
 } from '@/lib/corrigefacil/phq9-derivado';
 import {
   blocosFdt,
+  COLUNAS_FDT,
+  colunasDaLinhaFdt,
   derivadasAusentes,
   derivadoFdt,
   ehFdt,
-  zFormatado,
+  errosPorTarefaFdt,
+  perfilExecutivoFdt,
+  TITULO_ERRO,
+  TITULO_TEMPO,
+  tomDaClassificacao,
+  type BlocoFdt,
 } from '@/lib/corrigefacil/fdt-derivado';
+import {
+  ErrosPorTarefaFdt,
+  PerfilExecutivoFdt,
+} from '@/app/app/corrigefacil/FdtGraficos';
 import {
   narrativaVazia,
   parseNarrativa,
@@ -789,6 +800,12 @@ export function RelatorioDocumentClient({
 
         <section
           className={[
+            // `pp-narrativa` é o gancho das regras de espaçamento de
+            // impressão em globals.css: o Markdown sai com margens de tela,
+            // e no papel elas encostam um pouco mais. É gancho de estilo —
+            // o texto renderizado continua sendo `output_text`, sem um
+            // caractere de diferença.
+            'pp-narrativa',
             'text-[15px] leading-[1.7] text-pp-ink break-words print:text-[11.5pt] print:leading-[1.55]',
             // Em edição a leitura some da tela, mas continua montada: é ela
             // que o print usaria, e ter duas versões visíveis do mesmo texto
@@ -978,37 +995,32 @@ function FdtDoDocumento({
   if (!blocos) return null;
   const ausentes = derivadasAusentes(derivado);
 
+  const perfil = perfilExecutivoFdt(blocos);
+  const errosPorTarefa = errosPorTarefaFdt(blocos);
+
   return (
-    <section className="space-y-4">
+    <section className="space-y-5">
       {blocos.map((bloco) => (
-        <div key={bloco.titulo} className="space-y-2 print:break-inside-avoid">
-          <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
-            {bloco.titulo}
-          </h2>
-          <ul className="space-y-1">
-            {bloco.linhas.map((linha) => (
-              <li
-                key={linha.code}
-                className="text-pp-ink text-sm print:text-[11px]"
-              >
-                <span className="font-medium">{linha.nome}</span>
-                {linha.indisponivel ? (
-                  <span className="text-pp-ink-soft"> — {linha.indisponivel}</span>
-                ) : (
-                  <span className="tabular-nums">
-                    {linha.bruto !== null && ` — bruto ${linha.bruto}`}
-                    {linha.z !== null && ` · z ${zFormatado(linha.z)}`}
-                    {linha.faixa && ` · ${linha.faixa}`}
-                    {linha.classificacao && ` · ${linha.classificacao}`}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-          <p className="text-[11px] text-pp-ink-soft leading-relaxed">
-            {bloco.nota}
-          </p>
-        </div>
+        <Fragment key={bloco.titulo}>
+          <QuadroFdt bloco={bloco} />
+
+          {/* O DESENHO VEM COLADO NO QUADRO QUE ELE RELÊ, e não numa área
+              de gráficos no fim do documento: a régua do Perfil executivo
+              só faz sentido ao lado das classificações que acabaram de ser
+              lidas. É a mesma ordem da tela — dados, desenho, dados,
+              desenho —, e é o que faz o relatório e a tela parecerem o
+              mesmo produto.
+
+              Os dois componentes são OS MESMOS da tela, na variante
+              compacta. Não há segunda implementação: mesma posição, mesmas
+              cores, mesmo eixo, densidade de A4. */}
+          {bloco.titulo === TITULO_TEMPO && perfil && (
+            <PerfilExecutivoFdt medidas={perfil} variante="documento" />
+          )}
+          {bloco.titulo === TITULO_ERRO && errosPorTarefa && (
+            <ErrosPorTarefaFdt dados={errosPorTarefa} variante="documento" />
+          )}
+        </Fragment>
       ))}
 
       {ausentes.length > 0 && (
@@ -1017,6 +1029,119 @@ function FdtDoDocumento({
         </p>
       )}
     </section>
+  );
+}
+
+/** UM bloco de medidas do FDT como QUADRO, e não como linha corrida.
+ *
+ *  O que havia aqui era `Leitura — bruto 45 · z -4,17 · < P5 ·
+ *  Deficitário`: correto, e com cara de saída de banco. Num relatório que
+ *  vai para escola ou família, os quatro números precisam estar em colunas
+ *  que se comparam de cima a baixo, como já acontece na tela.
+ *
+ *  TABELA, e de propósito: a folha de impressão já dá a `table` deste
+ *  documento `table-layout: fixed`, `overflow-wrap: anywhere` nas células,
+ *  `thead` repetido a cada página e `break-inside: avoid` em cada `tr`.
+ *  Reproduzir isso com `div` significaria reescrever as quatro garantias —
+ *  e a linha é exatamente a unidade pequena que o item de paginação manda
+ *  proteger.
+ *
+ *  AS COLUNAS SÃO AS MESMAS DA TELA, e vêm da mesma função:
+ *  `colunasDaLinhaFdt` devolve sempre bruto, z, faixa percentílica e
+ *  classificação, com travessão onde o servidor não mandou valor. Não há
+ *  formatação própria aqui — o z sai pelo mesmo `zFormatado` que a tela
+ *  usa, uma casa dentro daquela função. */
+function QuadroFdt({ bloco }: Readonly<{ bloco: BlocoFdt }>) {
+  return (
+    <div className="space-y-2">
+      <h2 className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+        {bloco.titulo}
+      </h2>
+
+      <table className="w-full border-collapse text-sm print:text-[11px]">
+        <thead>
+          <tr className="text-left text-pp-ink-soft">
+            <th className="border border-pp-ink/15 px-3 py-2 font-medium">
+              Medida
+            </th>
+            {COLUNAS_FDT.map((c) => (
+              <th
+                key={c}
+                className="border border-pp-ink/15 px-3 py-2 font-medium"
+              >
+                {c.charAt(0).toUpperCase() + c.slice(1)}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bloco.linhas.map((linha) => (
+            <tr key={linha.code} className="align-top print:break-inside-avoid">
+              <td className="border border-pp-ink/15 px-3 py-2 text-pp-ink font-medium">
+                {linha.nome}
+              </td>
+
+              {linha.indisponivel ? (
+                // available=false não recebe número nenhum: quem informa é
+                // a mensagem que o servidor gravou, atravessando as quatro
+                // colunas para não deixar células fantasma.
+                <td
+                  colSpan={COLUNAS_FDT.length}
+                  className="border border-pp-ink/15 px-3 py-2 text-pp-ink-soft"
+                >
+                  {linha.indisponivel}
+                </td>
+              ) : (
+                colunasDaLinhaFdt(linha).map((coluna, i) => {
+                  const ultima = i === COLUNAS_FDT.length - 1;
+                  const tom = tomDaClassificacao(coluna.texto);
+                  return (
+                    <td
+                      key={coluna.rotulo}
+                      className={[
+                        'border border-pp-ink/15 px-3 py-2',
+                        coluna.ausente
+                          ? 'text-pp-ink-soft'
+                          : 'text-pp-ink tabular-nums',
+                      ].join(' ')}
+                    >
+                      {/* A CLASSIFICAÇÃO ganha o pastel dela, o mesmo dos
+                          dois gráficos abaixo — assim a cor que aparece na
+                          régua já foi apresentada na tabela. O selo tem
+                          BORDA no tom fechado porque fundo não é pintado na
+                          impressão sem "gráficos de fundo": no papel
+                          sobrevive a moldura. */}
+                      {ultima && tom && !coluna.ausente ? (
+                        <span
+                          className={[
+                            'inline-block rounded-pill border px-2 py-0.5',
+                            'text-pp-ink print:border-pp-ink',
+                            tom.fundo,
+                            tom.borda,
+                            // o pastel do selo é o mesmo dos gráficos
+                            // abaixo; sem ele impresso, a tabela perde a
+                            // ponte de cor com a régua
+                            'pp-tinta',
+                          ].join(' ')}
+                        >
+                          {coluna.texto}
+                        </span>
+                      ) : (
+                        coluna.texto
+                      )}
+                    </td>
+                  );
+                })
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <p className="text-[11px] text-pp-ink-soft leading-relaxed">
+        {bloco.nota}
+      </p>
+    </div>
   );
 }
 

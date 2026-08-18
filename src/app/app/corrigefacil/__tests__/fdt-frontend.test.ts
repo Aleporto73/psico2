@@ -897,11 +897,18 @@ describe('FDT · o z na tela', () => {
   });
 
   it('o documento usa o MESMO formatador', () => {
-    expect(DOCUMENTO).toContain('z ${zFormatado(linha.z)}');
+    // O documento passou a montar as colunas por `colunasDaLinhaFdt`, a
+    // MESMA função da tela — e é lá dentro que `zFormatado` roda. O
+    // caminho ficou mais curto, não mais longo: antes o documento chamava
+    // o formatador por conta própria, agora ele recebe a coluna pronta.
+    expect(DOCUMENTO).toContain('colunasDaLinhaFdt(linha)');
+    // o que não pode existir, em nenhum dos dois, é o z cru na tela
     expect(DOCUMENTO).not.toContain('z ${linha.z}');
+    expect(DOCUMENTO).not.toContain('{linha.z}');
     // um formatador só: duas cópias divergiriam no arredondamento, e a
     // mesma avaliação sairia com um z na tela e outro no PDF
     expect(FDT_DERIVADO_FONTE.split('export function zFormatado').length - 1).toBe(1);
+    expect(FDT_DERIVADO_FONTE).toContain('const z = zFormatado(linha.z);');
   });
 
   it('o valor GUARDADO continua sendo o do servidor, sem arredondar', () => {
