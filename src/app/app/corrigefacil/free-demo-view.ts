@@ -184,6 +184,49 @@ export function acaoAposFalhaDaDemo(status: number): 'indeterminado' | 'reconsul
 }
 
 /**
+ * O status disse `use_subscription` DEPOIS de o gate ter respondido 403.
+ *
+ * É contradição, e tem uma explicação provável: a assinatura foi ativada
+ * entre as duas consultas. Mostrar checkout a quem acabou de comprar seria
+ * o pior desfecho possível, então vale perguntar ao gate de novo.
+ *
+ * UMA vez. Nenhum outro estado repergunta, e a segunda resposta é final —
+ * é isso que impede o laço.
+ */
+export function precisaReconsultarGate(demo: FreeDemoState): boolean {
+  return demo === 'use_subscription';
+}
+
+/**
+ * O que a demonstração vira quando a reconsulta NÃO confirmou Pró.
+ *
+ * `sem_acesso` — a contradição se resolve a favor do gate. `use_subscription`
+ * cai na oferta paga, e não se inventa um Pró que o gate nega.
+ * `erro` — fail closed: sem resposta, sem promessa.
+ */
+export function estadoAposReconsultaSemPro(
+  acesso: 'sem_acesso' | 'erro',
+): FreeDemoState {
+  return acesso === 'erro' ? 'error' : 'use_subscription';
+}
+
+/**
+ * Depois de verificar o status, vale recarregar a lista de relatórios?
+ *
+ * Só com a chance já usada — e o caso que importa é o 503: o backend chamou
+ * a IA e não conseguiu confirmar a conclusão. Se ela aconteceu, o relatório
+ * existe e precisa aparecer em "Relatórios desta avaliação" sem exigir
+ * reload da página.
+ *
+ * Recarregar a lista é a ação SEGURA. Navegar para o relatório não seria:
+ * `already_used` é vitalício por CONTA, e a chance pode ter sido gasta em
+ * outra avaliação — a lista desta mostra o que é desta, e só.
+ */
+export function precisaRecarregarRelatorios(demo: FreeDemoState): boolean {
+  return demo === 'already_used';
+}
+
+/**
  * A tela pode disparar a geração?
  *
  * Só com a demonstração `available`. `in_progress` e `indeterminado` são

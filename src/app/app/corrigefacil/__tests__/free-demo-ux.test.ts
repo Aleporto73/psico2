@@ -235,6 +235,107 @@ describe('PR4 · a tela não decide nada comercial', () => {
 });
 
 // =====================================================================
+// 4b · A VERIFICAÇÃO MANUAL, depois de uma tentativa que não fechou
+//
+// O caso que manda aqui é o 503: o backend chamou a IA e não conseguiu
+// confirmar se a linha ficou concluída. Se ela ficou, o relatório existe —
+// e precisa aparecer sem exigir reload da página.
+// =====================================================================
+describe('PR4 · o recheck reposiciona a tela inteira', () => {
+  /** O corpo de `verificarDemo`, do início até o fechamento do useCallback. */
+  const VERIFICAR = (() => {
+    const inicio = PAINEL_CODIGO.indexOf('const verificarDemo = useCallback(');
+    const fim = PAINEL_CODIGO.indexOf('[loadReports],', inicio);
+    return PAINEL_CODIGO.slice(inicio, fim);
+  })();
+
+  it('a chance já usada recarrega os relatórios desta avaliação', () => {
+    // Sem isto, um 503 que na verdade terminou em completed deixaria o
+    // relatório recém-criado fora da lista até o próximo reload.
+    expect(VERIFICAR).toContain('precisaRecarregarRelatorios(estado)');
+    expect(VERIFICAR).toContain('await loadReports(id)');
+  });
+
+  it('mas NÃO navega automaticamente para relatório nenhum', () => {
+    // `already_used` é vitalício por CONTA: a chance pode ter sido gasta em
+    // outra avaliação, e abrir um relatório qualquer seria pior que não abrir.
+    expect(VERIFICAR).not.toContain('router.push');
+
+    // O único push do arquivo continua sendo o do sucesso do POST.
+    const pushes = PAINEL_CODIGO.match(/router\.push\(/g) ?? [];
+    expect(pushes).toHaveLength(1);
+    const posGerar = PAINEL_CODIGO.indexOf('async function generateReport()');
+    expect(PAINEL_CODIGO.indexOf('router.push(')).toBeGreaterThan(posGerar);
+  });
+
+  it('o pedido manual limpa a mensagem da tentativa anterior', () => {
+    const inicio = PAINEL_CODIGO.indexOf('async function reverificarDemo()');
+    const fim = PAINEL_CODIGO.indexOf('}', PAINEL_CODIGO.indexOf('await verificarDemo(id)', inicio));
+    const bloco = PAINEL_CODIGO.slice(inicio, fim);
+
+    expect(bloco).toContain('setMessage(null)');
+    expect(bloco.indexOf('setMessage(null)')).toBeLessThan(
+      bloco.indexOf('await verificarDemo(id)'),
+    );
+  });
+
+  it('mas a mensagem do backend sobrevive a uma geração que falhou', () => {
+    // Depois de um POST que não deu 200, a mensagem é justamente o que o
+    // profissional precisa ler — quem limpa é só o clique em verificar.
+    expect(VERIFICAR).not.toContain('setMessage(null)');
+  });
+
+  it('nenhum recheck gera nada: sem POST, sem reserve', () => {
+    for (const proibido of ["method: 'POST'", 'generateReport(', 'reserve_']) {
+      expect(VERIFICAR, proibido).not.toContain(proibido);
+    }
+  });
+
+  it('os três botões de verificar chamam a mesma reconsulta', () => {
+    const handlers = PAINEL_CODIGO.match(/onClick=\{reverificarDemo\}/g) ?? [];
+    expect(handlers).toHaveLength(3); // andamento, indeterminado e erro
+  });
+});
+
+// =====================================================================
+// 4c · A CONTRADIÇÃO DO use_subscription
+// =====================================================================
+describe('PR4 · quem assinou entre as duas consultas não vê checkout', () => {
+  const VERIFICAR = (() => {
+    const inicio = PAINEL_CODIGO.indexOf('const verificarDemo = useCallback(');
+    const fim = PAINEL_CODIGO.indexOf('[loadReports],', inicio);
+    return PAINEL_CODIGO.slice(inicio, fim);
+  })();
+
+  it('reconsulta o gate pago quando o banco diz que há Pró', () => {
+    expect(VERIFICAR).toContain('precisaReconsultarGate(estado)');
+    expect(VERIFICAR).toContain('await consultarAcessoPro()');
+  });
+
+  it('gate ativo → experiência Pró completa, e nada de demo', () => {
+    expect(VERIFICAR).toContain("setAccess('active')");
+    expect(VERIFICAR).toContain('setMonthlyCount(acesso.monthlyCount)');
+    expect(VERIFICAR).toContain('setMonthlyLimit(acesso.monthlyLimit)');
+    // e o painel volta ao bloco padrão — provado em free-demo-view.test.ts
+    expect(VERIFICAR).toContain("setDemo('use_subscription')");
+  });
+
+  it('gate ainda negativo → fail closed, sem inventar Pró', () => {
+    expect(VERIFICAR).toContain('estadoAposReconsultaSemPro(acesso.tipo)');
+  });
+
+  it('UMA reconsulta, sem laço', () => {
+    // Uma segunda chamada ao gate aqui, ou uma chamada recursiva, seriam
+    // consultas em cascata contra o mesmo endpoint.
+    const gates = VERIFICAR.match(/consultarAcessoPro\(\)/g) ?? [];
+    expect(gates).toHaveLength(1);
+    expect(VERIFICAR).not.toContain('verificarDemo(');
+    expect(VERIFICAR).not.toContain('while');
+    expect(VERIFICAR).not.toContain('for (');
+  });
+});
+
+// =====================================================================
 // 5 · O DOCUMENTO E A LISTA NÃO GANHAM NADA COMERCIAL
 // =====================================================================
 describe('PR4 · o relatório entregue é o produto real', () => {

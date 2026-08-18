@@ -11,8 +11,11 @@ import {
   acaoAposFalhaDaDemo,
   decidirCabecalho,
   decidirOferta,
+  estadoAposReconsultaSemPro,
   freeDemoStateFromRpc,
   podeGerarDemo,
+  precisaRecarregarRelatorios,
+  precisaReconsultarGate,
   type AccessState,
   type FreeDemoState,
   type OfertaModo,
@@ -183,6 +186,51 @@ describe('depois de uma geração que falhou', () => {
   it('o estado indeterminado tira a CTA de gerar da tela', () => {
     expect(semPro('indeterminado')).toBe('demo_indeterminado');
     expect(podeGerarDemo('indeterminado')).toBe(false);
+  });
+});
+
+describe('a contradição do use_subscription', () => {
+  it('só ele manda perguntar ao gate de novo', () => {
+    // Repergunta em qualquer outro estado viraria consulta em cascata.
+    for (const demo of TODOS_OS_DEMO) {
+      expect(precisaReconsultarGate(demo), demo).toBe(demo === 'use_subscription');
+    }
+  });
+
+  it('gate agora ATIVO: quem acabou de assinar não vê checkout', () => {
+    // O caminho de sucesso é o painel gravar acesso ativo — provado na
+    // fiação. Aqui fica a outra metade: as duas respostas negativas.
+    expect(estadoAposReconsultaSemPro('sem_acesso')).toBe('use_subscription');
+    expect(semPro('use_subscription')).toBe('checkout');
+  });
+
+  it('gate com ERRO: fail closed, sem inventar Pró nem prometer demo', () => {
+    const estado = estadoAposReconsultaSemPro('erro');
+    expect(estado).toBe('error');
+    expect(estado).not.toBe('available');
+    expect(semPro(estado)).toBe('demo_erro');
+  });
+
+  it('a segunda resposta é final — nenhum estado dela repergunta', () => {
+    // É isto que fecha o laço: nem 'use_subscription' nem 'error' saem daqui
+    // pedindo uma terceira consulta... e 'use_subscription' só voltaria a
+    // reperguntar se o profissional clicasse de novo, o que é uma ação dele.
+    expect(precisaReconsultarGate(estadoAposReconsultaSemPro('erro'))).toBe(false);
+  });
+});
+
+describe('recarregar a lista depois de verificar', () => {
+  it('só quando a chance já foi usada', () => {
+    for (const demo of TODOS_OS_DEMO) {
+      expect(precisaRecarregarRelatorios(demo), demo).toBe(demo === 'already_used');
+    }
+  });
+
+  it('nem available, nem in_progress, nem indeterminado recarregam', () => {
+    // Nesses três não existe relatório novo para aparecer.
+    for (const demo of ['available', 'in_progress', 'indeterminado'] as FreeDemoState[]) {
+      expect(precisaRecarregarRelatorios(demo), demo).toBe(false);
+    }
   });
 });
 

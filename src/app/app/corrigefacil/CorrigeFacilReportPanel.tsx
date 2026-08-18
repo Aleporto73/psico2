@@ -9,8 +9,11 @@ import {
   acaoAposFalhaDaDemo,
   decidirCabecalho,
   decidirOferta,
+  estadoAposReconsultaSemPro,
   freeDemoStateFromRpc,
   podeGerarDemo,
+  precisaRecarregarRelatorios,
+  precisaReconsultarGate,
   type FreeDemoState,
 } from './free-demo-view';
 
@@ -209,10 +212,46 @@ export function CorrigeFacilReportPanel({
 
   /** Reconsulta o status a pedido da tela (botões "Verificar novamente" e
    *  "Tentar novamente", e o reposicionamento depois de uma falha). */
-  const verificarDemo = useCallback(async (id: string) => {
-    setDemo('checking');
-    setDemo(await consultarStatusDemo(id));
-  }, []);
+  const verificarDemo = useCallback(
+    async (id: string) => {
+      setDemo('checking');
+      let estado = await consultarStatusDemo(id);
+
+      if (precisaReconsultarGate(estado)) {
+        // O banco vê Pró ativo e o gate tinha dito 403: provavelmente a
+        // assinatura foi ativada entre as duas consultas. Mostrar checkout a
+        // quem acabou de comprar é o pior desfecho possível.
+        //
+        // UMA reconsulta, e a segunda resposta é final — é isso que impede
+        // o laço.
+        const acesso = await consultarAcessoPro();
+
+        if (acesso.tipo === 'ativo') {
+          setMonthlyCount(acesso.monthlyCount);
+          setMonthlyLimit(acesso.monthlyLimit);
+          setAccess('active');
+          setDemo('use_subscription');
+          return;
+        }
+
+        estado = estadoAposReconsultaSemPro(acesso.tipo);
+      }
+
+      setDemo(estado);
+
+      // A chance já usada pode ter nascido NESTA avaliação — inclusive no
+      // 503, em que o backend não conseguiu confirmar a conclusão. Se ela
+      // aconteceu, o relatório aparece na lista sem exigir reload da página.
+      //
+      // Recarregar é a ação segura; navegar não seria: `already_used` é
+      // vitalício por CONTA, e a chance pode ter sido gasta em outra
+      // avaliação.
+      if (precisaRecarregarRelatorios(estado)) {
+        await loadReports(id);
+      }
+    },
+    [loadReports],
+  );
 
   /** Na avaliação salva, o estado é descoberto sozinho: o profissional não
    *  deveria precisar clicar para saber o que a tela tem a oferecer.
@@ -248,8 +287,7 @@ export function CorrigeFacilReportPanel({
 
         // Sem Pró: é aqui que se descobre se há demonstração a oferecer.
         setAccess('inactive');
-        const estado = await consultarStatusDemo(id);
-        if (ativo) setDemo(estado);
+        if (ativo) await verificarDemo(id);
       })
       .catch(() => {
         if (!ativo) return;
@@ -260,7 +298,7 @@ export function CorrigeFacilReportPanel({
     return () => {
       ativo = false;
     };
-  }, [freeDemoContext, resolvedAssessmentId]);
+  }, [freeDemoContext, resolvedAssessmentId, verificarDemo]);
 
   async function resolveAssessment(): Promise<string | null> {
     if (resolvedAssessmentId) return resolvedAssessmentId;
@@ -472,6 +510,13 @@ export function CorrigeFacilReportPanel({
   const cabecalho = decidirCabecalho({ access, freeDemoContext, demo });
 
   async function reverificarDemo() {
+    // A mensagem pertence à tentativa ANTERIOR — inclusive a do 503. Pedir
+    // uma verificação nova a torna passado: deixá-la na tela ao lado do
+    // resultado atualizado diria duas coisas diferentes ao mesmo tempo.
+    //
+    // Só aqui, no pedido manual. Depois de uma geração que falhou, a
+    // mensagem do backend é justamente o que o profissional precisa ler.
+    setMessage(null);
     const id = await resolveAssessment();
     if (id) await verificarDemo(id);
   }
