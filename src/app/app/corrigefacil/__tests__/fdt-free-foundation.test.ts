@@ -263,7 +263,11 @@ describe('PR0 · a migration é a única fonte destas peças', () => {
     .filter((f) => f.endsWith('.sql'))
     .sort();
 
-  it('nenhuma outra migration define is_free_demo ou a função', () => {
+  it('nenhuma outra migration DEFINE is_free_demo ou a função', () => {
+    // CONSUMIR as duas é esperado — a policy de metadados do Relatório Pró
+    // chama a função, e é assim que a regra fica com um dono só. O que não
+    // pode existir é uma segunda DEFINIÇÃO: aí passariam a ser duas regras
+    // com o mesmo nome, e a última a rodar venceria em silêncio.
     const outras = TODAS.filter(
       (f) => f !== '20260817120000_corrigefacil_free_demo_instrument.sql',
     );
@@ -271,16 +275,25 @@ describe('PR0 · a migration é a única fonte destas peças', () => {
       const corpo = semComentarios(
         source(join('supabase/migrations', arquivo)),
       ).toLowerCase();
-      expect(corpo, arquivo).not.toContain('is_free_demo');
-      expect(corpo, arquivo).not.toContain('can_access_corrigefacil_instrument');
+      expect(corpo, arquivo).not.toContain('add column if not exists is_free_demo');
+      expect(corpo, arquivo).not.toContain('set is_free_demo');
+      expect(corpo, arquivo).not.toContain(
+        'create or replace function public.can_access_corrigefacil_instrument',
+      );
+      expect(corpo, arquivo).not.toContain(
+        'drop function public.can_access_corrigefacil_instrument',
+      );
     }
   });
 
-  it('ordena depois da última migration aplicada', () => {
-    // Supabase aplica por ordem lexical do nome. Um timestamp menor que o da
-    // última migration entraria fora de ordem e poderia nem rodar.
-    expect(TODAS[TODAS.length - 1]).toBe(
-      '20260817120000_corrigefacil_free_demo_instrument.sql',
-    );
+  it('entra em ordem: depois de tudo que existia antes dela', () => {
+    // Supabase aplica por ordem lexical do nome. Um timestamp menor que o de
+    // uma migration anterior entraria fora de ordem e poderia nem rodar.
+    // Migrations posteriores podem existir — e existem: o hotfix das
+    // policies de metadados veio depois e consome a função criada aqui.
+    const eu = '20260817120000_corrigefacil_free_demo_instrument.sql';
+    const anteriores = TODAS.filter((f) => f < eu);
+    expect(anteriores).toContain('20260816120000_deactivate_fdt_spreadsheet.sql');
+    expect(TODAS.indexOf(eu)).toBe(anteriores.length);
   });
 });
