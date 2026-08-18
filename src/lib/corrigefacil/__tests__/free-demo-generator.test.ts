@@ -77,22 +77,30 @@ function fakeSupabase(cfg: {
 
   const inserts: Array<Record<string, unknown>> = [];
   const rpcCalls: Array<{ name: string; args: Record<string, unknown> }> = [];
+  const filtros: Array<[string, unknown]> = [];
 
   function builder(table: string) {
     const resultado = () =>
       filas[table]?.shift() ?? { data: null, error: null };
 
     const b: Record<string, unknown> = {};
-    for (const m of ['select', 'eq', 'gte', 'order', 'limit']) {
+    for (const m of ['select', 'gte', 'order', 'limit']) {
       b[m] = () => b;
     }
+    b.eq = (coluna: string, valor: unknown) => {
+      if (table === 'ai_reports') filtros.push([coluna, valor]);
+      return b;
+    };
     b.insert = (row: Record<string, unknown>) => {
       sequencia.push(`insert:${table}`);
       inserts.push(row);
       return b;
     };
     b.single = () => Promise.resolve(resultado());
-    b.maybeSingle = () => Promise.resolve(resultado());
+    b.maybeSingle = () => {
+      if (table === 'ai_reports') sequencia.push('confirma');
+      return Promise.resolve(resultado());
+    };
     b.then = (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
       Promise.resolve(resultado()).then(res, rej);
     return b;
@@ -101,6 +109,7 @@ function fakeSupabase(cfg: {
   return {
     inserts,
     rpcCalls,
+    filtros,
     from: (table: string) => builder(table),
     rpc: (name: string, args: Record<string, unknown>) => {
       sequencia.push(`rpc:${name}`);
@@ -194,6 +203,7 @@ describe('PR3 · a ORDEM da demonstração gratuita', () => {
       'rpc:reserve_corrigefacil_free_demo_report',
       'openai',
       'rpc:complete_corrigefacil_free_demo_report',
+      'confirma',
     ]);
   });
 
@@ -390,5 +400,176 @@ describe('PR3 · falha depois da reserva devolve a chance', () => {
     expect(res.status).toBe(422);
     expect(supabase.rpcCalls).toHaveLength(0);
     expect(callOpenAI).not.toHaveBeenCalled();
+  });
+});
+
+// =====================================================================
+// A CONFIRMAÇÃO PÓS-FINALIZAÇÃO
+//
+// Duas coisas que a auditoria do PR #108 pegou, e que estes testes trancam:
+//
+// 1. A releitura não pode herdar a garantia da RLS. Ela pede os três
+//    atributos na query E os reconfere na linha que volta — senão bastaria
+//    uma policy administrativa ou permissiva devolver a reserva para o
+//    código chamar de "relatório pronto" uma linha de texto vazio.
+//
+// 2. ERRO DE SELECT NÃO É AUSÊNCIA DE LINHA. Um timeout aqui não diz nada
+//    sobre a linha: `complete` pode ter commitado do outro lado. Apagar
+//    nesse estado destruiria um relatório possivelmente entregue.
+// =====================================================================
+describe('PR #108 · a confirmação é explícita', () => {
+  const ERRO_DE_REDE = { data: null, error: { message: 'ECONNRESET' } };
+
+  it('a query pede os três atributos, não confia na policy', async () => {
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [{ data: linhaFinal, error: null }],
+    });
+
+    await chamar('free_demo', supabase);
+
+    expect(supabase.filtros).toContainEqual(['id', REPORT_ID]);
+    expect(supabase.filtros).toContainEqual(['billing_origin', 'free_demo']);
+    expect(supabase.filtros).toContainEqual(['generation_status', 'completed']);
+  });
+
+  it('linha PENDING que vaze por policy permissiva NÃO é sucesso', async () => {
+    // O texto vem CHEIO de propósito: se a reserva estivesse vazia, o teste
+    // passaria pela checagem de output_text e não provaria nada sobre o
+    // estado. O único motivo de rejeição aqui é generation_status.
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [
+        {
+          data: { ...linhaFinal, generation_status: 'pending' },
+          error: null,
+        },
+      ],
+    });
+
+    const res = await chamar('free_demo', supabase);
+    const body = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(supabase.rpcCalls.map((c) => c.name)).toContain(
+      'release_corrigefacil_free_demo_report',
+    );
+    expect(JSON.stringify(body)).not.toContain('RELATÓRIO GERADO PELA IA');
+  });
+
+  it('linha de outra ORIGEM também não é a demonstração desta conta', async () => {
+    // Mesmo id, texto cheio, completed — mas billing_origin='subscription'.
+    // Só a reconferência da origem rejeita esta.
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [
+        {
+          data: { ...linhaFinal, billing_origin: 'subscription' },
+          error: null,
+        },
+      ],
+    });
+
+    const res = await chamar('free_demo', supabase);
+
+    expect(res.status).toBe(500);
+    expect(supabase.rpcCalls.map((c) => c.name)).toContain(
+      'release_corrigefacil_free_demo_report',
+    );
+  });
+
+  it('completed com output_text vazio NÃO é sucesso', async () => {
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [{ data: { ...linhaFinal, output_text: '   ' }, error: null }],
+    });
+
+    const res = await chamar('free_demo', supabase);
+
+    expect(res.status).toBe(500);
+    expect(supabase.rpcCalls.map((c) => c.name)).toContain(
+      'release_corrigefacil_free_demo_report',
+    );
+  });
+
+  it('SELECT ok e SEM linha -> release, e nada de texto', async () => {
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [{ data: null, error: null }],
+    });
+
+    const res = await chamar('free_demo', supabase);
+    const body = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(supabase.rpcCalls.map((c) => c.name)).toContain(
+      'release_corrigefacil_free_demo_report',
+    );
+    expect(JSON.stringify(body)).not.toContain('RELATÓRIO GERADO PELA IA');
+  });
+
+  it('1ª releitura FALHA, 2ª confirma -> sucesso, sem release', async () => {
+    // O cenário exato do finding: complete commitou, a resposta se perdeu, e
+    // o primeiro SELECT de confirmação também. A chance não pode ser
+    // devolvida — o relatório existe.
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [ERRO_DE_REDE, { data: linhaFinal, error: null }],
+    });
+
+    const res = await chamar('free_demo', supabase);
+    const body = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(body.report.id).toBe(REPORT_ID);
+    expect(supabase.rpcCalls.map((c) => c.name)).not.toContain(
+      'release_corrigefacil_free_demo_report',
+    );
+  });
+
+  it('1ª releitura FALHA, 2ª responde ausência -> release', async () => {
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [ERRO_DE_REDE, { data: null, error: null }],
+    });
+
+    const res = await chamar('free_demo', supabase);
+    const body = await res.json();
+
+    expect(res.status).toBe(500);
+    expect(supabase.rpcCalls.map((c) => c.name)).toContain(
+      'release_corrigefacil_free_demo_report',
+    );
+    expect(JSON.stringify(body)).not.toContain('RELATÓRIO GERADO PELA IA');
+  });
+
+  it('TODAS as releituras falham -> 503, SEM release e SEM texto', async () => {
+    // Estado indeterminado. Deixar uma possível reserva para o TTL de 30
+    // minutos é reversível; apagar uma linha que talvez seja um relatório
+    // entregue não é.
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [ERRO_DE_REDE, ERRO_DE_REDE, ERRO_DE_REDE],
+    });
+
+    const res = await chamar('free_demo', supabase);
+    const body = await res.json();
+
+    expect(res.status).toBe(503);
+    expect(supabase.rpcCalls.map((c) => c.name)).not.toContain(
+      'release_corrigefacil_free_demo_report',
+    );
+    expect(JSON.stringify(body)).not.toContain('RELATÓRIO GERADO PELA IA');
+  });
+
+  it('tenta a releitura no máximo 3 vezes', async () => {
+    const supabase = fakeSupabase({
+      rpc: { reserve_corrigefacil_free_demo_report: reservaOk },
+      aiReports: [ERRO_DE_REDE, ERRO_DE_REDE, ERRO_DE_REDE],
+    });
+
+    await chamar('free_demo', supabase);
+
+    expect(sequencia.filter((e) => e === 'confirma')).toHaveLength(3);
   });
 });

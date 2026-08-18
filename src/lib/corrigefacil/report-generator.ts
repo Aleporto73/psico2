@@ -119,6 +119,94 @@ type RpcClient = {
   ) => Promise<{ error: unknown }>;
 };
 
+/** Só o que a confirmação usa: `from(...).select(...).eq(...).maybeSingle()`. */
+interface FiltroDemo {
+  eq: (coluna: string, valor: unknown) => FiltroDemo;
+  maybeSingle: () => Promise<{
+    data: Record<string, unknown> | null;
+    error: unknown;
+  }>;
+}
+
+interface LeitorDemo {
+  from: (tabela: string) => { select: (colunas: string) => FiltroDemo };
+}
+
+/**
+ * A confirmação tem três respostas possíveis, e a diferença entre as duas
+ * últimas é o que este PR corrige: "o banco respondeu e não há relatório" é
+ * MUITO diferente de "não consegui perguntar ao banco".
+ */
+type ConfirmacaoDemo =
+  | { estado: 'confirmado'; report: Record<string, unknown> }
+  | { estado: 'ausente' }
+  | { estado: 'indeterminado' };
+
+/** Tentativas da releitura e o intervalo entre elas. Curto de propósito:
+ *  isto roda dentro de um request que o usuário está esperando. */
+const CONFIRM_TENTATIVAS = 3;
+const CONFIRM_INTERVALO_MS = 150;
+
+/**
+ * Uma linha só é relatório pronto se ela DIZ que é. Os três atributos são
+ * conferidos aqui, na linha que voltou, além de irem como filtro na query:
+ * depender apenas da policy de SELECT seria transformar a RLS em
+ * pós-condição, e bastaria uma policy administrativa ou permissiva devolver
+ * a reserva para o código chamar de "relatório" uma linha de texto vazio.
+ */
+function relatorioDemoValido(linha: Record<string, unknown> | null): boolean {
+  if (!linha) return false;
+
+  const texto = linha.output_text;
+
+  return (
+    linha.generation_status === 'completed' &&
+    linha.billing_origin === 'free_demo' &&
+    typeof texto === 'string' &&
+    texto.trim() !== ''
+  );
+}
+
+async function confirmarDemoConcluida(
+  supabase: LeitorDemo,
+  reportId: string | null,
+): Promise<ConfirmacaoDemo> {
+  if (!reportId) return { estado: 'ausente' };
+
+  for (let tentativa = 1; tentativa <= CONFIRM_TENTATIVAS; tentativa++) {
+    const { data, error } = await supabase
+      .from('ai_reports')
+      .select('*')
+      .eq('id', reportId)
+      .eq('billing_origin', 'free_demo')
+      .eq('generation_status', 'completed')
+      .maybeSingle();
+
+    if (error) {
+      // ERRO NÃO É AUSÊNCIA. Um timeout de rede aqui não diz nada sobre a
+      // linha: `complete` pode ter commitado do outro lado.
+      console.error(
+        `CorrigeFácil free demo confirm error (tentativa ${tentativa}):`,
+        error,
+      );
+
+      if (tentativa < CONFIRM_TENTATIVAS) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, CONFIRM_INTERVALO_MS),
+        );
+      }
+      continue;
+    }
+
+    // O banco RESPONDEU. A resposta é definitiva — para os dois lados.
+    return relatorioDemoValido(data)
+      ? { estado: 'confirmado', report: data as Record<string, unknown> }
+      : { estado: 'ausente' };
+  }
+
+  return { estado: 'indeterminado' };
+}
+
 async function releaseFreeDemo(
   supabase: RpcClient,
   reportId: string | null,
@@ -849,22 +937,39 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
       console.error('CorrigeFácil free demo complete error:', completeError);
     }
 
-    // A VERDADE é a releitura, não a resposta da RPC.
-    //
-    // O SELECT deste usuário só enxerga generation_status='completed' — é a
-    // policy do banco que garante isso. Entao: se a linha aparece, a
-    // finalização aconteceu, INCLUSIVE no caso ambíguo em que a RPC commitou
-    // e a resposta se perdeu na volta. É por isso que o `completeError`
-    // acima é só registrado, e não decide nada sozinho.
-    const { data: finalReport } = await supabase
-      .from('ai_reports')
-      .select('*')
-      .eq('id', reservedReportId)
-      .maybeSingle();
+    // A VERDADE é a releitura, não a resposta da RPC — e ela é EXPLÍCITA,
+    // não herdada da RLS. É por isso que o `completeError` acima é só
+    // registrado: ele não decide nada sozinho, nos dois sentidos.
+    const confirmacao = await confirmarDemoConcluida(
+      supabase,
+      reservedReportId,
+    );
 
-    if (!finalReport) {
-      // Não finalizou de verdade. Devolve a chance e NÃO entrega o texto:
-      // entregar aqui seria dar o valor e cobrar a demonstração assim mesmo.
+    if (confirmacao.estado === 'indeterminado') {
+      // AMBÍGUO: nenhuma tentativa conseguiu ler a linha. `complete` pode
+      // ter commitado, e apagar uma linha cujo estado não conseguimos ver
+      // seria destruir um relatório possivelmente entregue.
+      //
+      // Por isso NÃO se devolve a chance aqui. Se a linha estiver completed,
+      // ela já está no histórico; se estiver pending, o TTL de 30 minutos a
+      // recupera na próxima tentativa. Esperar é reversível, apagar não é.
+      console.error(
+        'CorrigeFácil free demo: confirmação indeterminada para',
+        reservedReportId,
+      );
+      return NextResponse.json(
+        {
+          message:
+            'Não foi possível confirmar a conclusão da demonstração gratuita. Confira seu histórico em instantes antes de tentar novamente.',
+        },
+        { status: 503 },
+      );
+    }
+
+    if (confirmacao.estado === 'ausente') {
+      // O banco RESPONDEU e não há relatório concluído: não finalizou.
+      // Devolve a chance e NÃO entrega o texto — entregar seria dar o valor
+      // e cobrar a demonstração assim mesmo.
       await releaseFreeDemo(supabase, reservedReportId);
       return NextResponse.json(
         {
@@ -877,7 +982,7 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
 
     return NextResponse.json({
       message: 'Relatório gerado com sucesso.',
-      report: finalReport,
+      report: confirmacao.report,
       // A demonstração NÃO entra na cota mensal: o contador da assinatura
       // volta exatamente como estava.
       monthly_count: currentMonthlyCount,

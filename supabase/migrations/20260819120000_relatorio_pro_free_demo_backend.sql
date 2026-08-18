@@ -297,8 +297,8 @@ begin
     return;
   end if;
 
-  -- (F) A reserva. `output_text = ''` porque a coluna e NOT NULL; o que diz
-  -- que ainda nao ha relatorio e generation_status, nao o texto.
+  -- (F) A reserva. O texto nasce vazio porque a coluna nao aceita nulo; o
+  -- que diz que ainda nao ha relatorio e generation_status, nao o texto.
   begin
     insert into public.ai_reports
       (user_id, output_text, billing_origin, generation_status, corrigefacil_assessment_id)
