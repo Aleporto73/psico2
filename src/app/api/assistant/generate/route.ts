@@ -193,7 +193,36 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!accessData.has_active_assistant) {
+    // O corpo é lido ANTES do gate porque a decisão de origem depende de
+    // `source`: sem Relatório Pró ativo, só o CorrigeFácil tem um caminho
+    // adiante. Antes deste PR o 403 acontecia aqui, e não havia o que decidir.
+    let body: Record<string, any>;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Payload inválido. Envie um JSON válido.' },
+        { status: 400 },
+      );
+    }
+
+    const hasActivePro = accessData.has_active_assistant === true;
+    const isCorrigeFacil = body.source === 'corrigefacil';
+
+    // ==================================================================
+    // A ORIGEM É DECIDIDA AQUI, NO SERVIDOR — NUNCA PELO CLIENTE.
+    //
+    // A origem NUNCA é lida do payload — nem aqui, nem no gerador. Se o
+    // request trouxer um campo de origem, ele é simplesmente ignorado:
+    // quem tem Pró ativo gera pelo fluxo pago, e só quem NÃO tem pode
+    // chegar à demonstração — e ainda assim apenas pelo CorrigeFácil, com a
+    // elegibilidade revalidada no banco pela RPC de reserva.
+    // ==================================================================
+    const billingOrigin: 'subscription' | 'free_demo' = hasActivePro
+      ? 'subscription'
+      : 'free_demo';
+
+    if (!hasActivePro && !isCorrigeFacil) {
       return NextResponse.json(
         {
           message:
@@ -203,11 +232,15 @@ export async function POST(request: Request) {
       );
     }
 
+    // A cota mensal é da ASSINATURA. A demonstração gratuita não entra na
+    // conta — nem para bloquear agora, nem para descontar dos 50 de quem
+    // assinar depois.
     const startOfMonth = getStartOfBrazilMonthUtc();
     const { count, error: countError } = await supabase
       .from('ai_reports')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
+      .eq('billing_origin', 'subscription')
       .gte('created_at', startOfMonth.toISOString());
 
     if (countError) {
@@ -217,7 +250,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if ((count ?? 0) >= MONTHLY_LIMIT) {
+    if (billingOrigin === 'subscription' && (count ?? 0) >= MONTHLY_LIMIT) {
       return NextResponse.json(
         {
           message:
@@ -231,17 +264,7 @@ export async function POST(request: Request) {
       );
     }
 
-    let body: Record<string, any>;
-    try {
-      body = await request.json();
-    } catch {
-      return NextResponse.json(
-        { message: 'Payload inválido. Envie um JSON válido.' },
-        { status: 400 },
-      );
-    }
-
-    if (body.source === 'corrigefacil') {
+    if (isCorrigeFacil) {
       return generateCorrigeFacilReport({
         supabase,
         userId: user.id,
@@ -249,6 +272,7 @@ export async function POST(request: Request) {
         currentMonthlyCount: count ?? 0,
         monthlyLimit: MONTHLY_LIMIT,
         avisoFinal: NOTA_PROFISSIONAL,
+        billingOrigin,
       });
     }
 
@@ -529,11 +553,15 @@ export async function GET() {
       );
     }
 
+    // Mesma regra do POST: o contador que a tela mostra é o da ASSINATURA.
+    // Sem o filtro, uma demonstração gratuita apareceria como "1 de 50" para
+    // quem assinasse depois — cobrando do plano um relatório que foi cortesia.
     const startOfMonth = getStartOfBrazilMonthUtc();
     const { count, error: countError } = await supabase
       .from('ai_reports')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', user.id)
+      .eq('billing_origin', 'subscription')
       .gte('created_at', startOfMonth.toISOString());
 
     if (countError) {

@@ -81,6 +81,60 @@ const DESTINATION_RULES: Record<ReportType, string> = {
     'Frases objetivas valem mais que parágrafos desenvolvidos.',
 };
 
+/**
+ * O que responder quando a reserva NÃO foi concedida. Nenhum destes caminhos
+ * chega perto da OpenAI.
+ */
+const FREE_DEMO_DENIAL: Record<string, { message: string; status: number }> = {
+  already_used: {
+    message:
+      'Você já utilizou a demonstração gratuita do Relatório Pró desta conta.',
+    status: 403,
+  },
+  in_progress: {
+    message:
+      'Já existe uma geração da demonstração gratuita em andamento. Aguarde alguns instantes.',
+    status: 409,
+  },
+  use_subscription: {
+    message:
+      'Esta conta possui Relatório Pró ativo e não utiliza a demonstração gratuita.',
+    status: 403,
+  },
+  ineligible: {
+    message:
+      'Esta avaliação não está elegível para a demonstração gratuita do Relatório Pró.',
+    status: 403,
+  },
+};
+
+/**
+ * Devolve a chance quando nada foi entregue. Falhar aqui não é fatal: a
+ * reserva órfã é recuperada pelo TTL de 30 minutos na próxima tentativa.
+ */
+type RpcClient = {
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ error: unknown }>;
+};
+
+async function releaseFreeDemo(
+  supabase: RpcClient,
+  reportId: string | null,
+) {
+  if (!reportId) return;
+
+  const { error } = await supabase.rpc(
+    'release_corrigefacil_free_demo_report',
+    { report_uuid: reportId },
+  );
+
+  if (error) {
+    console.error('CorrigeFácil free demo release error:', error);
+  }
+}
+
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -436,6 +490,12 @@ export async function generateCorrigeFacilReport(args: {
   currentMonthlyCount: number;
   monthlyLimit: number;
   avisoFinal: string;
+  /**
+   * DECIDIDO PELA ROTA, no servidor. Não vem do body, não vem do cliente e
+   * não é inferido aqui: 'subscription' quando há Relatório Pró ativo,
+   * 'free_demo' quando não há. O banco revalida tudo na RPC de reserva.
+   */
+  billingOrigin: 'subscription' | 'free_demo';
 }) {
   const {
     supabase,
@@ -444,6 +504,7 @@ export async function generateCorrigeFacilReport(args: {
     currentMonthlyCount,
     monthlyLimit,
     avisoFinal,
+    billingOrigin,
   } = args;
 
   const assessmentId =
@@ -663,6 +724,59 @@ ${resultsText}${derivadoText}${phq9Text}${fdtText}${orientacaoText}${temposText}
 
 Redija as cinco seções para o destino solicitado. Preserve integralmente os dados fechados acima.`;
 
+  // ==================================================================
+  // A RESERVA — ANTES DA IA, e só para a demonstração gratuita.
+  //
+  // Ela vem AQUI, e não no começo da função, de propósito: tudo que podia
+  // falhar por dado já falhou acima — avaliação carregada, posse conferida,
+  // nome e idade presentes, instrumento resolvido, resultados existentes,
+  // prompt montado. Reservar antes disso gastaria a única chance da conta
+  // num erro de preenchimento.
+  //
+  // Daqui para baixo vale a regra que sustenta o produto inteiro: quem não
+  // ganhou a reserva NÃO chama a OpenAI.
+  // ==================================================================
+  let reservedReportId: string | null = null;
+
+  if (billingOrigin === 'free_demo') {
+    const { data: reservation, error: reserveError } = await supabase.rpc(
+      'reserve_corrigefacil_free_demo_report',
+      { assessment_uuid: assessmentId },
+    );
+
+    if (reserveError) {
+      console.error('CorrigeFácil free demo reserve error:', reserveError);
+      return NextResponse.json(
+        { message: 'Não foi possível iniciar a demonstração gratuita.' },
+        { status: 500 },
+      );
+    }
+
+    const reserved = Array.isArray(reservation) ? reservation[0] : reservation;
+    const reservationStatus: string | null =
+      reserved?.reservation_status ?? null;
+
+    if (reservationStatus !== 'reserved') {
+      // Inclui `use_subscription`: se o banco disser que esta conta tem Pró
+      // ativo, a demonstração não acontece — falha fechada, sem gerar nada.
+      const negativa =
+        FREE_DEMO_DENIAL[reservationStatus ?? ''] ?? FREE_DEMO_DENIAL.ineligible;
+      return NextResponse.json(
+        { message: negativa.message },
+        { status: negativa.status },
+      );
+    }
+
+    reservedReportId = reserved?.report_id ?? null;
+
+    if (!reservedReportId) {
+      return NextResponse.json(
+        { message: 'Não foi possível iniciar a demonstração gratuita.' },
+        { status: 500 },
+      );
+    }
+  }
+
   let generatedText: string;
   try {
     const result = await callOpenAI([
@@ -694,6 +808,8 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
     });
   } catch (error) {
     console.error('OpenAI CorrigeFácil error:', error);
+    // Nenhum valor foi entregue ao usuário: a chance volta.
+    await releaseFreeDemo(supabase, reservedReportId);
     return NextResponse.json(
       { message: 'Erro ao conectar com o serviço de IA. Tente novamente em instantes.' },
       { status: 502 },
@@ -714,6 +830,62 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
   ]
     .filter(Boolean)
     .join('\n');
+
+  if (billingOrigin === 'free_demo') {
+    // Finaliza a MESMA linha que foi reservada. Nenhuma linha nova nasce
+    // aqui: se nascesse, a conta teria duas demonstrações.
+    const { error: completeError } = await supabase.rpc(
+      'complete_corrigefacil_free_demo_report',
+      {
+        report_uuid: reservedReportId,
+        new_title: reportTitle,
+        new_report_type: reportType,
+        new_input_text: savedInput,
+        new_output_text: generatedText,
+      },
+    );
+
+    if (completeError) {
+      console.error('CorrigeFácil free demo complete error:', completeError);
+    }
+
+    // A VERDADE é a releitura, não a resposta da RPC.
+    //
+    // O SELECT deste usuário só enxerga generation_status='completed' — é a
+    // policy do banco que garante isso. Entao: se a linha aparece, a
+    // finalização aconteceu, INCLUSIVE no caso ambíguo em que a RPC commitou
+    // e a resposta se perdeu na volta. É por isso que o `completeError`
+    // acima é só registrado, e não decide nada sozinho.
+    const { data: finalReport } = await supabase
+      .from('ai_reports')
+      .select('*')
+      .eq('id', reservedReportId)
+      .maybeSingle();
+
+    if (!finalReport) {
+      // Não finalizou de verdade. Devolve a chance e NÃO entrega o texto:
+      // entregar aqui seria dar o valor e cobrar a demonstração assim mesmo.
+      await releaseFreeDemo(supabase, reservedReportId);
+      return NextResponse.json(
+        {
+          message:
+            'Não foi possível concluir a demonstração gratuita. Tente novamente.',
+        },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      message: 'Relatório gerado com sucesso.',
+      report: finalReport,
+      // A demonstração NÃO entra na cota mensal: o contador da assinatura
+      // volta exatamente como estava.
+      monthly_count: currentMonthlyCount,
+      monthly_limit: monthlyLimit,
+      daily_count: currentMonthlyCount,
+      daily_limit: monthlyLimit,
+    });
+  }
 
   const { data: savedReport, error: saveError } = await supabase
     .from('ai_reports')
