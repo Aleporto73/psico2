@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Printer, RefreshCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Printer, RefreshCw } from 'lucide-react';
 import {
   buscarInstrumento,
   corrigirInstrumento,
@@ -13,6 +13,7 @@ import {
 } from '@/lib/corrigefacil/api';
 import { resolverNormaData } from '@/lib/corrigefacil/date-norm-api';
 import { ResultGraph } from '../../graphs/ResultGraph';
+import { CODIGOS_DOS_21 } from '../../graphs/graph-config';
 import { RespostasAuxiliares } from '../../RespostasAuxiliares';
 import { MetodoDeCorrecao } from '../../MetodoDeCorrecao';
 import { metricasDaEscala } from '@/lib/corrigefacil/metricas-instrumento';
@@ -169,7 +170,17 @@ function CorpoDoItem({
   );
 }
 
-export function AvaliarClient({ code }: { code: string }) {
+/** `modoDemo` NÃO é inferido aqui, e não pode ser: ele vem do Server
+ *  Component, que é o único lugar que conhece os dois direitos (o do produto
+ *  e o do instrumento). Deduzi-lo do `code` faria o comprador do CorrigeFácil
+ *  ver copy de demonstração ao aplicar o mesmo instrumento. */
+export function AvaliarClient({
+  code,
+  modoDemo,
+}: Readonly<{
+  code: string;
+  modoDemo: boolean;
+}>) {
   const [instrumento, setInstrumento] = useState<FaseInstrumento>({ fase: 'carregando' });
   const [estado, setEstado] = useState<EstadoFormulario>(estadoInicial);
   const [enviando, setEnviando] = useState(false);
@@ -380,6 +391,7 @@ export function AvaliarClient({ code }: { code: string }) {
           identificacao={identificacao}
           salvamento={salvamento}
           onSalvar={salvar}
+          modoDemo={modoDemo}
         />
       ) : (
         <>
@@ -836,6 +848,47 @@ function TemposFields({
   );
 }
 
+/** A oferta que fecha a experiência gratuita.
+ *
+ *  NÃO carrega preço nem URL de checkout, de propósito. Os dois moram em
+ *  `products_public` e são lidos num lugar só — a página de venda. Repetir
+ *  "R$ 57" aqui criaria um segundo valor para envelhecer sozinho no dia de
+ *  um reajuste, e um checkout copiado poderia apontar para o lugar errado.
+ *  Este bloco leva o profissional ATÉ a oferta; quem vende é ela.
+ *
+ *  O total sai de CODIGOS_DOS_21, a mesma fonte soberana que a página
+ *  comercial usa para escrever o número dela. Ninguém digita "21".
+ *
+ *  O nome do instrumento é PARÂMETRO e não literal: hoje só o FDT é
+ *  gratuito, mas quem decide isso é `instruments.is_free_demo` no banco, e
+ *  liberar um segundo instrumento não pode exigir editar esta frase. */
+function OfertaCorrigeFacilCompleto({
+  instrumento,
+}: Readonly<{ instrumento: string }>) {
+  return (
+    <section className="bg-pp-block-lilac rounded-block p-6 md:p-8 space-y-4 print:hidden">
+      <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+        Você experimentou 1 dos {CODIGOS_DOS_21.length} instrumentos
+      </p>
+      <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink leading-tight">
+        Continue com o CorrigeFácil completo
+      </h2>
+      <p className="text-pp-ink text-base leading-relaxed max-w-2xl">
+        Você usou o {instrumento} dentro do CorrigeFácil. Libere os demais
+        instrumentos para correção digital, com resultados organizados e
+        avaliações salvas no sistema.
+      </p>
+      <Link
+        href="/app/corrigefacil#oferta-corrigefacil"
+        className="inline-flex items-center gap-2 bg-pp-ink text-pp-canvas px-6 py-3 rounded-pill text-sm font-medium hover:bg-pp-ink-soft transition"
+      >
+        Liberar CorrigeFácil completo
+        <ArrowRight className="w-4 h-4" aria-hidden="true" />
+      </Link>
+    </section>
+  );
+}
+
 function ResultadoCorrecao({
   resposta,
   detalhe,
@@ -843,14 +896,16 @@ function ResultadoCorrecao({
   identificacao,
   salvamento,
   onSalvar,
-}: {
+  modoDemo,
+}: Readonly<{
   resposta: RespostaCorrecao;
   detalhe: InstrumentoDetalhe;
   onCorrigirNovamente: () => void;
   identificacao: IdentificacaoAvaliado;
   salvamento: EstadoSalvamento;
   onSalvar: () => Promise<string | null>;
-}) {
+  modoDemo: boolean;
+}>) {
   // O FDT desenha as dez medidas no bloco próprio, e não na grade: a
   // classificação dele não sai em `resultados` (ver FdtDerivado), e as duas
   // apresentações lado a lado seriam a mesma lista duas vezes. Os outros 20
@@ -983,10 +1038,23 @@ function ResultadoCorrecao({
 
       <hr className="border-pp-hairline-soft" />
 
-      <CorrigeFacilReportPanel
-        assessmentId={salvamento.fase === 'salvo' ? salvamento.id : null}
-        ensureAssessmentId={onSalvar}
-      />
+      {/* UMA oferta principal por vez, e o modo decide qual.
+       *
+       * Quem entrou pela porta do instrumento gratuito ainda não comprou o
+       * CorrigeFácil — oferecer Relatórios Pró aqui seria pedir a segunda
+       * compra antes da primeira, e dois CTAs disputando a mesma tela
+       * dividem a atenção e não convertem nem um.
+       *
+       * Quem comprou vê o painel EXATAMENTE como sempre viu: o componente
+       * não foi tocado, só deixou de ser renderizado num caso novo. */}
+      {modoDemo ? (
+        <OfertaCorrigeFacilCompleto instrumento={detalhe.code} />
+      ) : (
+        <CorrigeFacilReportPanel
+          assessmentId={salvamento.fase === 'salvo' ? salvamento.id : null}
+          ensureAssessmentId={onSalvar}
+        />
+      )}
 
       {salvamento.fase === 'salvo' ? (
         <section className="bg-pp-block-lilac/40 border border-pp-block-lilac rounded-block p-6 space-y-3 print:hidden">

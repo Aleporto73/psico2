@@ -9,6 +9,9 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import { CODIGOS_DOS_21 } from './graphs/graph-config';
+// A base da rota de aplicação vem do modelo do catálogo, não de uma string
+// nova: existe UM lugar que diz onde se aplica um instrumento.
+import { BASE_APLICAR } from './catalog-view';
 import {
   montarVisaoBloqueada,
   montarVitrine,
@@ -78,6 +81,18 @@ const BENEFICIO_HISTORICO = {
  *  página de produtos já usam. O checkout daquele produto mora lá dentro e
  *  não é reimplementado aqui: esta página só aponta para o fluxo existente. */
 const ROTA_RELATORIOS_PRO = '/app/assistente-pro';
+
+/** O instrumento que abre a demonstração gratuita.
+ *
+ *  Isto é escolha COMERCIAL, não autorização. Quem decide se a porta abre é
+ *  `can_access_corrigefacil_instrument` no banco, que lê
+ *  `instruments.is_free_demo` — e o Server Component de /avaliar/[code] é
+ *  quem pergunta. Esta constante só diz para onde o botão aponta.
+ *
+ *  Apontar para um instrumento que o banco não liberou não abre nada: a rota
+ *  responde com esta mesma página de venda. O erro seria visível, não
+ *  silencioso. */
+const INSTRUMENTO_GRATUITO = 'FDT';
 
 const PASSOS = [
   'Escolha o instrumento',
@@ -194,6 +209,38 @@ export async function CorrigeFacilLocked() {
             </p>
           </div>
         )}
+      </section>
+
+      {/* 2b · Experimentar antes de comprar.
+          SECUNDÁRIA de propósito, e é por isso que ela vem DEPOIS do preço e
+          do checkout: a oferta paga continua sendo a protagonista da página.
+          Sem fundo de destaque, sem botão sólido — hairline e link de borda,
+          um degrau visual abaixo do CTA de compra logo acima.
+
+          O código do instrumento aparece no href porque a rota é essa, e
+          porque a escolha de QUAL instrumento abrir a demonstração é
+          comercial. A AUTORIZAÇÃO não passa por aqui: quem decide se a porta
+          abre é can_access_corrigefacil_instrument, no banco, consultada pelo
+          Server Component da rota. Trocar o instrumento gratuito é um UPDATE
+          em is_free_demo mais esta linha — nunca um `if` de acesso. */}
+      <section className="border border-pp-hairline rounded-block p-6 md:p-8 space-y-3">
+        <p className="text-[11px] uppercase tracking-wide text-pp-ink-soft">
+          Quer conhecer antes de comprar?
+        </p>
+        <h2 className="font-serif italic text-2xl md:text-3xl text-pp-ink leading-tight">
+          Experimente o CorrigeFácil gratuitamente com o FDT
+        </h2>
+        <p className="text-pp-ink text-base leading-relaxed max-w-2xl">
+          Faça uma correção completa do Teste dos Cinco Dígitos, veja o
+          resultado, o gráfico e salve sua avaliação no sistema.
+        </p>
+        <Link
+          href={`${BASE_APLICAR}/${INSTRUMENTO_GRATUITO}`}
+          className="inline-flex items-center gap-2 border border-pp-ink/25 text-pp-ink px-6 py-3 rounded-pill text-sm font-medium hover:border-pp-ink/50 transition"
+        >
+          Experimentar FDT grátis
+          <ArrowRight className="w-4 h-4" aria-hidden="true" />
+        </Link>
       </section>
 
       {/* 3 · Vitrine COMPLETA dos instrumentos — o argumento central.

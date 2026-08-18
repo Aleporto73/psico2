@@ -211,13 +211,22 @@ describe('navegação', () => {
     const AVALIAR_PAGE = semComentarios(
       ler('app/app/corrigefacil/avaliar/[code]/page.tsx'),
     );
-    for (const fonte of [PAGE, AVALIAR_PAGE]) {
-      expect(fonte).toContain('temAcessoCorrigeFacil');
-    }
+    // As duas continuam perguntando o direito do PRODUTO ao mesmo módulo.
+    // A raiz usa o wrapper booleano; a rota de aplicação usa a versão
+    // tri-state, porque só ela precisa distinguir 'negado' de 'erro' — mas
+    // as duas perguntam a mesma coisa, no mesmo lugar.
+    expect(PAGE).toContain('temAcessoCorrigeFacil');
+    expect(AVALIAR_PAGE).toContain('consultarAcessoCorrigeFacil');
+
     expect(PAGE).toContain('if (!temAcesso)');
     expect(PAGE).toContain('<CorrigeFacilLocked />');
     // o catálogo funcional segue atrás do gate
     expect(PAGE).toContain('<CorrigeFacilCatalogClient />');
+
+    // e a rota de aplicação continua caindo na página de venda quando o
+    // direito não é confirmado — inclusive quando o banco não respondeu
+    expect(AVALIAR_PAGE).toContain("produto === 'erro'");
+    expect(AVALIAR_PAGE).toContain('<CorrigeFacilLocked />');
   });
 });
 
@@ -515,13 +524,21 @@ describe('página interna de venda do CorrigeFácil', () => {
     expect(vitrine()).not.toContain('href');
     expect(vitrine()).not.toContain('/avaliar/');
     expect(vitrine()).not.toContain('Aplicar');
-    // a tela não monta rota de aplicação em lugar nenhum
+    // a tela não escreve rota de aplicação à mão: a base vem do modelo do
+    // catálogo, que é o único lugar que diz onde se aplica um instrumento
     expect(LOCKED).not.toContain('/app/corrigefacil/avaliar');
-    // e o ÚNICO Link do arquivo é o do Relatórios Pró — se aparecer um
-    // segundo, alguém abriu um caminho novo sem passar por aqui
+    expect(LOCKED).toContain("import { BASE_APLICAR } from './catalog-view'");
+  });
+
+  it('são DOIS Links, e cada um tem dono conhecido', () => {
+    // Se aparecer um terceiro, alguém abriu um caminho novo sem passar por
+    // aqui — que é exatamente o que esta trava existe para pegar.
     const links = LOCKED.match(/<Link\b/g) ?? [];
-    expect(links).toHaveLength(1);
+    expect(links).toHaveLength(2);
     expect(LOCKED).toContain('href={ROTA_RELATORIOS_PRO}');
+    expect(LOCKED).toContain(
+      'href={`${BASE_APLICAR}/${INSTRUMENTO_GRATUITO}`}',
+    );
   });
 
   it('a lista de instrumentos vem da fonte soberana, não de cópia local', () => {
