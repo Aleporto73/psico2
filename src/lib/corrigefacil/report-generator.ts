@@ -382,6 +382,57 @@ O bloco "DADOS DERIVADOS CONGELADOS DO CONFIAS" tem exatamente a mesma força do
 O Perfil por Habilidade PODE ser usado para descrever o perfil observado — quais tarefas ficaram consolidadas, quais estão em desenvolvimento e quais ainda não se consolidaram —, sempre com os rótulos recebidos. Não nomeie habilidade que não esteja nas linhas recebidas, não crie categoria de agrupamento que ninguém forneceu e não converta o perfil em diagnóstico, causa ou prognóstico.
 `;
 
+/** O PERFIL INTERPRETATIVO do CONFIAS — segundo piloto da mesma arquitetura
+ *  do FDT: um bloco de VOCABULÁRIO e ORDEM DE LEITURA, colado na trava que
+ *  já fecha o dado, sem abrir nenhuma permissão nova.
+ *
+ *  A causa do texto burocrático é a mesma do FDT, com a forma trocada. O
+ *  FDT tinha dez medidas em duas dimensões; o CONFIAS tem DUAS escalas
+ *  principais (Sílaba e Fonema, mais o Total) e DEZESSEIS tarefas em dois
+ *  grupos. Sem mapa, o modelo trata as dezesseis como lista plana — e
+ *  lista plana só comporta recitar ou generalizar. Recitar vira "S1:
+ *  Consolidada, S2: Consolidada, S3: Em desenvolvimento..." dezesseis
+ *  vezes; generalizar vira "houve variação entre as habilidades".
+ *
+ *  Entra colado na REGRA_DERIVADOS e sob o MESMO sinalizador: os dois só
+ *  existem quando a avaliação traz o snapshot do CONFIAS. Com `comDerivado`
+ *  false o prompt dos outros instrumentos continua byte a byte o que era —
+ *  o teste do FDT já provava isso por sha256, e o novo teste do CONFIAS usa
+ *  a mesma prova.
+ *
+ *  Nenhum corte entra aqui. Os cortes de 0,75 e 0,50 que separam as três
+ *  faixas do perfil não chegam ao browser (é a mesma trava de
+ *  `confias-derivado.ts`), e este bloco não os reconstrói: fala de
+ *  CLASSIFICAÇÃO recebida, nunca de percentual comparado com nada. */
+const PERFIL_INTERPRETATIVO_CONFIAS = `
+COMO LER O CONFIAS — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não afrouxa a REGRA_DERIVADOS acima: nada aqui autoriza recalcular, reclassificar, comparar percentual com corte ou concluir sobre a criança fora do que as tarefas deste protocolo sustentam. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra as dezesseis tarefas e não acrescente cautela nova.
+
+O QUE CADA NÍVEL DE INFORMAÇÃO REPRESENTA (vocabulário do instrumento, não característica da criança):
+- Sílaba, Fonema e Total são as ESCALAS PRINCIPAIS, e chegam a você já calculadas e classificadas na tabela de resultados por escala — este bloco não repete os números delas, só ensina a ler o conjunto. Sílaba representa o desempenho agregado nas tarefas silábicas do instrumento; Fonema, o desempenho agregado nas tarefas fonêmicas; Total, o resultado agregado do protocolo inteiro. NÃO converta Sílaba baixa em "déficit silábico", Fonema baixo em "déficit fonológico" nem Total baixo em "transtorno de aprendizagem": a classificação continua pertencendo ao CONFIAS, não à criança.
+- O PERFIL POR HABILIDADE traz as tarefas silábicas (S1 a S9) e fonêmicas (F1 a F7), cada uma já classificada como Consolidada, Em desenvolvimento ou Ainda não consolidada. Ele serve para identificar quais tarefas ficaram em cada classificação, a concentração das classificações, heterogeneidade, contraste e agrupamento entre o grupo silábico e o fonêmico — sempre com os rótulos recebidos. NÃO transforme "Síntese fonêmica — Ainda não consolidada" em "a criança não consegue sintetizar fonemas no cotidiano" nem em "há déficit fonêmico": o que se pode dizer é que, nesta tarefa, o desempenho foi classificado como Ainda não consolidada.
+- O NÍVEL EQUIVALENTE (escore sílaba), quando vier, é leitura ADICIONAL do escore de Sílaba — não é a hipótese de escrita informada pelo profissional para a seleção normativa, mesmo usando a mesma nomenclatura de escrita. Nunca chame o nível de hipótese observada, nunca diga que ele corrige a hipótese informada e nunca trate divergência entre os dois como erro: se houver divergência, ela é estrutural — as duas informações têm natureza diferente — e não inconsistência a resolver.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. ESCALAS PRINCIPAIS — como Sílaba, Fonema e Total se distribuem: convergem entre si, ou há diferença entre Sílaba e Fonema? Descreva a distribuição; não explique por que ela existe.
+2. DISTRIBUIÇÃO DAS HABILIDADES — quantas e quais tarefas aparecem como Consolidadas, Em desenvolvimento ou Ainda não consolidadas. Não vire contagem mecânica no texto: use para perceber o padrão, não para listar.
+3. SILÁBICAS × FONÊMICAS — verifique se há diferença REALMENTE sustentada entre os dois grupos. É permitido dizer que há maior concentração de habilidades consolidadas num grupo, maior número de tarefas em desenvolvimento no outro, ou distribuição semelhante entre os dois — somente se os dados mostrarem isso. Não explique por quê.
+4. CONTRASTES INTERNOS — procure tarefa específica que destoe do restante do grupo dela (por exemplo, um grupo majoritariamente consolidado com uma tarefa ainda não consolidada). Quando existir, pode ser destacada como particularidade do perfil. Não a transforme em diagnóstico nem em causa.
+5. NÍVEL EQUIVALENTE — quando existir, use-o como leitura adicional do escore de Sílaba, na forma da nota que já veio com ele. Não o use para diagnosticar estágio de alfabetização.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise: perfil homogêneo, predomínio de habilidades consolidadas, predomínio de habilidades em desenvolvimento, heterogeneidade, diferença silábico × fonêmico ou presença de habilidade específica destoante. Só o que os dados realmente sustentarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste CONFIAS?" priorizando Sílaba, Fonema e Total, o padrão geral do Perfil por Habilidade e o contraste realmente importante — não as dezesseis tarefas em prosa. Perfil homogêneo pede síntese CURTA: diga a homogeneidade e pare, sem inventar diferença para produzir texto.
+- Na Análise e interpretação, relacione as escalas principais com o Perfil por Habilidade, aprofunde o padrão silábico e fonêmico, destaque tarefa específica só quando ela acrescentar algo, integre o Nível equivalente quando existir, diga o que o perfil permite afirmar NO ÂMBITO DO CONFIAS e delimite a extrapolação. Não recite as dezesseis tarefas e não reescreva a síntese.
+- Nas Considerações para o contexto, use a mensagem central. Um perfil heterogêneo pode justificar orientar que o resultado não seja resumido só pelo Total; um perfil homogêneo não precisa de preocupação inventada. Não diga o que a escola ou a família devem trabalhar (rimas, fonemas, intervenção) a menos que isso venha de contexto escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste aplicado nos outros pilotos: ele existe POR CAUSA deste perfil CONFIAS? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: integrar separadamente o domínio silábico e o fonêmico se houver contraste real entre eles; considerar habilidade específica destoante quando o perfil não for uniforme; confrontar o Perfil por Habilidade com outras informações disponíveis da avaliação; preservar a diferença entre a hipótese informada e o Nível equivalente quando os dois vierem juntos. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente, e perfil homogêneo não pede uma segunda para completar.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL. Não repita a tabela, não repita as dezesseis habilidades, não repita as recomendações e não escreva um segundo aviso.
+
+O QUE NUNCA SE FAZ COM O PERFIL DO CONFIAS, mesmo com classificação extrema:
+Não crie habilidade que não esteja nas linhas recebidas e não invente agrupamento que ninguém forneceu. Não converta "Ainda não consolidada" em déficit, nem qualquer classificação do CONFIAS em diagnóstico. Não infira dislexia, transtorno de aprendizagem, dificuldade escolar ou prognóstico a partir de nenhuma classificação — do perfil, das escalas principais ou do nível equivalente. Não afirme que a criança "não sabe" determinada habilidade fora do contexto da tarefa avaliada: a classificação descreve o desempenho NESTA tarefa, NESTE protocolo, não uma capacidade geral.
+Ancore as afirmações com "neste protocolo", "no CONFIAS", "nas tarefas avaliadas" ou "no perfil observado".
+`;
+
 /** A regra do derivado do PHQ-9.
  *
  *  Entra no system prompt SÓ quando a avaliação tem snapshot, pela mesma
@@ -492,7 +543,12 @@ export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
   /** true só quando a avaliação traz o derivado do CONFIAS. O padrão
-   *  mantém o prompt dos outros instrumentos byte a byte como estava. */
+   *  mantém o prompt dos outros instrumentos byte a byte como estava.
+   *
+   *  Como em `comFdt`, este sinalizador liga DOIS blocos: a REGRA_DERIVADOS,
+   *  que fecha o dado, e o PERFIL_INTERPRETATIVO_CONFIAS, que diz como
+   *  lê-lo. Não há sinalizador novo para o mapa — ele nasce preso à mesma
+   *  trava que já condicionava o dado. */
   comDerivado = false,
   /** idem, para o derivado do PHQ-9. São dois sinalizadores e não um: cada
    *  regra só entra quando o bloco dela existe, e um relatório de PHQ-9 não
@@ -515,7 +571,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
