@@ -229,7 +229,15 @@ export function DetalheClient({ id }: { id: string }) {
 
       <MetodoDeCorrecao instrumento={d.instrument} />
 
-      <CorrigeFacilReportPanel assessmentId={d.assessment_id} />
+      {/* O SEGUNDO contato. A avaliação já foi corrigida, salva e reaberta
+          pelo histórico — é aqui, e só aqui, que a demonstração gratuita do
+          Relatório Pró pode ser oferecida.
+
+          Na tela do resultado recém-corrigido a oferta continua sendo a do
+          CorrigeFácil completo: quem entrou pela porta do instrumento
+          gratuito ainda não fez a primeira compra, e pedir a segunda antes
+          dela não converte nem uma. Aquele fluxo não passa esta prop. */}
+      <CorrigeFacilReportPanel assessmentId={d.assessment_id} freeDemoContext />
 
       <p className="text-xs text-pp-ink-soft leading-relaxed border-t border-pp-ink/10 pt-6">
         {AVISO}

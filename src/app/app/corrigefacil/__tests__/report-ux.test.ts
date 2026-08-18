@@ -23,8 +23,11 @@ describe('CorrigeFácil → Relatório Pró — UX V1', () => {
     const openStart = panel.indexOf('async function openGenerator()');
     const openEnd = panel.indexOf('async function generateReport()', openStart);
     const trecho = panel.slice(openStart, openEnd);
+    // O `fetch` do gate saiu daqui para `consultarAcessoPro()` — um lugar
+    // só, agora que a avaliação salva também o consulta na montagem. A ordem
+    // que este teste protege é a mesma: salvar ANTES de perguntar.
     expect(trecho.indexOf('await resolveAssessment()')).toBeGreaterThan(-1);
-    expect(trecho.indexOf("fetch('/api/assistant/generate'")).toBeGreaterThan(
+    expect(trecho.indexOf('await consultarAcessoPro()')).toBeGreaterThan(
       trecho.indexOf('await resolveAssessment()'),
     );
   });
@@ -54,7 +57,12 @@ describe('CorrigeFácil → Relatório Pró — UX V1', () => {
   });
 
   it('avaliação salva também permite gerar e rever relatórios vinculados', () => {
-    expect(detalhe).toContain('<CorrigeFacilReportPanel assessmentId={d.assessment_id} />');
+    // `freeDemoContext` marca esta tela como o SEGUNDO contato, onde a
+    // demonstração gratuita pode ser oferecida. A avaliação continua sendo
+    // passada do mesmo jeito.
+    expect(detalhe).toContain(
+      '<CorrigeFacilReportPanel assessmentId={d.assessment_id} freeDemoContext />',
+    );
     expect(panel).toContain(".eq('corrigefacil_assessment_id', id)");
     expect(panel).toContain('Relatórios desta avaliação');
     expect(panel).toContain('Gerar outro relatório');
@@ -149,8 +157,15 @@ describe('CorrigeFácil → card dos Relatórios Pro', () => {
     expect(panelTexto).toContain('Gerar relatório completo');
     expect(panelTexto).toContain('Edite o texto antes de imprimir ou salvar em PDF.');
     // a microcopy fica ABAIXO do botão que abre o gerador
+    //
+    // A mesma frase aparece agora no card da demonstração, que vem ANTES no
+    // arquivo. Procurar a partir do botão mantém a asserção sobre o par que
+    // ela sempre descreveu — o do bloco padrão.
     const botao = panelTexto.indexOf('onClick={openGenerator}');
-    const micro = panelTexto.indexOf('Edite o texto antes de imprimir ou salvar em PDF.');
+    const micro = panelTexto.indexOf(
+      'Edite o texto antes de imprimir ou salvar em PDF.',
+      botao,
+    );
     expect(botao).toBeGreaterThan(-1);
     expect(micro).toBeGreaterThan(botao);
   });
@@ -168,7 +183,13 @@ describe('CorrigeFácil → card dos Relatórios Pro', () => {
     expect(botao).toBeGreaterThan(-1);
     expect(micro).toBeGreaterThan(botao);
     // e o desbloqueio só aparece quando o gate disse que não há acesso
-    expect(panel).toContain("{access === 'inactive' ? (");
+    //
+    // O ternário virou blocos mutuamente exclusivos, porque agora são sete
+    // e não três. Quem garante a condição é `decidirOferta`, que só devolve
+    // 'checkout' com o gate em 'inactive' — provado caso a caso em
+    // free-demo-view.test.ts.
+    expect(panel).toContain("{oferta === 'checkout' && (");
+    expect(panel).toContain('decidirOferta({ access, composerOpen, freeDemoContext, demo })');
   });
 
   // O produto é pagamento único: "assine" prometeria recorrência. E o card
@@ -230,7 +251,23 @@ describe('CorrigeFácil → card dos Relatórios Pro', () => {
     expect(panelCodigo).not.toContain('.insert(');
     expect(panelCodigo).not.toContain('.update(');
     expect(panelCodigo).not.toContain('.delete(');
-    expect(panelCodigo).not.toContain('supabase.rpc(');
+
+    // A ÚNICA RPC do card é a de status, e ela é READ-ONLY (`stable`, sem
+    // escrita). O banimento anterior era de qualquer `supabase.rpc(`, o que
+    // hoje pegaria uma leitura — a intenção sempre foi "não escreve".
+    //
+    // As que ESCREVEM continuam proibidas aqui, e é o que importa: reservar
+    // pela tela gastaria a chance de quem apenas abriu a avaliação.
+    const rpcs = panelCodigo.match(/supabase\.rpc\(\s*'([a-z_]+)'/g) ?? [];
+    expect(rpcs).toHaveLength(1);
+    expect(rpcs[0]).toContain('corrigefacil_free_demo_report_status');
+    for (const proibida of [
+      'reserve_corrigefacil_free_demo_report',
+      'complete_corrigefacil_free_demo_report',
+      'release_corrigefacil_free_demo_report',
+    ]) {
+      expect(panelCodigo, proibida).not.toContain(proibida);
+    }
     // a única leitura continua sendo a lista de relatórios da avaliação
     const selects = panelCodigo.match(/\.from\('/g) ?? [];
     expect(selects).toHaveLength(1);
