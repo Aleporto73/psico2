@@ -110,32 +110,65 @@ export type LinhaFdt = {
 
 export type BlocoFdt = { titulo: string; nota: string; linhas: LinhaFdt[] };
 
-/** As COLUNAS de uma linha do FDT, na ordem em que a tela as mostra.
+/** O que se escreve onde o servidor não mandou valor.
  *
- *  As do FDT são as DELE — bruto, z e faixa percentílica —, e é por isso
- *  que esta função existe em vez de o FDT usar `celulasDoResultado`: os
- *  instrumentos comuns mostram escore e percentil, que aqui não há. O que
- *  os três lugares compartilham é o DESENHO, não o conjunto de medidas.
+ *  É APRESENTAÇÃO, e só. Não vira 0, não vira "0,00", não vira "n/c": o
+ *  dado continua null em `LinhaFdt`, e é o null que qualquer comparação
+ *  enxerga. O travessão diz "não veio", que é diferente de "veio zero" —
+ *  e no bloco de erros zero é resultado legítimo. */
+export const SEM_VALOR = '—';
+
+/** Os rótulos das quatro colunas do FDT, na ordem em que a tela as mostra.
  *
- *  COLUNA SEM VALOR NÃO EXISTE, e o `z` é o caso que exige cuidado: o
- *  filtro é o TEXTO formatado, não o número. Um z não finito devolve null
- *  em `zFormatado`, e testar `z !== null` deixaria passar um rótulo "Z"
- *  com nada embaixo — que é justamente o que se quer evitar.
+ *  A ORDEM É O CONTRATO desta função. O desalinhamento que ela corrige
+ *  vinha de as colunas serem omitidas quando faltava valor: sem z, a faixa
+ *  subia para o lugar do z e a classificação para o lugar da faixa, e a
+ *  mesma coluna mudava de posição de uma linha para a outra. */
+export const COLUNAS_FDT: readonly string[] = [
+  'bruto',
+  'z',
+  'faixa percentílica',
+  'classificação',
+];
+
+/** Uma coluna já resolvida para a tela: o texto que se imprime e se aquilo
+ *  é valor do servidor ou ausência. `ausente` existe para o desenho poder
+ *  tratar o travessão como travessão — tipo menor, tom apagado — sem que
+ *  ninguém precise comparar o texto com '—' de novo lá na frente. */
+export type ColunaFdt = { rotulo: string; texto: string; ausente: boolean };
+
+/** As QUATRO colunas de uma linha do FDT, SEMPRE as quatro.
+ *
+ *  As do FDT são as DELE — bruto, z, faixa percentílica e classificação —,
+ *  e é por isso que esta função existe em vez de o FDT usar
+ *  `celulasDoResultado`: os instrumentos comuns mostram escore e percentil,
+ *  que aqui não há.
+ *
+ *  COLUNA SEM VALOR CONTINUA EXISTINDO, ao contrário dos 20 comuns, e a
+ *  diferença é deliberada: lá as medidas variam de instrumento para
+ *  instrumento e uma coluna vazia seria ruído; aqui as dez medidas são
+ *  sempre as mesmas quatro colunas, lidas uma embaixo da outra, e é o
+ *  buraco que precisa ser visível para a coluna não se mexer.
+ *
+ *  O `z` é o caso que exige cuidado: o filtro é o TEXTO formatado, não o
+ *  número. Um z não finito devolve null em `zFormatado` e vira travessão —
+ *  nunca 0,00.
  *
  *  Não formata nada por conta própria: `zFormatado` é a mesma função que o
- *  PDF usa, e a faixa vem escrita do servidor. */
-export function celulasDaLinhaFdt(
-  linha: LinhaFdt,
-): { rotulo: string; texto: string; complemento: null }[] {
+ *  PDF usa, e faixa e classificação vêm escritas do servidor. */
+export function colunasDaLinhaFdt(linha: LinhaFdt): ColunaFdt[] {
   const z = zFormatado(linha.z);
+  const faixa = linha.faixa?.trim() ? linha.faixa : null;
+  const classe = linha.classificacao?.trim() ? linha.classificacao : null;
+  const texto = (v: string | null) => ({
+    texto: v ?? SEM_VALOR,
+    ausente: v === null,
+  });
   return [
-    ...(linha.bruto === null
-      ? []
-      : [{ rotulo: 'bruto', texto: String(linha.bruto), complemento: null }]),
-    ...(z === null ? [] : [{ rotulo: 'z', texto: z, complemento: null }]),
-    ...(linha.faixa
-      ? [{ rotulo: 'faixa percentílica', texto: linha.faixa, complemento: null }]
-      : []),
+    { rotulo: 'bruto', ...texto(linha.bruto === null ? null : String(linha.bruto)) },
+    { rotulo: 'z', ...texto(z) },
+    { rotulo: 'faixa percentílica', ...texto(faixa) },
+    { rotulo: 'classificação', ...texto(classe) },
   ];
 }
 
@@ -305,3 +338,291 @@ export function fdtParaTexto(d: DerivadoFdt | null): string | null {
   }
   return linhas.length > 0 ? linhas.join('\n') : null;
 }
+
+// =====================================================================
+// AS DUAS REPRESENTAÇÕES VISUAIS DO RESULTADO
+//
+// TRAVA, e ela é a razão de este bloco existir do jeito que existe: o FDT
+// NÃO TEM PERCENTIL PONTUAL. `assessment_results.percentile` sai nulo para
+// as dez medidas, e é decisão da controladora, não omissão — a fórmula de
+// interpolação da fonte discorda da régua de classificação exatamente nas
+// fronteiras, e entregar as duas seria entregar a contradição.
+//
+// Por isso, aqui:
+//
+//   nada calcula percentil;
+//   nada lê a interpolação da fonte;
+//   nada reconstrói ponto de corte;
+//   nada inventa meio de faixa;
+//   nada deriva posição a partir do z.
+//
+// O z existe e continua sendo mostrado como NÚMERO na coluna dele, mas não
+// posiciona barra nenhuma: ele vem de média e desvio, e a classificação
+// vem dos pontos empíricos da faixa etária. São duas réguas diferentes
+// sobre o mesmo bruto, e elas se cruzam — na faixa de 13 a 15 anos uma
+// Inibição "Média superior" tem z MAIOR que uma Leitura "Muito superior".
+// Barra por z desenharia a segunda menor que a primeira, contradizendo o
+// rótulo impresso ao lado dela.
+//
+// O que sobra, e que é legítimo:
+//
+//   Perfil executivo    posição ORDINAL entre as cinco classificações que
+//                       o servidor já nomeou. Cinco degraus, não cem.
+//   Erros por tarefa    a CONTAGEM, que é o próprio resultado do servidor.
+// =====================================================================
+
+/** As cinco classificações de tempo, da menor para a maior.
+ *
+ *  É ORDEM DE LEITURA de rótulos que o servidor já escolheu, e só. Não
+ *  classifica, não compara bruto com nada e não conhece ponto de corte: a
+ *  entrada desta régua é a `classificacao` que veio pronta no derivado.
+ *
+ *  Rótulo fora desta lista não recebe posição — vide `degrauDaClassificacao`.
+ *  Adivinhar onde ele cairia é justamente a segunda psicometria que não
+ *  pode existir aqui. */
+export const ORDEM_CLASSIFICACAO_TEMPO: readonly string[] = [
+  'Deficitário',
+  'Média inferior',
+  'Média',
+  'Média superior',
+  'Muito superior',
+];
+
+/** O degrau de uma classificação, 0 a 4, ou null.
+ *
+ *  Null em três casos, todos o mesmo para quem desenha: sem classificação,
+ *  classificação vazia e rótulo que não está na régua. Nenhum deles vira
+ *  degrau zero — degrau zero é "Deficitário", que é um resultado. */
+export function degrauDaClassificacao(
+  classificacao: string | null | undefined,
+): number | null {
+  if (typeof classificacao !== 'string') return null;
+  const i = ORDEM_CLASSIFICACAO_TEMPO.indexOf(classificacao.trim());
+  return i < 0 ? null : i;
+}
+
+/** As classes de UMA classificação: o pastel do preenchimento e o tom
+ *  fechado que o delimita, em duas formas.
+ *
+ *  `borda` e `contorno` pintam a MESMA cor e existem os dois porque os
+ *  dois desenhos têm geometrias diferentes:
+ *
+ *    borda     a barra de erros, que tem largura própria em `%`. Com
+ *              `box-sizing: border-box` a borda cabe DENTRO dela e não
+ *              altera o comprimento — que é o que a barra significa.
+ *
+ *    contorno  o degrau do perfil, que é `flex-1`. Ali borda ENGORDA a
+ *              caixa: com `flex-basis: 0`, a espessura entra na base e o
+ *              degrau aceso ficava ~3px mais largo que os outros quatro.
+ *              Num gráfico ordinal isso é uma mentira pequena e gratuita
+ *              — o degrau ativo não é MAIOR, é o ativo. `outline` não
+ *              participa do layout e resolve sem tocar na largura. */
+export type TomFdt = { fundo: string; borda: string; contorno: string };
+
+/** O TOM PASTEL DE CADA CLASSIFICAÇÃO — um mapa só, para os dois desenhos.
+ *
+ *  São TOKENS DO PRODUTO, não hex solto: os pastel narrativos
+ *  (`pp-block-*`) e os semânticos (`pp-danger`, `pp-warning`,
+ *  `pp-success`) já existem em `globals.css` e já são usados pelo resto
+ *  do sistema. Nada global foi alterado para isto.
+ *
+ *  O PAR existe porque pastel sozinho não sobrevive a duas coisas: ao
+ *  papel, onde `background-color` não é pintado sem background graphics, e
+ *  ao olho, num fundo já claro. A borda no tom fechado é o que faz a faixa
+ *  ativa saltar na tela e continuar legível impressa.
+ *
+ *  A COR NÃO É A ÚNICA PORTADORA: os dois gráficos escrevem a
+ *  classificação ao lado da medida. Quem não distingue os tons continua
+ *  lendo o resultado inteiro.
+ *
+ *  A cor tampouco MEDE. No Perfil executivo ela acompanha a posição
+ *  ordinal que já existia; nos Erros ela é a classificação do servidor
+ *  pintada, e o comprimento continua sendo só a contagem. */
+const TONS: Readonly<Record<string, TomFdt>> = {
+  Deficitário: {
+    fundo: 'bg-pp-block-coral',
+    borda: 'border-pp-danger',
+    contorno: 'outline-pp-danger',
+  },
+  'Média inferior': {
+    fundo: 'bg-pp-block-cream',
+    borda: 'border-pp-warning',
+    contorno: 'outline-pp-warning',
+  },
+  Média: {
+    fundo: 'bg-pp-block-lilac',
+    borda: 'border-pp-ink-soft',
+    contorno: 'outline-pp-ink-soft',
+  },
+  'Média superior': {
+    fundo: 'bg-pp-block-mint',
+    borda: 'border-pp-success',
+    contorno: 'outline-pp-success',
+  },
+  'Muito superior': {
+    fundo: 'bg-pp-block-lime',
+    borda: 'border-pp-success',
+    contorno: 'outline-pp-success',
+  },
+};
+
+/** O tom neutro: classificação que não está no mapa, ou que não veio.
+ *
+ *  Não se escolhe cor por conta própria para um rótulo desconhecido —
+ *  inventar tom seria afirmar uma gravidade que ninguém devolveu. */
+export const TOM_NEUTRO: TomFdt = {
+  fundo: 'bg-pp-ink/[0.12]',
+  borda: 'border-pp-ink-soft',
+  contorno: 'outline-pp-ink-soft',
+};
+
+/** O tom de uma classificação, ou null quando não há tom para ela.
+ *
+ *  Mesma entrada de `degrauDaClassificacao`: o rótulo que o servidor
+ *  escreveu, e nada mais. Não olha bruto, não olha z, não olha faixa. */
+export function tomDaClassificacao(
+  classificacao: string | null | undefined,
+): TomFdt | null {
+  if (typeof classificacao !== 'string') return null;
+  return TONS[classificacao.trim()] ?? null;
+}
+
+/** Uma medida no Perfil executivo. `degrau` null = sem posição, e quem
+ *  desenha NÃO põe barra: põe a ausência por escrito. */
+export type DegrauPerfil = {
+  code: string;
+  nome: string;
+  classificacao: string | null;
+  degrau: number | null;
+};
+
+/** O Perfil executivo: as seis medidas de tempo, na ordem do controlador.
+ *
+ *  A ordem é a de `MEDIDAS_TEMPO`, e vem de `blocosFdt` — não é reordenada
+ *  aqui, e não é ordenada por resultado: o profissional lê as seis sempre
+ *  na mesma sequência, e uma lista que se reorganiza a cada avaliação
+ *  esconderia justamente a comparação que ele está fazendo.
+ *
+ *  Null quando não há bloco de tempo ou quando NENHUMA das seis tem
+ *  classificação: aí não há o que posicionar, e um cartão com seis
+ *  ausências é pior que cartão nenhum. */
+export function perfilExecutivoFdt(
+  blocos: BlocoFdt[] | null | undefined,
+): DegrauPerfil[] | null {
+  const bloco = blocos?.find((b) => b.titulo === TITULO_TEMPO);
+  if (!bloco) return null;
+  const medidas = bloco.linhas.map((linha) => ({
+    code: linha.code,
+    nome: linha.nome,
+    classificacao: linha.classificacao,
+    // medida que o servidor declarou indisponível não recebe posição,
+    // mesmo que uma classificação tenha sobrado no derivado
+    degrau: linha.indisponivel
+      ? null
+      : degrauDaClassificacao(linha.classificacao),
+  }));
+  return medidas.some((m) => m.degrau !== null) ? medidas : null;
+}
+
+/** Uma barra de Erros por tarefa.
+ *
+ *  `fracao` é COMPRIMENTO, 0 a 1, e nasce da contagem dividida pelo topo
+ *  do eixo. Zero é comprimento zero E valor zero — no bloco de erros não
+ *  errar é resultado, não ausência. Ausência é `fracao` null, e aí não há
+ *  barra. */
+export type BarraErro = {
+  code: string;
+  nome: string;
+  bruto: number | null;
+  classificacao: string | null;
+  fracao: number | null;
+};
+
+export type ErrosPorTarefa = {
+  barras: BarraErro[];
+  /** O topo do eixo: a maior contagem presente, com piso 1. O piso existe
+   *  para o protocolo sem nenhum erro — quatro zeros — não dividir por
+   *  zero; ele muda o EIXO, nunca um valor. */
+  topo: number;
+  /** Marcas do eixo, todas inteiras: erro é contagem, e uma marca em 1,5
+   *  sugeriria meio erro. */
+  ticks: number[];
+};
+
+/** As marcas do eixo para um topo inteiro. Poucas medidas e contagens
+ *  baixas: até seis, todas as marcas; acima disso, três, para o eixo não
+ *  virar uma régua de milímetros.
+ *
+ *  A marca do meio é `ceil(topo/2)`, e com topo ÍMPAR ela não cai na
+ *  metade: em topo 7 ela é 4, que vale 57,14% do eixo. Quem posiciona é
+ *  `fracaoDoTick`, e é por isso que ela existe. */
+function ticksDoEixo(topo: number): number[] {
+  if (topo <= 6) return Array.from({ length: topo + 1 }, (_, i) => i);
+  return [0, Math.ceil(topo / 2), topo];
+}
+
+/** ONDE uma marca do eixo fica, de 0 a 1.
+ *
+ *  É a MESMA razão que dá o comprimento da barra — contagem sobre topo —,
+ *  e tem de ser, senão a marca deixa de marcar a barra. Uma barra de 4
+ *  num eixo de topo 7 termina em 57,14%; a marca "4" precisa cair ali.
+ *
+ *  Existe porque distribuir as marcas em espaços iguais é o mesmo que
+ *  supor que elas são equidistantes, e com topo ímpar elas não são: em
+ *  topo 7 as marcas são 0, 4 e 7, e espaçá-las igualmente põe o 4 em 50%
+ *  — sete pontos percentuais à esquerda da barra que ele deveria marcar.
+ *  Com topo par ou até seis o erro não aparece, o que torna a falha
+ *  especialmente fácil de não notar.
+ *
+ *  Topo não positivo devolve 0 para todas: não há eixo a dividir, e
+ *  dividir por zero devolveria Infinity para dentro do estilo. */
+export function fracaoDoTick(tick: number, topo: number): number {
+  if (!Number.isFinite(topo) || topo <= 0) return 0;
+  return Math.min(1, Math.max(0, tick / topo));
+}
+
+/** Erros por tarefa: as quatro condições, na ordem do controlador.
+ *
+ *  A barra é a CONTAGEM — o número que o servidor devolveu e que aparece
+ *  escrito ao lado dela. Não é z, não é percentil e não é classificação
+ *  convertida em tamanho.
+ *
+ *  Null quando não há bloco de erros ou quando nenhuma das quatro tem
+ *  contagem. */
+export function errosPorTarefaFdt(
+  blocos: BlocoFdt[] | null | undefined,
+): ErrosPorTarefa | null {
+  const bloco = blocos?.find((b) => b.titulo === TITULO_ERRO);
+  if (!bloco) return null;
+  const presentes = bloco.linhas
+    .filter((l) => !l.indisponivel && typeof l.bruto === 'number')
+    .map((l) => l.bruto as number);
+  if (presentes.length === 0) return null;
+  const topo = Math.max(1, ...presentes);
+  const barras = bloco.linhas.map((linha) => {
+    const conta =
+      linha.indisponivel || typeof linha.bruto !== 'number' ? null : linha.bruto;
+    return {
+      code: linha.code,
+      nome: linha.nome,
+      bruto: conta,
+      classificacao: linha.classificacao,
+      fracao: conta === null ? null : Math.min(1, Math.max(0, conta / topo)),
+    };
+  });
+  return { barras, topo, ticks: ticksDoEixo(topo) };
+}
+
+/** Os títulos e as legendas dos dois cartões visuais.
+ *
+ *  "Perfil executivo" NÃO é seguido da palavra percentil em lugar nenhum,
+ *  e o subtítulo diz o que a régua é: cinco classificações, não uma escala
+ *  de 0 a 100. */
+export const TITULO_PERFIL = 'Perfil executivo';
+export const SUBTITULO_PERFIL =
+  'Representação visual do desempenho nas condições do FDT.';
+export const NOTA_PERFIL =
+  'As cores indicam a faixa de classificação de cada medida.';
+
+export const TITULO_ERROS_TAREFA = 'Erros por tarefa';
+export const SUBTITULO_ERROS_TAREFA = 'Contagem de erros por condição.';

@@ -26,7 +26,11 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { ResultadoEscala } from '@/lib/corrigefacil/api';
 import { celulasDoResultado } from '@/lib/corrigefacil/resultado-celulas';
-import { celulasDaLinhaFdt, type LinhaFdt } from '@/lib/corrigefacil/fdt-derivado';
+import {
+  COLUNAS_FDT,
+  colunasDaLinhaFdt,
+  type LinhaFdt,
+} from '@/lib/corrigefacil/fdt-derivado';
 
 function source(path: string) {
   return readFileSync(join(process.cwd(), path), 'utf8');
@@ -85,11 +89,27 @@ describe('a classificação é a última coluna, não um bloco abaixo', () => {
     expect(pilula).toBeLessThan(fecha);
   });
 
-  it('os três renderers passaram a usar o mesmo bloco', () => {
-    for (const src of [avaliar, detalhe, fdt]) {
+  it('os dois renderers comuns passaram a usar o mesmo bloco', () => {
+    for (const src of [avaliar, detalhe]) {
       expect(src).toContain('<ResultadoMetricas');
       expect(src).toContain('classificacao={');
     }
+  });
+
+  it('o FDT mantém a decisão com desenho próprio: classificação é COLUNA', () => {
+    // O FDT saiu de `ResultadoMetricas` — e a razão é a oposta da que
+    // criou este arquivo. Lá a decisão é "classificação junto das
+    // métricas", e ela CONTINUA valendo: a classificação é a última das
+    // quatro colunas, dentro do mesmo grid.
+    //
+    // O que mudou é a omissão. `ResultadoMetricas` não desenha coluna sem
+    // valor, e isso é certo para os 20 comuns; no FDT, com dez medidas
+    // lidas uma embaixo da outra, faltar o z fazia a classificação subir
+    // para a posição da faixa e a coluna trocar de lugar entre as linhas.
+    expect(fdt).not.toContain('<ResultadoMetricas');
+    expect(fdt).toContain('colunasDaLinhaFdt(linha)');
+    // e a classificação é a ÚLTIMA das quatro, não um bloco abaixo delas
+    expect(COLUNAS_FDT[COLUNAS_FDT.length - 1]).toBe('classificação');
   });
 
   it('nenhum renderer mantém a classificação em bloco vertical próprio', () => {
@@ -124,7 +144,11 @@ describe('a classificação é a última coluna, não um bloco abaixo', () => {
     expect(passagens(detalhe, 'celulas.classificacao')).toBe(1);
     expect(detalhe).not.toContain('{r.classification}');
 
-    expect(passagens(fdt, 'linha.classificacao')).toBe(1);
+    // no FDT a passagem é a linha inteira, UMA vez: as quatro colunas —
+    // classificação inclusive — saem todas de `colunasDaLinhaFdt`, e o
+    // componente não lê `linha.classificacao` por fora dela
+    expect(fdt.split('colunasDaLinhaFdt(linha)').length - 1).toBe(1);
+    expect(fdt).not.toContain('{linha.classificacao}');
   });
 
   it('o grid quebra em vez de espremer, e a pílula não estoura o card', () => {
@@ -260,21 +284,23 @@ describe('o que não existe não ocupa coluna', () => {
 // ── 8 · FDT ─────────────────────────────────────────────────────────────
 
 describe('FDT · bruto, z, faixa e classificação no mesmo bloco', () => {
-  it('as quatro colunas do FDT saem juntas', () => {
+  it('as quatro colunas do FDT saem juntas e na ordem', () => {
     const linha = linhaFdt({
       bruto: 23,
       z: 0.14,
       faixa: 'P25–P75',
       classificacao: 'Média',
     });
-    expect(rotulos(celulasDaLinhaFdt(linha))).toEqual([
+    expect(rotulos(colunasDaLinhaFdt(linha))).toEqual([
       'bruto',
       'z',
       'faixa percentílica',
+      'classificação',
     ]);
     // o z sai formatado pela MESMA função que o PDF usa
-    expect(celulasDaLinhaFdt(linha)[1].texto).toBe('0,14');
-    expect(linha.classificacao).toBe('Média');
+    expect(colunasDaLinhaFdt(linha)[1].texto).toBe('0,14');
+    // e a classificação é a quarta coluna, no mesmo bloco
+    expect(colunasDaLinhaFdt(linha)[3].texto).toBe('Média');
   });
 
   it('o FDT continua com renderer próprio, e não virou instrumento comum', () => {
@@ -289,18 +315,23 @@ describe('FDT · bruto, z, faixa e classificação no mesmo bloco', () => {
     expect(detalhe).toContain('ehFdt(');
   });
 
-  it('z não finito não deixa rótulo com nada embaixo', () => {
+  it('z não finito vira travessão — nunca rótulo com nada embaixo', () => {
     // o filtro é o TEXTO formatado, não o número: `zFormatado` devolve null
-    // fora do finito, e testar `z !== null` deixaria passar a coluna vazia
+    // fora do finito. A coluna CONTINUA existindo, para as de baixo não
+    // subirem de posição, mas o que se escreve nela é a ausência.
     for (const z of [Number.NaN, Number.POSITIVE_INFINITY]) {
-      expect(rotulos(celulasDaLinhaFdt(linhaFdt({ bruto: 9, z })))).toEqual([
-        'bruto',
-      ]);
+      const colunas = colunasDaLinhaFdt(linhaFdt({ bruto: 9, z }));
+      expect(rotulos(colunas)).toEqual([...COLUNAS_FDT]);
+      expect(colunas[1]).toEqual({ rotulo: 'z', texto: '—', ausente: true });
+      // e o buraco não virou número
+      expect(colunas[1].texto).not.toBe('0,00');
     }
   });
 
-  it('medida sem faixa nem bruto não inventa coluna', () => {
-    expect(celulasDaLinhaFdt(linhaFdt())).toEqual([]);
+  it('medida sem nada mantém as quatro colunas, todas em travessão', () => {
+    const colunas = colunasDaLinhaFdt(linhaFdt());
+    expect(rotulos(colunas)).toEqual([...COLUNAS_FDT]);
+    expect(colunas.every((c) => c.ausente && c.texto === '—')).toBe(true);
   });
 });
 
