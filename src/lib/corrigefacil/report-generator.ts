@@ -539,6 +539,61 @@ Prefira "o resultado da condição...", "o desempenho observado nesta condição
 Havendo observação escrita pelo profissional, ela pode enriquecer bastante a leitura, desde que o texto distinga o RESULTADO DO FDT do CONTEXTO INFORMADO — "segundo a observação registrada pelo profissional", "no contexto adicional informado" — e nunca converta a observação em dado psicométrico.
 `;
 
+/** O código do BPA-2 no catálogo. Comparado direto contra `instrumentCode`
+ *  — ver o parâmetro em `buildCorrigeFacilSystemPrompt`. */
+const CODIGO_BPA2 = 'BPA-2';
+
+/** O PERFIL INTERPRETATIVO do BPA-2 — terceiro piloto da mesma
+ *  arquitetura do FDT e do CONFIAS, com uma diferença estrutural: o
+ *  BPA-2 NÃO TEM SNAPSHOT.
+ *
+ *  CONFIAS, PHQ-9 e FDT precisam de um bloco `DADOS DERIVADOS CONGELADOS`
+ *  porque cada um carrega alguma leitura que só existe fora da tabela de
+ *  resultados por escala — o perfil de habilidades, o rastreamento, a
+ *  classificação por faixa etária. O BPA-2 não: as quatro medidas (AA,
+ *  AC, AD, AG) chegam com bruto, percentil e classificação já na tabela
+ *  de resultados de sempre, pelo mesmo caminho que qualquer outro
+ *  instrumento usa. Não há nada para congelar, e por isso não há
+ *  REGRA_BPA2 — só o mapa de como LER as quatro medidas juntas.
+ *
+ *  O que falta ao prompt não é dado; é IDENTIDADE. Ele precisa saber que
+ *  o instrumento desta chamada é o BPA-2 para saber que este mapa se
+ *  aplica. É para isso que existe o parâmetro `instrumentCode`, e não um
+ *  quarto booleano `comBpa2`: o próximo instrumento sem snapshot reusa o
+ *  MESMO parâmetro, comparando com o próprio código — sem abrir posição
+ *  nova na assinatura da função a cada instrumento novo.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar, mas do mesmo jeito que os
+ *  outros três: condicionado, e byte a byte ausente quando o instrumento
+ *  não é este. */
+const PERFIL_INTERPRETATIVO_BPA2 = `
+COMO LER O BPA-2 — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, reselecionar norma ou concluir sobre a pessoa fora do que estas quatro medidas sustentam. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra AA, AC, AD e AG como tabela em prosa e não acrescente cautela nova.
+
+O QUE CADA MEDIDA REPRESENTA (vocabulário do instrumento, não característica da pessoa):
+- AA (Atenção Alternada), AC (Atenção Concentrada) e AD (Atenção Dividida) são três medidas ESPECÍFICAS e independentes entre si. NÃO escreva "possui boa atenção alternada", "tem déficit de atenção concentrada" nem "não consegue dividir a atenção" como traço da pessoa. Prefira "no BPA-2, a medida de Atenção Alternada foi classificada como..." ou "neste protocolo, Atenção Concentrada e Atenção Dividida apresentaram classificações...".
+- AG (Atenção Geral) é RESULTADO COMPOSTO, calculado pelo servidor a partir de AA, AC e AD — não é uma quarta tarefa independente, e não deve ser tratada como equivalente às três anteriores. Não a recalcule, não some os brutos de novo para conferir, não derive percentil ou classificação dela a partir das outras três e não a explique como se fosse uma função cognitiva própria, diferente das três que a compõem. Interpretativamente, AG pode ser usada como MEDIDA DE SÍNTESE do conjunto: quando ela convergir com AA, AC e AD, diga que convergiu; quando destoar de alguma das três, descreva a configuração — nunca explique a causa da diferença. Não escreva "a atenção geral está preservada" como conclusão sobre a pessoa.
+- O BRUTO PODE SER NEGATIVO. Cada medida combina acertos, erros e omissões, e por isso um bruto negativo é RESULTADO VÁLIDO, não erro de digitação nem falha de sistema. Não corrija para zero, não trate como bug, não diga que o resultado é impossível e não substitua nem reinterprete o valor: use apenas o percentil e a classificação que já vieram prontos, exatamente como vieram.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. DISTRIBUIÇÃO — como AA, AC e AD se distribuem: homogêneas, predominantemente inferiores, predominantemente médias, predominantemente superiores ou heterogêneas. Use somente as classificações recebidas.
+2. CONTRASTE ENTRE MODALIDADES — existe diferença realmente relevante entre AA, AC e AD? Quando existir, pode ser nomeada — "as medidas específicas apresentaram distribuição heterogênea, com classificação mais elevada em uma e inferior em outra", por exemplo, só quando os dados sustentarem. Não explique por quê.
+3. ATENÇÃO GERAL — como AG se posiciona em relação ao padrão observado nas três medidas componentes. Lembre-se de que ela é composta e pode funcionar como síntese do conjunto; não é tarefa independente.
+4. CONVERGÊNCIA — as três medidas específicas apontam para direção semelhante? AG acompanha essa configuração, ou há uma medida destoante?
+5. MENSAGEM CENTRAL — escolha UMA leitura central para organizar Síntese e Análise: homogeneidade, heterogeneidade, predomínio numa região classificatória, uma modalidade destoante ou convergência das três medidas com AG. Só o que os dados realmente sustentarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste BPA-2?" priorizando a configuração das três modalidades, o contraste quando existir e a posição de AG no conjunto — não AA, AC, AD e AG como tabela em prosa. Perfil homogêneo pede síntese CURTA. Perfil heterogêneo destaca só o contraste relevante. O percentil exato não precisa aparecer se a classificação e a configuração já comunicarem o ponto.
+- Na Análise e interpretação, relacione AA, AC e AD entre si e depois integre AG como medida composta — não como quarta condição. É permitido descrever distribuição semelhante, diferença entre modalidades, medida específica destoante, convergência ou heterogeneidade. NÃO é permitido explicar causa, inferir estratégia, inferir esforço, inferir desatenção cotidiana, inferir funcionamento escolar ou transformar classificação em traço da pessoa. Não escreva "o indivíduo é mais capaz de...", "tem dificuldade para..." nem "possui capacidade preservada..." sem contexto escrito pelo profissional que sustente a frase.
+- Nas Considerações para o contexto, use a configuração encontrada. Perfil heterogêneo pode justificar orientar que o resultado não seja resumido somente pela AG; perfil homogêneo não precisa de contraste ou preocupação inventada. O destino (Escola, Família, Técnico, Interno) ajusta a LINGUAGEM, nunca a interpretação psicométrica. Não prescreva adaptação escolar, treino atencional, intervenção ou encaminhamento só a partir do BPA-2, a menos que isso venha de contexto escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração do BPA-2? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente AA, AC e AD quando houver heterogeneidade entre as medidas; evitar resumir o perfil apenas pela AG quando uma modalidade específica destoar; integrar a configuração das medidas com outras fontes da avaliação. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente. Não fabrique intervenção.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL. Não repita os quatro resultados, não repita todos os percentis, não repita as recomendações e não escreva um segundo aviso.
+
+O QUE NUNCA SE FAZ COM O PERFIL DO BPA-2, mesmo com classificação extrema:
+Classificação inferior — "Muito inferior" ou "Inferior" — não vira "déficit de atenção" como conclusão sobre a pessoa. Classificação superior — "Superior" ou "Muito superior" — não vira "atenção preservada" nem "atenção excelente" como característica geral. Não infira TDAH, transtorno, funcionamento cotidiano ou desempenho escolar a partir de nenhuma classificação — de AA, AC, AD ou AG. Não explique a causa de nenhum contraste entre as medidas.
+Ancore as afirmações com "no BPA-2", "neste protocolo" ou "nas medidas avaliadas".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -563,7 +618,20 @@ export function buildCorrigeFacilSystemPrompt(
    *  mapa sem trava vira extrapolação, trava sem mapa vira burocracia — e
    *  por isso saem juntos do mesmo sinalizador. */
   comFdt = false,
+  /** O código do instrumento no catálogo (ex.: "BPA-2"), para os
+   *  perfis interpretativos que NÃO dependem de snapshot algum — o
+   *  BPA-2 é o primeiro caso. Ele chega calculado e classificado pelos
+   *  resultados por escala de sempre; não há nada para congelar, e por
+   *  isso não há um `comBpa2` pareado com REGRA nenhuma.
+   *
+   *  É um parâmetro, não um booleano por instrumento: o próximo
+   *  instrumento sem snapshot compara o MESMO `instrumentCode` com o
+   *  próprio código, sem abrir posição nova na assinatura. Vazio por
+   *  padrão — quem chama sem passar nada mantém o prompt de sempre. */
+  instrumentCode = '',
 ): string {
+  const comBpa2 = instrumentCode === CODIGO_BPA2;
+
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
 Responda exclusivamente em português brasileiro.
@@ -571,7 +639,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
@@ -1001,6 +1069,7 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
           derivado !== null,
           phq9 !== null,
           fdt !== null,
+          instrument.code,
         ),
       },
       { role: 'user', content: userText },
