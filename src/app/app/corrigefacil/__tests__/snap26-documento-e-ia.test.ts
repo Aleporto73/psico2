@@ -21,7 +21,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { montarLinhas, rotulosDasColunas } from '@/lib/report/document-model';
-import { formatClosedResults } from '@/lib/corrigefacil/report-generator';
+import {
+  buildCorrigeFacilSystemPrompt,
+  formatClosedResults,
+} from '@/lib/corrigefacil/report-generator';
 import { orientacaoParaIA } from '@/lib/corrigefacil/metricas-instrumento';
 import type { ResultadoEscala } from '@/lib/corrigefacil/api';
 
@@ -241,13 +244,29 @@ describe('D · prompt do Relatório Pró', () => {
       motor.indexOf('Preserve integralmente os dados fechados acima.'),
     );
     expect(userText).toContain('${orientacaoText}');
-    // o system prompt é o mesmo para todos os instrumentos
-    const system = motor.slice(
-      motor.indexOf('export function buildCorrigeFacilSystemPrompt'),
-      motor.indexOf('export function professionalText'),
+    // O system prompt SEM instrumentCode é o mesmo para todos os
+    // instrumentos que não têm perfil interpretativo próprio — o que a
+    // suíte de cada piloto (fdt-narrativa, confias-narrativa,
+    // bpa2-narrativa, dass21-narrativa) já prova por sha256. Este teste
+    // cobre o caso específico do SNAP-IV: a orientação semântica de
+    // `orientacaoParaIA` — a frase exata sobre Sintomas presentes — não
+    // duplica no system prompt nem sem `instrumentCode` nem COM ele,
+    // porque ela é userText, não perfil interpretativo.
+    expect(buildCorrigeFacilSystemPrompt('technical', 'AVISO')).not.toContain(
+      'SNAP',
     );
-    expect(system).not.toContain('SNAP');
-    expect(system).not.toContain('Sintomas presentes');
+    expect(
+      buildCorrigeFacilSystemPrompt('technical', 'AVISO'),
+    ).not.toContain('Sintomas presentes');
+    for (const codigo of ['SNAP-IV-18', 'SNAP-IV-26']) {
+      expect(
+        buildCorrigeFacilSystemPrompt(
+          'technical', 'AVISO', false, false, false, codigo,
+        ),
+      ).not.toContain(
+        'A interpretação do limiar utiliza a contagem de Sintomas presentes',
+      );
+    }
   });
 
   it('é orientação, não autorização: as travas continuam', () => {

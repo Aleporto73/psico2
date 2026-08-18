@@ -647,6 +647,89 @@ Não infira depressão clínica, transtorno de ansiedade ou transtorno relaciona
 Ancore as afirmações com "na DASS-21", "neste protocolo" ou "nesta escala".
 `;
 
+/** Os dois códigos da família SNAP-IV no catálogo. Comparados direto
+ *  contra `instrumentCode`, o mesmo parâmetro que o BPA-2 e a DASS-21
+ *  já usam. */
+const CODIGO_SNAP18 = 'SNAP-IV-18';
+const CODIGO_SNAP26 = 'SNAP-IV-26';
+
+/** O PERFIL INTERPRETATIVO do SNAP-IV — quinto piloto da mesma
+ *  arquitetura, e o primeiro que cobre DUAS versões de um instrumento com
+ *  UM bloco só.
+ *
+ *  MESMA FAMÍLIA ESTRUTURAL DO BPA-2 E DA DASS-21: o SNAP-IV também não
+ *  tem snapshot. Os domínios chegam com bruto, contagem e classificação
+ *  já na tabela de resultados de sempre — `metricasDaEscala` já nomeia as
+ *  duas medidas ("Pontuação bruta" e "Sintomas presentes") desde antes
+ *  desta fase, e as DUAS chegam ao Relatório Pró: a auditoria confirmou
+ *  contra `formatClosedResults` que nenhuma das duas fica de fora. Não há
+ *  REGRA_SNAPIV pelo mesmo motivo que não há REGRA_BPA2: nada a congelar.
+ *
+ *  POR QUE É UMA FUNÇÃO, E NÃO UM CONST. SNAP-IV-18 e SNAP-IV-26
+ *  compartilham Desatenção e Hiperatividade/Impulsividade byte a byte; o
+ *  26 soma TOD. Duplicar o bloco inteiro em dois consts quase idênticos
+ *  criaria dois textos livres para divergir sem ninguém notar — o mesmo
+ *  risco que motivou `metricasDaEscala` a ler de um mapa único em vez de
+ *  um `if` por instrumento. Em vez disso, o conteúdo COMPARTILHADO é um
+ *  só, e só os trechos sobre TOD entram ou saem por parâmetro. `comTod`
+ *  decide isso, e só ele: o resto do texto é idêntico nas duas versões,
+ *  byte a byte — é o que os testes de família provam.
+ *
+ *  MÉDIA POR ITEM NÃO ENTRA AQUI. Ela já existe — implementada, para o
+ *  SNAP-IV-18 — em `METRICAS_POR_INSTRUMENTO` e chega ao modelo pela
+ *  `orientacaoText` que `orientacaoParaIA` já monta (userText, não system
+ *  prompt; `snap18-metricas.test.ts` prova a separação). Repeti-la aqui
+ *  seria uma segunda fonte da mesma regra — exatamente o padrão que este
+ *  módulo evita em todo o resto do arquivo. */
+function perfilInterpretativoSnapIv(comTod: boolean): string {
+  const dominios = comTod
+    ? 'Desatenção, Hiperatividade/Impulsividade e TOD'
+    : 'Desatenção e Hiperatividade/Impulsividade';
+  const versao = comTod ? '26' : '18';
+  // as quatro inserções do TOD, cada uma isolada no ponto exato da frase
+  // que ela completa — nenhuma reaproveita a lógica de outra
+  const naoSignificaTod = comTod ? ', diagnóstico de TOD' : '';
+  const nomeDaDimensaoTod = comTod
+    ? ' Mesmo o domínio chamado "Transtorno Opositivo-Desafiador" é NOME DA DIMENSÃO neste instrumento: atingir o limiar nele não confirma TOD.'
+    : '';
+  const preferenciaTod = comTod
+    ? ', ou "na dimensão TOD do SNAP-IV-26..."'
+    : '';
+  const proibicaoEscreverTod = comTod ? ' nem "apresenta TOD"' : '';
+  const naoInferirTod = comTod ? ', inferir TOD' : '';
+
+  return `
+COMO LER O SNAP-IV — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, comparar Pontuação bruta com corte ou concluir diagnóstico a partir de nenhum domínio. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não repita Pontuação bruta, Sintomas presentes e classificação por domínio se a tabela já os apresenta, e não acrescente cautela nova.
+
+Este protocolo é o SNAP-IV-${versao}, com os domínios ${dominios}. Nenhum outro domínio existe neste protocolo.
+
+DUAS MEDIDAS, NÃO UMA (vocabulário do instrumento, não característica da pessoa):
+- Pontuação bruta descreve a INTENSIDADE agregada das respostas do domínio — quanto foi marcado nos itens. Sintomas presentes descreve a CONTAGEM de itens que atingiram o critério de presença do instrumento — quantos itens, não quanto. NÃO derive uma da outra: são medidas diferentes e podem divergir sem contradição — um domínio com Pontuação bruta relativamente alta pode ficar abaixo do limiar de Sintomas presentes, e dois domínios com Pontuação bruta parecida podem ter classificações diferentes.
+- A CLASSIFICAÇÃO sai da CONTAGEM de Sintomas presentes, nunca da Pontuação bruta. NÃO compare a Pontuação bruta com nenhum corte, não infira limiar pela intensidade, não recalcule a classificação e não a reinterprete: reproduza o rótulo recebido — "Atinge o limiar de sintomas deste domínio" ou "Não atinge o limiar de sintomas deste domínio" — exatamente como veio.
+
+LIMIAR NÃO É DIAGNÓSTICO. "Atinge o limiar de sintomas deste domínio" NÃO significa diagnóstico de TDAH, apresentação desatenta, apresentação hiperativa/impulsiva${naoSignificaTod}, transtorno confirmado, quadro clínico confirmado ou indicação diagnóstica suficiente.${nomeDaDimensaoTod} Prefira "no domínio de Desatenção do SNAP-IV..." ou "o domínio de Hiperatividade/Impulsividade atingiu o limiar de sintomas definido pelo instrumento..."${preferenciaTod}, e nunca "o avaliado apresenta TDAH"${proibicaoEscreverTod}.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. DOMÍNIOS DESTE PROTOCOLO — ${dominios}, e só estes. Nenhum outro domínio existe neste protocolo.
+2. DISTRIBUIÇÃO DOS LIMIARES — quais domínios atingem o limiar do próprio instrumento, quais não atingem.
+3. CONFIGURAÇÃO — existe convergência entre os domínios, contraste, um domínio isoladamente acima do limiar, múltiplos domínios acima, ou nenhum acima?
+4. INTENSIDADE E CONTAGEM — há diferença relevante entre a Pontuação bruta e os Sintomas presentes de um mesmo domínio, ou entre domínios? Descreva a diferença sem corrigir nada e sem explicar a causa dela.
+5. MENSAGEM CENTRAL — escolha UMA leitura central do protocolo: nenhum domínio atingiu o limiar, o limiar foi atingido em um domínio só, múltiplos domínios atingiram o limiar, ou configuração contrastante entre os domínios. Só o que os dados realmente sustentarem, e sem transformar isso em diagnóstico.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste SNAP-IV?" priorizando quais domínios atingiram ou não o limiar, o padrão de distribuição e o contraste relevante — não repita Pontuação bruta, Sintomas presentes e classificação de cada domínio se a tabela já os apresenta. Nenhum domínio acima do limiar pede síntese CURTA; um ou mais domínios acima pedem destacar essa configuração.
+- Na Análise e interpretação, relacione os domínios deste protocolo. É permitido descrever convergência, divergência, diferença de configuração e diferença entre intensidade e contagem quando houver. NÃO é permitido diagnosticar, inferir apresentação de TDAH${naoInferirTod}, inferir causa, inferir prejuízo funcional, inferir desempenho escolar, inferir funcionamento familiar, inferir necessidade medicamentosa nem inferir prognóstico.
+- Nas Considerações para o contexto, o destino muda a LINGUAGEM, nunca o fato de que o resultado é rastreio/levantamento de sintomas do instrumento — nunca diagnóstico. Não escreva automaticamente "deve procurar neurologista", "precisa de medicação" nem "necessita avaliação para TDAH" só porque um domínio atingiu o limiar; integrar com outras fontes da avaliação é aceitável quando houver contexto escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração do SNAP-IV? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente os domínios quando houver contraste; não resumir todo o SNAP-IV a um único rótulo; integrar um domínio que atingiu o limiar com as demais informações disponíveis da avaliação. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente. Não produza protocolo diagnóstico nem de tratamento.
+- Nas Considerações finais, feche a configuração — por exemplo, "neste protocolo, o limiar de sintomas foi atingido em um domínio, mas não no outro", sem repetir a tabela inteira — e delimite que isso NÃO constitui diagnóstico isoladamente. Não escreva um segundo aviso: o parágrafo obrigatório vem depois e basta.
+
+O QUE NUNCA SE FAZ COM OS DOMÍNIOS DO SNAP-IV, mesmo com todos os domínios acima do limiar:
+Não use rótulo que não esteja no resultado recebido — em especial "Risco de TDAH", "Limiar de Risco" ou "Sem Risco": são um esquema antigo que a correção do controlador retirou de carga, e nenhum resultado real os produz. Usá-los inventaria uma classificação que o sistema não calculou. O SNAP-IV tem itens individuais, mas este perfil trabalha com os domínios já calculados: não crie leitura item a item, e não use resposta isolada para afirmar comportamento frequente real, dificuldade escolar, impulsividade cotidiana, oposição, agressividade ou transtorno.
+Ancore as afirmações com "no SNAP-IV", "neste protocolo" ou "neste domínio".
+`;
+}
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -685,6 +768,8 @@ export function buildCorrigeFacilSystemPrompt(
 ): string {
   const comBpa2 = instrumentCode === CODIGO_BPA2;
   const comDass21 = instrumentCode === CODIGO_DASS21;
+  const comSnap18 = instrumentCode === CODIGO_SNAP18;
+  const comSnap26 = instrumentCode === CODIGO_SNAP26;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -693,7 +778,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
