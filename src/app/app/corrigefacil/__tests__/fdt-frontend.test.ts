@@ -37,7 +37,7 @@ import {
   fdtParaTexto,
   MEDIDAS_ERRO,
   MEDIDAS_TEMPO,
-  celulasDaLinhaFdt,
+  colunasDaLinhaFdt,
   zFormatado,
 } from '@/lib/corrigefacil/fdt-derivado';
 import {
@@ -477,6 +477,9 @@ function leia(...partes: string[]): string {
 const FONTES_FDT = [
   leia('src', 'lib', 'corrigefacil', 'fdt-derivado.ts'),
   leia('src', 'app', 'app', 'corrigefacil', 'FdtDerivado.tsx'),
+  // o desenho do resultado entra nas MESMAS travas: ele é o lugar onde a
+  // tentação de virar percentil seria maior
+  leia('src', 'app', 'app', 'corrigefacil', 'FdtGraficos.tsx'),
 ];
 
 describe('FDT · o cliente não calcula', () => {
@@ -867,24 +870,30 @@ describe('FDT · o z na tela', () => {
   };
 
   it('a tela e o histórico usam o formatador, e não o número cru', () => {
-    // O componente passou a montar as colunas por `celulasDaLinhaFdt`, e é
+    // O componente passou a montar as colunas por `colunasDaLinhaFdt`, e é
     // LÁ que `zFormatado` roda — o caminho ganhou um passo, e o passo é
     // testado: o que não pode existir é o z cru chegando à tela.
-    expect(FDT_COMPONENTE).toContain('celulasDaLinhaFdt(linha)');
+    expect(FDT_COMPONENTE).toContain('colunasDaLinhaFdt(linha)');
     expect(FDT_COMPONENTE).not.toContain('{linha.z}');
     expect(FDT_DERIVADO_FONTE).toContain('const z = zFormatado(linha.z);');
-    expect(celulasDaLinhaFdt(LINHA_COM_Z)).toContainEqual({
+    expect(colunasDaLinhaFdt(LINHA_COM_Z)).toContainEqual({
       rotulo: 'z',
       texto: '0,14',
-      complemento: null,
+      ausente: false,
     });
   });
 
-  it('coluna de z só existe quando há z que se escreva', () => {
-    // o filtro é o TEXTO, não o número: z não finito não deixa rótulo com
-    // nada embaixo
+  it('z que não se escreve vira travessão, e a coluna não sai do lugar', () => {
+    // o filtro é o TEXTO, não o número. A coluna CONTINUA existindo — é o
+    // que impede a faixa de subir para a posição do z na linha seguinte —,
+    // e o que se escreve nela é a ausência, nunca um zero inventado.
     const semZ = { ...LINHA_COM_Z, z: Number.NaN };
-    expect(celulasDaLinhaFdt(semZ).some((c) => c.rotulo === 'z')).toBe(false);
+    expect(colunasDaLinhaFdt(semZ)[1]).toEqual({
+      rotulo: 'z',
+      texto: '—',
+      ausente: true,
+    });
+    expect(colunasDaLinhaFdt(semZ)).toHaveLength(4);
   });
 
   it('o documento usa o MESMO formatador', () => {
