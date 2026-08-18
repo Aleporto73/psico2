@@ -42,6 +42,7 @@ import {
   errosPorTarefaFdt,
   MEDIDAS_ERRO,
   MEDIDAS_TEMPO,
+  NOTA_PERFIL,
   ORDEM_CLASSIFICACAO_TEMPO,
   perfilExecutivoFdt,
   SEM_VALOR,
@@ -683,6 +684,59 @@ describe('cor por classificação · o mesmo mapa nos dois gráficos', () => {
     expect(Object.keys(uma).sort()).toEqual(
       ['bruto', 'classificacao', 'code', 'fracao', 'nome'].sort(),
     );
+  });
+
+  it('Perfil · as pontas da régua acompanham a curva do trilho', () => {
+    const regua = GRAFICOS.slice(
+      GRAFICOS.indexOf('function Regua'),
+      GRAFICOS.indexOf('export function PerfilExecutivoFdt'),
+    );
+    // o contorno é retângulo e cruzava a curva nas duas extremidades —
+    // Deficitário à esquerda, Muito superior à direita. `outline` segue o
+    // `border-radius` do elemento, então as pontas o recebem.
+    expect(regua).toContain('first:rounded-l-pill last:rounded-r-pill');
+    // e o trilho continua sendo quem define a forma externa
+    expect(regua).toContain('rounded-pill overflow-hidden');
+    // raio NÃO ocupa espaço: nada de padding ou margem nas pontas, que
+    // desigualariam os cinco degraus
+    expect(regua).not.toMatch(/first:(p|m)[xlr]?-/);
+    expect(regua).not.toMatch(/last:(p|m)[xlr]?-/);
+  });
+
+  it('Erros · contagem zero não desenha barra, e o valor 0 continua', () => {
+    // largura zero não bastava: a barra tem borda, e borda de largura zero
+    // ainda pinta uma lasca de ~2px que se lia como "quase um erro"
+    expect(GRAFICOS).toContain('{b.fracao > 0 && (');
+
+    // e o MODELO não mudou: fração 0 e bruto 0 continuam existindo, porque
+    // no bloco de erros não errar é resultado, não ausência
+    const zerado = errosPorTarefaFdt(
+      blocosFdt(
+        'FDT',
+        {
+          medidas: {
+            E_LEITURA: { bruto: 0, faixa_percentilica: null, classificacao: 'Média' },
+            E_CONTAGEM: { bruto: 2, faixa_percentilica: null, classificacao: 'Média' },
+          },
+          derivadas: {},
+        },
+        { E_LEITURA: res(0, null), E_CONTAGEM: res(2, null) },
+      ),
+    )!;
+    const leitura = zerado.barras.find((b) => b.code === 'E_LEITURA')!;
+    expect(leitura.fracao).toBe(0);
+    expect(leitura.bruto).toBe(0);
+    // ausência continua sendo outra coisa, e diz outra coisa
+    expect(leitura.fracao).not.toBeNull();
+    expect(GRAFICOS).toContain('sem contagem — não recebe barra');
+  });
+
+  it('a nota do Perfil é curta e não promete percentil', () => {
+    expect(NOTA_PERFIL).toBe(
+      'As cores indicam a faixa de classificação de cada medida.',
+    );
+    expect(NOTA_PERFIL).not.toMatch(/percentil/i);
+    expect(NOTA_PERFIL.length).toBeLessThan(80);
   });
 
   it('a cor não é a única portadora: a classificação continua escrita', () => {

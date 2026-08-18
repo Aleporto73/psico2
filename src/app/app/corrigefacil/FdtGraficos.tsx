@@ -102,6 +102,17 @@ function Regua({ m }: Readonly<{ m: DegrauPerfil }>) {
             // ser idênticos.
             'flex-1 border-r border-pp-ink/15 last:border-r-transparent',
             'print:border-pp-ink/30 print:last:border-r-transparent',
+            // AS PONTAS ACOMPANHAM A CURVA DO TRILHO. O fundo do degrau já
+            // saía redondo, porque o trilho tem `overflow-hidden` e o
+            // recorta; o CONTORNO não — ele é retângulo e cruzava a curva,
+            // deixando uma quebra visível no Deficitário (à esquerda) e no
+            // Muito superior (à direita). `outline` segue o
+            // `border-radius` do próprio elemento, então arredondar as
+            // pontas resolve os dois.
+            //
+            // Raio não ocupa espaço: os cinco degraus continuam com a
+            // mesma largura, e a posição não muda.
+            'first:rounded-l-pill last:rounded-r-pill',
             i === m.degrau
               ? `${tom.fundo} ${tom.contorno} outline-2 -outline-offset-2 print:outline-pp-ink`
               : 'bg-pp-ink/[0.05]',
@@ -212,18 +223,27 @@ export function ErrosPorTarefaFdt({
                       diferente — a norma dos erros muda a cada faixa
                       etária, e é isso que a cor mostra.
 
-                      CONTAGEM ZERO É COMPRIMENTO ZERO — e o valor 0
-                      continua escrito ao lado. No bloco de erros não errar
-                      é resultado, não ausência. */}
-                  <div
-                    className={[
-                      'absolute inset-y-[3px] left-0 rounded-pill border',
-                      (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).fundo,
-                      (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).borda,
-                      'print:border-pp-ink',
-                    ].join(' ')}
-                    style={{ width: `${b.fracao * 100}%` }}
-                  />
+                      CONTAGEM ZERO NÃO DESENHA BARRA NENHUMA. Largura zero
+                      não bastava: a barra tem borda, e borda de largura
+                      zero ainda pinta ~2px — uma lasca que se lia como
+                      "quase um erro". Quem informa o zero é o valor ao
+                      lado, que continua lá. O trilho vazio permanece, e é
+                      ele que mostra que a tarefa foi medida.
+
+                      É APRESENTAÇÃO: `fracao` continua 0 no modelo, e 0
+                      continua sendo resultado legítimo — no bloco de erros
+                      não errar não é ausência. */}
+                  {b.fracao > 0 && (
+                    <div
+                      className={[
+                        'absolute inset-y-[3px] left-0 rounded-pill border',
+                        (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).fundo,
+                        (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).borda,
+                        'print:border-pp-ink',
+                      ].join(' ')}
+                      style={{ width: `${b.fracao * 100}%` }}
+                    />
+                  )}
                 </div>
                 {/* o valor REAL, ao lado da barra: é ele que se lê, e a
                     barra só o compara com os outros três */}

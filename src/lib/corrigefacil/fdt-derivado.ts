@@ -598,9 +598,7 @@ export const TITULO_PERFIL = 'Perfil executivo';
 export const SUBTITULO_PERFIL =
   'Representação visual do desempenho nas condições do FDT.';
 export const NOTA_PERFIL =
-  'A posição indica a classificação devolvida para cada medida, entre as ' +
-  'cinco faixas do instrumento. Não é percentil, e medidas na mesma ' +
-  'classificação ocupam a mesma posição.';
+  'As cores indicam a faixa de classificação de cada medida.';
 
 export const TITULO_ERROS_TAREFA = 'Erros por tarefa';
 export const SUBTITULO_ERROS_TAREFA = 'Contagem de erros por condição.';
