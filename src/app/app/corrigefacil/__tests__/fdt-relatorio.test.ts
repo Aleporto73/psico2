@@ -56,6 +56,7 @@ const ILHA = leia(
 );
 const GRAFICOS = leia('src', 'app', 'app', 'corrigefacil', 'FdtGraficos.tsx');
 const GERADOR = leia('src', 'lib', 'corrigefacil', 'report-generator.ts');
+const CSS = leia('src', 'app', 'globals.css');
 
 /** O bloco do FDT dentro do documento, para as varreduras não pegarem
  *  markup dos outros instrumentos. */
@@ -498,6 +499,75 @@ describe('20 · FDT no documento · o escopo da Fase 2A', () => {
       expect(fonte).not.toContain('functions/v1');
       expect(fonte).not.toContain('supabase.from(');
     }
+  });
+
+  it('a nota do Perfil nunca abre uma página sozinha', () => {
+    // no PDF ela caiu no topo da folha seguinte, longe da legenda que
+    // explica. Legenda e nota viraram UMA unidade protegida.
+    const perfil = GRAFICOS.slice(
+      GRAFICOS.indexOf('export function PerfilExecutivoFdt'),
+      GRAFICOS.indexOf('export function ErrosPorTarefaFdt'),
+    );
+    const grupo = perfil.indexOf('space-y-3 print:break-inside-avoid');
+    const legenda = perfil.indexOf('<ul');
+    const nota = perfil.indexOf('{NOTA_PERFIL}');
+    expect(grupo).toBeGreaterThan(-1);
+    // o contêiner protegido ABRE antes da legenda, e a nota vem dentro dele
+    expect(grupo).toBeLessThan(legenda);
+    expect(legenda).toBeLessThan(nota);
+
+    // e a proteção é do PAR, não do Perfil inteiro: segurar as seis réguas
+    // empurraria o gráfico todo e deixaria buraco na folha anterior
+    expect(perfil).not.toMatch(/<Cartao[^>]*break-inside-avoid/);
+    const reguas = perfil.indexOf('<Regua m={m}');
+    expect(reguas).toBeGreaterThan(-1);
+    expect(reguas).toBeLessThan(grupo);
+  });
+
+  it('a cor impressa é reforço, nunca o único portador', () => {
+    // `pp-tinta` marca o que precisa sobreviver a "graficos de fundo"
+    // desligado — e cada um desses elementos tem borda ou contorno em tinta
+    // fechada, com a classificação escrita ao lado
+    expect(CSS).toContain('.pp-tinta');
+    expect(CSS).toMatch(/print-color-adjust:\s*exact/);
+    expect(CSS).toMatch(/-webkit-print-color-adjust:\s*exact/);
+    // escopado ao documento: não vaza para o resto do app
+    expect(CSS).toMatch(/body\.pp-print-document \.pp-doc \.pp-tinta/);
+
+    // os três lugares que carregam cor de classificação
+    expect(GRAFICOS).toContain('print:outline-pp-ink pp-tinta');
+    expect(GRAFICOS.split("'pp-tinta'").length - 1).toBe(2);
+    expect(BLOCO_FDT).toContain("'pp-tinta'");
+    // o fallback continua: borda/contorno em tinta em todos eles
+    expect(GRAFICOS).toContain('print:outline-pp-ink');
+    expect(GRAFICOS).toContain('print:border-pp-ink');
+    expect(BLOCO_FDT).toContain('print:border-pp-ink');
+  });
+
+  it('a narrativa não parte parágrafo, e o título não fica órfão', () => {
+    // parágrafo protegido, com degradação por orphans/widows quando ele for
+    // maior que a folha
+    expect(CSS).toMatch(/\.pp-doc p \{\s*\n?\s*break-inside: avoid/);
+    expect(CSS).toMatch(/orphans:\s*2/);
+    expect(CSS).toMatch(/widows:\s*2/);
+    // título anda junto com o que anuncia
+    expect(CSS).toMatch(/break-after:\s*avoid/);
+    // item de lista inteiro
+    expect(CSS).toMatch(/\.pp-doc li,/);
+    // o gancho de espaçamento existe e é do container, não do texto
+    expect(DOCUMENTO).toContain("'pp-narrativa'");
+    expect(CSS).toContain('.pp-narrativa');
+  });
+
+  it('a compactação é de espaço, e só no papel', () => {
+    // nenhuma fonte encolheu: o que cedeu foi o respiro entre blocos
+    const print = CSS.slice(CSS.indexOf('@media print {'));
+    expect(print).toMatch(/\.pp-doc > \* \+ \* \{\s*\n?\s*margin-top:/);
+    expect(print).not.toMatch(/font-size:\s*(\d|\.)+(px|pt)/);
+    // e vive DENTRO do @media print: a tela não muda
+    const antesDoPrint = CSS.slice(0, CSS.indexOf('@media print {'));
+    expect(antesDoPrint).not.toContain('pp-tinta');
+    expect(antesDoPrint).not.toContain('pp-narrativa');
   });
 
   it('a tela não regrediu: ela continua na variante dela', () => {

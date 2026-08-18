@@ -209,8 +209,12 @@ function Regua({
             // Raio não ocupa espaço: os cinco degraus continuam com a
             // mesma largura, e a posição não muda.
             'first:rounded-l-pill last:rounded-r-pill',
+            // `pp-tinta` no degrau ACESO, e só nele: é a única cor da régua
+            // que significa alguma coisa. Os inativos são cinza quase
+            // branco, e a ausência deles no papel não muda leitura nenhuma
+            // — quem separa os cinco é a divisória, que é borda.
             i === m.degrau
-              ? `${tom.fundo} ${tom.contorno} outline-2 -outline-offset-2 print:outline-pp-ink`
+              ? `${tom.fundo} ${tom.contorno} outline-2 -outline-offset-2 print:outline-pp-ink pp-tinta`
               : 'bg-pp-ink/[0.05]',
           ].join(' ')}
         />
@@ -257,35 +261,50 @@ export function PerfilExecutivoFdt({
         ))}
       </div>
 
-      {/* O EIXO: os cinco degraus escritos, uma vez só, embaixo das réguas.
-          São PALAVRAS, e não 0–25–50–75–100 — o FDT não tem percentil
-          pontual, e um eixo numérico afirmaria um que não existe.
+      {/* LEGENDA E NOTA SÃO UMA UNIDADE, e é por isso que dividem um
+          contêiner protegido: no papel a nota caiu sozinha no topo da
+          página seguinte, sem a legenda que ela explica. "As cores indicam
+          a faixa" abrindo uma folha, longe de qualquer cor, é uma frase
+          órfã.
 
-          Cada rótulo vem no PRÓPRIO pastel, nas mesmas cinco colunas das
-          réguas acima. Assim o eixo é também a legenda: a cor acesa na
-          régua encontra o nome dela na vertical, sem o olho ter de
-          procurar. É o mesmo mapa dos dois gráficos. */}
-      <ul className="grid grid-cols-5 gap-1 print:break-inside-avoid">
-        {ORDEM_CLASSIFICACAO_TEMPO.map((rotulo) => {
-          const tom = tomDaClassificacao(rotulo) ?? TOM_NEUTRO;
-          return (
-            <li
-              key={rotulo}
-              className={[
-                'text-pp-ink text-center leading-tight break-words',
-                'rounded-block border',
-                d.chip,
-                tom.fundo,
-                tom.borda,
-              ].join(' ')}
-            >
-              {rotulo}
-            </li>
-          );
-        })}
-      </ul>
+          A proteção é DESTE par, não do Perfil inteiro: segurar o gráfico
+          todo empurraria seis réguas para a folha seguinte e deixaria um
+          buraco na anterior. */}
+      <div className="space-y-3 print:break-inside-avoid">
+        {/* O EIXO: os cinco degraus escritos, uma vez só, embaixo das
+            réguas. São PALAVRAS, e não 0–25–50–75–100 — o FDT não tem
+            percentil pontual, e um eixo numérico afirmaria um que não
+            existe.
 
-      <p className={d.nota}>{NOTA_PERFIL}</p>
+            Cada rótulo vem no PRÓPRIO pastel, nas mesmas cinco colunas das
+            réguas acima. Assim o eixo é também a legenda: a cor acesa na
+            régua encontra o nome dela na vertical, sem o olho ter de
+            procurar. É o mesmo mapa dos dois gráficos. */}
+        <ul className="grid grid-cols-5 gap-1">
+          {ORDEM_CLASSIFICACAO_TEMPO.map((rotulo) => {
+            const tom = tomDaClassificacao(rotulo) ?? TOM_NEUTRO;
+            return (
+              <li
+                key={rotulo}
+                className={[
+                  'text-pp-ink text-center leading-tight break-words',
+                  'rounded-block border',
+                  d.chip,
+                  tom.fundo,
+                  tom.borda,
+                  // o pastel da legenda é o mapa inteiro numa linha: sem
+                  // ele impresso, a régua acima perde a chave de leitura
+                  'pp-tinta',
+                ].join(' ')}
+              >
+                {rotulo}
+              </li>
+            );
+          })}
+        </ul>
+
+        <p className={d.nota}>{NOTA_PERFIL}</p>
+      </div>
     </Cartao>
   );
 }
@@ -352,6 +371,9 @@ export function ErrosPorTarefaFdt({
                         (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).fundo,
                         (tomDaClassificacao(b.classificacao) ?? TOM_NEUTRO).borda,
                         'print:border-pp-ink',
+                        // a barra JÁ diz o tamanho pela borda; o pastel é
+                        // que diz a classificação, e é ele que sumia
+                        'pp-tinta',
                       ].join(' ')}
                       style={{ width: `${b.fracao * 100}%` }}
                     />

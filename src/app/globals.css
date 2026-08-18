@@ -340,10 +340,61 @@
 
   /* Unidades PEQUENAS, e só elas. Proteger a narrativa ou a seção inteira
      de resultados jogaria blocos de várias páginas para a folha seguinte e
-     deixaria buracos enormes — parágrafo longo tem de poder quebrar. */
+     deixaria buracos enormes.
+
+     O PARÁGRAFO ENTROU NA LISTA, e é uma reversão consciente da decisão
+     anterior — que era deixá-lo quebrar e segurar só as linhas soltas com
+     `orphans`/`widows`. Na prática o PDF abria uma página com "profissional.
+     Isoladamente…", e meia frase no topo da folha custa mais leitura do que
+     o espaço que sobra no pé da anterior.
+
+     `break-inside: avoid` DEGRADA SOZINHO: quando o bloco não cabe em página
+     nenhuma, o navegador quebra assim mesmo. Por isso `orphans`/`widows`
+     continuam logo abaixo — elas são o que age justamente nesse caso, e um
+     parágrafo maior que a folha não trava a paginação. */
   body.pp-print-document .pp-doc tr,
-  body.pp-print-document .pp-doc li {
+  body.pp-print-document .pp-doc li,
+  body.pp-print-document .pp-doc p {
     break-inside: avoid;
+  }
+
+  /* COMPACTAÇÃO VERTICAL — só no papel, e só no espaço entre blocos.
+     Nenhuma fonte encolhe: o que sobrava era respiro de TELA, onde a
+     rolagem é barata. `space-y-8` do documento vale 8,5mm por gap, e num
+     relatório com uma dúzia de blocos isso é quase meia página gasta em
+     ar. 5mm continua separando os blocos com folga. */
+  body.pp-print-document .pp-doc > * + * {
+    margin-top: 5mm;
+  }
+
+  /* A narrativa tem ritmo próprio — parágrafos, títulos e listas vindos do
+     Markdown, com margens pensadas para a tela. No papel elas encostam um
+     pouco mais, sem juntar. O título continua colado no que ele anuncia
+     pela regra de `break-after` acima. */
+  body.pp-print-document .pp-doc .pp-narrativa p,
+  body.pp-print-document .pp-doc .pp-narrativa ul,
+  body.pp-print-document .pp-doc .pp-narrativa ol {
+    margin-top: 2.5mm;
+    margin-bottom: 2.5mm;
+  }
+
+  body.pp-print-document .pp-doc .pp-narrativa h2,
+  body.pp-print-document .pp-doc .pp-narrativa h3 {
+    margin-top: 5mm;
+    margin-bottom: 2mm;
+  }
+
+  /* A COR QUE CARREGA SIGNIFICADO pede para ser impressa. Sem isto, o
+     pastel da classificação some sempre que "gráficos de fundo" está
+     desligado — o padrão de muitos navegadores.
+
+     NÃO É DEPENDÊNCIA DE COR: cada um destes elementos tem borda ou
+     contorno em tinta fechada, e a classificação está escrita por extenso
+     ao lado. Se a impressora ignorar tudo isso, o documento continua
+     completo — a cor é reforço, nunca o único portador. */
+  body.pp-print-document .pp-doc .pp-tinta {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   /* Título não fica sozinho no pé da página: ele se move junto com o que

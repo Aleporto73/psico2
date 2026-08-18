@@ -800,6 +800,12 @@ export function RelatorioDocumentClient({
 
         <section
           className={[
+            // `pp-narrativa` é o gancho das regras de espaçamento de
+            // impressão em globals.css: o Markdown sai com margens de tela,
+            // e no papel elas encostam um pouco mais. É gancho de estilo —
+            // o texto renderizado continua sendo `output_text`, sem um
+            // caractere de diferença.
+            'pp-narrativa',
             'text-[15px] leading-[1.7] text-pp-ink break-words print:text-[11.5pt] print:leading-[1.55]',
             // Em edição a leitura some da tela, mas continua montada: é ela
             // que o print usaria, e ter duas versões visíveis do mesmo texto
@@ -1112,6 +1118,10 @@ function QuadroFdt({ bloco }: Readonly<{ bloco: BlocoFdt }>) {
                             'text-pp-ink print:border-pp-ink',
                             tom.fundo,
                             tom.borda,
+                            // o pastel do selo é o mesmo dos gráficos
+                            // abaixo; sem ele impresso, a tabela perde a
+                            // ponte de cor com a régua
+                            'pp-tinta',
                           ].join(' ')}
                         >
                           {coluna.texto}
