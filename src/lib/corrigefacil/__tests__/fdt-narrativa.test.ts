@@ -299,10 +299,14 @@ describe('FDT narrativa · os cinco passos', () => {
 // =====================================================================
 
 describe('FDT narrativa · o que muda em cada seção', () => {
-  it('22 · a síntese resume o padrão em vez de repetir a tabela', () => {
-    expect(P).toContain('resuma o PADRÃO em vez de repetir a tabela');
+  it('22 · a síntese responde CONFIGURAÇÃO, não a tabela', () => {
     expect(P).toContain('qual é a configuração principal deste FDT?');
-    expect(P).toContain('Não percorra as dez medidas uma a uma');
+    expect(P).toContain('responda com CONFIGURAÇÃO, não com a tabela');
+    // e a ordem do que ela responde: agrupamento, contraste, direção
+    expect(P).toContain(
+      'como as medidas se agrupam, onde está o contraste quando houver e em que direção as classificações se distribuem',
+    );
+    expect(P).toContain('sem percorrer as dez medidas uma a uma');
     // a trava global de não recitar a tabela continua de pé
     expect(P).toContain('Não repita a tabela linha por linha');
   });
@@ -323,14 +327,23 @@ describe('FDT narrativa · o que muda em cada seção', () => {
     );
   });
 
-  it('25 · pelo menos uma recomendação nasce do perfil real', () => {
+  it('25 · TODA recomendação nasce da configuração real', () => {
+    expect(P).toContain('ele existe POR CAUSA da configuração deste protocolo?');
     expect(P).toContain(
-      'pelo menos UM item deve nascer da configuração real deste perfil',
+      'Se a mesma frase caberia em qualquer outro instrumento, ela não entra',
     );
-    expect(P).toContain('Dois a quatro itens costumam bastar');
     expect(P).toContain(
       'Não repita a mesma recomendação em sinônimos diferentes',
     );
+    // as três fortes continuam disponíveis, e continuam condicionadas
+    expect(P).toContain('sem reduzi-lo a uma medida única');
+    expect(P).toContain(
+      'considerar separadamente as condições automáticas, as controladas e os índices derivados',
+    );
+    expect(P).toContain(
+      'confrontar a distribuição de tempo e erros com as outras fontes disponíveis',
+    );
+    expect(P).toContain('e só quando ele os sustentar');
   });
 
   it('26 · as considerações finais fecham a mensagem central', () => {
@@ -757,5 +770,142 @@ describe('FDT narrativa · os quatro perfis e o caso real', () => {
         }
       }
     }
+  });
+});
+
+// =====================================================================
+// 12 · O POLIMENTO EDITORIAL — o que o primeiro FDT real ensinou
+//
+// O mapa funcionou: a narrativa encontrou o padrão certo. Ela escorregou
+// em duas coisas que o prompt ainda não barrava, e as duas são de FORMA,
+// não de segurança.
+//
+//   A SÍNTESE RECITAVA A FAIXA. Depois de nomear a configuração, o texto
+//   repetia as faixas percentílicas medida a medida — e elas estão
+//   impressas logo acima, na tabela do documento. Encontrar o padrão e
+//   em seguida transcrevê-lo é a tabela em prosa.
+//
+//   AS RECOMENDAÇÕES CHEGAVAM A QUATRO porque quatro parecia ser o
+//   número. A última era sempre verdadeira e sempre genérica: comunicar
+//   com cuidado, guardar com confidencialidade — frases que caberiam em
+//   qualquer instrumento do catálogo, e que por isso não são
+//   recomendações DESTE protocolo.
+//
+// O dado não mudou de lugar: a faixa continua chegando inteira ao modelo
+// pelo bloco congelado, e continua FECHADA quando ele a reproduz. O que
+// mudou é o critério de QUANDO reproduzi-la.
+// =====================================================================
+
+/** Um cenário com as faixas que o servidor realmente manda.
+ *
+ *  Os quatro cenários do bloco 11 usam faixa null porque lá o assunto é o
+ *  padrão de classificação. Aqui o assunto é a FAIXA, então ela existe —
+ *  e é ela que prova que o modelo continua recebendo o dado que o prompt
+ *  o desobriga de recitar. */
+const COM_FAIXA: DerivadoFdt = {
+  medidas: {
+    T_LEITURA: {
+      bruto: 45,
+      faixa_percentilica: '< P5',
+      classificacao: 'Deficitário',
+    },
+    T_ESCOLHA: {
+      bruto: 22,
+      faixa_percentilica: '> P95',
+      classificacao: 'Muito superior',
+    },
+    E_LEITURA: {
+      bruto: 2,
+      faixa_percentilica: 'P5 a P25',
+      classificacao: 'Média inferior',
+    },
+  },
+  derivadas: { INIBICAO: false, FLEXIBILIDADE: false },
+};
+
+describe('FDT narrativa · síntese de padrão, não recitação de percentil', () => {
+  it('48 · a faixa percentílica CHEGA ao modelo, inteira', () => {
+    const texto = fdtParaTexto(COM_FAIXA)!;
+    expect(texto).toContain('Leitura: 45 · < P5 · Deficitário');
+    expect(texto).toContain('Escolha: 22 · > P95 · Muito superior');
+    expect(texto).toContain('Leitura: 2 · P5 a P25 · Média inferior');
+    // e o que não foi calculado continua legível como ausência
+    expect(texto).toContain(
+      'Não calculadas por falta de componente: Inibição, Flexibilidade',
+    );
+  });
+
+  it('49 · mas não existe obrigação de reproduzi-la na narrativa', () => {
+    expect(P).toContain(
+      'A FAIXA PERCENTÍLICA ESTÁ DISPONÍVEL, MAS NÃO É OBRIGATÓRIA NO TEXTO',
+    );
+    expect(P).toContain('o documento já a imprime ao lado de cada medida');
+    expect(P).toContain('enfileirá-la na narrativa é escrever a tabela em prosa');
+    // a desobrigação não é permissão para deformar: quando entrar, entra
+    // como veio — e a REGRA_FDT continua chamando o rótulo de fechado
+    expect(P).toContain(
+      'Cite faixa ou classificação exata SÓ onde ela sustentar uma distinção que a prosa não faria sozinha',
+    );
+    expect(P).toContain('e aí reproduza o rótulo como veio');
+    expect(P).toContain('dados FECHADOS');
+  });
+
+  it('50 · nenhuma faixa do cenário virou texto obrigatório do prompt', () => {
+    // o prompt não conhece rótulo de faixa: quem os traz é o bloco
+    for (const faixa of ['< P5', '> P95', 'P5 a P25', 'P75 a P95']) {
+      expect(P, faixa).not.toContain(faixa);
+    }
+  });
+});
+
+describe('FDT narrativa · recomendação sem quantidade artificial', () => {
+  it('51 · não existe alvo numérico de itens', () => {
+    expect(P).toContain('NÃO EXISTE QUANTIDADE MÍNIMA');
+    expect(P).toContain(
+      'uma recomendação específica vale mais que três genéricas',
+    );
+    expect(P).toContain('três específicas não pedem uma quarta para completar');
+    // o alvo antigo saiu, e não voltou por outro nome
+    expect(P).not.toContain('Dois a quatro itens');
+    expect(P).not.toMatch(/\b(dois|três|quatro|cinco)\s+itens\b/i);
+    // e a regra global que diz a mesma coisa continua de pé
+    expect(P).toContain('um item verdadeiro vale mais que três repetidos');
+    expect(P).toContain('Não crie itens para encher');
+  });
+
+  it('52 · o item genérico é nomeado e barrado', () => {
+    expect(P).toContain(
+      'comunicar com cuidado, guardar com confidencialidade e integrar ao acompanhamento são verdades genéricas, não recomendações deste FDT',
+    );
+    expect(P).toContain(
+      'Não escreva recomendação genérica desconectada do resultado',
+    );
+  });
+});
+
+describe('FDT narrativa · perfil homogêneo', () => {
+  it('53 · homogêneo pode produzir texto curto, e isso é a resposta certa', () => {
+    expect(P).toContain('Conjunto homogêneo pede síntese CURTA');
+    expect(P).toContain('diga a homogeneidade e pare');
+    // e o teto global continua dizendo o mesmo
+    expect(P).toContain('EXTENSÃO: proporcional à informação disponível');
+    expect(P).toContain('Seção obrigatória NÃO significa volume obrigatório');
+    expect(P).toContain('O ganho pedido é de RACIOCÍNIO, não de tamanho');
+  });
+
+  it('54 · contraste não pode ser criado quando não está nos dados', () => {
+    // no cenário B não existe contraste nenhum a encontrar
+    const valores = new Set(
+      Object.values(CENARIOS.homogeneo.medidas).map((m) => m.classificacao),
+    );
+    expect(valores.size).toBe(1);
+    // e o prompt barra a construção nos três lugares em que ela caberia
+    expect(P).toContain(
+      'sem construir contraste, agrupamento ou hierarquia que as classificações recebidas não mostrem',
+    );
+    expect(P).toContain('NÃO force agrupamento que os resultados não sustentem');
+    expect(P).toContain('procure contraste realmente visível');
+    // e a trava global contra hierarquia inventada continua onde estava
+    expect(P).toContain('sem criar hierarquia que os dados não sustentam');
   });
 });
