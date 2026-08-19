@@ -25,6 +25,8 @@
 
 import type { ResultadoEscala } from './api';
 import { metricasDaEscala, textoDePercentil } from './metricas-instrumento';
+// O MESMO formatador que o FDT já usa para z — não uma segunda cópia.
+import { zFormatado } from './fdt-derivado';
 
 /** Uma coluna: o nome que a métrica tem NESTE instrumento e o valor já
  *  escrito. `complemento` é o IC95%, que sai colado no escore em tipo
@@ -73,7 +75,11 @@ export function celulasDoResultado(
     metricas.push(celula(met.escore.rotulo, met.escore.texto, r.ci95 ?? null));
   }
   if (percentil !== null) metricas.push(celula('percentil', percentil));
-  if (r.z !== null) metricas.push(celula('z', String(r.z)));
+  // duas casas decimais na apresentação, pela mesma função que o FDT já
+  // usa — `z` bruto tem uma dezena delas (`(bruto - média) / DP` em ponto
+  // flutuante), e nenhuma delas é psicometria: é só a régua da tela.
+  const zTexto = zFormatado(r.z);
+  if (zTexto !== null) metricas.push(celula('z', zTexto));
 
   return {
     metricas,

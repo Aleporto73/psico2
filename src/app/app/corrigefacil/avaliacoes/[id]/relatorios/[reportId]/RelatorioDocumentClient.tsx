@@ -618,7 +618,7 @@ export function RelatorioDocumentClient({
                             {colunas.media && cabecalhos.media && <Celula valor={l.mediaTexto} />}
                             {colunas.escore && <Celula valor={l.escoreTexto} />}
                             {colunas.percentil && <Celula valor={l.percentilTexto} />}
-                            {colunas.z && <Celula valor={l.z} />}
+                            {colunas.z && <Celula valor={l.zTexto} />}
                             {colunas.ci95 && <Celula valor={l.ci95} />}
                             {colunas.classificacao && <Celula valor={l.classificacao} />}
                           </>

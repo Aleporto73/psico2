@@ -357,7 +357,44 @@ describe('montagem por instrumento', () => {
     const silaba = m.blocos[0].pontos[0];
     expect(silaba.excedente).toBe('abaixo');
     expect(silaba.valor).toBe(-4.2); // o valor NÃO é truncado no modelo
+    // o TEXTO, sim, arredonda — duas casas, pela mesma função do FDT
+    expect(silaba.valorTexto).toBe('-4,20');
     expect(m.blocos[0].pontos[1].excedente).toBeNull();
+  });
+
+  it('CONFIAS: valorTexto tem no máximo duas casas — os três z reais do teste manual', () => {
+    // mesmos valores do relatório real gerado (Sílaba, Fonema, Total):
+    // antes do polimento apareciam com dez e mais casas no rótulo do gráfico
+    const m = montarModelo(
+      cfg('CONFIAS'),
+      {
+        'Sílaba': resultado({ z: -0.829694323144105 }),
+        Fonema: resultado({ z: 1.4769230769230772 }),
+      },
+      [],
+      [escala('Sílaba'), escala('Fonema')],
+    );
+    const [silaba, fonema] = m.blocos[0].pontos;
+    // o valor exato continua exato — é ele que posiciona a barra
+    expect(silaba.valor).toBe(-0.829694323144105);
+    expect(fonema.valor).toBe(1.4769230769230772);
+    expect(silaba.valorTexto).toBe('-0,83');
+    expect(fonema.valorTexto).toBe('1,48');
+  });
+
+  it('BPA-2 (percentil): valorTexto NÃO passa pelo formatador de z — continua o número como sempre saiu', () => {
+    // trava do polimento: só a métrica z ganha a régua de duas casas.
+    // Percentil e escore de outros instrumentos não podem mudar de
+    // aparência por causa de um ajuste pedido só para z.
+    const m = montarModelo(
+      cfg('BPA-2'),
+      { AA: resultado({ percentile: 75 }) },
+      [],
+      [escala('AA')],
+    );
+    const aa = m.blocos[0].pontos[0];
+    expect(aa.valor).toBe(75);
+    expect(aa.valorTexto).toBe('75');
   });
 
   it('TDF: desenha em 40..160 e marca excedente sem truncar o valor', () => {

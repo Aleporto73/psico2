@@ -37,7 +37,10 @@ import {
 } from '@/lib/corrigefacil/metricas-instrumento';
 import { celulasDoResultado } from '@/lib/corrigefacil/resultado-celulas';
 import { montarLinhas, colunasVisiveis } from '@/lib/report/document-model';
-import { formatClosedResults } from '@/lib/corrigefacil/report-generator';
+import {
+  buildCorrigeFacilSystemPrompt,
+  formatClosedResults,
+} from '@/lib/corrigefacil/report-generator';
 import type { ResultadoEscala } from '@/lib/corrigefacil/api';
 
 const SNAP18 = 'SNAP-IV-18';
@@ -294,18 +297,24 @@ describe('as superfícies consomem a mesma derivação', () => {
     expect(o).toContain('não a Pontuação bruta nem a Média por item');
     expect(o).toContain('não participa da classificação');
 
-    // e o system prompt global continua sem regra de instrumento
+    // e o system prompt SEM instrumentCode continua sem regra de
+    // instrumento — o caso COM `instrumentCode` é o perfil interpretativo
+    // do SNAP-IV, coberto em snapiv-narrativa.test.ts, e não repete a
+    // frase de `orientacaoParaIA` (ela é userText, não system prompt)
+    const semCodigo = buildCorrigeFacilSystemPrompt('technical', 'AVISO');
+    expect(semCodigo).not.toContain('SNAP');
+    expect(semCodigo).not.toContain('Média por item');
+    const comSnap18 = buildCorrigeFacilSystemPrompt(
+      'technical', 'AVISO', false, false, false, 'SNAP-IV-18',
+    );
+    expect(comSnap18).not.toContain(
+      'não a Pontuação bruta nem a Média por item',
+    );
+    // as travas de dado fechado continuam
     const motor = readFileSync(
       join(process.cwd(), 'src/lib/corrigefacil/report-generator.ts'),
       'utf8',
     );
-    const system = motor.slice(
-      motor.indexOf('export function buildCorrigeFacilSystemPrompt'),
-      motor.indexOf('export function professionalText'),
-    );
-    expect(system).not.toContain('SNAP');
-    expect(system).not.toContain('Média por item');
-    // as travas de dado fechado continuam
     expect(motor).toContain('Não recalcule escores');
     expect(motor).toContain('Não determine pontos de corte');
   });

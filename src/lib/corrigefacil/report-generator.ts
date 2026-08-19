@@ -382,6 +382,57 @@ O bloco "DADOS DERIVADOS CONGELADOS DO CONFIAS" tem exatamente a mesma força do
 O Perfil por Habilidade PODE ser usado para descrever o perfil observado — quais tarefas ficaram consolidadas, quais estão em desenvolvimento e quais ainda não se consolidaram —, sempre com os rótulos recebidos. Não nomeie habilidade que não esteja nas linhas recebidas, não crie categoria de agrupamento que ninguém forneceu e não converta o perfil em diagnóstico, causa ou prognóstico.
 `;
 
+/** O PERFIL INTERPRETATIVO do CONFIAS — segundo piloto da mesma arquitetura
+ *  do FDT: um bloco de VOCABULÁRIO e ORDEM DE LEITURA, colado na trava que
+ *  já fecha o dado, sem abrir nenhuma permissão nova.
+ *
+ *  A causa do texto burocrático é a mesma do FDT, com a forma trocada. O
+ *  FDT tinha dez medidas em duas dimensões; o CONFIAS tem DUAS escalas
+ *  principais (Sílaba e Fonema, mais o Total) e DEZESSEIS tarefas em dois
+ *  grupos. Sem mapa, o modelo trata as dezesseis como lista plana — e
+ *  lista plana só comporta recitar ou generalizar. Recitar vira "S1:
+ *  Consolidada, S2: Consolidada, S3: Em desenvolvimento..." dezesseis
+ *  vezes; generalizar vira "houve variação entre as habilidades".
+ *
+ *  Entra colado na REGRA_DERIVADOS e sob o MESMO sinalizador: os dois só
+ *  existem quando a avaliação traz o snapshot do CONFIAS. Com `comDerivado`
+ *  false o prompt dos outros instrumentos continua byte a byte o que era —
+ *  o teste do FDT já provava isso por sha256, e o novo teste do CONFIAS usa
+ *  a mesma prova.
+ *
+ *  Nenhum corte entra aqui. Os cortes de 0,75 e 0,50 que separam as três
+ *  faixas do perfil não chegam ao browser (é a mesma trava de
+ *  `confias-derivado.ts`), e este bloco não os reconstrói: fala de
+ *  CLASSIFICAÇÃO recebida, nunca de percentual comparado com nada. */
+const PERFIL_INTERPRETATIVO_CONFIAS = `
+COMO LER O CONFIAS — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não afrouxa a REGRA_DERIVADOS acima: nada aqui autoriza recalcular, reclassificar, comparar percentual com corte ou concluir sobre a criança fora do que as tarefas deste protocolo sustentam. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra as dezesseis tarefas e não acrescente cautela nova.
+
+O QUE CADA NÍVEL DE INFORMAÇÃO REPRESENTA (vocabulário do instrumento, não característica da criança):
+- Sílaba, Fonema e Total são as ESCALAS PRINCIPAIS, e chegam a você já calculadas e classificadas na tabela de resultados por escala — este bloco não repete os números delas, só ensina a ler o conjunto. Sílaba representa o desempenho agregado nas tarefas silábicas do instrumento; Fonema, o desempenho agregado nas tarefas fonêmicas; Total, o resultado agregado do protocolo inteiro. NÃO converta Sílaba baixa em "déficit silábico", Fonema baixo em "déficit fonológico" nem Total baixo em "transtorno de aprendizagem": a classificação continua pertencendo ao CONFIAS, não à criança.
+- O PERFIL POR HABILIDADE traz as tarefas silábicas (S1 a S9) e fonêmicas (F1 a F7), cada uma já classificada como Consolidada, Em desenvolvimento ou Ainda não consolidada. Ele serve para identificar quais tarefas ficaram em cada classificação, a concentração das classificações, heterogeneidade, contraste e agrupamento entre o grupo silábico e o fonêmico — sempre com os rótulos recebidos. NÃO transforme "Síntese fonêmica — Ainda não consolidada" em "a criança não consegue sintetizar fonemas no cotidiano" nem em "há déficit fonêmico": o que se pode dizer é que, nesta tarefa, o desempenho foi classificado como Ainda não consolidada.
+- O NÍVEL EQUIVALENTE (escore sílaba), quando vier, é leitura ADICIONAL do escore de Sílaba — não é a hipótese de escrita informada pelo profissional para a seleção normativa, mesmo usando a mesma nomenclatura de escrita. Nunca chame o nível de hipótese observada, nunca diga que ele corrige a hipótese informada e nunca trate divergência entre os dois como erro: se houver divergência, ela é estrutural — as duas informações têm natureza diferente — e não inconsistência a resolver.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. ESCALAS PRINCIPAIS — como Sílaba, Fonema e Total se distribuem: convergem entre si, ou há diferença entre Sílaba e Fonema? Descreva a distribuição; não explique por que ela existe.
+2. DISTRIBUIÇÃO DAS HABILIDADES — quantas e quais tarefas aparecem como Consolidadas, Em desenvolvimento ou Ainda não consolidadas. Não vire contagem mecânica no texto: use para perceber o padrão, não para listar.
+3. SILÁBICAS × FONÊMICAS — os dois grupos têm números diferentes de tarefas, e por isso a comparação entre eles NUNCA pode ser por contagem bruta: dizer que um grupo tem "mais tarefas consolidadas" ou "mais tarefas em desenvolvimento" que o outro compara quantidades que não têm a mesma base, e cria diferença artificial só pelo tamanho do grupo — cinco tarefas consolidadas no grupo maior não é a mesma concentração que quatro no grupo menor, mesmo cinco sendo o número maior. Compare a DISTRIBUIÇÃO das classificações DENTRO de cada grupo — a maior parte dele está concentrada em qual classificação, e o outro grupo mostra a mesma concentração ou uma diferente —, nunca a quantidade absoluta entre os dois grupos. Quando o contraste entre silábico e fonêmico for o ponto central da leitura, priorize as escalas fechadas Sílaba e Fonema: elas já chegam calculadas pelo servidor e são a base segura para esse contraste, não a contagem de tarefas do Perfil por Habilidade. Não explique por quê.
+4. CONTRASTES INTERNOS — procure tarefa específica que destoe do restante do grupo dela (por exemplo, um grupo majoritariamente consolidado com uma tarefa ainda não consolidada). Quando existir, pode ser destacada como particularidade do perfil. Não a transforme em diagnóstico nem em causa.
+5. NÍVEL EQUIVALENTE — quando existir, use-o como leitura adicional do escore de Sílaba, na forma da nota que já veio com ele. Não o use para diagnosticar estágio de alfabetização.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise: perfil homogêneo, predomínio de habilidades consolidadas, predomínio de habilidades em desenvolvimento, heterogeneidade, diferença silábico × fonêmico ou presença de habilidade específica destoante. Só o que os dados realmente sustentarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste CONFIAS?" priorizando Sílaba, Fonema e Total, o padrão geral do Perfil por Habilidade e o contraste realmente importante — não as dezesseis tarefas em prosa. Perfil homogêneo pede síntese CURTA: diga a homogeneidade e pare, sem inventar diferença para produzir texto.
+- Na Análise e interpretação, relacione as escalas principais com o Perfil por Habilidade, aprofunde o padrão silábico e fonêmico, destaque tarefa específica só quando ela acrescentar algo, integre o Nível equivalente quando existir, diga o que o perfil permite afirmar NO ÂMBITO DO CONFIAS e delimite a extrapolação. Não recite as dezesseis tarefas e não reescreva a síntese.
+- Nas Considerações para o contexto, use a mensagem central. Um perfil heterogêneo pode justificar orientar que o resultado não seja resumido só pelo Total; um perfil homogêneo não precisa de preocupação inventada. Não diga o que a escola ou a família devem trabalhar (rimas, fonemas, intervenção) a menos que isso venha de contexto escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste aplicado nos outros pilotos: ele existe POR CAUSA deste perfil CONFIAS? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: integrar separadamente o domínio silábico e o fonêmico se houver contraste real entre eles; considerar habilidade específica destoante quando o perfil não for uniforme; preservar a diferença entre a hipótese informada e o Nível equivalente quando os dois vierem juntos. CONFRONTAR O CONFIAS COM OUTRAS INFORMAÇÕES DA AVALIAÇÃO é o item mais fácil de escrever e o que menos acrescenta, então ele tem regra própria: só entra quando existir uma questão que PRECISE de confronto externo para ser lida — divergência entre a hipótese informada e o Nível equivalente; habilidade destoante cuja interpretação dependa de outro dado da avaliação; ou contexto escrito pelo profissional que precise ser confrontado com este CONFIAS. NÃO BASTAM para autorizá-lo, porque cada um deles já gera recomendação específica própria: existir contraste entre Sílaba e Fonema; existir heterogeneidade entre as tarefas; existir classificação diferente entre as escalas. PARE QUANDO O PERFIL JÁ ESTIVER COBERTO: se uma ou duas recomendações específicas já cobrem a particularidade central deste CONFIAS, a lista está COMPLETA — não acrescente um item de integrar com as demais informações, articular com os demais dados, discutir com a equipe, com a família ou com a escola, nem de registrar de forma objetiva os dados pertinentes. Esses temas já têm lugar nas Considerações para o contexto e no parágrafo final de responsabilidade, e repeti-los aqui não é uma recomendação deste protocolo. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente, perfil homogêneo não pede uma segunda para completar, e duas recomendações específicas que já cobrem o perfil não pedem uma terceira só para a lista não parecer curta.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL. Não repita a tabela, não repita as dezesseis habilidades, não repita as recomendações e não escreva um segundo aviso.
+
+O QUE NUNCA SE FAZ COM O PERFIL DO CONFIAS, mesmo com classificação extrema:
+Não crie habilidade que não esteja nas linhas recebidas e não invente agrupamento que ninguém forneceu. Não converta "Ainda não consolidada" em déficit, nem qualquer classificação do CONFIAS em diagnóstico. Não infira dislexia, transtorno de aprendizagem, dificuldade escolar ou prognóstico a partir de nenhuma classificação — do perfil, das escalas principais ou do nível equivalente. Não afirme que a criança "não sabe" determinada habilidade fora do contexto da tarefa avaliada: a classificação descreve o desempenho NESTA tarefa, NESTE protocolo, não uma capacidade geral.
+Ancore as afirmações com "neste protocolo", "no CONFIAS", "nas tarefas avaliadas" ou "no perfil observado".
+`;
+
 /** A regra do derivado do PHQ-9.
  *
  *  Entra no system prompt SÓ quando a avaliação tem snapshot, pela mesma
@@ -488,11 +539,956 @@ Prefira "o resultado da condição...", "o desempenho observado nesta condição
 Havendo observação escrita pelo profissional, ela pode enriquecer bastante a leitura, desde que o texto distinga o RESULTADO DO FDT do CONTEXTO INFORMADO — "segundo a observação registrada pelo profissional", "no contexto adicional informado" — e nunca converta a observação em dado psicométrico.
 `;
 
+/** O código do BPA-2 no catálogo. Comparado direto contra `instrumentCode`
+ *  — ver o parâmetro em `buildCorrigeFacilSystemPrompt`. */
+const CODIGO_BPA2 = 'BPA-2';
+
+/** O PERFIL INTERPRETATIVO do BPA-2 — terceiro piloto da mesma
+ *  arquitetura do FDT e do CONFIAS, com uma diferença estrutural: o
+ *  BPA-2 NÃO TEM SNAPSHOT.
+ *
+ *  CONFIAS, PHQ-9 e FDT precisam de um bloco `DADOS DERIVADOS CONGELADOS`
+ *  porque cada um carrega alguma leitura que só existe fora da tabela de
+ *  resultados por escala — o perfil de habilidades, o rastreamento, a
+ *  classificação por faixa etária. O BPA-2 não: as quatro medidas (AA,
+ *  AC, AD, AG) chegam com bruto, percentil e classificação já na tabela
+ *  de resultados de sempre, pelo mesmo caminho que qualquer outro
+ *  instrumento usa. Não há nada para congelar, e por isso não há
+ *  REGRA_BPA2 — só o mapa de como LER as quatro medidas juntas.
+ *
+ *  O que falta ao prompt não é dado; é IDENTIDADE. Ele precisa saber que
+ *  o instrumento desta chamada é o BPA-2 para saber que este mapa se
+ *  aplica. É para isso que existe o parâmetro `instrumentCode`, e não um
+ *  quarto booleano `comBpa2`: o próximo instrumento sem snapshot reusa o
+ *  MESMO parâmetro, comparando com o próprio código — sem abrir posição
+ *  nova na assinatura da função a cada instrumento novo.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar, mas do mesmo jeito que os
+ *  outros três: condicionado, e byte a byte ausente quando o instrumento
+ *  não é este. */
+const PERFIL_INTERPRETATIVO_BPA2 = `
+COMO LER O BPA-2 — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, reselecionar norma ou concluir sobre a pessoa fora do que estas quatro medidas sustentam. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra AA, AC, AD e AG como tabela em prosa e não acrescente cautela nova.
+
+O QUE CADA MEDIDA REPRESENTA (vocabulário do instrumento, não característica da pessoa):
+- AA (Atenção Alternada), AC (Atenção Concentrada) e AD (Atenção Dividida) são três medidas ESPECÍFICAS e independentes entre si. NÃO escreva "possui boa atenção alternada", "tem déficit de atenção concentrada" nem "não consegue dividir a atenção" como traço da pessoa. Prefira "no BPA-2, a medida de Atenção Alternada foi classificada como..." ou "neste protocolo, Atenção Concentrada e Atenção Dividida apresentaram classificações...".
+- AG (Atenção Geral) é RESULTADO COMPOSTO, calculado pelo servidor a partir de AA, AC e AD — não é uma quarta tarefa independente, e não deve ser tratada como equivalente às três anteriores. Não a recalcule, não some os brutos de novo para conferir, não derive percentil ou classificação dela a partir das outras três e não a explique como se fosse uma função cognitiva própria, diferente das três que a compõem. Interpretativamente, AG pode ser usada como MEDIDA DE SÍNTESE do conjunto: quando ela convergir com AA, AC e AD, diga que convergiu; quando destoar de alguma das três, descreva a configuração — nunca explique a causa da diferença. Não escreva "a atenção geral está preservada" como conclusão sobre a pessoa.
+- O BRUTO PODE SER NEGATIVO. Cada medida combina acertos, erros e omissões, e por isso um bruto negativo é RESULTADO VÁLIDO, não erro de digitação nem falha de sistema. Não corrija para zero, não trate como bug, não diga que o resultado é impossível e não substitua nem reinterprete o valor: use apenas o percentil e a classificação que já vieram prontos, exatamente como vieram.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. DISTRIBUIÇÃO — como AA, AC e AD se distribuem: homogêneas, predominantemente inferiores, predominantemente médias, predominantemente superiores ou heterogêneas. Use somente as classificações recebidas.
+2. CONTRASTE ENTRE MODALIDADES — existe diferença realmente relevante entre AA, AC e AD? Quando existir, pode ser nomeada — "as medidas específicas apresentaram distribuição heterogênea, com classificação mais elevada em uma e inferior em outra", por exemplo, só quando os dados sustentarem. Não explique por quê.
+3. ATENÇÃO GERAL — como AG se posiciona em relação ao padrão observado nas três medidas componentes. Lembre-se de que ela é composta e pode funcionar como síntese do conjunto; não é tarefa independente.
+4. CONVERGÊNCIA — as três medidas específicas apontam para direção semelhante? AG acompanha essa configuração, ou há uma medida destoante?
+5. MENSAGEM CENTRAL — escolha UMA leitura central para organizar Síntese e Análise: homogeneidade, heterogeneidade, predomínio numa região classificatória, uma modalidade destoante ou convergência das três medidas com AG. Só o que os dados realmente sustentarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste BPA-2?" priorizando a configuração das três modalidades, o contraste quando existir e a posição de AG no conjunto — não AA, AC, AD e AG como tabela em prosa. Perfil homogêneo pede síntese CURTA. Perfil heterogêneo destaca só o contraste relevante. O percentil exato não precisa aparecer se a classificação e a configuração já comunicarem o ponto.
+- Na Análise e interpretação, relacione AA, AC e AD entre si e depois integre AG como medida composta — não como quarta condição. É permitido descrever distribuição semelhante, diferença entre modalidades, medida específica destoante, convergência ou heterogeneidade. NÃO é permitido explicar causa, inferir estratégia, inferir esforço, inferir desatenção cotidiana, inferir funcionamento escolar ou transformar classificação em traço da pessoa. Não escreva "o indivíduo é mais capaz de...", "tem dificuldade para..." nem "possui capacidade preservada..." sem contexto escrito pelo profissional que sustente a frase.
+- Nas Considerações para o contexto, use a configuração encontrada. Perfil heterogêneo pode justificar orientar que o resultado não seja resumido somente pela AG; perfil homogêneo não precisa de contraste ou preocupação inventada. O destino (Escola, Família, Técnico, Interno) ajusta a LINGUAGEM, nunca a interpretação psicométrica. Não prescreva adaptação escolar, treino atencional, intervenção ou encaminhamento só a partir do BPA-2, a menos que isso venha de contexto escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração do BPA-2? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente AA, AC e AD quando houver heterogeneidade entre as medidas; evitar resumir o perfil apenas pela AG quando uma modalidade específica destoar; integrar a configuração das medidas com outras fontes da avaliação. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente. Não fabrique intervenção.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL. Não repita os quatro resultados, não repita todos os percentis, não repita as recomendações e não escreva um segundo aviso.
+
+O QUE NUNCA SE FAZ COM O PERFIL DO BPA-2, mesmo com classificação extrema:
+Classificação inferior — "Muito inferior" ou "Inferior" — não vira "déficit de atenção" como conclusão sobre a pessoa. Classificação superior — "Superior" ou "Muito superior" — não vira "atenção preservada" nem "atenção excelente" como característica geral. Não infira TDAH, transtorno, funcionamento cotidiano ou desempenho escolar a partir de nenhuma classificação — de AA, AC, AD ou AG. Não explique a causa de nenhum contraste entre as medidas.
+Ancore as afirmações com "no BPA-2", "neste protocolo" ou "nas medidas avaliadas".
+`;
+
+/** O código da DASS-21 no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que o BPA-2 já usa. */
+const CODIGO_DASS21 = 'DASS-21';
+
+/** O PERFIL INTERPRETATIVO da DASS-21 — quarto piloto da mesma
+ *  arquitetura, e o segundo (depois do BPA-2) a reusar `instrumentCode`
+ *  em vez de abrir um `comDass21` na assinatura.
+ *
+ *  MESMA FAMÍLIA ESTRUTURAL DO BPA-2: a DASS-21 também não tem snapshot.
+ *  As três escalas — Depressão, Ansiedade, Estresse — chegam com bruto,
+ *  percentil (quando houver) e classificação já na tabela de resultados
+ *  de sempre. Não há REGRA_DASS21 pelo mesmo motivo que não há
+ *  REGRA_BPA2: nada para congelar.
+ *
+ *  A DIFERENÇA QUE IMPORTA AQUI NÃO É ESTRUTURAL, É SEMÂNTICA: a DASS-21
+ *  não soma. O controlador registra isso como CORREÇÃO deliberada — "não
+ *  há escore total: as três escalas são independentes e a planilha não
+ *  soma uma na outra" — e é exatamente o tipo de ausência que um modelo
+ *  de linguagem tende a preencher sozinho, inventando "resultado geral"
+ *  ou "gravidade global" a partir de três números que estão lado a lado.
+ *  O bloco entra dizendo isso ANTES do mapa, não depois, porque foi
+ *  precisar de um commit de correção para o FDT aprender essa lição
+ *  (PERFIL_INTERPRETATIVO_FDT ganhou "O FDT NÃO TEM RESULTADO ÚNICO"
+ *  só depois de um relatório real produzir "resultado global do FDT").
+ *  Aqui a mesma trava nasce dentro do primeiro commit. */
+const PERFIL_INTERPRETATIVO_DASS21 = `
+COMO LER A DASS-21 — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, somar escalas ou concluir sobre a pessoa fora do que estas três dimensões sustentam. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva Depressão, Ansiedade e Estresse como tabela em prosa e não acrescente cautela nova.
+
+A DASS-21 NÃO TEM ESCORE TOTAL. Depressão, Ansiedade e Estresse são escalas INDEPENDENTES: o instrumento não soma uma na outra, não produz gravidade global, não produz classificação geral e não produz índice composto das três. NÃO escreva "resultado global da DASS-21", "gravidade global", "escore total da DASS-21", "perfil geral severo" nem "quadro geral moderado" quando a expressão sugerir soma ou classificação única — e a regra é SEMÂNTICA: qualquer formulação que leve o leitor a esperar um número único da DASS-21 tem o mesmo defeito. Diga o que existe, conforme o caso: o conjunto dos resultados, a configuração das três dimensões, o perfil observado nas escalas ou a distribuição entre as dimensões.
+
+O QUE CADA ESCALA REPRESENTA (vocabulário do instrumento, não característica da pessoa):
+Depressão, Ansiedade e Estresse são dimensões SEPARADAS dentro da DASS-21, cada uma com sua própria classificação — Normal, Leve, Moderado, Severo ou Extremamente severo. O rótulo pertence À ESCALA, não à pessoa. NÃO escreva "tem depressão", "apresenta transtorno de ansiedade", "está severamente estressado", "quadro depressivo" nem "transtorno ansioso". Prefira "na escala de Depressão da DASS-21, o resultado foi classificado como..." ou "neste protocolo, a dimensão de Ansiedade apresentou classificação...". "Severo" e "Extremamente severo" são classificação da dimensão NESTE instrumento — não significam automaticamente transtorno severo, quadro grave, risco, urgência ou incapacidade funcional, e o rótulo recebido deve ser preservado exatamente como veio, sem gradação própria.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. DISTRIBUIÇÃO — como Depressão, Ansiedade e Estresse se distribuem: mesma classificação, classificações próximas, heterogêneas, uma dimensão claramente mais elevada ou uma claramente mais baixa. Use somente as classificações recebidas.
+2. CONVERGÊNCIA — as três dimensões apontam para região classificatória semelhante? Se sim, a convergência pode ser nomeada, sem inventar significado além disso.
+3. DIVERGÊNCIA — existe contraste real? Quando existir, é permitido dizer que as três dimensões apresentam distribuição heterogênea, com maior elevação relativa numa delas — só quando os dados sustentarem. NÃO diga que uma dimensão está causando outra, nem escreva qualquer explicação causal entre elas.
+4. DIMENSÃO DE DESTAQUE — se uma escala realmente destoar das outras duas, ela pode ser destacada, sempre ancorada em "no instrumento", "nesta escala" ou "neste protocolo". Não a transforme em característica global da pessoa.
+5. MENSAGEM CENTRAL — escolha UMA configuração para organizar Síntese e Análise: homogênea, heterogênea, concentração nas faixas inferiores, concentração nas faixas superiores ou uma dimensão destacada. Só o que os dados realmente mostrarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal desta DASS-21?" priorizando convergência, divergência e direção das classificações — não "Depressão = X, Ansiedade = Y, Estresse = Z" como tabela em prosa. Perfil homogêneo pede síntese CURTA; perfil contrastante destaca só o contraste principal. As pontuações exatas não precisam ser repetidas quando a tabela já as apresenta.
+- Na Análise e interpretação, relacione as três dimensões entre si — comparar classificações, destacar concentração, destacar diferença relativa, nomear a dimensão mais elevada ou mais baixa. NÃO é permitido explicar causa, inferir diagnóstico, inferir duração, inferir etiologia, inferir funcionamento cotidiano, inferir risco, inferir prejuízo escolar ou profissional, nem afirmar transtorno. Não reescreva a síntese.
+- Nas Considerações para o contexto, use a configuração real. Havendo heterogeneidade, pode orientar que as três dimensões sejam consideradas SEPARADAMENTE; perfil homogêneo não inventa diferença. O destino ajusta a LINGUAGEM, nunca a interpretação psicométrica. Não prescreva psicoterapia, psiquiatria, medicação, afastamento, intervenção escolar ou protocolo clínico só a partir da classificação da DASS-21, a menos que isso venha de contexto escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração da DASS-21? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente as três dimensões quando houver heterogeneidade; evitar resumir a DASS-21 numa única gravidade; integrar a dimensão de maior elevação com outras fontes da avaliação. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente. Não fabrique conduta clínica.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL. Não crie escore global, não crie diagnóstico, não resuma as três linhas de novo e não escreva um segundo aviso.
+
+O QUE NUNCA SE FAZ COM AS ESCALAS DA DASS-21, mesmo com classificação extrema:
+Não infira depressão clínica, transtorno de ansiedade ou transtorno relacionado ao estresse a partir de nenhuma classificação. Não infira risco, urgência, funcionamento cotidiano nem causalidade entre as dimensões — "Extremamente severo" não vira conclusão de urgência, e uma classificação elevada numa escala não explica a de outra. A DASS-21 tem 21 itens, mas este perfil trabalha com as três escalas já calculadas: não crie leitura item a item, não destaque conteúdo de item específico e não invente regra de item para a DASS-21 — este instrumento não tem nenhuma nesta arquitetura.
+Ancore as afirmações com "na DASS-21", "neste protocolo" ou "nesta escala".
+`;
+
+/** Os dois códigos da família SNAP-IV no catálogo. Comparados direto
+ *  contra `instrumentCode`, o mesmo parâmetro que o BPA-2 e a DASS-21
+ *  já usam. */
+const CODIGO_SNAP18 = 'SNAP-IV-18';
+const CODIGO_SNAP26 = 'SNAP-IV-26';
+
+/** O PERFIL INTERPRETATIVO do SNAP-IV — quinto piloto da mesma
+ *  arquitetura, e o primeiro que cobre DUAS versões de um instrumento com
+ *  UM bloco só.
+ *
+ *  MESMA FAMÍLIA ESTRUTURAL DO BPA-2 E DA DASS-21: o SNAP-IV também não
+ *  tem snapshot. Os domínios chegam com bruto, contagem e classificação
+ *  já na tabela de resultados de sempre — `metricasDaEscala` já nomeia as
+ *  duas medidas ("Pontuação bruta" e "Sintomas presentes") desde antes
+ *  desta fase, e as DUAS chegam ao Relatório Pró: a auditoria confirmou
+ *  contra `formatClosedResults` que nenhuma das duas fica de fora. Não há
+ *  REGRA_SNAPIV pelo mesmo motivo que não há REGRA_BPA2: nada a congelar.
+ *
+ *  POR QUE É UMA FUNÇÃO, E NÃO UM CONST. SNAP-IV-18 e SNAP-IV-26
+ *  compartilham Desatenção e Hiperatividade/Impulsividade byte a byte; o
+ *  26 soma TOD. Duplicar o bloco inteiro em dois consts quase idênticos
+ *  criaria dois textos livres para divergir sem ninguém notar — o mesmo
+ *  risco que motivou `metricasDaEscala` a ler de um mapa único em vez de
+ *  um `if` por instrumento. Em vez disso, o conteúdo COMPARTILHADO é um
+ *  só, e só os trechos sobre TOD entram ou saem por parâmetro. `comTod`
+ *  decide isso, e só ele: o resto do texto é idêntico nas duas versões,
+ *  byte a byte — é o que os testes de família provam.
+ *
+ *  MÉDIA POR ITEM NÃO ENTRA AQUI. Ela já existe — implementada, para o
+ *  SNAP-IV-18 — em `METRICAS_POR_INSTRUMENTO` e chega ao modelo pela
+ *  `orientacaoText` que `orientacaoParaIA` já monta (userText, não system
+ *  prompt; `snap18-metricas.test.ts` prova a separação). Repeti-la aqui
+ *  seria uma segunda fonte da mesma regra — exatamente o padrão que este
+ *  módulo evita em todo o resto do arquivo. */
+function perfilInterpretativoSnapIv(comTod: boolean): string {
+  const dominios = comTod
+    ? 'Desatenção, Hiperatividade/Impulsividade e TOD'
+    : 'Desatenção e Hiperatividade/Impulsividade';
+  const versao = comTod ? '26' : '18';
+  // as quatro inserções do TOD, cada uma isolada no ponto exato da frase
+  // que ela completa — nenhuma reaproveita a lógica de outra
+  const naoSignificaTod = comTod ? ', diagnóstico de TOD' : '';
+  const nomeDaDimensaoTod = comTod
+    ? ' Mesmo o domínio chamado "Transtorno Opositivo-Desafiador" é NOME DA DIMENSÃO neste instrumento: atingir o limiar nele não confirma TOD.'
+    : '';
+  const preferenciaTod = comTod
+    ? ', ou "na dimensão TOD do SNAP-IV-26..."'
+    : '';
+  const proibicaoEscreverTod = comTod ? ' nem "apresenta TOD"' : '';
+  const naoInferirTod = comTod ? ', inferir TOD' : '';
+
+  return `
+COMO LER O SNAP-IV — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, comparar Pontuação bruta com corte ou concluir diagnóstico a partir de nenhum domínio. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não repita Pontuação bruta, Sintomas presentes e classificação por domínio se a tabela já os apresenta, e não acrescente cautela nova.
+
+Este protocolo é o SNAP-IV-${versao}, com os domínios ${dominios}. Nenhum outro domínio existe neste protocolo.
+
+DUAS MEDIDAS, NÃO UMA (vocabulário do instrumento, não característica da pessoa):
+- Pontuação bruta descreve a INTENSIDADE agregada das respostas do domínio — quanto foi marcado nos itens. Sintomas presentes descreve a CONTAGEM de itens que atingiram o critério de presença do instrumento — quantos itens, não quanto. NÃO derive uma da outra: são medidas diferentes e podem divergir sem contradição — um domínio com Pontuação bruta relativamente alta pode ficar abaixo do limiar de Sintomas presentes, e dois domínios com Pontuação bruta parecida podem ter classificações diferentes.
+- A CLASSIFICAÇÃO sai da CONTAGEM de Sintomas presentes, nunca da Pontuação bruta. NÃO compare a Pontuação bruta com nenhum corte, não infira limiar pela intensidade, não recalcule a classificação e não a reinterprete: reproduza o rótulo recebido — "Atinge o limiar de sintomas deste domínio" ou "Não atinge o limiar de sintomas deste domínio" — exatamente como veio.
+
+LIMIAR NÃO É DIAGNÓSTICO. "Atinge o limiar de sintomas deste domínio" NÃO significa diagnóstico de TDAH, apresentação desatenta, apresentação hiperativa/impulsiva${naoSignificaTod}, transtorno confirmado, quadro clínico confirmado ou indicação diagnóstica suficiente.${nomeDaDimensaoTod} Prefira "no domínio de Desatenção do SNAP-IV..." ou "o domínio de Hiperatividade/Impulsividade atingiu o limiar de sintomas definido pelo instrumento..."${preferenciaTod}, e nunca "o avaliado apresenta TDAH"${proibicaoEscreverTod}.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. DOMÍNIOS DESTE PROTOCOLO — ${dominios}, e só estes. Nenhum outro domínio existe neste protocolo.
+2. DISTRIBUIÇÃO DOS LIMIARES — quais domínios atingem o limiar do próprio instrumento, quais não atingem.
+3. CONFIGURAÇÃO — existe convergência entre os domínios, contraste, um domínio isoladamente acima do limiar, múltiplos domínios acima, ou nenhum acima?
+4. INTENSIDADE E CONTAGEM — há diferença relevante entre a Pontuação bruta e os Sintomas presentes de um mesmo domínio, ou entre domínios? Descreva a diferença sem corrigir nada e sem explicar a causa dela.
+5. MENSAGEM CENTRAL — escolha UMA leitura central do protocolo: nenhum domínio atingiu o limiar, o limiar foi atingido em um domínio só, múltiplos domínios atingiram o limiar, ou configuração contrastante entre os domínios. Só o que os dados realmente sustentarem, e sem transformar isso em diagnóstico.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste SNAP-IV?" priorizando quais domínios atingiram ou não o limiar, o padrão de distribuição e o contraste relevante — não repita Pontuação bruta, Sintomas presentes e classificação de cada domínio se a tabela já os apresenta. Nenhum domínio acima do limiar pede síntese CURTA; um ou mais domínios acima pedem destacar essa configuração.
+- Na Análise e interpretação, relacione os domínios deste protocolo. É permitido descrever convergência, divergência, diferença de configuração e diferença entre intensidade e contagem quando houver. NÃO é permitido diagnosticar, inferir apresentação de TDAH${naoInferirTod}, inferir causa, inferir prejuízo funcional, inferir desempenho escolar, inferir funcionamento familiar, inferir necessidade medicamentosa nem inferir prognóstico.
+- Nas Considerações para o contexto, o destino muda a LINGUAGEM, nunca o fato de que o resultado é rastreio/levantamento de sintomas do instrumento — nunca diagnóstico. Não escreva automaticamente "deve procurar neurologista", "precisa de medicação" nem "necessita avaliação para TDAH" só porque um domínio atingiu o limiar; integrar com outras fontes da avaliação é aceitável quando houver contexto escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração do SNAP-IV? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente os domínios quando houver contraste; não resumir todo o SNAP-IV a um único rótulo; integrar um domínio que atingiu o limiar com as demais informações disponíveis da avaliação. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente. Não produza protocolo diagnóstico nem de tratamento.
+- Nas Considerações finais, feche a configuração — por exemplo, "neste protocolo, o limiar de sintomas foi atingido em um domínio, mas não no outro", sem repetir a tabela inteira — e delimite que isso NÃO constitui diagnóstico isoladamente. Não escreva um segundo aviso: o parágrafo obrigatório vem depois e basta.
+
+O QUE NUNCA SE FAZ COM OS DOMÍNIOS DO SNAP-IV, mesmo com todos os domínios acima do limiar:
+Não use rótulo que não esteja no resultado recebido — em especial "Risco de TDAH", "Limiar de Risco" ou "Sem Risco": são um esquema antigo que a correção do controlador retirou de carga, e nenhum resultado real os produz. Usá-los inventaria uma classificação que o sistema não calculou. O SNAP-IV tem itens individuais, mas este perfil trabalha com os domínios já calculados: não crie leitura item a item, e não use resposta isolada para afirmar comportamento frequente real, dificuldade escolar, impulsividade cotidiana, oposição, agressividade ou transtorno.
+Ancore as afirmações com "no SNAP-IV", "neste protocolo" ou "neste domínio".
+`;
+}
+
+/** O código da Bayley-III no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que BPA-2, DASS-21 e a família
+ *  SNAP-IV já usam. */
+const CODIGO_BAYLEY3 = 'BAYLEY-III';
+
+/** O PERFIL INTERPRETATIVO da Bayley-III — sexto piloto da mesma
+ *  arquitetura, e o instrumento mais estruturalmente rico coberto até
+ *  aqui: cinco domínios, dois deles com dois componentes, um com
+ *  múltiplas subescalas, e DUAS réguas normativas por domínio (escalonada
+ *  e composta) em vez de uma.
+ *
+ *  A AUDITORIA MUDOU O QUE ESTE BLOCO PODE AFIRMAR. `data/bayley3.json`,
+ *  no CorrigeFacil, é controlador de NORMA — dezesseis códigos de
+ *  subteste/subescala (Cog, CR, CE, MF, MG, SE, Com, FA, AD, LZ, Soc, VC,
+ *  VD, SS, AC, MO), quatro tabelas de conversão escalonado→composto
+ *  cobrindo cinco domínios, sete `composite_bands` ("Muito acima da
+ *  média" a "Extremamente baixa"), e as tabelas de idade/prematuridade/IC
+ *  que resolvem a norma no servidor. O JSON não tem uma string de nome —
+ *  nenhum subteste, subescala ou domínio tem nome próprio ALI — mas os
+ *  nomes existem no loader que o carrega. Os dos CINCO DOMÍNIOS vieram de
+ *  `graph-config.ts` (`DOM_Cognitivo`, `DOM_Linguagem`, `DOM_Motora`,
+ *  `DOM_Socioemocional`, `DOM_Adaptativo` — "os cinco domínios do Bayley,
+ *  na métrica composta"), já escalas reais e aprovadas no gráfico. Os dos
+ *  SEIS SUBTESTES/SUBESCALAS DE UM CÓDIGO SÓ estão em
+ *  `engine/loader.py::NAMES` — Cog "Cognitivo (subteste)", CR "Comunicação
+ *  receptiva", CE "Comunicação expressiva", MF "Motricidade fina", MG
+ *  "Motricidade grossa", SE "Socioemocional (subteste)" —, conferido
+ *  numa segunda auditoria depois da primeira versão deste bloco. Este
+ *  bloco continua tratando os quatro por CÓDIGO no texto do prompt (CR,
+ *  CE, MF, MG), e a glosa entre parênteses ("receptivo"/"expressivo",
+ *  "fino"/"grosso") é a mesma raiz semântica do nome confirmado no
+ *  loader, resumida para o prompt.
+ *
+ *  DUAS CAMADAS, NÃO UMA. A tabela de conversão do controlador confirma:
+ *  subteste/subescala só tem `scaled` (banda 1–19) — nunca `percentile`
+ *  nem classificação. Só o COMPOSTO do domínio tem `percentile`, IC
+ *  (quando o servidor o publica) e cai em `composite_bands`. Não é
+ *  estilo; é estrutura, e o bloco ensina a lê-la como tal.
+ *
+ *  ADAPTATIVO TAMBÉM PODE TER IC95 — a primeira versão deste bloco dizia
+ *  o contrário, apoiada só no comentário de `graph-config.ts`
+ *  ("Adaptativo não tem IC95 publicado"), que descrevia o gráfico
+ *  aprovado e não o controlador inteiro. `engine/loader.py` mostra a
+ *  fonte: os outros quatro domínios trazem o IC95 já escrito na própria
+ *  linha da tabela `composites`, mas o Comportamento Adaptativo (CAG) é o
+ *  ÚNICO cujo IC95 depende da IDADE — o loader monta essa margem a partir
+ *  de `ic_bands` (`CAG95` por faixa etária em meses) e grava
+ *  `composite ± margem` como o `ci95` da linha de `DOM_Adaptativo`, pelo
+ *  mesmo campo que os outros quatro usam. A ORIGEM do número muda por
+ *  domínio; o que o Relatório Pró recebe não muda: um `ci95` pronto,
+ *  quando o servidor o envia, tratado igual em qualquer dos cinco. Por
+ *  isso o texto do prompt nunca precisou dizer "Adaptativo não tem IC" —
+ *  só a nota de auditoria deste comentário dizia, e é ela que está
+ *  corrigida agora.
+ *
+ *  NÃO HÁ REGRA_BAYLEY3 pelo mesmo motivo que não há REGRA_BPA2: nenhuma
+ *  das duas camadas é snapshot — as duas chegam pelos resultados por
+ *  escala de sempre, e nada aqui precisa ser congelado. */
+const PERFIL_INTERPRETATIVO_BAYLEY3 = `
+COMO LER A BAYLEY-III — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, converter uma régua na outra, escolher faixa etária, decidir correção de prematuridade ou concluir diagnóstico a partir de nenhum domínio. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra os cinco domínios e os subtestes como tabela em prosa, e não acrescente cautela nova.
+
+CAMADAS DIFERENTES, NUNCA UMA VIRA A OUTRA (vocabulário do instrumento, não característica da criança):
+- ESCORE ESCALONADO é o resultado normativo de CADA SUBTESTE OU SUBESCALA, numa régua própria. Ele NÃO vem com classificação nem com percentil — só o número escalonado.
+- ESCORE COMPOSTO é o resultado normativo de CADA DOMÍNIO, numa régua diferente da do subteste, e é ele que vem acompanhado de PERCENTIL e, quando o servidor o publicou, de INTERVALO DE CONFIANÇA. É neste nível que existe CLASSIFICAÇÃO — não no subteste.
+- NÃO converta um escalonado em composto, não some escalonados para reconstruir um composto, e não estime percentil, IC ou classificação para um subteste: ele não tem essas três coisas, e inventá-las cria dado que o sistema não calculou. NÃO compare o número de um subteste com o número de um composto como se fossem a mesma régua — "o subteste está abaixo do composto" mistura duas escalas diferentes e não pode aparecer no texto.
+- Onde o IC vier, trate-o como o intervalo já calculado para aquela estimativa. Não recalcule, não use o limite inferior nem o superior para criar uma segunda classificação, e não escolha "a classificação mais provável" dentro do intervalo — a classificação já veio pronta, ao lado do composto.
+
+OS CINCO DOMÍNIOS (vocabulário do instrumento, não característica da criança):
+- Cognitivo é composto por um subteste só. Não o transforme em inteligência global, QI, deficiência intelectual, capacidade intelectual geral nem prognóstico cognitivo. Prefira "no domínio Cognitivo da Bayley-III, o resultado...".
+- Linguagem integra dois componentes, receptivo (CR) e expressivo (CE). Quando os dois chegarem, é permitido comparar: distribuição semelhante, diferença entre os componentes, um relativamente mais elevado ou mais baixo. NÃO conclua transtorno de linguagem, atraso de linguagem, dificuldade de compreensão cotidiana nem dificuldade de fala cotidiana sem outras informações.
+- Motora integra dois componentes, fino (MF) e grosso (MG). Mesma regra: comparação permitida quando os dois chegarem, sem virar atraso motor diagnosticado, alteração neurológica, dificuldade funcional real ou etiologia motora. Ancore sempre em "nas tarefas/subtestes avaliados".
+- Socioemocional é composto por uma medida só. Use somente a estrutura fornecida: não infira transtorno emocional, TEA, vínculo, regulação emocional global nem comportamento social cotidiano a partir do escore ou da classificação isolados.
+- Adaptativo pode integrar múltiplas subescalas. Quando várias chegarem, observe homogeneidade, heterogeneidade, subescala destoante ou agrupamento realmente visível entre elas — nunca um agrupamento que os dados não sustentem. Uma classificação inferior aqui não vira incapacidade funcional, dependência nem prejuízo adaptativo clínico.
+
+A BAYLEY-III NÃO TEM RESULTADO GLOBAL. Os cinco domínios são compostos DISTINTOS: não existe soma, média nem composto único dos cinco. NÃO escreva "escore global Bayley", "resultado global Bayley", "desenvolvimento global de X", "classificação global", "pontuação total" nem "índice geral" quando a expressão sugerir uma medida composta única que não existe — a regra é SEMÂNTICA: qualquer formulação que leve o leitor a esperar um número único da Bayley-III tem o mesmo defeito. Diga o que existe, conforme o caso: o conjunto dos resultados, o perfil entre os domínios, a configuração observada ou a distribuição dos resultados.
+
+A BAYLEY-III NÃO TEM IDADE EQUIVALENTE NESTA IMPLEMENTAÇÃO. Não converta nenhum resultado — escalonado, composto, percentil ou classificação — em idade de desenvolvimento, idade equivalente, idade mental, "funciona como uma criança de X meses", "está X meses atrasado" nem "tem atraso de X meses", a menos que um campo explícito com esse significado tenha sido entregue pelo sistema. Nenhum destes é derivável do que este bloco descreve.
+
+IDADE E PREMATURIDADE JÁ FORAM RESOLVIDAS PELO SISTEMA. A idade na avaliação, quando corrigida por prematuridade, já chega identificada como tal; isso é dado factual do protocolo, e pode ser mencionado como tal. NÃO calcule idade corrigida, não decida se a prematuridade deveria ser corrigida, não aplique semanas × dias, não escolha nem revise faixa etária: a seleção normativa é do sistema, não sua.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. MAPEAR O QUE EXISTE — quais domínios, subtestes e componentes realmente estão presentes neste protocolo. Não complete medida ausente.
+2. DISTRIBUIÇÃO ENTRE DOMÍNIOS — os compostos estão homogêneos, predominantemente na média, predominantemente abaixo, predominantemente acima, ou heterogêneos? Use somente as classificações recebidas.
+3. CONTRASTES ENTRE DOMÍNIOS — existe domínio realmente destoante dos demais? Quando existir, pode ser nomeado. Não explique a causa.
+4. CONTRASTES INTERNOS — quando um domínio tiver mais de um componente (Linguagem, Motora) ou múltiplas subescalas (Adaptativo), verifique diferença interna realmente sustentada. Não a transforme em mecanismo causal.
+5. SUBTESTE × COMPOSTO — o composto já integra os subtestes daquele domínio; não interprete o composto como uma tarefa nova, e não conte a mesma informação duas vezes. Os componentes servem para mostrar a configuração INTERNA, não para duplicar o resultado do domínio.
+6. MENSAGEM CENTRAL — escolha UMA leitura principal: perfil homogêneo, perfil heterogêneo, domínio específico destoante, contraste interno num domínio, ou distribuição predominante numa região classificatória. Só o que os dados realmente sustentarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal desta Bayley-III?" priorizando a distribuição entre os domínios e o principal contraste, quando houver — não percorra os cinco domínios e os subtestes como tabela em prosa. Perfil homogêneo pede síntese CURTA; perfil heterogêneo destaca só os contrastes realmente úteis.
+- Na Análise e interpretação, articule os domínios, aprofunde o contraste relevante, use os componentes internos SÓ quando acrescentarem informação, e diferencie subteste de composto o tempo todo. Diga o que o padrão mostra DENTRO da Bayley-III. NÃO explique causa, não diagnostique atraso, não infira TEA, deficiência intelectual, transtorno do desenvolvimento, prognóstico ou funcionamento cotidiano além do dado, e não crie idade equivalente.
+- Nas Considerações para o contexto, é permitido orientar integração com observação, história do desenvolvimento e outras fontes profissionais, quando pertinente. NÃO prescreva terapia, estimulação, intervenção, encaminhamento ou frequência terapêutica só a partir da Bayley-III.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração da Bayley-III? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente dois componentes de um domínio quando houver contraste relevante; não resumir o perfil a um único domínio quando houver heterogeneidade; preservar a diferença entre resultado composto e configuração interna dos subtestes. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente. Não fabrique intervenção.
+- Nas Considerações finais, feche a mensagem central. Não repita todos os escores, não crie um "nível global", não repita recomendações, não crie diagnóstico, não crie idade de desenvolvimento e não escreva um segundo aviso.
+
+RESULTADOS INFERIORES NÃO AUTORIZAM, mesmo com todos os domínios abaixo da média: atraso global do desenvolvimento, atraso do desenvolvimento, deficiência intelectual, TEA, transtorno de linguagem, transtorno motor, transtorno do neurodesenvolvimento nem incapacidade adaptativa. RESULTADOS SUPERIORES NÃO AUTORIZAM, mesmo com todos os domínios acima da média: desenvolvimento avançado global, superdotação nem altas habilidades, sem fonte específica adicional. A classificação da Bayley-III é resultado do instrumento — não é diagnóstico, em nenhuma direção.
+Ancore as afirmações com "na Bayley-III", "neste protocolo" ou "neste domínio".
+`;
+
+/** O código do SDQ-POR no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que BPA-2, DASS-21, SNAP-IV e a
+ *  Bayley-III já usam. */
+const CODIGO_SDQ_POR = 'SDQ-POR';
+
+/** O PERFIL INTERPRETATIVO do SDQ-POR — sétimo piloto da mesma
+ *  arquitetura. Mesma família estrutural do BPA-2 e da DASS-21: sem
+ *  snapshot, sem REGRA_SDQ_POR — as sete escalas (EMO, CON, HIP, PAR,
+ *  PRO, IMPACTO e o composto TOTAL) chegam pelos resultados por escala
+ *  de sempre.
+ *
+ *  A ASSIMETRIA QUE IMPORTA AQUI: só DUAS das sete escalas têm
+ *  classificação. `data/sdq_por.json`, no CorrigeFacil, tem
+ *  `classification_bands` no nível raiz (as quatro faixas do TOTAL) e
+ *  dentro da escala IMPACTO (as quatro faixas dela) — e em NENHUM outro
+ *  lugar. EMO, CON, HIP, PAR e PRO não têm campo de faixa nenhum.
+ *  `graph-config.ts` confirma isso já em produção: as quatro escalas de
+ *  dificuldade saem do gráfico do TOTAL com o motivo "subescala sem
+ *  faixa publicada", e PRO sai com dois motivos — "direção OPOSTA
+ *  (competência preservada, não dificuldade)" e "única das cinco que não
+ *  entra no TOTAL". As duas frases vieram de lá, não foram inferidas
+ *  aqui.
+ *
+ *  O GATE DO IMPACTO é servidor, confirmado em `engine/calc.py::GATES`:
+ *  a pergunta de porta fecha a escala em zero, abre para a soma de três
+ *  itens, ou — faltando a porta ou algum dos três — tira a escala do
+ *  resultado inteiramente. Este módulo não vê a porta: o Relatório Pró
+ *  recebe RESULTADO por escala, nunca resposta item a item — confirmado
+ *  contra `formatClosedResults` e contra a ausência de qualquer query de
+ *  `assessment_responses` no gerador. Por isso o bloco proíbe reconstruir
+ *  a pergunta que abre a seção, e não a nomeia por número: não há
+ *  necessidade de o modelo saber que ela existe.
+ *
+ *  NÃO HÁ REGRA_SDQ_POR pelo mesmo motivo que não há REGRA_BPA2: nenhuma
+ *  das sete escalas é snapshot. */
+const PERFIL_INTERPRETATIVO_SDQ_POR = `
+COMO LER O SDQ-POR — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, somar escalas ou concluir diagnóstico a partir de nenhuma delas. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra as sete escalas como tabela em prosa, e não acrescente cautela nova.
+
+O TOTAL É COMPOSTO, NÃO É UMA SEXTA MEDIDA. O Total de Dificuldades já chega calculado a partir de quatro escalas — Dificuldades Emocionais, Dificuldades de Conduta, Hiperatividade e Problemas com Pares —, e SÓ dessas quatro: Pró-Social não entra no Total, e o Escore de Impacto também não. NÃO some as quatro escalas para conferir o Total, não o trate como uma quinta dificuldade e não o recalcule: ele já veio fechado, e a soma pertence ao servidor.
+
+CLASSIFICAÇÃO: SÓ O TOTAL E O IMPACTO TÊM. Dificuldades Emocionais, Dificuldades de Conduta, Hiperatividade, Problemas com Pares e Pró-Social chegam SEM classificação — o servidor não publica faixa normativa para nenhuma delas nesta implementação. NÃO invente uma: não escreva "Emocional alto", "Conduta elevada", "Hiperatividade moderada", "Problemas com Pares muito altos" nem "Pró-Social baixo" se esse rótulo não veio do sistema. É permitido descrever DIFERENÇA NUMÉRICA entre as quatro escalas de dificuldade quando os dados realmente sustentarem — algo como "entre as quatro escalas que compõem o Total, a pontuação de Dificuldades Emocionais foi numericamente maior..." —, mas isso NÃO é classificação, e não deve soar como uma.
+
+PRÓ-SOCIAL TEM DIREÇÃO ESTRUTURALMENTE OPOSTA às quatro escalas de dificuldade: ela mede competência preservada, não dificuldade, e por isso fica fora do Total. NÃO a leia como "quinta dificuldade", não trate pontuação de Pró-Social mais alta como mais problema nem mais baixa como transtorno social, e não a apresente como fator protetivo comprovado nem como algo que "compensa" um Total elevado. Havendo contraste entre Pró-Social e o conjunto de dificuldades, descreva a coexistência das duas medidas — nunca o mecanismo entre elas, e nunca como compensação ou proteção.
+
+O ESCORE DE IMPACTO É CAMADA SEPARADA — não é componente do Total, não é uma quinta escala de dificuldade e não é diagnóstico. Ele só existe no resultado quando o protocolo o produziu; sem ele, não há linha de Impacto para comentar. Quando existir, use exatamente a classificação recebida — "Sem Impacto", "Impacto Leve", "Impacto Moderado" ou "Impacto Grave" — sem gradação própria. NÃO reconstrua a origem desse resultado: o Impacto vem de uma pergunta de porta que este relatório não recebe, e "Sem Impacto" NÃO autoriza escrever que "o respondente informou que não há dificuldade" nem qualquer frase que presuma a resposta daquela pergunta. A única afirmação segura é "o Escore de Impacto foi classificado como Sem Impacto", ou equivalente ancorado no protocolo — não a origem dela.
+
+TOTAL E IMPACTO PODEM DIVERGIR, E ISSO NÃO É CONTRADIÇÃO. Um Total Muito Alto ao lado de um Impacto Sem Impacto — ou o inverso — são configurações legítimas, porque as duas medem aspectos diferentes. NÃO escreva que isso é erro, contradição, inconsistência ou falha de preenchimento, e não explique a causa da diferença: descreva que as duas medidas apresentaram configurações diferentes, e pare aí. Da mesma forma, um Total menos elevado ao lado de um Impacto mais elevado não autoriza concluir que "o impacto é desproporcional" — descreva as duas camadas, sem julgar uma pela ótica da outra.
+
+ITENS INDIVIDUAIS NÃO CHEGAM A VOCÊ. Você recebe os resultados por escala — nunca as respostas item a item do SDQ-POR. Em especial, você NÃO recebe a resposta que abre a Seção de Impacto, a duração das dificuldades nem o peso que elas representam para quem respondeu: não infira nenhuma delas, e não presuma o que qualquer uma diz. Não escreva "impacto nas amizades", "impacto escolar" nem "impacto no aprendizado" a partir do Escore de Impacto agregado — o número não diz qual pergunta específica produziu os pontos.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. TOTAL — qual classificação ele recebeu?
+2. CONFIGURAÇÃO DAS QUATRO DIFICULDADES — Dificuldades Emocionais, de Conduta, Hiperatividade e Problemas com Pares apresentam distribuição semelhante? Há alguma pontuação numericamente destoante? Sem criar classificação para nenhuma delas.
+3. PRÓ-SOCIAL — considere separadamente; nunca some ao Total; nunca leia na mesma direção das dificuldades.
+4. IMPACTO — existe resultado? Se existir, qual classificação veio? Como ele se relaciona DESCRITIVAMENTE com o Total? Nunca reconstrua a origem dele.
+5. CONTRASTES — Total × componentes, Total × Impacto, dificuldades × Pró-Social — só quando forem reais.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal. Só o que os dados realmente sustentarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste SDQ-POR?" priorizando a classificação do Total, o padrão relevante entre as quatro escalas de dificuldade, o Impacto quando existir e acrescentar informação, e a Pró-Social só quando for relevante para a configuração — não liste cada escala como tabela em prosa. Perfil homogêneo pede síntese CURTA.
+- Na Análise e interpretação, relacione as quatro escalas de dificuldade como componentes do Total, integre o Total como síntese composta delas, e separe Pró-Social e Impacto como dimensões fora do Total. NÃO explique causa, não diagnostique, não infira prognóstico, funcionamento cotidiano, desempenho escolar ou prejuízo específico, e não explique nenhuma discrepância entre as camadas.
+- Nas Considerações para o contexto, o destino muda a linguagem, nunca a interpretação. Não transforme automaticamente Hiperatividade numericamente elevada em TDAH, Conduta numericamente elevada em transtorno de conduta, Dificuldades Emocionais numericamente elevadas em transtorno emocional, Problemas com Pares numericamente elevados em problema social clínico, Pró-Social numericamente reduzida em déficit social, Total Muito Alto em psicopatologia global nem Impacto Grave em incapacidade funcional geral.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração do SDQ-POR? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente os componentes do Total quando houver heterogeneidade importante; não resumir toda a configuração ao Total quando uma escala componente destoar; integrar separadamente Total e Impacto quando apresentarem configurações diferentes; preservar a leitura independente da Pró-Social, sem incorporá-la ao Total. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode bastar. Não fabrique encaminhamento, terapia, medicação, adaptação escolar nem protocolo diagnóstico.
+- Nas Considerações finais, feche a mensagem central. Não repita todas as escalas, não crie diagnóstico, não repita recomendações e não escreva um segundo aviso.
+
+O QUE NUNCA SE FAZ COM O SDQ-POR, mesmo com o Total em Muito Alto ou o Impacto em Grave: não infira TDAH, transtorno de conduta, transtorno emocional, transtorno de ansiedade, transtorno depressivo, TEA nem transtorno opositor a partir de nenhuma escala ou classificação. Não escreva "psicopatologia global", "déficit global" nem "problema comportamental global". Não trate o Total como diagnóstico global, a Pró-Social como fator protetivo comprovado nem o Impacto como prova de prejuízo específico em amizade ou escola. Não explique causa nem preveja prognóstico.
+Ancore as afirmações com "no SDQ-POR", "neste protocolo" ou "nesta escala".
+`;
+
+/** O código do C-TRF 1½-5 no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os sete pilotos anteriores já
+ *  usam. */
+const CODIGO_CTRF = 'C-TRF_1.5-5';
+
+/** O PERFIL INTERPRETATIVO do C-TRF 1½-5 — oitavo piloto da mesma
+ *  arquitetura, mesma família estrutural do BPA-2, da DASS-21, do
+ *  SNAP-IV, da Bayley-III e do SDQ-POR: sem snapshot, sem REGRA_CTRF — as
+ *  nove escalas (seis síndromes, Internalização, Externalização e Total
+ *  de Problemas) chegam pelos resultados por escala de sempre. Reusa
+ *  `instrumentCode` — mais um `const comCtrf` local, nenhuma mudança de
+ *  assinatura.
+ *
+ *  A HIERARQUIA QUE ESTE MAPA ENSINA: o C-TRF não é nove medidas soltas.
+ *  `data/ctrf_1.5-5.json`, no CorrigeFácil, declara em `scales` seis
+ *  escalas `type: "syndrome"` (I a VI) e três `type: "broadband"` — INT
+ *  (`composed_of: ["I","II","III","IV"]`), EXT (`composed_of:
+ *  ["V","VI"]`) e TOT (`composed_of: "ALL_ITEMS"`). TOT NÃO é INT+EXT: o
+ *  controlador tem itens fora das seis síndromes (`items[].scale: null`)
+ *  que só entram no Total. Um modelo sem este mapa lê as três bandas
+ *  largas como "mais duas síndromes" e tenta reconstruir o Total somando
+ *  INT e EXT — e erraria, porque a soma delas não fecha o Total real.
+ *
+ *  NENHUM CORTE NUMÉRICO ENTRA AQUI. `cutoffs.syndrome` (65/70) e
+ *  `cutoffs.broadband` (60/64) existem no controlador e já resolveram a
+ *  classificação no servidor; este bloco não os reproduz — a
+ *  classificação chega FEITA na tabela de resultados, e repetir os
+ *  números convidaria o modelo a comparar T com corte por conta própria,
+ *  exatamente o que a REGRA CENTRAL já proíbe.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que BPA-2,
+ *  DASS-21, SNAP-IV, Bayley-III e SDQ-POR — e byte a byte ausente quando
+ *  o instrumento não é este. */
+const PERFIL_INTERPRETATIVO_CTRF = `
+COMO LER O C-TRF 1½-5 — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular T, aplicar corte, reclassificar, converter T em percentil, estimar percentil ou reconstruir qualquer escala. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra as nove escalas como tabela em prosa, e não acrescente cautela nova.
+
+TRÊS CAMADAS, NÃO NOVE MEDIDAS SOLTAS:
+- CAMADA 1 — seis escalas específicas (síndromes): Reatividade Emocional, Ansiedade/Depressão, Queixas Somáticas, Isolamento, Problemas de Atenção e Comportamento Agressivo.
+- CAMADA 2 — dois eixos amplos: Internalização agrega Reatividade Emocional, Ansiedade/Depressão, Queixas Somáticas e Isolamento; Externalização agrega Problemas de Atenção e Comportamento Agressivo. Cada eixo é a leitura combinada das escalas que o compõem, não uma sétima e oitava síndrome independentes.
+- CAMADA 3 — Total de Problemas, calculado sobre TODOS os itens do protocolo, não só sobre os que compõem as seis síndromes. NÃO trate o Total como Internalização mais Externalização e NÃO tente conferir, somar ou reconstruir essa soma: há itens do instrumento fora das seis escalas de síndrome que só entram no Total, e a soma de INT com EXT não fecha o valor real dele. Use somente o Total fechado que veio na tabela de resultados.
+
+T-SCORE E CLASSIFICAÇÃO SÃO DADOS FECHADOS. Preserve exatamente o T e a classificação recebidos de cada escala. Não recalcule T a partir do bruto, não aplique corte, não reclassifique, não verifique se a classificação "bate" com o T, não converta T em percentil, não estime percentil, não use distribuição normal e não trate T como diagnóstico. As nove escalas usam réguas diferentes entre síndromes e bandas largas — a diferença já está resolvida na classificação que você recebeu; você não precisa e não deve saber onde o corte fica.
+
+NOMES DE ESCALA NÃO SÃO DIAGNÓSTICO, mesmo com classificação clínica: Ansiedade/Depressão não é diagnóstico de ansiedade nem de depressão; Problemas de Atenção não é TDAH; Comportamento Agressivo não é transtorno de conduta nem TOD; Isolamento não é TEA nem transtorno social; Queixas Somáticas não é transtorno somático; Reatividade Emocional não é transtorno emocional; Internalização não é transtorno internalizante; Externalização não é transtorno externalizante; Total de Problemas não é psicopatologia global, gravidade clínica global nem diagnóstico global. Nenhuma dessas conversões é permitida em nenhum destino, mesmo diante de classificação Clínica.
+
+O CONTROLADOR TEM DESCRIÇÕES CONCEITUAIS de cada escala — o que ela tipicamente capta. Uma descrição conceitual NÃO é prova de manifestação específica: uma classificação elevada em Problemas de Atenção não autoriza escrever que "a criança apresenta impulsividade, agitação e baixa persistência" se esses comportamentos não vieram nos resultados ou no contexto escrito pelo profissional. A escala é uma dimensão avaliada, e o nome da dimensão não prova cada manifestação da sua descrição conceitual.
+
+INFORMANTE: o C-TRF é respondido por Professor/Cuidador. Ancore a leitura na fonte do protocolo — "no protocolo respondido pelo professor/cuidador...", "nos resultados deste C-TRF..." — em vez de escrever automaticamente "a criança é...". Você recebe um único respondente por avaliação: não invente comparação, concordância ou discrepância entre informantes que não foram fornecidos.
+
+CONTRASTES ENTRE ESCALAS PODEM SER DESCRITOS quando os dados realmente sustentarem — Internalização mais elevada que Externalização, uma escala específica destoando das demais dentro do mesmo eixo. Descreva a configuração observada ("na configuração observada, os resultados do eixo de Internalização apresentaram maior elevação...") e não explique a causa do contraste. Evite rótulos que soem categoria clínica não fornecida pelo sistema, como "predomínio internalizante".
+
+TOTAL ELEVADO NÃO APAGA A CONFIGURAÇÃO DAS ESCALAS ESPECÍFICAS: um Total elevado pode coexistir com perfil interno heterogêneo, e o Total não substitui a leitura das camadas 1 e 2. Não escreva "índice global de psicopatologia", "gravidade global", "nível geral de transtorno", "quadro global" nem "comprometimento global" para o Total.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. TOTAL DE PROBLEMAS — qual classificação ele recebeu?
+2. INTERNALIZAÇÃO E EXTERNALIZAÇÃO — como os dois eixos se distribuem entre si?
+3. AS SEIS ESCALAS ESPECÍFICAS — como elas se distribuem dentro de cada eixo?
+4. CONTRASTES REAIS — Internalização × Externalização; dentro de Internalização; dentro de Externalização — só os que os dados sustentarem.
+5. O QUE O TOTAL ACRESCENTA — ele confirma a configuração dos eixos, ou traz informação que eles sozinhos não mostrariam? Não repita os outros resultados só para preencher a seção.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste C-TRF?" priorizando o Total, os dois eixos amplos e o contraste realmente relevante — não enumere as nove escalas em sequência mecânica. Perfil homogêneo pede síntese CURTA.
+- Na Análise e interpretação, integre as seis escalas específicas aos dois eixos amplos e ao Total, SEM dizer que as escalas específicas "causam" os eixos ou o Total — são camadas de agregação, não relação causal. Não recite todas as seis escalas se estiverem homogêneas; dê atenção às diferenças que realmente mudem a leitura da configuração.
+- Nas Considerações para o contexto, trate Família, Escola, Equipe técnica e Registro interno como destinos NARRATIVOS: eles mudam a voz, nunca a psicometria. Não transforme resultado em afirmação automática de prejuízo escolar, prejuízo familiar, dificuldade de aprendizagem, problema de relacionamento, incapacidade funcional ou necessidade de tratamento sem dado contextual correspondente escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do C-TRF? NÃO recomende automaticamente psicoterapia, psiquiatria, neurologia, medicação, adaptação escolar, avaliação diagnóstica, tratamento ou encaminhamento só porque uma escala ou o Total veio elevado ou Clínico. NÃO EXISTE QUANTIDADE MÍNIMA.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir as nove escalas nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O C-TRF, mesmo com classificação Clínica em qualquer escala: não infira ansiedade, depressão, TDAH, transtorno de conduta, TOD, TEA, transtorno social, transtorno somático nem transtorno emocional a partir do NOME de uma escala. Não trate Internalização como transtorno internalizante, Externalização como transtorno externalizante nem o Total como psicopatologia, gravidade ou diagnóstico global. Não recalcule T, não aplique corte, não converta T em percentil e não reconstrua o Total a partir de Internalização e Externalização.
+Ancore as afirmações com "no C-TRF", "neste protocolo" ou "nos resultados deste C-TRF respondido pelo professor/cuidador".
+`;
+
+/** O código do EPQ-J no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os oito pilotos anteriores já
+ *  usam. */
+const CODIGO_EPQJ = 'EPQ-J';
+
+/** O PERFIL INTERPRETATIVO do EPQ-J — nono piloto da mesma arquitetura,
+ *  mesma família estrutural do BPA-2, da DASS-21, do SNAP-IV, da
+ *  Bayley-III, do SDQ-POR e do C-TRF: sem snapshot, sem REGRA_EPQJ — os
+ *  quatro fatores (P, E, N, S) chegam pelos resultados por escala de
+ *  sempre. Reusa `instrumentCode` — mais um `const comEpqj` local,
+ *  nenhuma mudança de assinatura.
+ *
+ *  A ASSIMETRIA ESTRUTURAL: `engine/loader.py::load_epqj`, no
+ *  CorrigeFácil, grava P/E/N com `kind: "primaria"` e S com `kind:
+ *  "validade"` — a única diferença de tipo entre as quatro escalas do
+ *  instrumento. S não é um quarto traço ao lado de P/E/N; é a Escala de
+ *  Sinceridade do EPQ, e `graph-config.ts` já trata isso em produção:
+ *  P/E/N formam o "Perfil de traços" e S sai como complemento
+ *  SEPARADO, sob o título "Escala de Sinceridade" — a mesma separação
+ *  que este mapa ensina o modelo a fazer na prosa.
+ *
+ *  NÃO EXISTE TOTAL. O controlador não declara `composed_of` nenhum:
+ *  P, E e N não somam entre si, e S não entra em soma nenhuma. Ao
+ *  contrário do C-TRF (Total sobre ALL_ITEMS) e do SDQ-POR (Total
+ *  composto de quatro escalas), o EPQ-J é puramente CONFIGURACIONAL —
+ *  não há medida agregada para o mapa proteger, só a ausência dela para
+ *  impedir que o modelo invente uma.
+ *
+ *  GRUPO NORMATIVO: `L.dimensions([{code: "grupo", ..., manual: True}])`
+ *  no loader e `norm_selection: "manual_deliberada · não usa o sexo
+ *  informado automaticamente"` no controlador — a escolha entre
+ *  Feminino/Masculino/Grupo Geral é decisão prévia do
+ *  profissional/sistema, resolvida antes do resultado chegar aqui.
+ *  `generateCorrigeFacilReport` não lê `norm_selector` nem qualquer
+ *  campo de grupo normativo hoje — nenhuma query nova foi aberta para
+ *  este piloto, e o mapa não pede que uma seja aberta: ele só impede o
+ *  modelo de INFERIR o grupo a partir de sexo, gênero, nome ou pronome
+ *  quando (e se) esse dado aparecer em algum texto livre.
+ *
+ *  PERCENTIL: `lookup_note` no controlador documenta o VLOOKUP
+ *  aproximado da fonte — bruto duplicado na tabela resolve pelo MAIOR
+ *  percentil. Isso é comportamento do LOADER (`_faixas_percentil`), não
+ *  do prompt: o percentil que chega aqui já saiu resolvido, e o mapa
+ *  apenas nomeia a regra para o modelo não tentar "corrigir" uma
+ *  duplicidade que não existe do lado dele.
+ *
+ *  NENHUM CORTE NUMÉRICO ENTRA AQUI, pela mesma razão do C-TRF: as
+ *  faixas de percentil (5/10/20/30/.../90/99) que separam MUITO
+ *  BAIXO/BAIXO/MEDIO/ALTO/MUITO ALTO já resolveram a classificação no
+ *  servidor, e reproduzi-las convidaria o modelo a comparar percentil
+ *  com corte por conta própria.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os
+ *  seis pilotos sem snapshot anteriores — e byte a byte ausente quando
+ *  o instrumento não é este. */
+const PERFIL_INTERPRETATIVO_EPQJ = `
+COMO LER O EPQ-J — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular percentil, aplicar corte, reclassificar, escolher ou verificar grupo normativo, inverter item ou reconstruir qualquer fator. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva P, E, N e S como tabela em prosa, e não acrescente cautela nova.
+
+DUAS CAMADAS, NÃO QUATRO TRAÇOS NO MESMO PLANO:
+- CAMADA 1 — perfil primário: Psicoticismo (P), Extroversão (E) e Neuroticismo (N). São as três dimensões de personalidade que o EPQ-J mede.
+- CAMADA 2 — validade: Sinceridade (S). NÃO é um quarto traço de personalidade equivalente a P/E/N — é a escala de validade do protocolo. S não deve dominar a Síntese nem aparecer misturada a P/E/N como se fosse a mesma espécie de medida.
+
+NÃO EXISTE TOTAL NO EPQ-J. Não há índice global, escore composto nem "perfil geral" calculado a partir de P, E, N e S. NÃO some os fatores, não crie um "escore global de personalidade" e não diga que um fator "compensa" outro matematicamente. A leitura é CONFIGURACIONAL — três traços mais uma escala de validade separada — e não redutível a um número único.
+
+PERCENTIL E CLASSIFICAÇÃO SÃO DADOS FECHADOS. Preserve exatamente o percentil e a classificação (MUITO BAIXO, BAIXO, MEDIO, ALTO, MUITO ALTO) recebidos de cada fator. Não calcule percentil a partir do bruto, não escolha outro percentil, não use interpolação, distribuição normal ou CDF, e não tente "corrigir" ou reconstruir o VLOOKUP da fonte — quando o bruto se repete na tabela normativa, a regra já aplicada pelo servidor fica com o MAIOR percentil, e isso não é inconsistência a resolver. Percentil é POSIÇÃO NORMATIVA, não porcentagem do traço: percentil 90 não vira "90% de Neuroticismo", nem percentil 80 vira "80% psicótico" ou percentil 10 vira "10% extrovertido" — bloqueie esse tipo de leitura em qualquer fator.
+
+CLASSIFICAÇÃO NÃO É GRAVIDADE UNIFORME. As palavras MUITO BAIXO a MUITO ALTO indicam posição normativa NAQUELE fator — não são automaticamente gravidade, risco, patologia, comprometimento, funcionamento ruim ou funcionamento bom. A direção clínica NÃO é uniforme entre os quatro fatores: Extroversão Muito Alta não significa "quadro grave", e Extroversão Muito Baixa não significa déficit ou isolamento patológico. Trate cada fator pela direção que ele próprio sustenta, sem aplicar uma leitura de risco genérica aos quatro.
+
+PSICOTICISMO É O NOME DA DIMENSÃO, não um veredito clínico. Mesmo com classificação ALTO ou MUITO ALTO, não converta em psicose, transtorno psicótico, esquizofrenia, delírio, alucinação, perda de contato com a realidade, risco de psicose, traços psicóticos clínicos nem diagnóstico psicótico. Prefira "no fator Psicoticismo do EPQ-J..." e não explique clinicamente o nome do fator além do que o resultado normativo sustenta.
+
+NEUROTICISMO É O NOME DA DIMENSÃO. Mesmo com classificação ALTO ou MUITO ALTO, não converta em neurose, transtorno neurótico, transtorno de ansiedade, depressão, instabilidade emocional clínica, transtorno emocional ou psicopatologia.
+
+EXTROVERSÃO É DIMENSÃO, NÃO VEREDITO DE FUNCIONAMENTO. ALTA não é automaticamente melhor; BAIXA não é automaticamente pior. Sem informação contextual escrita pelo profissional, não infira habilidade social, competência social, isolamento, timidez clínica, sociabilidade cotidiana, qualidade das relações, desempenho escolar ou prejuízo social a partir de nenhuma classificação de Extroversão. O resultado descreve posição na dimensão avaliada, não uma conclusão sobre a vida da pessoa.
+
+SINCERIDADE (S) É ESCALA DE VALIDADE, NÃO TRAÇO PRINCIPAL E NÃO JULGAMENTO MORAL. Ela pode entrar na leitura como indicador de validade/consistência do protocolo, mas somente dentro do que o resultado fechado sustenta. NÃO escreva, só por causa da classificação de S, que "o respondente mentiu", "não foi sincero", "respondeu de maneira falsa", "tentou manipular o teste", que "o protocolo é inválido" ou que "o resultado deve ser descartado". O controlador não traz nenhuma regra de invalidação automática, e o mapa não cria uma: S alta não invalida o protocolo, S baixa não o "confirma válido" nem confirma que o respondente foi "totalmente sincero" — a formulação segura é considerar S separadamente, como parte da leitura de consistência do protocolo, sem transformá-la em julgamento sobre a pessoa nem em critério de descarte dos demais resultados.
+
+GRUPO NORMATIVO É DECISÃO JÁ TOMADA, FORA DO SEU ALCANCE. A escolha entre Feminino, Masculino e Grupo Geral é manual e deliberada — feita antes deste relatório, pelo profissional ou pelo sistema — e não usa o sexo informado automaticamente. Você não escolhe grupo normativo, não troca grupo, não confere o grupo contra o sexo informado em qualquer outro lugar do protocolo e não sugere que o grupo esteja errado. NÃO infira o grupo normativo a partir de sexo, gênero, nome ou pronome. Se alguma informação de grupo normativo chegar até você, trate-a apenas como contexto normativo já resolvido — nunca como algo a verificar ou recalcular.
+
+ITENS E INVERSÕES PERTENCEM AO CÁLCULO, NÃO AO RELATÓRIO. Não mencione quais itens são invertidos (reverse), não tente inverter resposta alguma, não recalcule bruto e não reconstrua fator a partir de item. Você recebe resultados por fator, já calculados — nunca respostas item a item do EPQ-J.
+
+CONTRASTES ENTRE P, E E N PODEM SER DESCRITOS quando os dados realmente sustentarem — um fator em posição normativa mais elevada, outro relativamente mais baixo, distribuição homogênea ou contrastante entre os três. NÃO transforme contraste em causalidade: nunca escreva "o Neuroticismo elevado causa...", "o Psicoticismo explica..." ou "a baixa Extroversão leva a...". Descreva a configuração, não o mecanismo.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. LER P, E E N com percentil e classificação exatamente como vieram.
+2. CONFIGURAÇÃO ENTRE OS TRÊS — homogênea, contrastante, um fator destoante?
+3. OBSERVAR S SEPARADAMENTE, como escala de validade.
+4. VERIFICAR SE S ACRESCENTA alguma consideração legítima de consistência do protocolo, sem invalidá-lo automaticamente.
+5. IDENTIFICAR CONTRASTES REAIS entre P, E e N — só os que os dados sustentarem.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste EPQ-J?" priorizando P, E e N — não como P = ..., E = ..., N = ... em sequência mecânica, a tabela já existe. Perfil homogêneo pede síntese CURTA; perfil contrastante destaca o contraste que realmente muda a leitura. Sinceridade entra separadamente, e só quando for relevante para a leitura.
+- Na Análise e interpretação, articule P, E e N entre si, e trate S como validade separada — nunca como quarto traço. Pode destacar homogeneidade, heterogeneidade, fator destoante ou contraste normativo, sem diagnóstico, causalidade, prognóstico ou descrição de sintomas não fornecidos.
+- Nas Considerações para o contexto, os quatro destinos mudam linguagem, profundidade e voz — nunca a psicometria. NÃO converta P/E/N/S em funcionamento cotidiano sem dado contextual. No destino Escola em especial, não derive automaticamente comportamento escolar, rendimento, relações sociais, disciplina, adaptação ou atenção a partir de P, E, N ou S.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do EPQ-J? NÃO recomende automaticamente psicoterapia, psiquiatria, neurologia, medicação, avaliação diagnóstica, intervenção escolar ou tratamento só porque um fator veio ALTO ou MUITO ALTO. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar a configuração de P/E/N com outras fontes já disponíveis na avaliação; considerar separadamente fatores contrastantes; manter S como elemento de validade, sem transformá-la em julgamento da pessoa.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro fatores nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O EPQ-J, mesmo com classificação MUITO ALTO em qualquer fator: não infira psicose, transtorno psicótico, esquizofrenia, neurose, transtorno de ansiedade, depressão, transtorno emocional, isolamento clínico ou déficit social a partir do NOME de um fator. Não trate Sinceridade como acusação de mentira nem como critério para invalidar o protocolo. Não some P, E, N ou S, não invente Total nem índice global de personalidade, e não infira nem substitua o grupo normativo por sexo, gênero, nome ou pronome.
+Ancore as afirmações com "no EPQ-J", "neste protocolo" ou "no fator [nome] do EPQ-J".
+`;
+
+/** O código do ERA-A no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os nove pilotos anteriores já
+ *  usam. */
+const CODIGO_ERAA = 'ERA-A';
+
+/** O PERFIL INTERPRETATIVO do ERA-A — décimo piloto da mesma
+ *  arquitetura, mesma família estrutural do BPA-2, da DASS-21, do
+ *  SNAP-IV, da Bayley-III, do SDQ-POR, do C-TRF e do EPQ-J: sem
+ *  snapshot, sem REGRA_ERAA — os quatro fatores e o Escore Geral chegam
+ *  pelos resultados por escala de sempre. Reusa `instrumentCode` — mais
+ *  um `const comEraa` local, nenhuma mudança de assinatura.
+ *
+ *  A DIFERENÇA DESTE PILOTO PARA O C-TRF E O SDQ-POR: no C-TRF o Total
+ *  NÃO é INT+EXT (há itens fora das seis síndromes), e no SDQ-POR o
+ *  Total soma só QUATRO das sete escalas. Aqui não: `engine/loader.py`
+ *  (`_load_era`) grava o Escore Geral com `kind: "composta"` e
+ *  `scale_components` apontando para OS QUATRO fatores — a nota do
+ *  próprio controlador diz "Escore Geral = soma dos 4 fatores", e a soma
+ *  bate de verdade. Mesmo assim a trava é a MESMA: a IA não soma para
+ *  conferir, porque conferir o servidor não é a tarefa dela — a REGRA
+ *  CENTRAL já proíbe recalcular qualquer escore, e este mapa não abre
+ *  exceção só porque, desta vez, a soma coincidiria.
+ *
+ *  CLASSIFICAÇÃO: duas bandas só, gravadas por `L.bands` a partir de
+ *  `classification_rule` do controlador — "Baixa presença de sintomas"
+ *  (percentil ≤ 59) e "Alta presença de sintomas" (percentil ≥ 60).
+ *  NENHUM dos dois números entra neste bloco, pela mesma razão do
+ *  C-TRF e do EPQ-J: a classificação já chega FEITA, e repetir o corte
+ *  convidaria o modelo a compará-lo por conta própria.
+ *
+ *  A TRAVA MAIS FORTE DESTE PILOTO: "Alta presença de sintomas" é
+ *  rótulo do INSTRUMENTO, não abreviação de "sintomas de autismo". O
+ *  controlador não anexa "de autismo" ao rótulo em lugar nenhum, e este
+ *  mapa proíbe explicitamente a IA de fazer essa montagem — é o mesmo
+ *  princípio de "nome da escala não é diagnóstico" dos pilotos
+ *  anteriores, levado ao caso em que o instrumento avalia tema
+ *  historicamente associado a TEA sem em nenhum momento nomeá-lo.
+ *
+ *  ITENS SEM ENUNCIADO: `notes` do controlador diz "Enunciados dos itens
+ *  não estão no arquivo (placeholders)" — mesma situação do C-TRF, do
+ *  ERA-F, do BPA-2/AG etc. (ver `form-model.ts::semEnunciado`). O mapa
+ *  não inventa conteúdo de item nem lê resposta individual — só fatores
+ *  e Escore Geral, como todo o resto do produto.
+ *
+ *  NORMA ÚNICA: `L.norm_sets([{code: "geral", label: "Amostra normativa
+ *  única"}])` — não há seleção manual (como o grupo do EPQ-J) nem
+ *  resolução por idade (como o BPA-2 e o FDT). Não há nada para o mapa
+ *  proteger aqui além de não inventar uma seleção que não existe.
+ *
+ *  ERA-A × ERA-F: um fator é HOMÔNIMO entre os dois — "Sensibilidade
+ *  Sensorial" existe nos dois controladores, com normas próprias e
+ *  distintas (`graph-config.ts` já registra isso: "nunca comparar um
+ *  com o outro"). Este piloto cobre só o ERA-A; o ERA-F, quando ganhar
+ *  perfil, é outro `instrumentCode` e outro bloco.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os
+ *  sete pilotos sem snapshot anteriores — e byte a byte ausente quando
+ *  o instrumento não é este. */
+const PERFIL_INTERPRETATIVO_ERAA = `
+COMO LER O ERA-A — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular percentil, aplicar corte, reclassificar, somar fatores para conferir o Escore Geral ou reconstruir tabela normativa. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva os quatro fatores e o Escore Geral como tabela em prosa, e não acrescente cautela nova.
+
+DUAS CAMADAS:
+- CAMADA 1 — quatro fatores específicos: Comunicação Social, Interação Social, Sensibilidade Sensorial e Padrões Restritos e Repetitivos.
+- CAMADA 2 — Escore Geral, que integra os quatro fatores mas NÃO apaga a configuração interna. Perfil geral alto pode coexistir com fatores heterogêneos; perfil geral baixo também não obriga todos os fatores à mesma configuração.
+
+O ESCORE GERAL É COMPOSTO DOS QUATRO FATORES, E AINDA ASSIM NÃO É RECALCULADO POR VOCÊ. O controlador declara Escore Geral como soma de Comunicação Social, Interação Social, Sensibilidade Sensorial e Padrões Restritos e Repetitivos — mas conferir essa soma não é sua tarefa. NÃO some os quatro fatores para checar o servidor, não reconstrua o Escore Geral e não o corrija: use somente o Escore Geral fechado que veio na tabela de resultados. Não afirme que o Escore Geral "confirma" os fatores — é apenas outra camada do mesmo resultado.
+
+PERCENTIL É DADO FECHADO. Preserve exatamente o percentil recebido de cada fator e do Escore Geral. Não interpole, não use CDF nem distribuição normal, não reconstrua a tabela normativa e não estime percentil. Quando o bruto se repete na tabela normativa, o servidor já resolveu pelo MAIOR percentil — isso não é inconsistência a expor nem a "corrigir" no texto. Percentil é POSIÇÃO NORMATIVA: percentil 90 não vira "90% de sintomas", em nenhum fator.
+
+CLASSIFICAÇÃO É DADO FECHADO. Existem só DUAS categorias no ERA-A — Baixa presença de sintomas e Alta presença de sintomas — e a IA não reaplica o corte que as separa nem substitui o rótulo recebido por outro.
+
+"ALTA PRESENÇA DE SINTOMAS" NÃO É DIAGNÓSTICO E NÃO GANHA "DE AUTISMO". É classificação DO INSTRUMENTO, não do avaliado. Mesmo com vários fatores em Alta presença de sintomas, NÃO converta em TEA, autismo, transtorno do espectro autista, risco de autismo, indicativo de TEA, provável TEA, quadro autístico, sintomas autísticos clínicos, diagnóstico ou gravidade clínica. O controlador não autoriza acrescentar "de autismo" ao rótulo — "Alta presença de sintomas de autismo" é uma expressão que você NÃO PODE criar se ela não veio do resultado ou do contexto escrito pelo profissional. Prefira "no fator Comunicação Social do ERA-A, a classificação recebida foi Alta presença de sintomas".
+
+"BAIXA PRESENÇA DE SINTOMAS" TAMBÉM NÃO É AUSÊNCIA. Não significa ausência de sintomas, ausência de dificuldades, desenvolvimento típico, TEA descartado, sem risco ou funcionamento normal. Preserve exatamente a categoria recebida, sem adicionar nem subtrair sentido a ela.
+
+NOMES DOS FATORES NÃO VIRAM FATOS DA VIDA REAL, mesmo em Alta presença de sintomas: Comunicação Social elevada não autoriza "dificuldade para se comunicar", "dificuldade de linguagem", "não compreende comunicação" ou "não mantém conversa"; Interação Social elevada não autoriza "não interage", "evita pessoas", "não tem amigos" ou "tem prejuízo social"; Sensibilidade Sensorial elevada não autoriza inventar hipersensibilidade auditiva, seletividade alimentar, aversão tátil ou reação a luz, ruído ou textura; Padrões Restritos e Repetitivos elevado não autoriza inventar estereotipia, rigidez, ecolalia, interesses restritos, movimentos repetitivos ou rotinas rígidas. O nome do fator é uma dimensão avaliada — ele não prova cada comportamento possível associado a ela.
+
+OS 75 ITENS NÃO TÊM ENUNCIADO PUBLICADO NESTE PRODUTO, e você não os recebe individualmente de qualquer forma: trabalhe somente com fatores, Escore Geral, percentil, classificação e contexto escrito pelo profissional. Não interprete item algum, não invente conteúdo de item, não crie exemplo comportamental baseado em suposto conteúdo dos itens e não presuma o que qualquer item mede além do nome do fator ao qual ele pertence.
+
+A NORMA DO ERA-A É ÚNICA — não há seleção de sexo, idade, escolaridade ou grupo normativo nesta arquitetura. Não invente comparação normativa por grupo nem sugira que existe seleção normativa a considerar.
+
+CONTRASTES ENTRE FATORES PODEM SER DESCRITOS quando os dados realmente sustentarem — por exemplo, maior elevação relativa em Sensibilidade Sensorial quando comparada aos demais fatores, se os percentis recebidos realmente mostrarem isso. Não explique a causa do contraste e não o transforme em comportamento concreto que não foi observado.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. LER o Escore Geral e sua classificação.
+2. LER os quatro fatores, com percentil e classificação de cada um.
+3. IDENTIFICAR quantos fatores estão em Alta e quantos em Baixa presença de sintomas.
+4. IDENTIFICAR homogeneidade ou contraste entre os fatores.
+5. VERIFICAR se existe fator destoante dos demais.
+6. INTEGRAR a leitura específica dos fatores com o Escore Geral, sem deixar um apagar o outro.
+7. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste ERA-A?" — por exemplo, perfil predominantemente em baixa presença sem contraste relevante, vários fatores em alta presença com um relativamente mais elevado, ou configuração heterogênea com elevação concentrada num fator — sempre ancorado em "neste ERA-A" ou "nos resultados deste protocolo", sem diagnóstico. Perfil homogêneo pede síntese CURTA: a tabela já mostra percentis, classificações e valores; a narrativa organiza, não repete.
+- Na Análise e interpretação, articule os quatro fatores com o Escore Geral — convergência, heterogeneidade, contraste, fator destoante, distribuição das classificações. NÃO infira TEA, diagnóstico, causalidade, funcionamento cotidiano, prognóstico, prejuízo escolar, prejuízo social ou necessidade terapêutica sem outras fontes.
+- Nas Considerações para o contexto, os quatro destinos mudam linguagem, nunca o dado. No destino Escola em especial, não transforme o resultado em problema de interação escolar, problema de aprendizagem, problema de comportamento, dificuldade em sala ou necessidade de adaptação sem dado escrito correspondente.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do ERA-A? NÃO recomende automaticamente avaliação para TEA, neurologista, psiquiatra, psicoterapia, fonoaudiologia, terapia ocupacional, ABA, medicação, adaptação escolar ou intervenção sensorial só porque houve Alta presença de sintomas. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar o resultado aos demais dados da avaliação; considerar separadamente fatores contrastantes; não reduzir uma configuração heterogênea ao Escore Geral.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro fatores nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O ERA-A, mesmo com Escore Geral ou qualquer fator em Alta presença de sintomas: não infira TEA, autismo, transtorno do espectro autista ou qualquer diagnóstico a partir do NOME de um fator ou da classificação recebida. Não chame o Escore Geral de gravidade global, índice de autismo, índice de TEA, probabilidade de TEA, grau de autismo, severidade ou comprometimento global. Não some os quatro fatores para verificar o Escore Geral e não reaplique o corte que separa as duas classificações.
+Ancore as afirmações com "no ERA-A", "neste protocolo" ou "no fator [nome] do ERA-A".
+`;
+
+/** O código do ERA-F no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os dez pilotos anteriores já
+ *  usam. */
+const CODIGO_ERAF = 'ERA-F';
+
+/** O PERFIL INTERPRETATIVO do ERA-F — décimo primeiro piloto da mesma
+ *  arquitetura, mesma família estrutural do ERA-A: sem snapshot, sem
+ *  REGRA_ERAF — os quatro fatores e o Escore Geral chegam pelos
+ *  resultados por escala de sempre. Reusa `instrumentCode` — mais um
+ *  `const comEraf` local, nenhuma mudança de assinatura.
+ *
+ *  ERA-A E ERA-F COMPARTILHAM O LOADER (`engine/loader.py::_load_era`),
+ *  NÃO OS FATORES. Este bloco NÃO é uma cópia do
+ *  PERFIL_INTERPRETATIVO_ERAA com nomes trocados: os quatro fatores do
+ *  ERA-F são Camuflagem: Compensação e Assimilação, Autopercepção de
+ *  Gênero, Camuflagem: Mascaramento e Sensibilidade Sensorial — só o
+ *  último é homônimo do ERA-A, e mesmo esse é escala de outro
+ *  instrumento, com itens e norma próprios (`graph-config.ts` já
+ *  registra: "homônimos mas normativamente distintos: nunca comparar um
+ *  com o outro"). A ativação é exclusivamente por
+ *  `instrumentCode === 'ERA-F'` — nunca pelo nome de um fator, e por
+ *  isso o ERA-A e o ERA-F continuam isolados um do outro nos testes.
+ *
+ *  MESMA REGRA DO ESCORE GERAL DO ERA-A: o controlador também declara
+ *  "Escore Geral = soma dos 4 fatores" e o loader grava `kind:
+ *  "composta"` com os quatro fatores como `scale_components` — a soma
+ *  bate de verdade, e ainda assim a IA não a confere. Mesma razão:
+ *  conferir o servidor não é a tarefa dela.
+ *
+ *  A TRAVA MAIS FORTE DESTE PILOTO NÃO É A MESMA DO ERA-A: aqui é
+ *  Autopercepção de Gênero. O controlador mede uma dimensão do
+ *  instrumento com esse nome, e nada nos dados fechados (percentil,
+ *  classificação) autoriza qualquer afirmação sobre identidade de
+ *  gênero, orientação sexual ou disforia de quem respondeu — a escala
+ *  não mede isso, e o mapa é explícito em bloquear a ponte entre o nome
+ *  do fator e uma leitura identitária, em qualquer direção (alto ou
+ *  baixo, elevado ou reduzido).
+ *
+ *  OS DOIS FATORES DE CAMUFLAGEM SÃO DOIS, NÃO UM: o controlador não
+ *  declara nenhum composto entre "Camuflagem: Compensação e
+ *  Assimilação" e "Camuflagem: Mascaramento" — são escalas irmãs por
+ *  tema, não por estrutura. O mapa proíbe fundir os dois num "índice de
+ *  camuflagem" que ninguém calculou.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os
+ *  oito pilotos sem snapshot anteriores — e byte a byte ausente quando
+ *  o instrumento não é este. */
+const PERFIL_INTERPRETATIVO_ERAF = `
+COMO LER O ERA-F — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular percentil, aplicar corte, reclassificar, somar fatores para conferir o Escore Geral ou reconstruir tabela normativa. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva os quatro fatores e o Escore Geral como tabela em prosa, e não acrescente cautela nova.
+
+DUAS CAMADAS:
+- CAMADA 1 — quatro fatores específicos: Camuflagem: Compensação e Assimilação, Autopercepção de Gênero, Camuflagem: Mascaramento e Sensibilidade Sensorial.
+- CAMADA 2 — Escore Geral, que integra os quatro fatores mas NÃO apaga a configuração interna. Pode haver dois fatores de Camuflagem em posições diferentes, Autopercepção de Gênero destoante ou Sensibilidade Sensorial destoante mesmo com Escore Geral homogêneo — e o inverso também.
+
+O ESCORE GERAL É COMPOSTO DOS QUATRO FATORES, E AINDA ASSIM NÃO É RECALCULADO POR VOCÊ. O controlador declara Escore Geral como soma dos quatro fatores — mas conferir essa soma não é sua tarefa. NÃO some os quatro fatores para checar o servidor, não reconstrua o Escore Geral e não o corrija: use somente o Escore Geral fechado que veio na tabela de resultados.
+
+CLASSIFICAÇÃO É DADO FECHADO. Existem só DUAS categorias no ERA-F — Baixa presença de sintomas e Alta presença de sintomas — e a IA não reaplica o corte que as separa, não compara percentil com ele e não substitui o rótulo recebido por outro.
+
+"ALTA PRESENÇA DE SINTOMAS" NÃO É DIAGNÓSTICO E NÃO GANHA "DE AUTISMO". É classificação DO INSTRUMENTO. Mesmo com vários fatores em Alta presença de sintomas, NÃO converta em TEA, autismo, transtorno do espectro autista, risco de TEA, provável TEA, diagnóstico, gravidade clínica, severidade global ou quadro clínico. O controlador não autoriza acrescentar "de autismo" ao rótulo.
+
+"BAIXA PRESENÇA DE SINTOMAS" TAMBÉM NÃO É AUSÊNCIA. Não significa ausência de sintomas, ausência de dificuldade, sem risco, TEA descartado, funcionamento típico ou normalidade. Preserve exatamente a categoria recebida.
+
+CAMUFLAGEM: COMPENSAÇÃO E ASSIMILAÇÃO É O NOME DE UMA DIMENSÃO, não uma lista de comportamentos. Uma elevação NÃO autoriza afirmar que a pessoa ensaia respostas sociais, imita outras pessoas, força contato visual, copia gestos, cria scripts, esconde características, muda personalidade, tenta "parecer neurotípica" ou compensa dificuldades sociais específicas — os enunciados reais dos itens não estão disponíveis, e transformar o nome conceitual do fator em comportamento concreto é inventar dado que não veio. Prefira "no fator Camuflagem: Compensação e Assimilação do ERA-F...".
+
+CAMUFLAGEM: MASCARAMENTO É OUTRO FATOR, com a mesma trava. Sem contexto escrito pelo profissional, NÃO infira ocultação consciente, supressão de estereotipias, controle de expressão facial, imitação social, exaustão por mascaramento, burnout, sofrimento psicológico ou estratégia consciente. O fator avalia uma dimensão; o nome dele não prova cada comportamento possível relacionado a ela.
+
+OS DOIS FATORES DE CAMUFLAGEM NÃO SÃO UM SÓ. Não funda Camuflagem: Compensação e Assimilação com Camuflagem: Mascaramento num suposto "índice de camuflagem" — o controlador não declara esse composto. É permitido comparar os dois percentis fechados e dizer que um ficou relativamente mais elevado que o outro; não é permitido somar os dois, criar média entre eles ou inventar um índice novo.
+
+AUTOPERCEPÇÃO DE GÊNERO EXIGE O TRATAMENTO MAIS CUIDADOSO DESTE MAPA. "Autopercepção de Gênero" é o nome de uma dimensão do ERA-F, e a classificação ou o percentil recebidos NUNCA autorizam conversão em identidade de gênero, sexo, transgeneridade, cisgeneridade, não-binariedade, orientação sexual, disforia de gênero, incongruência de gênero, questionamento de identidade ou diagnóstico relacionado a gênero — em NENHUMA direção. NÃO escreva "a pessoa se identifica como...", "há indício de disforia...", "há conflito com seu gênero..." nem "o resultado sugere identidade...": nada disso é autorizado pela escala fechada. Classificação alta NÃO é problema, patologia ou maior sofrimento; classificação baixa NÃO é "identidade de gênero típica" nem "ausência de conflito". Ancore estritamente com "no fator Autopercepção de Gênero do ERA-F...", e não vá além disso em hipótese alguma.
+
+ESTE FATOR TEM NOME HOMÔNIMO DE UMA ESCALA DE OUTRO INSTRUMENTO DO CATÁLOGO — os itens e a norma são diferentes, e os dois resultados nunca devem ser comparados ou tratados como equivalentes. Uma elevação aqui não autoriza inventar hipersensibilidade auditiva, luz, texturas, cheiros, seletividade alimentar, aversão tátil ou sobrecarga sensorial sem contexto escrito pelo profissional correspondente.
+
+OS 34 ITENS NÃO TÊM ENUNCIADO PUBLICADO NESTE PRODUTO, e você não os recebe individualmente de qualquer forma: trabalhe somente com fatores, Escore Geral, percentil, classificação e contexto escrito pelo profissional. Não interprete item algum, não invente conteúdo de item e não presuma o que qualquer item mede além do nome do fator ao qual ele pertence.
+
+PERCENTIL É DADO FECHADO. Não interpole, não use CDF nem distribuição normal, não reconstrua a tabela normativa e não estime percentil. Quando o bruto se repete na tabela normativa, o servidor já resolveu pelo MAIOR percentil — isso não é inconsistência a expor nem a "corrigir" no texto. Percentil é POSIÇÃO NORMATIVA: nunca vira porcentagem de sintomas, de camuflagem, de sensibilidade ou de qualquer leitura sobre identidade — "90% de camuflagem" e "80% de sintomas" são exatamente o tipo de formulação proibida.
+
+A NORMA DO ERA-F É ÚNICA — não há seleção de sexo, gênero, idade, escolaridade ou grupo normativo nesta arquitetura, e o "F" do código não é seletor normativo de sexo ou gênero: é parte do nome do instrumento. Não invente comparação normativa por grupo.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. LER o Escore Geral e sua classificação.
+2. LER os quatro fatores, com percentil e classificação de cada um.
+3. SEPARAR os dois fatores de Camuflagem — eles não são um só.
+4. OBSERVAR Autopercepção de Gênero sem extrapolar para identidade, orientação ou disforia.
+5. OBSERVAR Sensibilidade Sensorial, sem compará-la à escala homônima de outro instrumento.
+6. IDENTIFICAR convergência, contraste ou fator destoante entre os quatro.
+7. INTEGRAR essa leitura ao Escore Geral, sem deixar um apagar o outro.
+8. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste ERA-F?", sempre ancorado em "neste ERA-F" ou "nos resultados deste protocolo", sem diagnóstico. Perfil homogêneo pede síntese CURTA. Se os dois fatores de Camuflagem divergirem, isso pode ser a informação central — mas não explique por que divergiram.
+- Na Análise e interpretação, articule os dois fatores de Camuflagem, Autopercepção de Gênero, Sensibilidade Sensorial e o Escore Geral — convergência, divergência, elevação relativa, fator destoante, heterogeneidade. NÃO transforme isso em diagnóstico, etiologia, identidade, comportamento concreto, prejuízo funcional, TEA, burnout, disforia, sofrimento ou prognóstico sem outra fonte.
+- Nas Considerações para o contexto, os quatro destinos mudam voz e profundidade, nunca a psicometria. No destino Escola em especial, não derive automaticamente isolamento, problema social, dificuldade de adaptação, problema sensorial, problema de comportamento ou rendimento escolar a partir dos fatores.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do ERA-F? NÃO recomende automaticamente avaliação para TEA, psiquiatria, neurologia, psicoterapia, terapia ocupacional, fonoaudiologia, avaliação de identidade de gênero, tratamento, intervenção sensorial ou adaptação escolar só por classificação alta. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar diferenças entre os dois fatores de Camuflagem com outras fontes da avaliação; não reduzir perfil heterogêneo ao Escore Geral; considerar Autopercepção de Gênero apenas como dimensão deste protocolo e confrontá-la com contexto já fornecido, sem inferência identitária.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro fatores nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O ERA-F, mesmo com Escore Geral ou qualquer fator em Alta presença de sintomas: não infira TEA, autismo ou qualquer diagnóstico a partir do NOME de um fator ou da classificação recebida. Não trate Autopercepção de Gênero como afirmação sobre identidade, orientação sexual ou disforia, em nenhuma direção. Não funda os dois fatores de Camuflagem num índice novo, não some os quatro fatores para verificar o Escore Geral e não reaplique o corte que separa as duas classificações.
+Ancore as afirmações com "no ERA-F", "neste protocolo" ou "no fator [nome] do ERA-F".
+`;
+
+/** O código do ETPC no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os onze pilotos anteriores já
+ *  usam. */
+const CODIGO_ETPC = 'ETPC';
+
+/** O PERFIL INTERPRETATIVO do ETPC — décimo segundo piloto da mesma
+ *  arquitetura: sem snapshot, sem REGRA_ETPC — os quatro fatores chegam
+ *  pelos resultados por escala de sempre. Reusa `instrumentCode` — mais
+ *  um `const comEtpc` local, nenhuma mudança de assinatura.
+ *
+ *  `engine/loader.py::load_etpc` chama o próprio instrumento de "stress
+ *  test": item em dois fatores, 15 grupos normativos e quartil — as três
+ *  coisas que este mapa protege.
+ *
+ *  A ARMADILHA DESTE PILOTO É O CAMPO `score`. `score_type: "quartil"` e
+ *  `L.norm_entries` gravam 25, 50 ou 75 na coluna `score` — o MARCADOR
+ *  do quartil que casou (Q25/Q50/Q75), não um escore real e não
+ *  percentil (a coluna `percentile` fica `None`). `graph-config.ts` já
+ *  documenta exatamente isso, na entrada `ETPC`: "usa a CLASSIFICAÇÃO,
+ *  não o número: 25/50/75 são marcadores de quartil, e altura
+ *  proporcional diria 'três vezes mais' entre duas categorias ordinais
+ *  vizinhas" — por isso `metrica: 'classification'` lá. `formatClosedResults`
+ *  não tem entrada no mapa de `metricas-instrumento.ts` para o ETPC
+ *  (confirmado: nenhuma ocorrência de "ETPC" ali), então ele cai no
+ *  caminho genérico e imprime "escore: 25" (ou 50, ou 75) igual a
+ *  qualquer instrumento — SEM alterar essa infraestrutura nesta fase, o
+ *  mapa ensina o modelo a não dar significado novo a esse número.
+ *
+ *  NÃO EXISTE TOTAL. O controlador não declara `composed_of` nenhum, e
+ *  ao contrário do EPQ-J (P/E/N primários + S de validade) as QUATRO
+ *  escalas do ETPC são todas primárias — sem hierarquia entre elas.
+ *
+ *  ITEM EM DOIS FATORES: quatro itens do controlador pontuam em mais de
+ *  um fator ao mesmo tempo (itens 3, 14 e 26 em Psicoticismo+Extroversão;
+ *  item 28 em Psicoticismo+Sociabilidade). Os quatro fatores NÃO são
+ *  partições do protocolo — são leituras que compartilham parte da
+ *  base de itens —, e é por isso que somar/reconstruir/comparar como se
+ *  fossem blocos independentes de resposta é matematicamente errado, não
+ *  só editorialmente proibido.
+ *
+ *  15 GRUPOS NORMATIVOS, seleção manual (`L.dimensions([{code: "grupo",
+ *  manual: True}])`), com região, sexo, idade ou combinações no nome
+ *  (ver `d["norm_groups"]`) — a mesma arquitetura do grupo do EPQ-J, e a
+ *  mesma trava: `generateCorrigeFacilReport` não lê `norm_selector` nem
+ *  grupo normativo hoje, e este piloto não abre infraestrutura para
+ *  buscá-lo.
+ *
+ *  ISOLAMENTO SEMÂNTICO: Psicoticismo, Extroversão e Neuroticismo são
+ *  homônimos de fatores de outro instrumento do catálogo, mas o ETPC não
+ *  tem escala de validade equivalente à Sinceridade — Sociabilidade é
+ *  fator PRIMÁRIO, não controle de resposta. A ativação continua sendo
+ *  só `instrumentCode === 'ETPC'`, e o texto deste bloco não cita o
+ *  outro instrumento por código — mesma decisão já tomada no piloto do
+ *  ERA-F para a Sensibilidade Sensorial homônima do ERA-A.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os nove
+ *  pilotos sem snapshot anteriores — e byte a byte ausente quando o
+ *  instrumento não é este. */
+const PERFIL_INTERPRETATIVO_ETPC = `
+COMO LER O ETPC — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular quartil, aplicar corte, reclassificar, escolher grupo normativo ou tratar os quatro fatores como blocos independentes de item. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva os quatro fatores como tabela em prosa, e não acrescente cautela nova.
+
+NÃO EXISTE TOTAL NO ETPC. Não há índice global, composto nem soma dos quatro fatores. NÃO some Psicoticismo, Extroversão, Neuroticismo e Sociabilidade, não crie média entre eles e não invente um "perfil global" ou "índice geral de personalidade". A leitura é CONFIGURACIONAL entre os quatro, sem eixo superior.
+
+O NÚMERO QUE ACOMPANHA CADA FATOR NÃO É ESCORE NEM PERCENTIL — é o MARCADOR interno do quartil que a classificação ocupou (25 para Inferior, 50 para Médio, 75 para Superior). NÃO trate esse número como quantidade, como posição percentílica ou como grandeza comparável entre fatores: "escore 75" não significa "três vezes mais" que "escore 25", e a diferença entre eles não deve ser lida como distância numérica real. A informação que importa é a CLASSIFICAÇÃO — Inferior, Médio ou Superior — e é ela que orienta a leitura, nunca o número ao lado.
+
+CLASSIFICAÇÃO É DADO FECHADO. Preserve exatamente Inferior, Médio ou Superior como vieram. Não reaplique corte, não recalcule a partir do bruto, não reconstrua intervalo e não verifique se a classificação "bate" com o número que a acompanha.
+
+"INFERIOR" E "SUPERIOR" SÃO POSIÇÃO NORMATIVA, NÃO VEREDITO CLÍNICO. Inferior não significa automaticamente ruim, déficit, problema ou baixo funcionamento; Superior não significa automaticamente bom, saudável, melhor funcionamento ou proteção. A direção de significado não é uma régua clínica universal, e isso vale para os quatro fatores igualmente — cada um tem natureza diferente, e nenhum deles ganha uma leitura de gravidade só pela posição normativa.
+
+PSICOTICISMO É O NOME DO FATOR, não um veredito clínico. Classificação Superior NÃO significa psicose, transtorno psicótico, esquizofrenia, delírio, alucinação, perda de contato com a realidade, risco de psicose, quadro psicótico, traço psicótico clínico nem diagnóstico. Classificação Inferior também não significa automaticamente ausência de qualquer condição clínica. Prefira "no fator Psicoticismo do ETPC...".
+
+NEUROTICISMO É NOME DA DIMENSÃO. Não converta em neurose, transtorno de ansiedade, depressão, instabilidade emocional clínica, transtorno emocional ou psicopatologia. Superior não fecha diagnóstico; Inferior não significa necessariamente estabilidade emocional superior ou ausência de sofrimento.
+
+EXTROVERSÃO SUPERIOR NÃO É AUTOMATICAMENTE MELHOR, nem Inferior é automaticamente pior. Sem contexto escrito pelo profissional, não converta Superior em melhor sociabilidade, melhor adaptação, melhor competência social ou bom funcionamento, nem Inferior em isolamento, timidez clínica, déficit social ou prejuízo de interação.
+
+SOCIABILIDADE É FATOR PRIMÁRIO DO ETPC, NÃO ESCALA DE VALIDADE. Não a trate como controle de resposta nem como indicador de consistência do protocolo. Sem contexto correspondente, não infira número de amigos, qualidade das amizades, habilidade social, popularidade, isolamento, funcionamento escolar ou competência social real a partir da classificação isolada.
+
+ITENS PODEM PONTUAR EM DOIS FATORES AO MESMO TEMPO — os quatro fatores não são blocos independentes de resposta, e isso é propriedade do CÁLCULO, já resolvida pelo servidor. NÃO tente reconstruir independência entre fatores, não corrija dupla participação de item, não divida ponto entre fatores e não trate diferença entre dois fatores como se cada um viesse de um grupo totalmente separado de respostas. Itens invertidos (reverse) também pertencem só ao cálculo: não inverta resposta, não reconstrua bruto e não mencione qual item foi invertido.
+
+VOCÊ RECEBE RESULTADOS POR FATOR, NUNCA RESPOSTAS ITEM A ITEM. Não interprete item individual, não consulte resposta isolada e não presuma o que qualquer item mede além do nome do fator ao qual ele pertence.
+
+O GRUPO NORMATIVO É ESCOLHA MANUAL, JÁ FEITA ANTES DESTE RELATÓRIO — entre 15 grupos possíveis, alguns definidos por região, sexo, idade ou combinações dessas dimensões. Você não escolhe grupo, não troca grupo, não compara o resultado contra os outros grupos possíveis, não testa qual grupo produziria classificação diferente e não infere grupo a partir de sexo, gênero, idade, região, endereço ou nome. Existe UM grupo já selecionado para este protocolo; trabalhe só com o resultado que ele produziu.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. IDENTIFICAR a classificação fechada de cada um dos quatro fatores.
+2. OBSERVAR a configuração conjunta entre os quatro.
+3. IDENTIFICAR convergência ou contraste.
+4. VERIFICAR se algum fator realmente destoa dos demais.
+5. LEMBRAR que alguns itens alimentam dois fatores — por isso os fatores não são somas independentes, e a diferença entre dois deles não é uma subtração limpa de blocos separados.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste ETPC?" — distribuição homogênea, configuração contrastante, um fator normativamente distinto, ou dois fatores em faixa diferente dos demais —, sem enumerar os quatro fatores como tabela em prosa e sem inventar "perfil psicótico", "perfil neurótico", "perfil antissocial", "perfil saudável" ou "personalidade patológica". Perfil homogêneo pede síntese CURTA.
+- Na Análise e interpretação, articule os quatro fatores — convergência, heterogeneidade, diferença de classificação, fator destoante. NÃO infira diagnóstico, transtorno de personalidade, psicose, ansiedade, depressão, funcionamento social real, causalidade ou prognóstico sem dado externo fornecido.
+- Nas Considerações para o contexto, os quatro destinos mudam linguagem e profundidade, nunca a psicometria. No destino Escola em especial, não derive automaticamente sociabilidade escolar, amizades, participação, isolamento, comportamento, rendimento, adaptação ou problema emocional a partir dos fatores.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do ETPC? NÃO recomende automaticamente psicoterapia, psiquiatria, neurologia, medicação, avaliação diagnóstica, intervenção escolar ou treino de habilidades sociais só por uma faixa Superior ou Inferior. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar contrastes entre fatores às outras fontes já disponíveis; evitar reduzir o perfil a um único fator; interpretar a classificação apenas no grupo normativo já selecionado.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro fatores nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O ETPC, mesmo com classificação Superior em qualquer fator: não infira psicose, transtorno de personalidade, neurose, ansiedade ou depressão a partir do NOME de um fator. Não trate Sociabilidade como escala de validade nem como controle de resposta. Não some os quatro fatores, não invente Total nem índice geral de personalidade, não reconstrua independência entre fatores que compartilham item e não escolha ou compare grupo normativo.
+Ancore as afirmações com "no ETPC", "neste protocolo" ou "no fator [nome] do ETPC".
+`;
+
+/** O código do TRILHAS_PRE no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os doze pilotos anteriores já
+ *  usam. */
+const CODIGO_TRILHAS_PRE = 'TRILHAS_PRE';
+
+/** O PERFIL INTERPRETATIVO do Teste de Trilhas Pré-Escolares — décimo
+ *  terceiro piloto da mesma arquitetura: sem snapshot, sem
+ *  REGRA_TRILHAS_PRE — os quatro subtestes chegam pelos resultados por
+ *  escala de sempre. Reusa `instrumentCode` — mais um `const
+ *  comTrilhasPre` local, nenhuma mudança de assinatura.
+ *
+ *  SEM TOTAL, DECLARADO PELO PRÓPRIO CONTROLADOR: `trilhas.json ·
+ *  instrument.notes` traz literalmente "Sem escore composto/total", e
+ *  `engine/loader.py::load_trilhas` não grava `scale_components` nenhum
+ *  — os quatro subtestes (A-SEQ, A-CON, B-SEQ, B-CON) são resultados
+ *  fechados independentes, sem composto para o mapa proteger e sem
+ *  hierarquia entre eles.
+ *
+ *  BRUTO E PONTUAÇÃO PADRÃO SÃO RÉGUAS DIFERENTES, E OS TETOS DO BRUTO
+ *  TAMBÉM SÃO: `subtests[].raw_max` vale 5 (A-SEQ), 4 (A-CON), 10
+ *  (B-SEQ) e 9 (B-CON) — um bruto 5 em A-SEQ é o TETO da escala, e um
+ *  bruto 5 em B-SEQ é pouco mais que a metade dela. Comparar os dois
+ *  brutos diretamente erra a posição normativa; só a pontuação padrão e
+ *  a classificação, já convertidas pelo servidor, são comparáveis entre
+ *  os quatro.
+ *
+ *  ZERO NÃO TEM NORMA: `instrument.notes` também diz "Tabelas originais
+ *  começam no bruto 1 — zero não é aceito", e a tabela de
+ *  `d["norms"][subteste][idade]` confirmada na auditoria só tem chaves
+ *  de bruto a partir de "1" — não existe linha para zero. Um resultado
+ *  cujo bruto seria zero chega como indisponível, e o mapa proíbe
+ *  inventar conversão para preencher essa ausência.
+ *
+ *  IDADE NORMATIVA: só há tabela para 4, 5 e 6 anos
+ *  (`instrument.ages`), e a seleção é resolvida ANTES deste relatório —
+ *  `generateCorrigeFacilReport` não lê `idade_normativa` nem escolhe
+ *  norma hoje, e este piloto não abre infraestrutura para isso.
+ *
+ *  SEM SEMÂNTICA APROVADA ALÉM DO NOME DO SUBTESTE: `graph-config.ts`
+ *  (entrada `TRILHAS_PRE`) plota os quatro na mesma janela visual sem
+ *  atribuir nenhum construto cognitivo a nenhum deles — é puramente
+ *  visual. Nenhum lugar do código aprova chamar Parte B de
+ *  "flexibilidade cognitiva", Conexões de "atenção" ou Sequências de
+ *  "planejamento"; o mapa ancora estritamente nos NOMES dos subtestes, e
+ *  não importa teoria do Trail Making Test que não esteja na
+ *  arquitetura auditada.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os dez
+ *  pilotos sem snapshot anteriores — e byte a byte ausente quando o
+ *  instrumento não é este. */
+const PERFIL_INTERPRETATIVO_TRILHAS_PRE = `
+COMO LER O TESTE DE TRILHAS PRÉ-ESCOLARES — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular pontuação padrão, aplicar corte, reclassificar, escolher idade normativa ou somar subtestes. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva os quatro subtestes como tabela em prosa, e não acrescente cautela nova.
+
+NÃO EXISTE TOTAL NESTE INSTRUMENTO. O controlador declara "Sem escore composto/total": não some A-SEQ com A-CON, não some B-SEQ com B-CON, não some os quatro subtestes, não tire média entre eles e não invente "escore executivo geral" nem "desempenho geral no Trilhas". A leitura é CONFIGURACIONAL entre quatro resultados fechados e independentes.
+
+BRUTO NÃO É PONTUAÇÃO PADRÃO, E OS TETOS SÃO DIFERENTES ENTRE SUBTESTES. Cada subteste tem seu próprio teto de bruto, e um mesmo valor bruto ocupa posições normativas diferentes em subtestes diferentes — bruto 5 em A-SEQ não é a mesma posição que bruto 5 em B-SEQ. NÃO compare bruto entre subtestes: use a pontuação padrão e a classificação, que já vieram convertidas e são comparáveis entre os quatro.
+
+A PONTUAÇÃO PADRÃO É DADO FECHADO. Preserve exatamente o número recebido. Não calcule z, não estime percentil, não converta pontuação padrão em percentil, não crie IC95 e não use distribuição normal ou CDF. Não escreva "está X desvios-padrão da média" sem fonte explícita nos dados recebidos — o desvio-padrão da escala não está disponível para você.
+
+CLASSIFICAÇÃO É DADO FECHADO. Existem cinco categorias — Muito baixa, Baixa, Média, Alta e Muito alta — e a IA não reaplica o corte que as separa, não reclassifica a partir da pontuação padrão e não traz limite numérico nenhum para o texto.
+
+"BAIXA" E "ALTA" SÃO POSIÇÃO NORMATIVA NAQUELE SUBTESTE, não veredito clínico. Muito baixa NÃO significa automaticamente déficit, transtorno, comprometimento, lesão, disfunção executiva ou TDAH. Muito alta NÃO significa automaticamente superdotação, função executiva excepcional, ausência de dificuldade ou proteção clínica. A classificação descreve o desempenho normativo na tarefa aplicada, nada além disso.
+
+BRUTO ZERO NÃO TEM NORMA, E ISSO É LIMITE DO RESULTADO, NÃO FALHA A PREENCHER. As tabelas originais começam no bruto 1; zero não tem linha normativa. Se o resultado chegar indisponível ou com mensagem de ausência de norma, PRESERVE isso exatamente: não interprete o bruto como se fosse escore válido, não escreva "mesmo sem norma, o desempenho parece...", não estime classificação por proximidade e não complete a lacuna de nenhuma forma.
+
+A IDADE NORMATIVA JÁ FOI SELECIONADA ANTES DESTE RELATÓRIO — só existe tabela para 4, 5 e 6 anos. Você não calcula idade, não escolhe idade normativa, não corrige, não arredonda, não troca de uma idade para outra, não usa norma de idade vizinha e não extrapola para idades fora da tabela. A seleção normativa é responsabilidade do sistema, não sua.
+
+OS NOMES DOS SUBTESTES SÃO DESCRITIVOS, NÃO CONSTRUTOS COGNITIVOS PRONTOS. Sem sustentação explícita nos dados recebidos ou no contexto escrito pelo profissional, não converta automaticamente nenhum subteste em atenção sustentada, atenção alternada, controle inibitório, flexibilidade cognitiva, velocidade de processamento, planejamento ou memória operacional. Em especial: Parte B NÃO vira automaticamente "flexibilidade cognitiva"; Conexões NÃO vira automaticamente "atenção"; Sequências NÃO vira automaticamente "planejamento". Ancore-se nos nomes exatos dos subtestes — "Parte A — Sequências", "Parte A — Conexões", "Parte B — Sequências", "Parte B — Conexões".
+
+COMPARAÇÕES ENTRE A E B, E ENTRE SEQUÊNCIAS E CONEXÕES, SÃO DESCRITIVAS, NUNCA CALCULADAS. É permitido comparar A-SEQ com B-SEQ, ou A-CON com B-CON, ou observar Sequências ao lado de Conexões, quando os resultados normativos recebidos sustentarem isso. NÃO calcule B-SEQ menos A-SEQ nem B-CON menos A-CON, não crie "índice de custo" nem "efeito B", e não assuma sem fonte explícita que B é "mais complexo", que B mede "alternância" ou que a diferença entre as duas partes significa flexibilidade. Da mesma forma, não crie índice Sequência, índice Conexão, diferença Seq-Con, percentual de perda ou razão entre eles, e não afirme qual processo cognitivo seria responsável por uma diferença observada.
+
+DIFERENÇA ENTRE PONTUAÇÕES É DESCRITIVA, NUNCA ESTATÍSTICA. "Maior" ou "menor" entre dois subtestes é permitido quando os dados sustentarem. NÃO chame nenhuma diferença de "significativa", "clinicamente significativa" ou "estatisticamente significativa" — isso exigiria uma tabela de discrepância normativa que não está disponível.
+
+RESULTADOS PARCIAIS SÃO NORMAIS NESTE INSTRUMENTO. Se apenas alguns dos quatro subtestes estiverem disponíveis, narre somente o que existe. NÃO trate um subteste ausente como zero, como Muito baixa, como "não realizado" ou como erro do participante, a menos que o próprio resultado recebido diga isso.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. VERIFICAR quais dos quatro resultados estão disponíveis.
+2. LER pontuação padrão e classificação de cada um dos disponíveis.
+3. OBSERVAR a configuração das duas medidas da Parte A.
+4. OBSERVAR a configuração das duas medidas da Parte B.
+5. OBSERVAR Sequências e Conexões apenas de forma descritiva.
+6. IDENTIFICAR homogeneidade ou contraste real entre os resultados disponíveis.
+7. VERIFICAR se algum subteste realmente destoa dos demais.
+8. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal neste Teste de Trilhas Pré-Escolares?" — desempenho homogêneo nas medidas disponíveis, uma medida relativamente mais baixa, duas medidas contrastantes, ou resultados parciais com interpretação limitada às medidas disponíveis —, sem enumerar os quatro subtestes como tabela em prosa e sem criar um resultado global que não existe. Perfil homogêneo pede síntese CURTA.
+- Na Análise e interpretação, articule os subtestes disponíveis — convergência, heterogeneidade, diferença normativa, subteste destoante. NÃO infira TDAH, disfunção executiva, transtorno neuropsicológico, déficit de atenção, déficit de flexibilidade, lesão cerebral, problema escolar, causalidade ou prognóstico.
+- Nas Considerações para o contexto, os quatro destinos mudam linguagem, nunca criam dado funcional. No destino Escola em especial, uma pontuação Baixa ou Muito baixa não autoriza afirmar dificuldade de aprendizagem, baixo rendimento, problema de atenção em sala, problema para seguir sequência, dificuldade de organização escolar ou problema de comportamento sem contexto fornecido pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do Trilhas? NÃO recomende automaticamente neurologista, psiquiatra, psicoterapia, medicação, treino executivo, intervenção atencional, adaptação escolar ou avaliação de TDAH só por classificação baixa. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar uma discrepância real entre subtestes às outras informações disponíveis; não reduzir quatro resultados a um índice global; tratar resultado sem norma como limite do protocolo, não como desempenho estimado.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro subtestes nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O TESTE DE TRILHAS PRÉ-ESCOLARES, mesmo com classificação Muito baixa ou Muito alta em qualquer subteste: não infira TDAH, disfunção executiva, transtorno neuropsicológico ou lesão cerebral a partir do NOME de um subteste ou da classificação recebida. Não converta Parte B em flexibilidade cognitiva, Conexões em atenção ou Sequências em planejamento sem fonte explícita. Não some subtestes, não invente Total, não calcule diferença B menos A nem diferença entre Sequências e Conexões, e não chame diferença nenhuma de estatisticamente ou clinicamente significativa.
+Ancore as afirmações com "neste Teste de Trilhas Pré-Escolares", "neste protocolo" ou "no subteste [nome]".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
   /** true só quando a avaliação traz o derivado do CONFIAS. O padrão
-   *  mantém o prompt dos outros instrumentos byte a byte como estava. */
+   *  mantém o prompt dos outros instrumentos byte a byte como estava.
+   *
+   *  Como em `comFdt`, este sinalizador liga DOIS blocos: a REGRA_DERIVADOS,
+   *  que fecha o dado, e o PERFIL_INTERPRETATIVO_CONFIAS, que diz como
+   *  lê-lo. Não há sinalizador novo para o mapa — ele nasce preso à mesma
+   *  trava que já condicionava o dado. */
   comDerivado = false,
   /** idem, para o derivado do PHQ-9. São dois sinalizadores e não um: cada
    *  regra só entra quando o bloco dela existe, e um relatório de PHQ-9 não
@@ -507,7 +1503,31 @@ export function buildCorrigeFacilSystemPrompt(
    *  mapa sem trava vira extrapolação, trava sem mapa vira burocracia — e
    *  por isso saem juntos do mesmo sinalizador. */
   comFdt = false,
+  /** O código do instrumento no catálogo (ex.: "BPA-2"), para os
+   *  perfis interpretativos que NÃO dependem de snapshot algum — o
+   *  BPA-2 é o primeiro caso. Ele chega calculado e classificado pelos
+   *  resultados por escala de sempre; não há nada para congelar, e por
+   *  isso não há um `comBpa2` pareado com REGRA nenhuma.
+   *
+   *  É um parâmetro, não um booleano por instrumento: o próximo
+   *  instrumento sem snapshot compara o MESMO `instrumentCode` com o
+   *  próprio código, sem abrir posição nova na assinatura. Vazio por
+   *  padrão — quem chama sem passar nada mantém o prompt de sempre. */
+  instrumentCode = '',
 ): string {
+  const comBpa2 = instrumentCode === CODIGO_BPA2;
+  const comDass21 = instrumentCode === CODIGO_DASS21;
+  const comSnap18 = instrumentCode === CODIGO_SNAP18;
+  const comSnap26 = instrumentCode === CODIGO_SNAP26;
+  const comBayley3 = instrumentCode === CODIGO_BAYLEY3;
+  const comSdqPor = instrumentCode === CODIGO_SDQ_POR;
+  const comCtrf = instrumentCode === CODIGO_CTRF;
+  const comEpqj = instrumentCode === CODIGO_EPQJ;
+  const comEraa = instrumentCode === CODIGO_ERAA;
+  const comEraf = instrumentCode === CODIGO_ERAF;
+  const comEtpc = instrumentCode === CODIGO_ETPC;
+  const comTrilhasPre = instrumentCode === CODIGO_TRILHAS_PRE;
+
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
 Responda exclusivamente em português brasileiro.
@@ -515,7 +1535,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}${comEraa ? PERFIL_INTERPRETATIVO_ERAA : ''}${comEraf ? PERFIL_INTERPRETATIVO_ERAF : ''}${comEtpc ? PERFIL_INTERPRETATIVO_ETPC : ''}${comTrilhasPre ? PERFIL_INTERPRETATIVO_TRILHAS_PRE : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
@@ -945,6 +1965,7 @@ Redija as cinco seções para o destino solicitado. Preserve integralmente os da
           derivado !== null,
           phq9 !== null,
           fdt !== null,
+          instrument.code,
         ),
       },
       { role: 'user', content: userText },

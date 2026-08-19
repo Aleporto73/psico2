@@ -94,8 +94,8 @@ export function StandardizedProfileChart({
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <p className="text-pp-ink text-sm">{p.nome}</p>
                       <p className="text-pp-ink-soft text-xs">
-                        {p.disponivel && p.valor !== null
-                          ? `${rotuloDaMetrica(metrica)} ${p.valor}`
+                        {p.disponivel && p.valorTexto !== null
+                          ? `${rotuloDaMetrica(metrica)} ${p.valorTexto}`
                           : ''}
                         {p.classificacao ? ` · ${p.classificacao}` : ''}
                       </p>

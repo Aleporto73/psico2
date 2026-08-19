@@ -25,6 +25,10 @@ import {
   type DisplayRange,
   type Metrica,
 } from './graph-config';
+// O MESMO formatador que o FDT já usa para z — não uma segunda cópia, e
+// só entra quando a métrica do bloco É z: score e percentil continuam
+// exatamente como sempre saíram, porque já chegam inteiros do servidor.
+import { zFormatado } from '@/lib/corrigefacil/fdt-derivado';
 
 /** Um segmento da régua, como veio de `faixas_classificacao`. `de`/`ate`
  *  nulos são faixa ABERTA — fato do acervo, não erro. */
@@ -41,8 +45,18 @@ export type Segmento = {
 export type PontoEscala = {
   escala: string;
   nome: string;
-  /** O valor da métrica, ou null. Null = sem ponto quantitativo. */
+  /** O valor da métrica, ou null. Null = sem ponto quantitativo.
+   *
+   *  Continua exato: é dele que `posicao` e `excedenteDe` tiram a
+   *  matemática do desenho. Arredondar aqui moveria a barra. */
   valor: number | null;
+  /** `valor` como o gráfico ESCREVE ao lado do nome da escala. Métrica z
+   *  sai formatada por `zFormatado` (duas casas, vírgula — a mesma régua
+   *  do FDT); score e percentil saem como sempre saíram, porque já são
+   *  inteiros do servidor. É por isso que existe ao lado de `valor`, e não
+   *  no lugar dele: a posição na régua usa o número exato, e só o texto ao
+   *  lado muda por métrica. */
+  valorTexto: string | null;
   classificacao: string | null;
   ci95: string | null;
   disponivel: boolean;
@@ -191,6 +205,13 @@ export function montarModelo(
         escala: code,
         nome: nomePorCode.get(code) ?? code,
         valor,
+        // só a métrica z passa pelo formatador de duas casas: score e
+        // percentil já chegam inteiros, e mudar a régua deles não foi
+        // pedido nem auditado — continuam String(valor), como sempre.
+        valorTexto:
+          config.metrica === 'z'
+            ? zFormatado(valor)
+            : valor === null ? null : String(valor),
         classificacao: r.classification,
         ci95: r.ci95 ?? null,
         disponivel: r.available,
@@ -277,7 +298,7 @@ export function descreverSegmento(seg: Segmento): string {
 export function descreverPonto(p: PontoEscala, metrica: Metrica): string {
   if (!p.disponivel) return `${p.nome}: ${p.mensagem ?? 'resultado indisponível'}`;
   const partes: string[] = [p.nome];
-  if (p.valor !== null) partes.push(`${rotuloDaMetrica(metrica)} ${p.valor}`);
+  if (p.valorTexto !== null) partes.push(`${rotuloDaMetrica(metrica)} ${p.valorTexto}`);
   if (p.ci95) partes.push(`IC95 ${p.ci95}`);
   if (p.classificacao) partes.push(p.classificacao);
   return partes.join(', ');
