@@ -747,24 +747,43 @@ const CODIGO_BAYLEY3 = 'BAYLEY-III';
  *  VD, SS, AC, MO), quatro tabelas de conversão escalonado→composto
  *  cobrindo cinco domínios, sete `composite_bands` ("Muito acima da
  *  média" a "Extremamente baixa"), e as tabelas de idade/prematuridade/IC
- *  que resolvem a norma no servidor. Ele NÃO TEM UMA STRING DE NOME:
- *  nenhum subteste, subescala ou domínio tem nome próprio ali — só
- *  código. Os nomes dos CINCO DOMÍNIOS vieram de `graph-config.ts`
- *  (`DOM_Cognitivo`, `DOM_Linguagem`, `DOM_Motora`, `DOM_Socioemocional`,
- *  `DOM_Adaptativo` — "os cinco domínios do Bayley, na métrica
- *  composta"), que já são escalas reais e aprovadas no gráfico. Os nomes
- *  dos QUATRO COMPONENTES (CR/CE de Linguagem, MF/MG de Motora) não
- *  foram confirmados como string exata de banco em lugar nenhum
- *  acessível a este repositório — este bloco os trata por código, e a
- *  glosa entre parênteses é vocabulário psicométrico do instrumento, não
- *  citação de campo.
+ *  que resolvem a norma no servidor. O JSON não tem uma string de nome —
+ *  nenhum subteste, subescala ou domínio tem nome próprio ALI — mas os
+ *  nomes existem no loader que o carrega. Os dos CINCO DOMÍNIOS vieram de
+ *  `graph-config.ts` (`DOM_Cognitivo`, `DOM_Linguagem`, `DOM_Motora`,
+ *  `DOM_Socioemocional`, `DOM_Adaptativo` — "os cinco domínios do Bayley,
+ *  na métrica composta"), já escalas reais e aprovadas no gráfico. Os dos
+ *  SEIS SUBTESTES/SUBESCALAS DE UM CÓDIGO SÓ estão em
+ *  `engine/loader.py::NAMES` — Cog "Cognitivo (subteste)", CR "Comunicação
+ *  receptiva", CE "Comunicação expressiva", MF "Motricidade fina", MG
+ *  "Motricidade grossa", SE "Socioemocional (subteste)" —, conferido
+ *  numa segunda auditoria depois da primeira versão deste bloco. Este
+ *  bloco continua tratando os quatro por CÓDIGO no texto do prompt (CR,
+ *  CE, MF, MG), e a glosa entre parênteses ("receptivo"/"expressivo",
+ *  "fino"/"grosso") é a mesma raiz semântica do nome confirmado no
+ *  loader, resumida para o prompt.
  *
  *  DUAS CAMADAS, NÃO UMA. A tabela de conversão do controlador confirma:
  *  subteste/subescala só tem `scaled` (banda 1–19) — nunca `percentile`
  *  nem classificação. Só o COMPOSTO do domínio tem `percentile`, IC
- *  (quando o servidor o publica — Adaptativo nunca tem, confirmado pelo
- *  comentário do próprio `graph-config.ts`) e cai em `composite_bands`.
- *  Não é estilo; é estrutura, e o bloco ensina a lê-la como tal.
+ *  (quando o servidor o publica) e cai em `composite_bands`. Não é
+ *  estilo; é estrutura, e o bloco ensina a lê-la como tal.
+ *
+ *  ADAPTATIVO TAMBÉM PODE TER IC95 — a primeira versão deste bloco dizia
+ *  o contrário, apoiada só no comentário de `graph-config.ts`
+ *  ("Adaptativo não tem IC95 publicado"), que descrevia o gráfico
+ *  aprovado e não o controlador inteiro. `engine/loader.py` mostra a
+ *  fonte: os outros quatro domínios trazem o IC95 já escrito na própria
+ *  linha da tabela `composites`, mas o Comportamento Adaptativo (CAG) é o
+ *  ÚNICO cujo IC95 depende da IDADE — o loader monta essa margem a partir
+ *  de `ic_bands` (`CAG95` por faixa etária em meses) e grava
+ *  `composite ± margem` como o `ci95` da linha de `DOM_Adaptativo`, pelo
+ *  mesmo campo que os outros quatro usam. A ORIGEM do número muda por
+ *  domínio; o que o Relatório Pró recebe não muda: um `ci95` pronto,
+ *  quando o servidor o envia, tratado igual em qualquer dos cinco. Por
+ *  isso o texto do prompt nunca precisou dizer "Adaptativo não tem IC" —
+ *  só a nota de auditoria deste comentário dizia, e é ela que está
+ *  corrigida agora.
  *
  *  NÃO HÁ REGRA_BAYLEY3 pelo mesmo motivo que não há REGRA_BPA2: nenhuma
  *  das duas camadas é snapshot — as duas chegam pelos resultados por
@@ -786,7 +805,7 @@ OS CINCO DOMÍNIOS (vocabulário do instrumento, não característica da crianç
 - Socioemocional é composto por uma medida só. Use somente a estrutura fornecida: não infira transtorno emocional, TEA, vínculo, regulação emocional global nem comportamento social cotidiano a partir do escore ou da classificação isolados.
 - Adaptativo pode integrar múltiplas subescalas. Quando várias chegarem, observe homogeneidade, heterogeneidade, subescala destoante ou agrupamento realmente visível entre elas — nunca um agrupamento que os dados não sustentem. Uma classificação inferior aqui não vira incapacidade funcional, dependência nem prejuízo adaptativo clínico.
 
-A BAYLEY-III NÃO TEM RESULTADO GLOBAL. Os cinco domínios são compostos INDEPENDENTES: não existe soma, média nem composto único dos cinco. NÃO escreva "escore global Bayley", "resultado global Bayley", "desenvolvimento global de X", "classificação global", "pontuação total" nem "índice geral" quando a expressão sugerir uma medida composta única que não existe — a regra é SEMÂNTICA: qualquer formulação que leve o leitor a esperar um número único da Bayley-III tem o mesmo defeito. Diga o que existe, conforme o caso: o conjunto dos resultados, o perfil entre os domínios, a configuração observada ou a distribuição dos resultados.
+A BAYLEY-III NÃO TEM RESULTADO GLOBAL. Os cinco domínios são compostos DISTINTOS: não existe soma, média nem composto único dos cinco. NÃO escreva "escore global Bayley", "resultado global Bayley", "desenvolvimento global de X", "classificação global", "pontuação total" nem "índice geral" quando a expressão sugerir uma medida composta única que não existe — a regra é SEMÂNTICA: qualquer formulação que leve o leitor a esperar um número único da Bayley-III tem o mesmo defeito. Diga o que existe, conforme o caso: o conjunto dos resultados, o perfil entre os domínios, a configuração observada ou a distribuição dos resultados.
 
 A BAYLEY-III NÃO TEM IDADE EQUIVALENTE NESTA IMPLEMENTAÇÃO. Não converta nenhum resultado — escalonado, composto, percentil ou classificação — em idade de desenvolvimento, idade equivalente, idade mental, "funciona como uma criança de X meses", "está X meses atrasado" nem "tem atraso de X meses", a menos que um campo explícito com esse significado tenha sido entregue pelo sistema. Nenhum destes é derivável do que este bloco descreve.
 

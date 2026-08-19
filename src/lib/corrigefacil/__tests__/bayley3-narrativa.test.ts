@@ -7,26 +7,42 @@
 // (escalonada e composta) em vez de uma. Reusa `instrumentCode` — mais
 // um `const comBayley3` local, nenhuma mudança de assinatura.
 //
-// A AUDITORIA ANTES DE ESCREVER MUDOU O QUE O BLOCO PODE AFIRMAR.
+// A AUDITORIA ANTES DE ESCREVER MUDOU O QUE O BLOCO PODE AFIRMAR, E UMA
+// SEGUNDA AUDITORIA CORRIGIU DUAS COISAS QUE A PRIMEIRA ERROU.
 // `data/bayley3.json`, no CorrigeFacil, é controlador de NORMA e não tem
-// UMA STRING DE NOME: dezesseis códigos de subteste/subescala, quatro
-// tabelas de conversão cobrindo cinco domínios, sete `composite_bands`,
-// e nenhum nome descritivo em lugar nenhum do arquivo — só código. Os
+// UMA STRING DE NOME ali dentro: dezesseis códigos de subteste/subescala,
+// quatro tabelas de conversão cobrindo cinco domínios, sete
+// `composite_bands`, e nenhum nome descritivo no ARQUIVO — só código. Os
 // nomes dos CINCO DOMÍNIOS vêm de `graph-config.ts`
 // (`DOM_Cognitivo`/`DOM_Linguagem`/`DOM_Motora`/`DOM_Socioemocional`/
 // `DOM_Adaptativo`, "os cinco domínios do Bayley, na métrica composta"),
-// já escalas reais e aprovadas no gráfico. Os nomes dos QUATRO
-// COMPONENTES (CR/CE de Linguagem, MF/MG de Motora) não foram
-// confirmados como string exata de banco — o bloco os trata por CÓDIGO,
-// e a glosa entre parênteses ("receptivo"/"expressivo",
-// "fino"/"grosso") é vocabulário psicométrico do instrumento, não
-// citação de campo. Nenhum teste aqui afirma o contrário.
+// já escalas reais e aprovadas no gráfico. Os nomes dos SEIS
+// SUBTESTES/SUBESCALAS DE UM CÓDIGO SÓ — inclusive CR/CE de Linguagem e
+// MF/MG de Motora — ESTÃO confirmados: `engine/loader.py::NAMES` os
+// escreve por extenso (Cog "Cognitivo (subteste)", CR "Comunicação
+// receptiva", CE "Comunicação expressiva", MF "Motricidade fina", MG
+// "Motricidade grossa", SE "Socioemocional (subteste)"). A primeira
+// versão deste arquivo dizia que eles não tinham sido confirmados; a
+// segunda auditoria achou a fonte, e o bloco continua os tratando por
+// CÓDIGO no texto do prompt, com a glosa entre parênteses resumindo o
+// nome já confirmado.
 //
 // DUAS CAMADAS, NÃO UMA — confirmado na própria tabela de conversão do
 // controlador: subteste/subescala só tem escore ESCALONADO (nunca
 // percentil, nunca classificação); só o COMPOSTO do domínio tem
-// percentil, IC (quando publicado — Adaptativo nunca tem) e cai nas
-// sete faixas de classificação. É estrutura, não estilo.
+// percentil, IC (quando o servidor o publica) e cai nas sete faixas de
+// classificação. É estrutura, não estilo.
+//
+// ADAPTATIVO TAMBÉM PODE TER IC95. A primeira versão deste arquivo dizia
+// que não, apoiada só no comentário de `graph-config.ts` sobre o
+// GRÁFICO aprovado — não sobre o controlador inteiro. `engine/loader.py`
+// mostra que o Comportamento Adaptativo é o ÚNICO domínio cujo IC95
+// depende da IDADE: o loader monta a margem a partir de `ic_bands`
+// (`CAG95` por faixa etária) e grava `composite ± margem` no MESMO campo
+// `ci95` que os outros quatro domínios já usam. A origem do número muda
+// por domínio; o que chega ao Relatório Pró não muda — um `ci95` pronto,
+// tratado igual nos cinco, quando o servidor o envia. Ver os testes 59 a
+// 61, no fim deste arquivo.
 //
 // AS TRAVAS QUE ESTE ARQUIVO GUARDA:
 //
@@ -302,9 +318,13 @@ describe('Bayley-III narrativa · os cinco domínios', () => {
 // =====================================================================
 
 describe('Bayley-III narrativa · não existe resultado global', () => {
-  it('24 · os cinco domínios são declarados compostos independentes', () => {
+  it('24 · os cinco domínios são declarados compostos distintos', () => {
     expect(P).toContain('A BAYLEY-III NÃO TEM RESULTADO GLOBAL');
-    expect(P).toContain('Os cinco domínios são compostos INDEPENDENTES');
+    // "DISTINTOS", não "INDEPENDENTES": o ponto é que não existe composto
+    // único dos cinco, não uma afirmação de independência estatística
+    // entre os domínios
+    expect(P).toContain('Os cinco domínios são compostos DISTINTOS');
+    expect(P).not.toContain('compostos INDEPENDENTES');
     expect(P).toContain('não existe soma, média nem composto único dos cinco');
   });
 
@@ -744,5 +764,83 @@ describe('Bayley-III narrativa · os nove cenários', () => {
     for (const bloco of blocos) {
       expect(P, bloco).not.toContain(bloco);
     }
+  });
+});
+
+// =====================================================================
+// 14 · ADAPTATIVO TAMBÉM PODE TER IC95 — correção de auditoria
+//
+// A primeira versão deste arquivo (e do bloco em report-generator.ts)
+// afirmava que o domínio Adaptativo NUNCA tem IC95, apoiada só no
+// comentário de `graph-config.ts` sobre o GRÁFICO aprovado — não sobre
+// o controlador inteiro. Uma segunda auditoria, contra
+// `engine/loader.py` no CorrigeFacil, encontrou o oposto: o Comportamento
+// Adaptativo (CAG) é o ÚNICO domínio cujo IC95 depende da idade, e o
+// loader monta essa margem a partir de `ic_bands` (`CAG95` por faixa
+// etária em meses), gravando `composite ± margem` no MESMO campo `ci95`
+// que os outros quatro domínios já usam.
+//
+// O que isso muda no PROMPT: nada. O texto nunca disse "Adaptativo não
+// tem IC" — só o comentário de auditoria dizia, e a correção foi nele.
+// O que estes três testes provam, então, não é uma mudança de
+// comportamento: é que o comportamento CORRETO (IC é dado fechado,
+// tratado igual em qualquer domínio, nunca recalculado) já cobria o
+// caso do Adaptativo mesmo antes de a nota estar certa — e que nenhuma
+// fórmula de margem (CAG95) nasceu no psico2 para "consertar" isso.
+// =====================================================================
+
+describe('Bayley-III narrativa · Adaptativo pode ter IC95, e é tratado como os outros', () => {
+  it('59 · formatClosedResults preserva o IC95 recebido para DOM_Adaptativo', () => {
+    // fixture conceitual: um composto já usado nos cenários anteriores
+    // (88, "Média baixa", cenário E) mais um IC95 textual qualquer — o
+    // teste não deriva a margem CAG95, só recebe o intervalo pronto,
+    // exatamente como a Edge o entregaria
+    const dados = [
+      {
+        raw: null, score: 88, percentile: '21', z_score: null,
+        classification: 'Média baixa', ci95: '80-96', available: true,
+        message: null, flags: [],
+        scales: { code: 'DOM_Adaptativo', name: 'Adaptativo', ordinal: 4 },
+      },
+    ];
+    const texto = formatClosedResults(dados, 'BAYLEY-III');
+    expect(texto).toContain('- percentil: 21');
+    expect(texto).toContain('- classificação: Média baixa');
+    expect(texto).toContain('- IC95: 80-96');
+  });
+
+  it('60 · o prompt trata o IC do Adaptativo como dado fechado, igual aos outros quatro', () => {
+    // a REGRA da camada composta não faz exceção por domínio: "quando o
+    // servidor o publica" cobre os cinco, Adaptativo incluído
+    expect(P).toContain(
+      'é ele que vem acompanhado de PERCENTIL e, quando o servidor o publicou, de INTERVALO DE CONFIANÇA',
+    );
+    expect(P).toContain('Onde o IC vier, trate-o como o intervalo já calculado para aquela estimativa');
+    // não recalcula, não usa limite para reclassificar, não escolhe
+    // "a classificação mais provável" — nenhuma dessas travas é
+    // condicionada a QUAL domínio enviou o IC
+    expect(P).toContain('Não recalcule, não use o limite inferior nem o superior para criar uma segunda classificação');
+    expect(P).toContain('não escolha "a classificação mais provável" dentro do intervalo');
+    expect(P).toContain('a classificação já veio pronta, ao lado do composto');
+    // e o texto do prompt nunca excluiu o Adaptativo dessa regra
+    expect(P).not.toContain('Adaptativo não tem IC');
+    expect(P).not.toContain('Adaptativo nunca tem IC');
+  });
+
+  it('61 · nenhum cálculo de margem CAG95 nasceu no psico2', () => {
+    // a origem do número (soma direta vs. composto ± margem etária) é
+    // detalhe do LOADER, no CorrigeFacil. "CAG95" pode aparecer em PROSA
+    // explicando essa origem — é o que o comentário de auditoria acima de
+    // `PERFIL_INTERPRETATIVO_BAYLEY3` faz —, mas nenhuma ARITMÉTICA de
+    // margem, e nada do que vai ao MODELO, pode depender disso.
+    expect(GERADOR).not.toMatch(/composite\s*[-+]\s*margem/i);
+    expect(GERADOR).not.toMatch(/margem\s*[-+]\s*composite/i);
+    expect(GERADOR).not.toMatch(/function\s+\w*margem\w*/i);
+    expect(GERADOR).not.toMatch(/import.*ic_bands/i);
+    // o texto que o modelo recebe — não o comentário para quem lê o
+    // código depois — nunca precisou saber que "CAG95" existe
+    expect(P).not.toContain('CAG95');
+    expect(P).not.toMatch(/\bCAG\b/);
+    expect(P).not.toContain('margem');
   });
 });
