@@ -1179,6 +1179,106 @@ O QUE NUNCA SE FAZ COM O ERA-A, mesmo com Escore Geral ou qualquer fator em Alta
 Ancore as afirmações com "no ERA-A", "neste protocolo" ou "no fator [nome] do ERA-A".
 `;
 
+/** O código do ERA-F no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os dez pilotos anteriores já
+ *  usam. */
+const CODIGO_ERAF = 'ERA-F';
+
+/** O PERFIL INTERPRETATIVO do ERA-F — décimo primeiro piloto da mesma
+ *  arquitetura, mesma família estrutural do ERA-A: sem snapshot, sem
+ *  REGRA_ERAF — os quatro fatores e o Escore Geral chegam pelos
+ *  resultados por escala de sempre. Reusa `instrumentCode` — mais um
+ *  `const comEraf` local, nenhuma mudança de assinatura.
+ *
+ *  ERA-A E ERA-F COMPARTILHAM O LOADER (`engine/loader.py::_load_era`),
+ *  NÃO OS FATORES. Este bloco NÃO é uma cópia do
+ *  PERFIL_INTERPRETATIVO_ERAA com nomes trocados: os quatro fatores do
+ *  ERA-F são Camuflagem: Compensação e Assimilação, Autopercepção de
+ *  Gênero, Camuflagem: Mascaramento e Sensibilidade Sensorial — só o
+ *  último é homônimo do ERA-A, e mesmo esse é escala de outro
+ *  instrumento, com itens e norma próprios (`graph-config.ts` já
+ *  registra: "homônimos mas normativamente distintos: nunca comparar um
+ *  com o outro"). A ativação é exclusivamente por
+ *  `instrumentCode === 'ERA-F'` — nunca pelo nome de um fator, e por
+ *  isso o ERA-A e o ERA-F continuam isolados um do outro nos testes.
+ *
+ *  MESMA REGRA DO ESCORE GERAL DO ERA-A: o controlador também declara
+ *  "Escore Geral = soma dos 4 fatores" e o loader grava `kind:
+ *  "composta"` com os quatro fatores como `scale_components` — a soma
+ *  bate de verdade, e ainda assim a IA não a confere. Mesma razão:
+ *  conferir o servidor não é a tarefa dela.
+ *
+ *  A TRAVA MAIS FORTE DESTE PILOTO NÃO É A MESMA DO ERA-A: aqui é
+ *  Autopercepção de Gênero. O controlador mede uma dimensão do
+ *  instrumento com esse nome, e nada nos dados fechados (percentil,
+ *  classificação) autoriza qualquer afirmação sobre identidade de
+ *  gênero, orientação sexual ou disforia de quem respondeu — a escala
+ *  não mede isso, e o mapa é explícito em bloquear a ponte entre o nome
+ *  do fator e uma leitura identitária, em qualquer direção (alto ou
+ *  baixo, elevado ou reduzido).
+ *
+ *  OS DOIS FATORES DE CAMUFLAGEM SÃO DOIS, NÃO UM: o controlador não
+ *  declara nenhum composto entre "Camuflagem: Compensação e
+ *  Assimilação" e "Camuflagem: Mascaramento" — são escalas irmãs por
+ *  tema, não por estrutura. O mapa proíbe fundir os dois num "índice de
+ *  camuflagem" que ninguém calculou.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os
+ *  oito pilotos sem snapshot anteriores — e byte a byte ausente quando
+ *  o instrumento não é este. */
+const PERFIL_INTERPRETATIVO_ERAF = `
+COMO LER O ERA-F — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular percentil, aplicar corte, reclassificar, somar fatores para conferir o Escore Geral ou reconstruir tabela normativa. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva os quatro fatores e o Escore Geral como tabela em prosa, e não acrescente cautela nova.
+
+DUAS CAMADAS:
+- CAMADA 1 — quatro fatores específicos: Camuflagem: Compensação e Assimilação, Autopercepção de Gênero, Camuflagem: Mascaramento e Sensibilidade Sensorial.
+- CAMADA 2 — Escore Geral, que integra os quatro fatores mas NÃO apaga a configuração interna. Pode haver dois fatores de Camuflagem em posições diferentes, Autopercepção de Gênero destoante ou Sensibilidade Sensorial destoante mesmo com Escore Geral homogêneo — e o inverso também.
+
+O ESCORE GERAL É COMPOSTO DOS QUATRO FATORES, E AINDA ASSIM NÃO É RECALCULADO POR VOCÊ. O controlador declara Escore Geral como soma dos quatro fatores — mas conferir essa soma não é sua tarefa. NÃO some os quatro fatores para checar o servidor, não reconstrua o Escore Geral e não o corrija: use somente o Escore Geral fechado que veio na tabela de resultados.
+
+CLASSIFICAÇÃO É DADO FECHADO. Existem só DUAS categorias no ERA-F — Baixa presença de sintomas e Alta presença de sintomas — e a IA não reaplica o corte que as separa, não compara percentil com ele e não substitui o rótulo recebido por outro.
+
+"ALTA PRESENÇA DE SINTOMAS" NÃO É DIAGNÓSTICO E NÃO GANHA "DE AUTISMO". É classificação DO INSTRUMENTO. Mesmo com vários fatores em Alta presença de sintomas, NÃO converta em TEA, autismo, transtorno do espectro autista, risco de TEA, provável TEA, diagnóstico, gravidade clínica, severidade global ou quadro clínico. O controlador não autoriza acrescentar "de autismo" ao rótulo.
+
+"BAIXA PRESENÇA DE SINTOMAS" TAMBÉM NÃO É AUSÊNCIA. Não significa ausência de sintomas, ausência de dificuldade, sem risco, TEA descartado, funcionamento típico ou normalidade. Preserve exatamente a categoria recebida.
+
+CAMUFLAGEM: COMPENSAÇÃO E ASSIMILAÇÃO É O NOME DE UMA DIMENSÃO, não uma lista de comportamentos. Uma elevação NÃO autoriza afirmar que a pessoa ensaia respostas sociais, imita outras pessoas, força contato visual, copia gestos, cria scripts, esconde características, muda personalidade, tenta "parecer neurotípica" ou compensa dificuldades sociais específicas — os enunciados reais dos itens não estão disponíveis, e transformar o nome conceitual do fator em comportamento concreto é inventar dado que não veio. Prefira "no fator Camuflagem: Compensação e Assimilação do ERA-F...".
+
+CAMUFLAGEM: MASCARAMENTO É OUTRO FATOR, com a mesma trava. Sem contexto escrito pelo profissional, NÃO infira ocultação consciente, supressão de estereotipias, controle de expressão facial, imitação social, exaustão por mascaramento, burnout, sofrimento psicológico ou estratégia consciente. O fator avalia uma dimensão; o nome dele não prova cada comportamento possível relacionado a ela.
+
+OS DOIS FATORES DE CAMUFLAGEM NÃO SÃO UM SÓ. Não funda Camuflagem: Compensação e Assimilação com Camuflagem: Mascaramento num suposto "índice de camuflagem" — o controlador não declara esse composto. É permitido comparar os dois percentis fechados e dizer que um ficou relativamente mais elevado que o outro; não é permitido somar os dois, criar média entre eles ou inventar um índice novo.
+
+AUTOPERCEPÇÃO DE GÊNERO EXIGE O TRATAMENTO MAIS CUIDADOSO DESTE MAPA. "Autopercepção de Gênero" é o nome de uma dimensão do ERA-F, e a classificação ou o percentil recebidos NUNCA autorizam conversão em identidade de gênero, sexo, transgeneridade, cisgeneridade, não-binariedade, orientação sexual, disforia de gênero, incongruência de gênero, questionamento de identidade ou diagnóstico relacionado a gênero — em NENHUMA direção. NÃO escreva "a pessoa se identifica como...", "há indício de disforia...", "há conflito com seu gênero..." nem "o resultado sugere identidade...": nada disso é autorizado pela escala fechada. Classificação alta NÃO é problema, patologia ou maior sofrimento; classificação baixa NÃO é "identidade de gênero típica" nem "ausência de conflito". Ancore estritamente com "no fator Autopercepção de Gênero do ERA-F...", e não vá além disso em hipótese alguma.
+
+ESTE FATOR TEM NOME HOMÔNIMO DE UMA ESCALA DE OUTRO INSTRUMENTO DO CATÁLOGO — os itens e a norma são diferentes, e os dois resultados nunca devem ser comparados ou tratados como equivalentes. Uma elevação aqui não autoriza inventar hipersensibilidade auditiva, luz, texturas, cheiros, seletividade alimentar, aversão tátil ou sobrecarga sensorial sem contexto escrito pelo profissional correspondente.
+
+OS 34 ITENS NÃO TÊM ENUNCIADO PUBLICADO NESTE PRODUTO, e você não os recebe individualmente de qualquer forma: trabalhe somente com fatores, Escore Geral, percentil, classificação e contexto escrito pelo profissional. Não interprete item algum, não invente conteúdo de item e não presuma o que qualquer item mede além do nome do fator ao qual ele pertence.
+
+PERCENTIL É DADO FECHADO. Não interpole, não use CDF nem distribuição normal, não reconstrua a tabela normativa e não estime percentil. Quando o bruto se repete na tabela normativa, o servidor já resolveu pelo MAIOR percentil — isso não é inconsistência a expor nem a "corrigir" no texto. Percentil é POSIÇÃO NORMATIVA: nunca vira porcentagem de sintomas, de camuflagem, de sensibilidade ou de qualquer leitura sobre identidade — "90% de camuflagem" e "80% de sintomas" são exatamente o tipo de formulação proibida.
+
+A NORMA DO ERA-F É ÚNICA — não há seleção de sexo, gênero, idade, escolaridade ou grupo normativo nesta arquitetura, e o "F" do código não é seletor normativo de sexo ou gênero: é parte do nome do instrumento. Não invente comparação normativa por grupo.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. LER o Escore Geral e sua classificação.
+2. LER os quatro fatores, com percentil e classificação de cada um.
+3. SEPARAR os dois fatores de Camuflagem — eles não são um só.
+4. OBSERVAR Autopercepção de Gênero sem extrapolar para identidade, orientação ou disforia.
+5. OBSERVAR Sensibilidade Sensorial, sem compará-la à escala homônima de outro instrumento.
+6. IDENTIFICAR convergência, contraste ou fator destoante entre os quatro.
+7. INTEGRAR essa leitura ao Escore Geral, sem deixar um apagar o outro.
+8. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste ERA-F?", sempre ancorado em "neste ERA-F" ou "nos resultados deste protocolo", sem diagnóstico. Perfil homogêneo pede síntese CURTA. Se os dois fatores de Camuflagem divergirem, isso pode ser a informação central — mas não explique por que divergiram.
+- Na Análise e interpretação, articule os dois fatores de Camuflagem, Autopercepção de Gênero, Sensibilidade Sensorial e o Escore Geral — convergência, divergência, elevação relativa, fator destoante, heterogeneidade. NÃO transforme isso em diagnóstico, etiologia, identidade, comportamento concreto, prejuízo funcional, TEA, burnout, disforia, sofrimento ou prognóstico sem outra fonte.
+- Nas Considerações para o contexto, os quatro destinos mudam voz e profundidade, nunca a psicometria. No destino Escola em especial, não derive automaticamente isolamento, problema social, dificuldade de adaptação, problema sensorial, problema de comportamento ou rendimento escolar a partir dos fatores.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do ERA-F? NÃO recomende automaticamente avaliação para TEA, psiquiatria, neurologia, psicoterapia, terapia ocupacional, fonoaudiologia, avaliação de identidade de gênero, tratamento, intervenção sensorial ou adaptação escolar só por classificação alta. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar diferenças entre os dois fatores de Camuflagem com outras fontes da avaliação; não reduzir perfil heterogêneo ao Escore Geral; considerar Autopercepção de Gênero apenas como dimensão deste protocolo e confrontá-la com contexto já fornecido, sem inferência identitária.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro fatores nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O ERA-F, mesmo com Escore Geral ou qualquer fator em Alta presença de sintomas: não infira TEA, autismo ou qualquer diagnóstico a partir do NOME de um fator ou da classificação recebida. Não trate Autopercepção de Gênero como afirmação sobre identidade, orientação sexual ou disforia, em nenhuma direção. Não funda os dois fatores de Camuflagem num índice novo, não some os quatro fatores para verificar o Escore Geral e não reaplique o corte que separa as duas classificações.
+Ancore as afirmações com "no ERA-F", "neste protocolo" ou "no fator [nome] do ERA-F".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -1224,6 +1324,7 @@ export function buildCorrigeFacilSystemPrompt(
   const comCtrf = instrumentCode === CODIGO_CTRF;
   const comEpqj = instrumentCode === CODIGO_EPQJ;
   const comEraa = instrumentCode === CODIGO_ERAA;
+  const comEraf = instrumentCode === CODIGO_ERAF;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -1232,7 +1333,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}${comEraa ? PERFIL_INTERPRETATIVO_ERAA : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}${comEraa ? PERFIL_INTERPRETATIVO_ERAA : ''}${comEraf ? PERFIL_INTERPRETATIVO_ERAF : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
