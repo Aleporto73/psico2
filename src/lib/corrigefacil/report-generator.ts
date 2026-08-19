@@ -1279,6 +1279,109 @@ O QUE NUNCA SE FAZ COM O ERA-F, mesmo com Escore Geral ou qualquer fator em Alta
 Ancore as afirmações com "no ERA-F", "neste protocolo" ou "no fator [nome] do ERA-F".
 `;
 
+/** O código do ETPC no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os onze pilotos anteriores já
+ *  usam. */
+const CODIGO_ETPC = 'ETPC';
+
+/** O PERFIL INTERPRETATIVO do ETPC — décimo segundo piloto da mesma
+ *  arquitetura: sem snapshot, sem REGRA_ETPC — os quatro fatores chegam
+ *  pelos resultados por escala de sempre. Reusa `instrumentCode` — mais
+ *  um `const comEtpc` local, nenhuma mudança de assinatura.
+ *
+ *  `engine/loader.py::load_etpc` chama o próprio instrumento de "stress
+ *  test": item em dois fatores, 15 grupos normativos e quartil — as três
+ *  coisas que este mapa protege.
+ *
+ *  A ARMADILHA DESTE PILOTO É O CAMPO `score`. `score_type: "quartil"` e
+ *  `L.norm_entries` gravam 25, 50 ou 75 na coluna `score` — o MARCADOR
+ *  do quartil que casou (Q25/Q50/Q75), não um escore real e não
+ *  percentil (a coluna `percentile` fica `None`). `graph-config.ts` já
+ *  documenta exatamente isso, na entrada `ETPC`: "usa a CLASSIFICAÇÃO,
+ *  não o número: 25/50/75 são marcadores de quartil, e altura
+ *  proporcional diria 'três vezes mais' entre duas categorias ordinais
+ *  vizinhas" — por isso `metrica: 'classification'` lá. `formatClosedResults`
+ *  não tem entrada no mapa de `metricas-instrumento.ts` para o ETPC
+ *  (confirmado: nenhuma ocorrência de "ETPC" ali), então ele cai no
+ *  caminho genérico e imprime "escore: 25" (ou 50, ou 75) igual a
+ *  qualquer instrumento — SEM alterar essa infraestrutura nesta fase, o
+ *  mapa ensina o modelo a não dar significado novo a esse número.
+ *
+ *  NÃO EXISTE TOTAL. O controlador não declara `composed_of` nenhum, e
+ *  ao contrário do EPQ-J (P/E/N primários + S de validade) as QUATRO
+ *  escalas do ETPC são todas primárias — sem hierarquia entre elas.
+ *
+ *  ITEM EM DOIS FATORES: quatro itens do controlador pontuam em mais de
+ *  um fator ao mesmo tempo (itens 3, 14 e 26 em Psicoticismo+Extroversão;
+ *  item 28 em Psicoticismo+Sociabilidade). Os quatro fatores NÃO são
+ *  partições do protocolo — são leituras que compartilham parte da
+ *  base de itens —, e é por isso que somar/reconstruir/comparar como se
+ *  fossem blocos independentes de resposta é matematicamente errado, não
+ *  só editorialmente proibido.
+ *
+ *  15 GRUPOS NORMATIVOS, seleção manual (`L.dimensions([{code: "grupo",
+ *  manual: True}])`), com região, sexo, idade ou combinações no nome
+ *  (ver `d["norm_groups"]`) — a mesma arquitetura do grupo do EPQ-J, e a
+ *  mesma trava: `generateCorrigeFacilReport` não lê `norm_selector` nem
+ *  grupo normativo hoje, e este piloto não abre infraestrutura para
+ *  buscá-lo.
+ *
+ *  ISOLAMENTO SEMÂNTICO: Psicoticismo, Extroversão e Neuroticismo são
+ *  homônimos de fatores de outro instrumento do catálogo, mas o ETPC não
+ *  tem escala de validade equivalente à Sinceridade — Sociabilidade é
+ *  fator PRIMÁRIO, não controle de resposta. A ativação continua sendo
+ *  só `instrumentCode === 'ETPC'`, e o texto deste bloco não cita o
+ *  outro instrumento por código — mesma decisão já tomada no piloto do
+ *  ERA-F para a Sensibilidade Sensorial homônima do ERA-A.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os nove
+ *  pilotos sem snapshot anteriores — e byte a byte ausente quando o
+ *  instrumento não é este. */
+const PERFIL_INTERPRETATIVO_ETPC = `
+COMO LER O ETPC — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular quartil, aplicar corte, reclassificar, escolher grupo normativo ou tratar os quatro fatores como blocos independentes de item. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva os quatro fatores como tabela em prosa, e não acrescente cautela nova.
+
+NÃO EXISTE TOTAL NO ETPC. Não há índice global, composto nem soma dos quatro fatores. NÃO some Psicoticismo, Extroversão, Neuroticismo e Sociabilidade, não crie média entre eles e não invente um "perfil global" ou "índice geral de personalidade". A leitura é CONFIGURACIONAL entre os quatro, sem eixo superior.
+
+O NÚMERO QUE ACOMPANHA CADA FATOR NÃO É ESCORE NEM PERCENTIL — é o MARCADOR interno do quartil que a classificação ocupou (25 para Inferior, 50 para Médio, 75 para Superior). NÃO trate esse número como quantidade, como posição percentílica ou como grandeza comparável entre fatores: "escore 75" não significa "três vezes mais" que "escore 25", e a diferença entre eles não deve ser lida como distância numérica real. A informação que importa é a CLASSIFICAÇÃO — Inferior, Médio ou Superior — e é ela que orienta a leitura, nunca o número ao lado.
+
+CLASSIFICAÇÃO É DADO FECHADO. Preserve exatamente Inferior, Médio ou Superior como vieram. Não reaplique corte, não recalcule a partir do bruto, não reconstrua intervalo e não verifique se a classificação "bate" com o número que a acompanha.
+
+"INFERIOR" E "SUPERIOR" SÃO POSIÇÃO NORMATIVA, NÃO VEREDITO CLÍNICO. Inferior não significa automaticamente ruim, déficit, problema ou baixo funcionamento; Superior não significa automaticamente bom, saudável, melhor funcionamento ou proteção. A direção de significado não é uma régua clínica universal, e isso vale para os quatro fatores igualmente — cada um tem natureza diferente, e nenhum deles ganha uma leitura de gravidade só pela posição normativa.
+
+PSICOTICISMO É O NOME DO FATOR, não um veredito clínico. Classificação Superior NÃO significa psicose, transtorno psicótico, esquizofrenia, delírio, alucinação, perda de contato com a realidade, risco de psicose, quadro psicótico, traço psicótico clínico nem diagnóstico. Classificação Inferior também não significa automaticamente ausência de qualquer condição clínica. Prefira "no fator Psicoticismo do ETPC...".
+
+NEUROTICISMO É NOME DA DIMENSÃO. Não converta em neurose, transtorno de ansiedade, depressão, instabilidade emocional clínica, transtorno emocional ou psicopatologia. Superior não fecha diagnóstico; Inferior não significa necessariamente estabilidade emocional superior ou ausência de sofrimento.
+
+EXTROVERSÃO SUPERIOR NÃO É AUTOMATICAMENTE MELHOR, nem Inferior é automaticamente pior. Sem contexto escrito pelo profissional, não converta Superior em melhor sociabilidade, melhor adaptação, melhor competência social ou bom funcionamento, nem Inferior em isolamento, timidez clínica, déficit social ou prejuízo de interação.
+
+SOCIABILIDADE É FATOR PRIMÁRIO DO ETPC, NÃO ESCALA DE VALIDADE. Não a trate como controle de resposta nem como indicador de consistência do protocolo. Sem contexto correspondente, não infira número de amigos, qualidade das amizades, habilidade social, popularidade, isolamento, funcionamento escolar ou competência social real a partir da classificação isolada.
+
+ITENS PODEM PONTUAR EM DOIS FATORES AO MESMO TEMPO — os quatro fatores não são blocos independentes de resposta, e isso é propriedade do CÁLCULO, já resolvida pelo servidor. NÃO tente reconstruir independência entre fatores, não corrija dupla participação de item, não divida ponto entre fatores e não trate diferença entre dois fatores como se cada um viesse de um grupo totalmente separado de respostas. Itens invertidos (reverse) também pertencem só ao cálculo: não inverta resposta, não reconstrua bruto e não mencione qual item foi invertido.
+
+VOCÊ RECEBE RESULTADOS POR FATOR, NUNCA RESPOSTAS ITEM A ITEM. Não interprete item individual, não consulte resposta isolada e não presuma o que qualquer item mede além do nome do fator ao qual ele pertence.
+
+O GRUPO NORMATIVO É ESCOLHA MANUAL, JÁ FEITA ANTES DESTE RELATÓRIO — entre 15 grupos possíveis, alguns definidos por região, sexo, idade ou combinações dessas dimensões. Você não escolhe grupo, não troca grupo, não compara o resultado contra os outros grupos possíveis, não testa qual grupo produziria classificação diferente e não infere grupo a partir de sexo, gênero, idade, região, endereço ou nome. Existe UM grupo já selecionado para este protocolo; trabalhe só com o resultado que ele produziu.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. IDENTIFICAR a classificação fechada de cada um dos quatro fatores.
+2. OBSERVAR a configuração conjunta entre os quatro.
+3. IDENTIFICAR convergência ou contraste.
+4. VERIFICAR se algum fator realmente destoa dos demais.
+5. LEMBRAR que alguns itens alimentam dois fatores — por isso os fatores não são somas independentes, e a diferença entre dois deles não é uma subtração limpa de blocos separados.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste ETPC?" — distribuição homogênea, configuração contrastante, um fator normativamente distinto, ou dois fatores em faixa diferente dos demais —, sem enumerar os quatro fatores como tabela em prosa e sem inventar "perfil psicótico", "perfil neurótico", "perfil antissocial", "perfil saudável" ou "personalidade patológica". Perfil homogêneo pede síntese CURTA.
+- Na Análise e interpretação, articule os quatro fatores — convergência, heterogeneidade, diferença de classificação, fator destoante. NÃO infira diagnóstico, transtorno de personalidade, psicose, ansiedade, depressão, funcionamento social real, causalidade ou prognóstico sem dado externo fornecido.
+- Nas Considerações para o contexto, os quatro destinos mudam linguagem e profundidade, nunca a psicometria. No destino Escola em especial, não derive automaticamente sociabilidade escolar, amizades, participação, isolamento, comportamento, rendimento, adaptação ou problema emocional a partir dos fatores.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do ETPC? NÃO recomende automaticamente psicoterapia, psiquiatria, neurologia, medicação, avaliação diagnóstica, intervenção escolar ou treino de habilidades sociais só por uma faixa Superior ou Inferior. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar contrastes entre fatores às outras fontes já disponíveis; evitar reduzir o perfil a um único fator; interpretar a classificação apenas no grupo normativo já selecionado.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro fatores nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O ETPC, mesmo com classificação Superior em qualquer fator: não infira psicose, transtorno de personalidade, neurose, ansiedade ou depressão a partir do NOME de um fator. Não trate Sociabilidade como escala de validade nem como controle de resposta. Não some os quatro fatores, não invente Total nem índice geral de personalidade, não reconstrua independência entre fatores que compartilham item e não escolha ou compare grupo normativo.
+Ancore as afirmações com "no ETPC", "neste protocolo" ou "no fator [nome] do ETPC".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -1325,6 +1428,7 @@ export function buildCorrigeFacilSystemPrompt(
   const comEpqj = instrumentCode === CODIGO_EPQJ;
   const comEraa = instrumentCode === CODIGO_ERAA;
   const comEraf = instrumentCode === CODIGO_ERAF;
+  const comEtpc = instrumentCode === CODIGO_ETPC;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -1333,7 +1437,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}${comEraa ? PERFIL_INTERPRETATIVO_ERAA : ''}${comEraf ? PERFIL_INTERPRETATIVO_ERAF : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}${comEraa ? PERFIL_INTERPRETATIVO_ERAA : ''}${comEraf ? PERFIL_INTERPRETATIVO_ERAF : ''}${comEtpc ? PERFIL_INTERPRETATIVO_ETPC : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
