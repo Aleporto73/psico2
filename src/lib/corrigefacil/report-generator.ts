@@ -1382,6 +1382,103 @@ O QUE NUNCA SE FAZ COM O ETPC, mesmo com classificação Superior em qualquer fa
 Ancore as afirmações com "no ETPC", "neste protocolo" ou "no fator [nome] do ETPC".
 `;
 
+/** O código do TRILHAS_PRE no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os doze pilotos anteriores já
+ *  usam. */
+const CODIGO_TRILHAS_PRE = 'TRILHAS_PRE';
+
+/** O PERFIL INTERPRETATIVO do Teste de Trilhas Pré-Escolares — décimo
+ *  terceiro piloto da mesma arquitetura: sem snapshot, sem
+ *  REGRA_TRILHAS_PRE — os quatro subtestes chegam pelos resultados por
+ *  escala de sempre. Reusa `instrumentCode` — mais um `const
+ *  comTrilhasPre` local, nenhuma mudança de assinatura.
+ *
+ *  SEM TOTAL, DECLARADO PELO PRÓPRIO CONTROLADOR: `trilhas.json ·
+ *  instrument.notes` traz literalmente "Sem escore composto/total", e
+ *  `engine/loader.py::load_trilhas` não grava `scale_components` nenhum
+ *  — os quatro subtestes (A-SEQ, A-CON, B-SEQ, B-CON) são resultados
+ *  fechados independentes, sem composto para o mapa proteger e sem
+ *  hierarquia entre eles.
+ *
+ *  BRUTO E PONTUAÇÃO PADRÃO SÃO RÉGUAS DIFERENTES, E OS TETOS DO BRUTO
+ *  TAMBÉM SÃO: `subtests[].raw_max` vale 5 (A-SEQ), 4 (A-CON), 10
+ *  (B-SEQ) e 9 (B-CON) — um bruto 5 em A-SEQ é o TETO da escala, e um
+ *  bruto 5 em B-SEQ é pouco mais que a metade dela. Comparar os dois
+ *  brutos diretamente erra a posição normativa; só a pontuação padrão e
+ *  a classificação, já convertidas pelo servidor, são comparáveis entre
+ *  os quatro.
+ *
+ *  ZERO NÃO TEM NORMA: `instrument.notes` também diz "Tabelas originais
+ *  começam no bruto 1 — zero não é aceito", e a tabela de
+ *  `d["norms"][subteste][idade]` confirmada na auditoria só tem chaves
+ *  de bruto a partir de "1" — não existe linha para zero. Um resultado
+ *  cujo bruto seria zero chega como indisponível, e o mapa proíbe
+ *  inventar conversão para preencher essa ausência.
+ *
+ *  IDADE NORMATIVA: só há tabela para 4, 5 e 6 anos
+ *  (`instrument.ages`), e a seleção é resolvida ANTES deste relatório —
+ *  `generateCorrigeFacilReport` não lê `idade_normativa` nem escolhe
+ *  norma hoje, e este piloto não abre infraestrutura para isso.
+ *
+ *  SEM SEMÂNTICA APROVADA ALÉM DO NOME DO SUBTESTE: `graph-config.ts`
+ *  (entrada `TRILHAS_PRE`) plota os quatro na mesma janela visual sem
+ *  atribuir nenhum construto cognitivo a nenhum deles — é puramente
+ *  visual. Nenhum lugar do código aprova chamar Parte B de
+ *  "flexibilidade cognitiva", Conexões de "atenção" ou Sequências de
+ *  "planejamento"; o mapa ancora estritamente nos NOMES dos subtestes, e
+ *  não importa teoria do Trail Making Test que não esteja na
+ *  arquitetura auditada.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os dez
+ *  pilotos sem snapshot anteriores — e byte a byte ausente quando o
+ *  instrumento não é este. */
+const PERFIL_INTERPRETATIVO_TRILHAS_PRE = `
+COMO LER O TESTE DE TRILHAS PRÉ-ESCOLARES — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular pontuação padrão, aplicar corte, reclassificar, escolher idade normativa ou somar subtestes. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva os quatro subtestes como tabela em prosa, e não acrescente cautela nova.
+
+NÃO EXISTE TOTAL NESTE INSTRUMENTO. O controlador declara "Sem escore composto/total": não some A-SEQ com A-CON, não some B-SEQ com B-CON, não some os quatro subtestes, não tire média entre eles e não invente "escore executivo geral" nem "desempenho geral no Trilhas". A leitura é CONFIGURACIONAL entre quatro resultados fechados e independentes.
+
+BRUTO NÃO É PONTUAÇÃO PADRÃO, E OS TETOS SÃO DIFERENTES ENTRE SUBTESTES. Cada subteste tem seu próprio teto de bruto, e um mesmo valor bruto ocupa posições normativas diferentes em subtestes diferentes — bruto 5 em A-SEQ não é a mesma posição que bruto 5 em B-SEQ. NÃO compare bruto entre subtestes: use a pontuação padrão e a classificação, que já vieram convertidas e são comparáveis entre os quatro.
+
+A PONTUAÇÃO PADRÃO É DADO FECHADO. Preserve exatamente o número recebido. Não calcule z, não estime percentil, não converta pontuação padrão em percentil, não crie IC95 e não use distribuição normal ou CDF. Não escreva "está X desvios-padrão da média" sem fonte explícita nos dados recebidos — o desvio-padrão da escala não está disponível para você.
+
+CLASSIFICAÇÃO É DADO FECHADO. Existem cinco categorias — Muito baixa, Baixa, Média, Alta e Muito alta — e a IA não reaplica o corte que as separa, não reclassifica a partir da pontuação padrão e não traz limite numérico nenhum para o texto.
+
+"BAIXA" E "ALTA" SÃO POSIÇÃO NORMATIVA NAQUELE SUBTESTE, não veredito clínico. Muito baixa NÃO significa automaticamente déficit, transtorno, comprometimento, lesão, disfunção executiva ou TDAH. Muito alta NÃO significa automaticamente superdotação, função executiva excepcional, ausência de dificuldade ou proteção clínica. A classificação descreve o desempenho normativo na tarefa aplicada, nada além disso.
+
+BRUTO ZERO NÃO TEM NORMA, E ISSO É LIMITE DO RESULTADO, NÃO FALHA A PREENCHER. As tabelas originais começam no bruto 1; zero não tem linha normativa. Se o resultado chegar indisponível ou com mensagem de ausência de norma, PRESERVE isso exatamente: não interprete o bruto como se fosse escore válido, não escreva "mesmo sem norma, o desempenho parece...", não estime classificação por proximidade e não complete a lacuna de nenhuma forma.
+
+A IDADE NORMATIVA JÁ FOI SELECIONADA ANTES DESTE RELATÓRIO — só existe tabela para 4, 5 e 6 anos. Você não calcula idade, não escolhe idade normativa, não corrige, não arredonda, não troca de uma idade para outra, não usa norma de idade vizinha e não extrapola para idades fora da tabela. A seleção normativa é responsabilidade do sistema, não sua.
+
+OS NOMES DOS SUBTESTES SÃO DESCRITIVOS, NÃO CONSTRUTOS COGNITIVOS PRONTOS. Sem sustentação explícita nos dados recebidos ou no contexto escrito pelo profissional, não converta automaticamente nenhum subteste em atenção sustentada, atenção alternada, controle inibitório, flexibilidade cognitiva, velocidade de processamento, planejamento ou memória operacional. Em especial: Parte B NÃO vira automaticamente "flexibilidade cognitiva"; Conexões NÃO vira automaticamente "atenção"; Sequências NÃO vira automaticamente "planejamento". Ancore-se nos nomes exatos dos subtestes — "Parte A — Sequências", "Parte A — Conexões", "Parte B — Sequências", "Parte B — Conexões".
+
+COMPARAÇÕES ENTRE A E B, E ENTRE SEQUÊNCIAS E CONEXÕES, SÃO DESCRITIVAS, NUNCA CALCULADAS. É permitido comparar A-SEQ com B-SEQ, ou A-CON com B-CON, ou observar Sequências ao lado de Conexões, quando os resultados normativos recebidos sustentarem isso. NÃO calcule B-SEQ menos A-SEQ nem B-CON menos A-CON, não crie "índice de custo" nem "efeito B", e não assuma sem fonte explícita que B é "mais complexo", que B mede "alternância" ou que a diferença entre as duas partes significa flexibilidade. Da mesma forma, não crie índice Sequência, índice Conexão, diferença Seq-Con, percentual de perda ou razão entre eles, e não afirme qual processo cognitivo seria responsável por uma diferença observada.
+
+DIFERENÇA ENTRE PONTUAÇÕES É DESCRITIVA, NUNCA ESTATÍSTICA. "Maior" ou "menor" entre dois subtestes é permitido quando os dados sustentarem. NÃO chame nenhuma diferença de "significativa", "clinicamente significativa" ou "estatisticamente significativa" — isso exigiria uma tabela de discrepância normativa que não está disponível.
+
+RESULTADOS PARCIAIS SÃO NORMAIS NESTE INSTRUMENTO. Se apenas alguns dos quatro subtestes estiverem disponíveis, narre somente o que existe. NÃO trate um subteste ausente como zero, como Muito baixa, como "não realizado" ou como erro do participante, a menos que o próprio resultado recebido diga isso.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. VERIFICAR quais dos quatro resultados estão disponíveis.
+2. LER pontuação padrão e classificação de cada um dos disponíveis.
+3. OBSERVAR a configuração das duas medidas da Parte A.
+4. OBSERVAR a configuração das duas medidas da Parte B.
+5. OBSERVAR Sequências e Conexões apenas de forma descritiva.
+6. IDENTIFICAR homogeneidade ou contraste real entre os resultados disponíveis.
+7. VERIFICAR se algum subteste realmente destoa dos demais.
+8. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal neste Teste de Trilhas Pré-Escolares?" — desempenho homogêneo nas medidas disponíveis, uma medida relativamente mais baixa, duas medidas contrastantes, ou resultados parciais com interpretação limitada às medidas disponíveis —, sem enumerar os quatro subtestes como tabela em prosa e sem criar um resultado global que não existe. Perfil homogêneo pede síntese CURTA.
+- Na Análise e interpretação, articule os subtestes disponíveis — convergência, heterogeneidade, diferença normativa, subteste destoante. NÃO infira TDAH, disfunção executiva, transtorno neuropsicológico, déficit de atenção, déficit de flexibilidade, lesão cerebral, problema escolar, causalidade ou prognóstico.
+- Nas Considerações para o contexto, os quatro destinos mudam linguagem, nunca criam dado funcional. No destino Escola em especial, uma pontuação Baixa ou Muito baixa não autoriza afirmar dificuldade de aprendizagem, baixo rendimento, problema de atenção em sala, problema para seguir sequência, dificuldade de organização escolar ou problema de comportamento sem contexto fornecido pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do Trilhas? NÃO recomende automaticamente neurologista, psiquiatra, psicoterapia, medicação, treino executivo, intervenção atencional, adaptação escolar ou avaliação de TDAH só por classificação baixa. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar uma discrepância real entre subtestes às outras informações disponíveis; não reduzir quatro resultados a um índice global; tratar resultado sem norma como limite do protocolo, não como desempenho estimado.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro subtestes nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O TESTE DE TRILHAS PRÉ-ESCOLARES, mesmo com classificação Muito baixa ou Muito alta em qualquer subteste: não infira TDAH, disfunção executiva, transtorno neuropsicológico ou lesão cerebral a partir do NOME de um subteste ou da classificação recebida. Não converta Parte B em flexibilidade cognitiva, Conexões em atenção ou Sequências em planejamento sem fonte explícita. Não some subtestes, não invente Total, não calcule diferença B menos A nem diferença entre Sequências e Conexões, e não chame diferença nenhuma de estatisticamente ou clinicamente significativa.
+Ancore as afirmações com "neste Teste de Trilhas Pré-Escolares", "neste protocolo" ou "no subteste [nome]".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -1429,6 +1526,7 @@ export function buildCorrigeFacilSystemPrompt(
   const comEraa = instrumentCode === CODIGO_ERAA;
   const comEraf = instrumentCode === CODIGO_ERAF;
   const comEtpc = instrumentCode === CODIGO_ETPC;
+  const comTrilhasPre = instrumentCode === CODIGO_TRILHAS_PRE;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -1437,7 +1535,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}${comEraa ? PERFIL_INTERPRETATIVO_ERAA : ''}${comEraf ? PERFIL_INTERPRETATIVO_ERAF : ''}${comEtpc ? PERFIL_INTERPRETATIVO_ETPC : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}${comEraa ? PERFIL_INTERPRETATIVO_ERAA : ''}${comEraf ? PERFIL_INTERPRETATIVO_ERAF : ''}${comEtpc ? PERFIL_INTERPRETATIVO_ETPC : ''}${comTrilhasPre ? PERFIL_INTERPRETATIVO_TRILHAS_PRE : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
