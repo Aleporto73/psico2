@@ -24,6 +24,11 @@ import {
   metricasDaEscala,
   textoDePercentil,
 } from '@/lib/corrigefacil/metricas-instrumento';
+// O MESMO formatador do FDT — não um segundo. `zFormatado` já é a régua
+// de duas casas do produto para z ("como o produto já escreve os outros
+// decimais", no comentário dela); duas cópias divergiriam no
+// arredondamento, e a mesma avaliação sairia com um z aqui e outro no FDT.
+import { zFormatado } from '@/lib/corrigefacil/fdt-derivado';
 import {
   formatCredential,
   getCredentialLabel,
@@ -78,6 +83,13 @@ export type LinhaResultado = {
    *  ele se escreve. Quem decide é `textoDePercentil`, uma vez só. */
   percentilTexto: string | null;
   z: number | null;
+  /** `z` como o documento IMPRIME: duas casas, vírgula — a mesma régua
+   *  que o FDT já usa (`zFormatado`).
+   *
+   *  Mesmo par de `brutoTexto`/`escoreTexto`/`percentilTexto` — `z`
+   *  continua `number` para quem precisa do valor exato (nenhum lugar
+   *  precisa hoje), e `zTexto` é só apresentação. */
+  zTexto: string | null;
   ci95: string | null;
   classificacao: string | null;
   disponivel: boolean;
@@ -124,6 +136,7 @@ export function montarLinhas(
       percentil: r.available ? r.percentile : null,
       percentilTexto: textoDePercentil(instrumento, r),
       z: r.available ? r.z : null,
+      zTexto: r.available ? zFormatado(r.z) : null,
       ci95: r.available ? (r.ci95 ?? null) : null,
       classificacao: r.available ? r.classification : null,
       disponivel: r.available,

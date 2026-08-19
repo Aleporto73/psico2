@@ -351,6 +351,40 @@ describe('CONFIAS narrativa · o que muda em cada seção', () => {
     expect(P).toContain('perfil homogêneo não pede uma segunda para completar');
   });
 
+  it('28b · três recomendações continuam incondicionais, sem gatilho extra exigido', () => {
+    // silábico × fonêmico, habilidade destoante e hipótese × nível
+    // continuam podendo entrar sempre que o próprio perfil os sustentar —
+    // só a recomendação genérica de "integrar com outras informações"
+    // ganhou a trava nova (teste 28c/28d)
+    expect(P).toContain(
+      'integrar separadamente o domínio silábico e o fonêmico se houver contraste real entre eles',
+    );
+    expect(P).toContain(
+      'considerar habilidade específica destoante quando o perfil não for uniforme',
+    );
+    expect(P).toContain(
+      'preservar a diferença entre a hipótese informada e o Nível equivalente quando os dois vierem juntos',
+    );
+  });
+
+  it('28c · "confrontar com outras informações" só entra por uma razão concreta deste perfil — nunca como preenchimento', () => {
+    expect(P).toContain(
+      'Confrontar o Perfil por Habilidade com outras informações disponíveis da avaliação só entra quando houver uma razão concreta NESTE perfil para isso',
+    );
+    expect(P).toContain(
+      'uma habilidade destoante, um contraste silábico × fonêmico relevante, uma divergência entre a hipótese informada e o Nível equivalente, ou outro dado específico deste protocolo que realmente precise ser confrontado',
+    );
+    expect(P).toContain(
+      'nunca como frase de preenchimento quando as recomendações específicas já bastam',
+    );
+  });
+
+  it('28d · duas recomendações específicas que já cobrem o perfil não pedem uma terceira genérica', () => {
+    expect(P).toContain(
+      'duas recomendações específicas que já cobrem o perfil não pedem uma terceira genérica só para a lista não parecer curta',
+    );
+  });
+
   it('29 · as considerações finais fecham a mensagem central', () => {
     expect(P).toContain('Nas Considerações finais, feche a MENSAGEM CENTRAL');
     expect(P).toContain('não repita as dezesseis habilidades');

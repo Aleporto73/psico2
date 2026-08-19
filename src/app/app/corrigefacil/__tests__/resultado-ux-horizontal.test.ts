@@ -205,7 +205,9 @@ describe('cada instrumento mostra as colunas que ele tem', () => {
       }),
     );
     expect(rotulos(metricas)).toEqual(['escore', 'percentil', 'z']);
-    expect(metricas.map((c) => c.texto)).toEqual(['31', '29', '-0.54']);
+    // z na mesma régua pt-BR dos outros números do produto — ver
+    // format-metric-number. '-0.54' era o bug: ponto, não vírgula.
+    expect(metricas.map((c) => c.texto)).toEqual(['31', '29', '-0,54']);
     expect(classificacao).toBe('Média inferior');
   });
 

@@ -57,12 +57,64 @@ describe('tabela determinística — linhas', () => {
         // Sem instrumento de regra própria, são a mesma coisa.
         percentilTexto: '95',
         z: 1.64,
+        // mesmo par de brutoTexto/escoreTexto/percentilTexto: no máximo
+        // duas casas decimais, vírgula pt-BR — ver format-metric-number.
+        zTexto: '1,64',
         ci95: '65-75',
         classificacao: 'Elevado',
         disponivel: true,
         mensagem: null,
       },
     ]);
+  });
+
+  it('zTexto tem no máximo duas casas — os três z reais do teste manual do CONFIAS', () => {
+    // valores exatos do relatório real gerado (Sílaba, Fonema, Total),
+    // antes do polimento: apareciam com dez e mais casas na tela.
+    const linhas = montarLinhas({
+      'Sílaba': resultado({
+        raw: 28, z: -0.829694323144105, classification: 'Desempenho compatível com o esperado',
+      }),
+      'Fonema': resultado({
+        raw: 20, z: 1.4769230769230772, classification: 'Desempenho superior ao esperado',
+      }),
+      'Total': resultado({
+        raw: 48, z: 0.17667844522968199, classification: 'Desempenho compatível com o esperado',
+      }),
+    });
+    const [silaba, fonema, total] = linhas;
+
+    // o VALOR persistido não muda — é o texto que arredonda
+    expect(silaba.z).toBe(-0.829694323144105);
+    expect(fonema.z).toBe(1.4769230769230772);
+    expect(total.z).toBe(0.17667844522968199);
+
+    expect(silaba.zTexto).toBe('-0,83');
+    expect(fonema.zTexto).toBe('1,48');
+    expect(total.zTexto).toBe('0,18');
+
+    // e a classificação — a leitura que realmente importa — não mudou
+    expect(silaba.classificacao).toBe('Desempenho compatível com o esperado');
+    expect(fonema.classificacao).toBe('Desempenho superior ao esperado');
+    expect(total.classificacao).toBe('Desempenho compatível com o esperado');
+  });
+
+  it('zTexto: negativo, positivo, zero e inteiro — null nunca vira zero', () => {
+    const linhas = montarLinhas({
+      NEG: resultado({ z: -1.2 }),
+      POS: resultado({ z: 2.5 }),
+      ZERO: resultado({ z: 0 }),
+      INTEIRO: resultado({ z: 3 }),
+      AUSENTE: resultado({ z: null }),
+    });
+    const porEscala = Object.fromEntries(linhas.map((l) => [l.escala, l]));
+    expect(porEscala.NEG.zTexto).toBe('-1,20');
+    expect(porEscala.POS.zTexto).toBe('2,50');
+    expect(porEscala.ZERO.zTexto).toBe('0,00');
+    expect(porEscala.INTEIRO.zTexto).toBe('3,00');
+    // ausência continua ausência — nunca "0,00"
+    expect(porEscala.AUSENTE.z).toBeNull();
+    expect(porEscala.AUSENTE.zTexto).toBeNull();
   });
 
   it('preserva a ordem em que o servidor devolveu as escalas', () => {

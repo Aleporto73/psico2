@@ -304,7 +304,11 @@ describe('20 · o resultado textual continua na tela', () => {
     expect(celulas).toContain('met.escore.rotulo');
     expect(celulas).toContain('met.escore.texto');
     expect(celulas).toContain("celula('percentil', percentil)");
-    expect(celulas).toContain("celula('z', String(r.z))");
+    // z passa pelo MESMO formatador de duas casas que o FDT já usa — não
+    // pelo número cru (`String(r.z)` era o bug: dez casas decimais na tela)
+    expect(celulas).toContain("import { zFormatado } from './fdt-derivado'");
+    expect(celulas).toContain('const zTexto = zFormatado(r.z)');
+    expect(celulas).toContain("celula('z', zTexto)");
     expect(celulas).toContain('r.ci95');
     expect(celulas).toContain('r.classification');
 
