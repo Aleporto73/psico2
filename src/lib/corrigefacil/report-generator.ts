@@ -1075,6 +1075,110 @@ O QUE NUNCA SE FAZ COM O EPQ-J, mesmo com classificação MUITO ALTO em qualquer
 Ancore as afirmações com "no EPQ-J", "neste protocolo" ou "no fator [nome] do EPQ-J".
 `;
 
+/** O código do ERA-A no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os nove pilotos anteriores já
+ *  usam. */
+const CODIGO_ERAA = 'ERA-A';
+
+/** O PERFIL INTERPRETATIVO do ERA-A — décimo piloto da mesma
+ *  arquitetura, mesma família estrutural do BPA-2, da DASS-21, do
+ *  SNAP-IV, da Bayley-III, do SDQ-POR, do C-TRF e do EPQ-J: sem
+ *  snapshot, sem REGRA_ERAA — os quatro fatores e o Escore Geral chegam
+ *  pelos resultados por escala de sempre. Reusa `instrumentCode` — mais
+ *  um `const comEraa` local, nenhuma mudança de assinatura.
+ *
+ *  A DIFERENÇA DESTE PILOTO PARA O C-TRF E O SDQ-POR: no C-TRF o Total
+ *  NÃO é INT+EXT (há itens fora das seis síndromes), e no SDQ-POR o
+ *  Total soma só QUATRO das sete escalas. Aqui não: `engine/loader.py`
+ *  (`_load_era`) grava o Escore Geral com `kind: "composta"` e
+ *  `scale_components` apontando para OS QUATRO fatores — a nota do
+ *  próprio controlador diz "Escore Geral = soma dos 4 fatores", e a soma
+ *  bate de verdade. Mesmo assim a trava é a MESMA: a IA não soma para
+ *  conferir, porque conferir o servidor não é a tarefa dela — a REGRA
+ *  CENTRAL já proíbe recalcular qualquer escore, e este mapa não abre
+ *  exceção só porque, desta vez, a soma coincidiria.
+ *
+ *  CLASSIFICAÇÃO: duas bandas só, gravadas por `L.bands` a partir de
+ *  `classification_rule` do controlador — "Baixa presença de sintomas"
+ *  (percentil ≤ 59) e "Alta presença de sintomas" (percentil ≥ 60).
+ *  NENHUM dos dois números entra neste bloco, pela mesma razão do
+ *  C-TRF e do EPQ-J: a classificação já chega FEITA, e repetir o corte
+ *  convidaria o modelo a compará-lo por conta própria.
+ *
+ *  A TRAVA MAIS FORTE DESTE PILOTO: "Alta presença de sintomas" é
+ *  rótulo do INSTRUMENTO, não abreviação de "sintomas de autismo". O
+ *  controlador não anexa "de autismo" ao rótulo em lugar nenhum, e este
+ *  mapa proíbe explicitamente a IA de fazer essa montagem — é o mesmo
+ *  princípio de "nome da escala não é diagnóstico" dos pilotos
+ *  anteriores, levado ao caso em que o instrumento avalia tema
+ *  historicamente associado a TEA sem em nenhum momento nomeá-lo.
+ *
+ *  ITENS SEM ENUNCIADO: `notes` do controlador diz "Enunciados dos itens
+ *  não estão no arquivo (placeholders)" — mesma situação do C-TRF, do
+ *  ERA-F, do BPA-2/AG etc. (ver `form-model.ts::semEnunciado`). O mapa
+ *  não inventa conteúdo de item nem lê resposta individual — só fatores
+ *  e Escore Geral, como todo o resto do produto.
+ *
+ *  NORMA ÚNICA: `L.norm_sets([{code: "geral", label: "Amostra normativa
+ *  única"}])` — não há seleção manual (como o grupo do EPQ-J) nem
+ *  resolução por idade (como o BPA-2 e o FDT). Não há nada para o mapa
+ *  proteger aqui além de não inventar uma seleção que não existe.
+ *
+ *  ERA-A × ERA-F: um fator é HOMÔNIMO entre os dois — "Sensibilidade
+ *  Sensorial" existe nos dois controladores, com normas próprias e
+ *  distintas (`graph-config.ts` já registra isso: "nunca comparar um
+ *  com o outro"). Este piloto cobre só o ERA-A; o ERA-F, quando ganhar
+ *  perfil, é outro `instrumentCode` e outro bloco.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os
+ *  sete pilotos sem snapshot anteriores — e byte a byte ausente quando
+ *  o instrumento não é este. */
+const PERFIL_INTERPRETATIVO_ERAA = `
+COMO LER O ERA-A — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular percentil, aplicar corte, reclassificar, somar fatores para conferir o Escore Geral ou reconstruir tabela normativa. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva os quatro fatores e o Escore Geral como tabela em prosa, e não acrescente cautela nova.
+
+DUAS CAMADAS:
+- CAMADA 1 — quatro fatores específicos: Comunicação Social, Interação Social, Sensibilidade Sensorial e Padrões Restritos e Repetitivos.
+- CAMADA 2 — Escore Geral, que integra os quatro fatores mas NÃO apaga a configuração interna. Perfil geral alto pode coexistir com fatores heterogêneos; perfil geral baixo também não obriga todos os fatores à mesma configuração.
+
+O ESCORE GERAL É COMPOSTO DOS QUATRO FATORES, E AINDA ASSIM NÃO É RECALCULADO POR VOCÊ. O controlador declara Escore Geral como soma de Comunicação Social, Interação Social, Sensibilidade Sensorial e Padrões Restritos e Repetitivos — mas conferir essa soma não é sua tarefa. NÃO some os quatro fatores para checar o servidor, não reconstrua o Escore Geral e não o corrija: use somente o Escore Geral fechado que veio na tabela de resultados. Não afirme que o Escore Geral "confirma" os fatores — é apenas outra camada do mesmo resultado.
+
+PERCENTIL É DADO FECHADO. Preserve exatamente o percentil recebido de cada fator e do Escore Geral. Não interpole, não use CDF nem distribuição normal, não reconstrua a tabela normativa e não estime percentil. Quando o bruto se repete na tabela normativa, o servidor já resolveu pelo MAIOR percentil — isso não é inconsistência a expor nem a "corrigir" no texto. Percentil é POSIÇÃO NORMATIVA: percentil 90 não vira "90% de sintomas", em nenhum fator.
+
+CLASSIFICAÇÃO É DADO FECHADO. Existem só DUAS categorias no ERA-A — Baixa presença de sintomas e Alta presença de sintomas — e a IA não reaplica o corte que as separa nem substitui o rótulo recebido por outro.
+
+"ALTA PRESENÇA DE SINTOMAS" NÃO É DIAGNÓSTICO E NÃO GANHA "DE AUTISMO". É classificação DO INSTRUMENTO, não do avaliado. Mesmo com vários fatores em Alta presença de sintomas, NÃO converta em TEA, autismo, transtorno do espectro autista, risco de autismo, indicativo de TEA, provável TEA, quadro autístico, sintomas autísticos clínicos, diagnóstico ou gravidade clínica. O controlador não autoriza acrescentar "de autismo" ao rótulo — "Alta presença de sintomas de autismo" é uma expressão que você NÃO PODE criar se ela não veio do resultado ou do contexto escrito pelo profissional. Prefira "no fator Comunicação Social do ERA-A, a classificação recebida foi Alta presença de sintomas".
+
+"BAIXA PRESENÇA DE SINTOMAS" TAMBÉM NÃO É AUSÊNCIA. Não significa ausência de sintomas, ausência de dificuldades, desenvolvimento típico, TEA descartado, sem risco ou funcionamento normal. Preserve exatamente a categoria recebida, sem adicionar nem subtrair sentido a ela.
+
+NOMES DOS FATORES NÃO VIRAM FATOS DA VIDA REAL, mesmo em Alta presença de sintomas: Comunicação Social elevada não autoriza "dificuldade para se comunicar", "dificuldade de linguagem", "não compreende comunicação" ou "não mantém conversa"; Interação Social elevada não autoriza "não interage", "evita pessoas", "não tem amigos" ou "tem prejuízo social"; Sensibilidade Sensorial elevada não autoriza inventar hipersensibilidade auditiva, seletividade alimentar, aversão tátil ou reação a luz, ruído ou textura; Padrões Restritos e Repetitivos elevado não autoriza inventar estereotipia, rigidez, ecolalia, interesses restritos, movimentos repetitivos ou rotinas rígidas. O nome do fator é uma dimensão avaliada — ele não prova cada comportamento possível associado a ela.
+
+OS 75 ITENS NÃO TÊM ENUNCIADO PUBLICADO NESTE PRODUTO, e você não os recebe individualmente de qualquer forma: trabalhe somente com fatores, Escore Geral, percentil, classificação e contexto escrito pelo profissional. Não interprete item algum, não invente conteúdo de item, não crie exemplo comportamental baseado em suposto conteúdo dos itens e não presuma o que qualquer item mede além do nome do fator ao qual ele pertence.
+
+A NORMA DO ERA-A É ÚNICA — não há seleção de sexo, idade, escolaridade ou grupo normativo nesta arquitetura. Não invente comparação normativa por grupo nem sugira que existe seleção normativa a considerar.
+
+CONTRASTES ENTRE FATORES PODEM SER DESCRITOS quando os dados realmente sustentarem — por exemplo, maior elevação relativa em Sensibilidade Sensorial quando comparada aos demais fatores, se os percentis recebidos realmente mostrarem isso. Não explique a causa do contraste e não o transforme em comportamento concreto que não foi observado.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. LER o Escore Geral e sua classificação.
+2. LER os quatro fatores, com percentil e classificação de cada um.
+3. IDENTIFICAR quantos fatores estão em Alta e quantos em Baixa presença de sintomas.
+4. IDENTIFICAR homogeneidade ou contraste entre os fatores.
+5. VERIFICAR se existe fator destoante dos demais.
+6. INTEGRAR a leitura específica dos fatores com o Escore Geral, sem deixar um apagar o outro.
+7. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste ERA-A?" — por exemplo, perfil predominantemente em baixa presença sem contraste relevante, vários fatores em alta presença com um relativamente mais elevado, ou configuração heterogênea com elevação concentrada num fator — sempre ancorado em "neste ERA-A" ou "nos resultados deste protocolo", sem diagnóstico. Perfil homogêneo pede síntese CURTA: a tabela já mostra percentis, classificações e valores; a narrativa organiza, não repete.
+- Na Análise e interpretação, articule os quatro fatores com o Escore Geral — convergência, heterogeneidade, contraste, fator destoante, distribuição das classificações. NÃO infira TEA, diagnóstico, causalidade, funcionamento cotidiano, prognóstico, prejuízo escolar, prejuízo social ou necessidade terapêutica sem outras fontes.
+- Nas Considerações para o contexto, os quatro destinos mudam linguagem, nunca o dado. No destino Escola em especial, não transforme o resultado em problema de interação escolar, problema de aprendizagem, problema de comportamento, dificuldade em sala ou necessidade de adaptação sem dado escrito correspondente.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do ERA-A? NÃO recomende automaticamente avaliação para TEA, neurologista, psiquiatra, psicoterapia, fonoaudiologia, terapia ocupacional, ABA, medicação, adaptação escolar ou intervenção sensorial só porque houve Alta presença de sintomas. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar o resultado aos demais dados da avaliação; considerar separadamente fatores contrastantes; não reduzir uma configuração heterogênea ao Escore Geral.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro fatores nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O ERA-A, mesmo com Escore Geral ou qualquer fator em Alta presença de sintomas: não infira TEA, autismo, transtorno do espectro autista ou qualquer diagnóstico a partir do NOME de um fator ou da classificação recebida. Não chame o Escore Geral de gravidade global, índice de autismo, índice de TEA, probabilidade de TEA, grau de autismo, severidade ou comprometimento global. Não some os quatro fatores para verificar o Escore Geral e não reaplique o corte que separa as duas classificações.
+Ancore as afirmações com "no ERA-A", "neste protocolo" ou "no fator [nome] do ERA-A".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -1119,6 +1223,7 @@ export function buildCorrigeFacilSystemPrompt(
   const comSdqPor = instrumentCode === CODIGO_SDQ_POR;
   const comCtrf = instrumentCode === CODIGO_CTRF;
   const comEpqj = instrumentCode === CODIGO_EPQJ;
+  const comEraa = instrumentCode === CODIGO_ERAA;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -1127,7 +1232,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}${comEraa ? PERFIL_INTERPRETATIVO_ERAA : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
