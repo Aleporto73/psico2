@@ -367,21 +367,80 @@ describe('CONFIAS narrativa · o que muda em cada seção', () => {
     );
   });
 
-  it('28c · "confrontar com outras informações" só entra por uma razão concreta deste perfil — nunca como preenchimento', () => {
+  it('28c · confrontar com outras informações exige razão EXTERNA — as três permitidas são nomeadas', () => {
     expect(P).toContain(
-      'Confrontar o Perfil por Habilidade com outras informações disponíveis da avaliação só entra quando houver uma razão concreta NESTE perfil para isso',
+      'CONFRONTAR O CONFIAS COM OUTRAS INFORMAÇÕES DA AVALIAÇÃO',
     );
     expect(P).toContain(
-      'uma habilidade destoante, um contraste silábico × fonêmico relevante, uma divergência entre a hipótese informada e o Nível equivalente, ou outro dado específico deste protocolo que realmente precise ser confrontado',
+      'só entra quando existir uma questão que PRECISE de confronto externo para ser lida',
+    );
+    // as três razões válidas são todas EXTERNAS ao próprio perfil: nenhuma
+    // delas é "existe contraste" ou "existe heterogeneidade", que já viram
+    // recomendação específica sozinhas
+    expect(P).toContain(
+      'divergência entre a hipótese informada e o Nível equivalente',
     );
     expect(P).toContain(
-      'nunca como frase de preenchimento quando as recomendações específicas já bastam',
+      'habilidade destoante cuja interpretação dependa de outro dado da avaliação',
+    );
+    expect(P).toContain(
+      'contexto escrito pelo profissional que precise ser confrontado com este CONFIAS',
     );
   });
 
-  it('28d · duas recomendações específicas que já cobrem o perfil não pedem uma terceira genérica', () => {
+  it('28d · contraste Sílaba × Fonema SOZINHO não autoriza a recomendação genérica', () => {
+    // este é o caso do teste manual real que ainda reprovava: havia
+    // contraste (Sílaba compatível, Fonema superior) e o modelo usava o
+    // mesmo fato duas vezes — uma na recomendação específica, outra para
+    // justificar o item genérico de integração
+    expect(P).toContain('NÃO BASTAM para autorizá-lo');
+    expect(P).toContain('porque cada um deles já gera recomendação específica própria');
+    expect(P).toContain('existir contraste entre Sílaba e Fonema');
+  });
+
+  it('28e · heterogeneidade sozinha e classificação diferente entre escalas também não autorizam', () => {
+    expect(P).toContain('existir heterogeneidade entre as tarefas');
+    expect(P).toContain('existir classificação diferente entre as escalas');
+  });
+
+  it('28f · com o perfil já coberto, a lista PARA — e os itens genéricos são nomeados um a um', () => {
+    expect(P).toContain('PARE QUANDO O PERFIL JÁ ESTIVER COBERTO');
     expect(P).toContain(
-      'duas recomendações específicas que já cobrem o perfil não pedem uma terceira genérica só para a lista não parecer curta',
+      'se uma ou duas recomendações específicas já cobrem a particularidade central deste CONFIAS, a lista está COMPLETA',
+    );
+    // as quatro formulações genéricas que apareceram (ou poderiam
+    // aparecer) no relatório real, barradas nominalmente
+    expect(P).toContain('não acrescente um item de integrar com as demais informações');
+    expect(P).toContain('articular com os demais dados');
+    expect(P).toContain('discutir com a equipe, com a família ou com a escola');
+    expect(P).toContain('registrar de forma objetiva os dados pertinentes');
+    expect(P).toContain(
+      'Esses temas já têm lugar nas Considerações para o contexto e no parágrafo final de responsabilidade',
+    );
+  });
+
+  it('28g · não há quantidade mínima, e duas específicas não pedem uma terceira', () => {
+    expect(P).toContain('NÃO EXISTE QUANTIDADE MÍNIMA');
+    expect(P).toContain(
+      'duas recomendações específicas que já cobrem o perfil não pedem uma terceira só para a lista não parecer curta',
+    );
+  });
+
+  it('28h · o caso manual real: contraste presente, hipótese × nível SEM divergência → nenhuma razão externa', () => {
+    // Sílaba compatível, Fonema superior, hipótese informada
+    // Silábico-alfabética e Nível equivalente Silábico-alfabética: os dois
+    // coincidem, então a única razão externa nomeada que existiria
+    // (divergência) NÃO está presente. O perfil precisa deixar isso
+    // explícito para o modelo não tratar "os dois vierem juntos" como
+    // gatilho — preservar a distinção é recomendação específica, não
+    // confronto externo.
+    expect(P).toContain(
+      'preservar a diferença entre a hipótese informada e o Nível equivalente quando os dois vierem juntos',
+    );
+    // e o gatilho externo é DIVERGÊNCIA, não mera coexistência
+    expect(P).toContain('divergência entre a hipótese informada e o Nível equivalente');
+    expect(P).not.toContain(
+      'coexistência entre a hipótese informada e o Nível equivalente',
     );
   });
 
