@@ -973,6 +973,108 @@ O QUE NUNCA SE FAZ COM O C-TRF, mesmo com classificação Clínica em qualquer e
 Ancore as afirmações com "no C-TRF", "neste protocolo" ou "nos resultados deste C-TRF respondido pelo professor/cuidador".
 `;
 
+/** O código do EPQ-J no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os oito pilotos anteriores já
+ *  usam. */
+const CODIGO_EPQJ = 'EPQ-J';
+
+/** O PERFIL INTERPRETATIVO do EPQ-J — nono piloto da mesma arquitetura,
+ *  mesma família estrutural do BPA-2, da DASS-21, do SNAP-IV, da
+ *  Bayley-III, do SDQ-POR e do C-TRF: sem snapshot, sem REGRA_EPQJ — os
+ *  quatro fatores (P, E, N, S) chegam pelos resultados por escala de
+ *  sempre. Reusa `instrumentCode` — mais um `const comEpqj` local,
+ *  nenhuma mudança de assinatura.
+ *
+ *  A ASSIMETRIA ESTRUTURAL: `engine/loader.py::load_epqj`, no
+ *  CorrigeFácil, grava P/E/N com `kind: "primaria"` e S com `kind:
+ *  "validade"` — a única diferença de tipo entre as quatro escalas do
+ *  instrumento. S não é um quarto traço ao lado de P/E/N; é a Escala de
+ *  Sinceridade do EPQ, e `graph-config.ts` já trata isso em produção:
+ *  P/E/N formam o "Perfil de traços" e S sai como complemento
+ *  SEPARADO, sob o título "Escala de Sinceridade" — a mesma separação
+ *  que este mapa ensina o modelo a fazer na prosa.
+ *
+ *  NÃO EXISTE TOTAL. O controlador não declara `composed_of` nenhum:
+ *  P, E e N não somam entre si, e S não entra em soma nenhuma. Ao
+ *  contrário do C-TRF (Total sobre ALL_ITEMS) e do SDQ-POR (Total
+ *  composto de quatro escalas), o EPQ-J é puramente CONFIGURACIONAL —
+ *  não há medida agregada para o mapa proteger, só a ausência dela para
+ *  impedir que o modelo invente uma.
+ *
+ *  GRUPO NORMATIVO: `L.dimensions([{code: "grupo", ..., manual: True}])`
+ *  no loader e `norm_selection: "manual_deliberada · não usa o sexo
+ *  informado automaticamente"` no controlador — a escolha entre
+ *  Feminino/Masculino/Grupo Geral é decisão prévia do
+ *  profissional/sistema, resolvida antes do resultado chegar aqui.
+ *  `generateCorrigeFacilReport` não lê `norm_selector` nem qualquer
+ *  campo de grupo normativo hoje — nenhuma query nova foi aberta para
+ *  este piloto, e o mapa não pede que uma seja aberta: ele só impede o
+ *  modelo de INFERIR o grupo a partir de sexo, gênero, nome ou pronome
+ *  quando (e se) esse dado aparecer em algum texto livre.
+ *
+ *  PERCENTIL: `lookup_note` no controlador documenta o VLOOKUP
+ *  aproximado da fonte — bruto duplicado na tabela resolve pelo MAIOR
+ *  percentil. Isso é comportamento do LOADER (`_faixas_percentil`), não
+ *  do prompt: o percentil que chega aqui já saiu resolvido, e o mapa
+ *  apenas nomeia a regra para o modelo não tentar "corrigir" uma
+ *  duplicidade que não existe do lado dele.
+ *
+ *  NENHUM CORTE NUMÉRICO ENTRA AQUI, pela mesma razão do C-TRF: as
+ *  faixas de percentil (5/10/20/30/.../90/99) que separam MUITO
+ *  BAIXO/BAIXO/MEDIO/ALTO/MUITO ALTO já resolveram a classificação no
+ *  servidor, e reproduzi-las convidaria o modelo a comparar percentil
+ *  com corte por conta própria.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que os
+ *  seis pilotos sem snapshot anteriores — e byte a byte ausente quando
+ *  o instrumento não é este. */
+const PERFIL_INTERPRETATIVO_EPQJ = `
+COMO LER O EPQ-J — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular percentil, aplicar corte, reclassificar, escolher ou verificar grupo normativo, inverter item ou reconstruir qualquer fator. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não escreva P, E, N e S como tabela em prosa, e não acrescente cautela nova.
+
+DUAS CAMADAS, NÃO QUATRO TRAÇOS NO MESMO PLANO:
+- CAMADA 1 — perfil primário: Psicoticismo (P), Extroversão (E) e Neuroticismo (N). São as três dimensões de personalidade que o EPQ-J mede.
+- CAMADA 2 — validade: Sinceridade (S). NÃO é um quarto traço de personalidade equivalente a P/E/N — é a escala de validade do protocolo. S não deve dominar a Síntese nem aparecer misturada a P/E/N como se fosse a mesma espécie de medida.
+
+NÃO EXISTE TOTAL NO EPQ-J. Não há índice global, escore composto nem "perfil geral" calculado a partir de P, E, N e S. NÃO some os fatores, não crie um "escore global de personalidade" e não diga que um fator "compensa" outro matematicamente. A leitura é CONFIGURACIONAL — três traços mais uma escala de validade separada — e não redutível a um número único.
+
+PERCENTIL E CLASSIFICAÇÃO SÃO DADOS FECHADOS. Preserve exatamente o percentil e a classificação (MUITO BAIXO, BAIXO, MEDIO, ALTO, MUITO ALTO) recebidos de cada fator. Não calcule percentil a partir do bruto, não escolha outro percentil, não use interpolação, distribuição normal ou CDF, e não tente "corrigir" ou reconstruir o VLOOKUP da fonte — quando o bruto se repete na tabela normativa, a regra já aplicada pelo servidor fica com o MAIOR percentil, e isso não é inconsistência a resolver. Percentil é POSIÇÃO NORMATIVA, não porcentagem do traço: percentil 90 não vira "90% de Neuroticismo", nem percentil 80 vira "80% psicótico" ou percentil 10 vira "10% extrovertido" — bloqueie esse tipo de leitura em qualquer fator.
+
+CLASSIFICAÇÃO NÃO É GRAVIDADE UNIFORME. As palavras MUITO BAIXO a MUITO ALTO indicam posição normativa NAQUELE fator — não são automaticamente gravidade, risco, patologia, comprometimento, funcionamento ruim ou funcionamento bom. A direção clínica NÃO é uniforme entre os quatro fatores: Extroversão Muito Alta não significa "quadro grave", e Extroversão Muito Baixa não significa déficit ou isolamento patológico. Trate cada fator pela direção que ele próprio sustenta, sem aplicar uma leitura de risco genérica aos quatro.
+
+PSICOTICISMO É O NOME DA DIMENSÃO, não um veredito clínico. Mesmo com classificação ALTO ou MUITO ALTO, não converta em psicose, transtorno psicótico, esquizofrenia, delírio, alucinação, perda de contato com a realidade, risco de psicose, traços psicóticos clínicos nem diagnóstico psicótico. Prefira "no fator Psicoticismo do EPQ-J..." e não explique clinicamente o nome do fator além do que o resultado normativo sustenta.
+
+NEUROTICISMO É O NOME DA DIMENSÃO. Mesmo com classificação ALTO ou MUITO ALTO, não converta em neurose, transtorno neurótico, transtorno de ansiedade, depressão, instabilidade emocional clínica, transtorno emocional ou psicopatologia.
+
+EXTROVERSÃO É DIMENSÃO, NÃO VEREDITO DE FUNCIONAMENTO. ALTA não é automaticamente melhor; BAIXA não é automaticamente pior. Sem informação contextual escrita pelo profissional, não infira habilidade social, competência social, isolamento, timidez clínica, sociabilidade cotidiana, qualidade das relações, desempenho escolar ou prejuízo social a partir de nenhuma classificação de Extroversão. O resultado descreve posição na dimensão avaliada, não uma conclusão sobre a vida da pessoa.
+
+SINCERIDADE (S) É ESCALA DE VALIDADE, NÃO TRAÇO PRINCIPAL E NÃO JULGAMENTO MORAL. Ela pode entrar na leitura como indicador de validade/consistência do protocolo, mas somente dentro do que o resultado fechado sustenta. NÃO escreva, só por causa da classificação de S, que "o respondente mentiu", "não foi sincero", "respondeu de maneira falsa", "tentou manipular o teste", que "o protocolo é inválido" ou que "o resultado deve ser descartado". O controlador não traz nenhuma regra de invalidação automática, e o mapa não cria uma: S alta não invalida o protocolo, S baixa não o "confirma válido" nem confirma que o respondente foi "totalmente sincero" — a formulação segura é considerar S separadamente, como parte da leitura de consistência do protocolo, sem transformá-la em julgamento sobre a pessoa nem em critério de descarte dos demais resultados.
+
+GRUPO NORMATIVO É DECISÃO JÁ TOMADA, FORA DO SEU ALCANCE. A escolha entre Feminino, Masculino e Grupo Geral é manual e deliberada — feita antes deste relatório, pelo profissional ou pelo sistema — e não usa o sexo informado automaticamente. Você não escolhe grupo normativo, não troca grupo, não confere o grupo contra o sexo informado em qualquer outro lugar do protocolo e não sugere que o grupo esteja errado. NÃO infira o grupo normativo a partir de sexo, gênero, nome ou pronome. Se alguma informação de grupo normativo chegar até você, trate-a apenas como contexto normativo já resolvido — nunca como algo a verificar ou recalcular.
+
+ITENS E INVERSÕES PERTENCEM AO CÁLCULO, NÃO AO RELATÓRIO. Não mencione quais itens são invertidos (reverse), não tente inverter resposta alguma, não recalcule bruto e não reconstrua fator a partir de item. Você recebe resultados por fator, já calculados — nunca respostas item a item do EPQ-J.
+
+CONTRASTES ENTRE P, E E N PODEM SER DESCRITOS quando os dados realmente sustentarem — um fator em posição normativa mais elevada, outro relativamente mais baixo, distribuição homogênea ou contrastante entre os três. NÃO transforme contraste em causalidade: nunca escreva "o Neuroticismo elevado causa...", "o Psicoticismo explica..." ou "a baixa Extroversão leva a...". Descreva a configuração, não o mecanismo.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. LER P, E E N com percentil e classificação exatamente como vieram.
+2. CONFIGURAÇÃO ENTRE OS TRÊS — homogênea, contrastante, um fator destoante?
+3. OBSERVAR S SEPARADAMENTE, como escala de validade.
+4. VERIFICAR SE S ACRESCENTA alguma consideração legítima de consistência do protocolo, sem invalidá-lo automaticamente.
+5. IDENTIFICAR CONTRASTES REAIS entre P, E e N — só os que os dados sustentarem.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste EPQ-J?" priorizando P, E e N — não como P = ..., E = ..., N = ... em sequência mecânica, a tabela já existe. Perfil homogêneo pede síntese CURTA; perfil contrastante destaca o contraste que realmente muda a leitura. Sinceridade entra separadamente, e só quando for relevante para a leitura.
+- Na Análise e interpretação, articule P, E e N entre si, e trate S como validade separada — nunca como quarto traço. Pode destacar homogeneidade, heterogeneidade, fator destoante ou contraste normativo, sem diagnóstico, causalidade, prognóstico ou descrição de sintomas não fornecidos.
+- Nas Considerações para o contexto, os quatro destinos mudam linguagem, profundidade e voz — nunca a psicometria. NÃO converta P/E/N/S em funcionamento cotidiano sem dado contextual. No destino Escola em especial, não derive automaticamente comportamento escolar, rendimento, relações sociais, disciplina, adaptação ou atenção a partir de P, E, N ou S.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do EPQ-J? NÃO recomende automaticamente psicoterapia, psiquiatria, neurologia, medicação, avaliação diagnóstica, intervenção escolar ou tratamento só porque um fator veio ALTO ou MUITO ALTO. NÃO EXISTE QUANTIDADE MÍNIMA. Cabem, quando sustentado: integrar a configuração de P/E/N com outras fontes já disponíveis na avaliação; considerar separadamente fatores contrastantes; manter S como elemento de validade, sem transformá-la em julgamento da pessoa.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir os quatro fatores nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O EPQ-J, mesmo com classificação MUITO ALTO em qualquer fator: não infira psicose, transtorno psicótico, esquizofrenia, neurose, transtorno de ansiedade, depressão, transtorno emocional, isolamento clínico ou déficit social a partir do NOME de um fator. Não trate Sinceridade como acusação de mentira nem como critério para invalidar o protocolo. Não some P, E, N ou S, não invente Total nem índice global de personalidade, e não infira nem substitua o grupo normativo por sexo, gênero, nome ou pronome.
+Ancore as afirmações com "no EPQ-J", "neste protocolo" ou "no fator [nome] do EPQ-J".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -1016,6 +1118,7 @@ export function buildCorrigeFacilSystemPrompt(
   const comBayley3 = instrumentCode === CODIGO_BAYLEY3;
   const comSdqPor = instrumentCode === CODIGO_SDQ_POR;
   const comCtrf = instrumentCode === CODIGO_CTRF;
+  const comEpqj = instrumentCode === CODIGO_EPQJ;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -1024,7 +1127,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}${comEpqj ? PERFIL_INTERPRETATIVO_EPQJ : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
