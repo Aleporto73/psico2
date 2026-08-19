@@ -730,6 +730,87 @@ Ancore as afirmações com "no SNAP-IV", "neste protocolo" ou "neste domínio".
 `;
 }
 
+/** O código da Bayley-III no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que BPA-2, DASS-21 e a família
+ *  SNAP-IV já usam. */
+const CODIGO_BAYLEY3 = 'BAYLEY-III';
+
+/** O PERFIL INTERPRETATIVO da Bayley-III — sexto piloto da mesma
+ *  arquitetura, e o instrumento mais estruturalmente rico coberto até
+ *  aqui: cinco domínios, dois deles com dois componentes, um com
+ *  múltiplas subescalas, e DUAS réguas normativas por domínio (escalonada
+ *  e composta) em vez de uma.
+ *
+ *  A AUDITORIA MUDOU O QUE ESTE BLOCO PODE AFIRMAR. `data/bayley3.json`,
+ *  no CorrigeFacil, é controlador de NORMA — dezesseis códigos de
+ *  subteste/subescala (Cog, CR, CE, MF, MG, SE, Com, FA, AD, LZ, Soc, VC,
+ *  VD, SS, AC, MO), quatro tabelas de conversão escalonado→composto
+ *  cobrindo cinco domínios, sete `composite_bands` ("Muito acima da
+ *  média" a "Extremamente baixa"), e as tabelas de idade/prematuridade/IC
+ *  que resolvem a norma no servidor. Ele NÃO TEM UMA STRING DE NOME:
+ *  nenhum subteste, subescala ou domínio tem nome próprio ali — só
+ *  código. Os nomes dos CINCO DOMÍNIOS vieram de `graph-config.ts`
+ *  (`DOM_Cognitivo`, `DOM_Linguagem`, `DOM_Motora`, `DOM_Socioemocional`,
+ *  `DOM_Adaptativo` — "os cinco domínios do Bayley, na métrica
+ *  composta"), que já são escalas reais e aprovadas no gráfico. Os nomes
+ *  dos QUATRO COMPONENTES (CR/CE de Linguagem, MF/MG de Motora) não
+ *  foram confirmados como string exata de banco em lugar nenhum
+ *  acessível a este repositório — este bloco os trata por código, e a
+ *  glosa entre parênteses é vocabulário psicométrico do instrumento, não
+ *  citação de campo.
+ *
+ *  DUAS CAMADAS, NÃO UMA. A tabela de conversão do controlador confirma:
+ *  subteste/subescala só tem `scaled` (banda 1–19) — nunca `percentile`
+ *  nem classificação. Só o COMPOSTO do domínio tem `percentile`, IC
+ *  (quando o servidor o publica — Adaptativo nunca tem, confirmado pelo
+ *  comentário do próprio `graph-config.ts`) e cai em `composite_bands`.
+ *  Não é estilo; é estrutura, e o bloco ensina a lê-la como tal.
+ *
+ *  NÃO HÁ REGRA_BAYLEY3 pelo mesmo motivo que não há REGRA_BPA2: nenhuma
+ *  das duas camadas é snapshot — as duas chegam pelos resultados por
+ *  escala de sempre, e nada aqui precisa ser congelado. */
+const PERFIL_INTERPRETATIVO_BAYLEY3 = `
+COMO LER A BAYLEY-III — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, converter uma régua na outra, escolher faixa etária, decidir correção de prematuridade ou concluir diagnóstico a partir de nenhum domínio. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra os cinco domínios e os subtestes como tabela em prosa, e não acrescente cautela nova.
+
+CAMADAS DIFERENTES, NUNCA UMA VIRA A OUTRA (vocabulário do instrumento, não característica da criança):
+- ESCORE ESCALONADO é o resultado normativo de CADA SUBTESTE OU SUBESCALA, numa régua própria. Ele NÃO vem com classificação nem com percentil — só o número escalonado.
+- ESCORE COMPOSTO é o resultado normativo de CADA DOMÍNIO, numa régua diferente da do subteste, e é ele que vem acompanhado de PERCENTIL e, quando o servidor o publicou, de INTERVALO DE CONFIANÇA. É neste nível que existe CLASSIFICAÇÃO — não no subteste.
+- NÃO converta um escalonado em composto, não some escalonados para reconstruir um composto, e não estime percentil, IC ou classificação para um subteste: ele não tem essas três coisas, e inventá-las cria dado que o sistema não calculou. NÃO compare o número de um subteste com o número de um composto como se fossem a mesma régua — "o subteste está abaixo do composto" mistura duas escalas diferentes e não pode aparecer no texto.
+- Onde o IC vier, trate-o como o intervalo já calculado para aquela estimativa. Não recalcule, não use o limite inferior nem o superior para criar uma segunda classificação, e não escolha "a classificação mais provável" dentro do intervalo — a classificação já veio pronta, ao lado do composto.
+
+OS CINCO DOMÍNIOS (vocabulário do instrumento, não característica da criança):
+- Cognitivo é composto por um subteste só. Não o transforme em inteligência global, QI, deficiência intelectual, capacidade intelectual geral nem prognóstico cognitivo. Prefira "no domínio Cognitivo da Bayley-III, o resultado...".
+- Linguagem integra dois componentes, receptivo (CR) e expressivo (CE). Quando os dois chegarem, é permitido comparar: distribuição semelhante, diferença entre os componentes, um relativamente mais elevado ou mais baixo. NÃO conclua transtorno de linguagem, atraso de linguagem, dificuldade de compreensão cotidiana nem dificuldade de fala cotidiana sem outras informações.
+- Motora integra dois componentes, fino (MF) e grosso (MG). Mesma regra: comparação permitida quando os dois chegarem, sem virar atraso motor diagnosticado, alteração neurológica, dificuldade funcional real ou etiologia motora. Ancore sempre em "nas tarefas/subtestes avaliados".
+- Socioemocional é composto por uma medida só. Use somente a estrutura fornecida: não infira transtorno emocional, TEA, vínculo, regulação emocional global nem comportamento social cotidiano a partir do escore ou da classificação isolados.
+- Adaptativo pode integrar múltiplas subescalas. Quando várias chegarem, observe homogeneidade, heterogeneidade, subescala destoante ou agrupamento realmente visível entre elas — nunca um agrupamento que os dados não sustentem. Uma classificação inferior aqui não vira incapacidade funcional, dependência nem prejuízo adaptativo clínico.
+
+A BAYLEY-III NÃO TEM RESULTADO GLOBAL. Os cinco domínios são compostos INDEPENDENTES: não existe soma, média nem composto único dos cinco. NÃO escreva "escore global Bayley", "resultado global Bayley", "desenvolvimento global de X", "classificação global", "pontuação total" nem "índice geral" quando a expressão sugerir uma medida composta única que não existe — a regra é SEMÂNTICA: qualquer formulação que leve o leitor a esperar um número único da Bayley-III tem o mesmo defeito. Diga o que existe, conforme o caso: o conjunto dos resultados, o perfil entre os domínios, a configuração observada ou a distribuição dos resultados.
+
+A BAYLEY-III NÃO TEM IDADE EQUIVALENTE NESTA IMPLEMENTAÇÃO. Não converta nenhum resultado — escalonado, composto, percentil ou classificação — em idade de desenvolvimento, idade equivalente, idade mental, "funciona como uma criança de X meses", "está X meses atrasado" nem "tem atraso de X meses", a menos que um campo explícito com esse significado tenha sido entregue pelo sistema. Nenhum destes é derivável do que este bloco descreve.
+
+IDADE E PREMATURIDADE JÁ FORAM RESOLVIDAS PELO SISTEMA. A idade na avaliação, quando corrigida por prematuridade, já chega identificada como tal; isso é dado factual do protocolo, e pode ser mencionado como tal. NÃO calcule idade corrigida, não decida se a prematuridade deveria ser corrigida, não aplique semanas × dias, não escolha nem revise faixa etária: a seleção normativa é do sistema, não sua.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. MAPEAR O QUE EXISTE — quais domínios, subtestes e componentes realmente estão presentes neste protocolo. Não complete medida ausente.
+2. DISTRIBUIÇÃO ENTRE DOMÍNIOS — os compostos estão homogêneos, predominantemente na média, predominantemente abaixo, predominantemente acima, ou heterogêneos? Use somente as classificações recebidas.
+3. CONTRASTES ENTRE DOMÍNIOS — existe domínio realmente destoante dos demais? Quando existir, pode ser nomeado. Não explique a causa.
+4. CONTRASTES INTERNOS — quando um domínio tiver mais de um componente (Linguagem, Motora) ou múltiplas subescalas (Adaptativo), verifique diferença interna realmente sustentada. Não a transforme em mecanismo causal.
+5. SUBTESTE × COMPOSTO — o composto já integra os subtestes daquele domínio; não interprete o composto como uma tarefa nova, e não conte a mesma informação duas vezes. Os componentes servem para mostrar a configuração INTERNA, não para duplicar o resultado do domínio.
+6. MENSAGEM CENTRAL — escolha UMA leitura principal: perfil homogêneo, perfil heterogêneo, domínio específico destoante, contraste interno num domínio, ou distribuição predominante numa região classificatória. Só o que os dados realmente sustentarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal desta Bayley-III?" priorizando a distribuição entre os domínios e o principal contraste, quando houver — não percorra os cinco domínios e os subtestes como tabela em prosa. Perfil homogêneo pede síntese CURTA; perfil heterogêneo destaca só os contrastes realmente úteis.
+- Na Análise e interpretação, articule os domínios, aprofunde o contraste relevante, use os componentes internos SÓ quando acrescentarem informação, e diferencie subteste de composto o tempo todo. Diga o que o padrão mostra DENTRO da Bayley-III. NÃO explique causa, não diagnostique atraso, não infira TEA, deficiência intelectual, transtorno do desenvolvimento, prognóstico ou funcionamento cotidiano além do dado, e não crie idade equivalente.
+- Nas Considerações para o contexto, é permitido orientar integração com observação, história do desenvolvimento e outras fontes profissionais, quando pertinente. NÃO prescreva terapia, estimulação, intervenção, encaminhamento ou frequência terapêutica só a partir da Bayley-III.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração da Bayley-III? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente dois componentes de um domínio quando houver contraste relevante; não resumir o perfil a um único domínio quando houver heterogeneidade; preservar a diferença entre resultado composto e configuração interna dos subtestes. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode ser suficiente. Não fabrique intervenção.
+- Nas Considerações finais, feche a mensagem central. Não repita todos os escores, não crie um "nível global", não repita recomendações, não crie diagnóstico, não crie idade de desenvolvimento e não escreva um segundo aviso.
+
+RESULTADOS INFERIORES NÃO AUTORIZAM, mesmo com todos os domínios abaixo da média: atraso global do desenvolvimento, atraso do desenvolvimento, deficiência intelectual, TEA, transtorno de linguagem, transtorno motor, transtorno do neurodesenvolvimento nem incapacidade adaptativa. RESULTADOS SUPERIORES NÃO AUTORIZAM, mesmo com todos os domínios acima da média: desenvolvimento avançado global, superdotação nem altas habilidades, sem fonte específica adicional. A classificação da Bayley-III é resultado do instrumento — não é diagnóstico, em nenhuma direção.
+Ancore as afirmações com "na Bayley-III", "neste protocolo" ou "neste domínio".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -770,6 +851,7 @@ export function buildCorrigeFacilSystemPrompt(
   const comDass21 = instrumentCode === CODIGO_DASS21;
   const comSnap18 = instrumentCode === CODIGO_SNAP18;
   const comSnap26 = instrumentCode === CODIGO_SNAP26;
+  const comBayley3 = instrumentCode === CODIGO_BAYLEY3;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -778,7 +860,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
