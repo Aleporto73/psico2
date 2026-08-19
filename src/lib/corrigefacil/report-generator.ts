@@ -830,6 +830,76 @@ RESULTADOS INFERIORES NÃO AUTORIZAM, mesmo com todos os domínios abaixo da mé
 Ancore as afirmações com "na Bayley-III", "neste protocolo" ou "neste domínio".
 `;
 
+/** O código do SDQ-POR no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que BPA-2, DASS-21, SNAP-IV e a
+ *  Bayley-III já usam. */
+const CODIGO_SDQ_POR = 'SDQ-POR';
+
+/** O PERFIL INTERPRETATIVO do SDQ-POR — sétimo piloto da mesma
+ *  arquitetura. Mesma família estrutural do BPA-2 e da DASS-21: sem
+ *  snapshot, sem REGRA_SDQ_POR — as sete escalas (EMO, CON, HIP, PAR,
+ *  PRO, IMPACTO e o composto TOTAL) chegam pelos resultados por escala
+ *  de sempre.
+ *
+ *  A ASSIMETRIA QUE IMPORTA AQUI: só DUAS das sete escalas têm
+ *  classificação. `data/sdq_por.json`, no CorrigeFacil, tem
+ *  `classification_bands` no nível raiz (as quatro faixas do TOTAL) e
+ *  dentro da escala IMPACTO (as quatro faixas dela) — e em NENHUM outro
+ *  lugar. EMO, CON, HIP, PAR e PRO não têm campo de faixa nenhum.
+ *  `graph-config.ts` confirma isso já em produção: as quatro escalas de
+ *  dificuldade saem do gráfico do TOTAL com o motivo "subescala sem
+ *  faixa publicada", e PRO sai com dois motivos — "direção OPOSTA
+ *  (competência preservada, não dificuldade)" e "única das cinco que não
+ *  entra no TOTAL". As duas frases vieram de lá, não foram inferidas
+ *  aqui.
+ *
+ *  O GATE DO IMPACTO é servidor, confirmado em `engine/calc.py::GATES`:
+ *  a pergunta de porta fecha a escala em zero, abre para a soma de três
+ *  itens, ou — faltando a porta ou algum dos três — tira a escala do
+ *  resultado inteiramente. Este módulo não vê a porta: o Relatório Pró
+ *  recebe RESULTADO por escala, nunca resposta item a item — confirmado
+ *  contra `formatClosedResults` e contra a ausência de qualquer query de
+ *  `assessment_responses` no gerador. Por isso o bloco proíbe reconstruir
+ *  a pergunta que abre a seção, e não a nomeia por número: não há
+ *  necessidade de o modelo saber que ela existe.
+ *
+ *  NÃO HÁ REGRA_SDQ_POR pelo mesmo motivo que não há REGRA_BPA2: nenhuma
+ *  das sete escalas é snapshot. */
+const PERFIL_INTERPRETATIVO_SDQ_POR = `
+COMO LER O SDQ-POR — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular, reclassificar, somar escalas ou concluir diagnóstico a partir de nenhuma delas. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra as sete escalas como tabela em prosa, e não acrescente cautela nova.
+
+O TOTAL É COMPOSTO, NÃO É UMA SEXTA MEDIDA. O Total de Dificuldades já chega calculado a partir de quatro escalas — Dificuldades Emocionais, Dificuldades de Conduta, Hiperatividade e Problemas com Pares —, e SÓ dessas quatro: Pró-Social não entra no Total, e o Escore de Impacto também não. NÃO some as quatro escalas para conferir o Total, não o trate como uma quinta dificuldade e não o recalcule: ele já veio fechado, e a soma pertence ao servidor.
+
+CLASSIFICAÇÃO: SÓ O TOTAL E O IMPACTO TÊM. Dificuldades Emocionais, Dificuldades de Conduta, Hiperatividade, Problemas com Pares e Pró-Social chegam SEM classificação — o servidor não publica faixa normativa para nenhuma delas nesta implementação. NÃO invente uma: não escreva "Emocional alto", "Conduta elevada", "Hiperatividade moderada", "Problemas com Pares muito altos" nem "Pró-Social baixo" se esse rótulo não veio do sistema. É permitido descrever DIFERENÇA NUMÉRICA entre as quatro escalas de dificuldade quando os dados realmente sustentarem — algo como "entre as quatro escalas que compõem o Total, a pontuação de Dificuldades Emocionais foi numericamente maior..." —, mas isso NÃO é classificação, e não deve soar como uma.
+
+PRÓ-SOCIAL TEM DIREÇÃO ESTRUTURALMENTE OPOSTA às quatro escalas de dificuldade: ela mede competência preservada, não dificuldade, e por isso fica fora do Total. NÃO a leia como "quinta dificuldade", não trate pontuação de Pró-Social mais alta como mais problema nem mais baixa como transtorno social, e não a apresente como fator protetivo comprovado nem como algo que "compensa" um Total elevado. Havendo contraste entre Pró-Social e o conjunto de dificuldades, descreva a coexistência das duas medidas — nunca o mecanismo entre elas, e nunca como compensação ou proteção.
+
+O ESCORE DE IMPACTO É CAMADA SEPARADA — não é componente do Total, não é uma quinta escala de dificuldade e não é diagnóstico. Ele só existe no resultado quando o protocolo o produziu; sem ele, não há linha de Impacto para comentar. Quando existir, use exatamente a classificação recebida — "Sem Impacto", "Impacto Leve", "Impacto Moderado" ou "Impacto Grave" — sem gradação própria. NÃO reconstrua a origem desse resultado: o Impacto vem de uma pergunta de porta que este relatório não recebe, e "Sem Impacto" NÃO autoriza escrever que "o respondente informou que não há dificuldade" nem qualquer frase que presuma a resposta daquela pergunta. A única afirmação segura é "o Escore de Impacto foi classificado como Sem Impacto", ou equivalente ancorado no protocolo — não a origem dela.
+
+TOTAL E IMPACTO PODEM DIVERGIR, E ISSO NÃO É CONTRADIÇÃO. Um Total Muito Alto ao lado de um Impacto Sem Impacto — ou o inverso — são configurações legítimas, porque as duas medem aspectos diferentes. NÃO escreva que isso é erro, contradição, inconsistência ou falha de preenchimento, e não explique a causa da diferença: descreva que as duas medidas apresentaram configurações diferentes, e pare aí. Da mesma forma, um Total menos elevado ao lado de um Impacto mais elevado não autoriza concluir que "o impacto é desproporcional" — descreva as duas camadas, sem julgar uma pela ótica da outra.
+
+ITENS INDIVIDUAIS NÃO CHEGAM A VOCÊ. Você recebe os resultados por escala — nunca as respostas item a item do SDQ-POR. Em especial, você NÃO recebe a resposta que abre a Seção de Impacto, a duração das dificuldades nem o peso que elas representam para quem respondeu: não infira nenhuma delas, e não presuma o que qualquer uma diz. Não escreva "impacto nas amizades", "impacto escolar" nem "impacto no aprendizado" a partir do Escore de Impacto agregado — o número não diz qual pergunta específica produziu os pontos.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. TOTAL — qual classificação ele recebeu?
+2. CONFIGURAÇÃO DAS QUATRO DIFICULDADES — Dificuldades Emocionais, de Conduta, Hiperatividade e Problemas com Pares apresentam distribuição semelhante? Há alguma pontuação numericamente destoante? Sem criar classificação para nenhuma delas.
+3. PRÓ-SOCIAL — considere separadamente; nunca some ao Total; nunca leia na mesma direção das dificuldades.
+4. IMPACTO — existe resultado? Se existir, qual classificação veio? Como ele se relaciona DESCRITIVAMENTE com o Total? Nunca reconstrua a origem dele.
+5. CONTRASTES — Total × componentes, Total × Impacto, dificuldades × Pró-Social — só quando forem reais.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal. Só o que os dados realmente sustentarem.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste SDQ-POR?" priorizando a classificação do Total, o padrão relevante entre as quatro escalas de dificuldade, o Impacto quando existir e acrescentar informação, e a Pró-Social só quando for relevante para a configuração — não liste cada escala como tabela em prosa. Perfil homogêneo pede síntese CURTA.
+- Na Análise e interpretação, relacione as quatro escalas de dificuldade como componentes do Total, integre o Total como síntese composta delas, e separe Pró-Social e Impacto como dimensões fora do Total. NÃO explique causa, não diagnostique, não infira prognóstico, funcionamento cotidiano, desempenho escolar ou prejuízo específico, e não explique nenhuma discrepância entre as camadas.
+- Nas Considerações para o contexto, o destino muda a linguagem, nunca a interpretação. Não transforme automaticamente Hiperatividade numericamente elevada em TDAH, Conduta numericamente elevada em transtorno de conduta, Dificuldades Emocionais numericamente elevadas em transtorno emocional, Problemas com Pares numericamente elevados em problema social clínico, Pró-Social numericamente reduzida em déficit social, Total Muito Alto em psicopatologia global nem Impacto Grave em incapacidade funcional geral.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos outros pilotos: ele existe POR CAUSA desta configuração do SDQ-POR? Se a mesma frase caberia igual em qualquer outro instrumento do catálogo, ela não entra. Cabem, quando o perfil os sustentar: considerar separadamente os componentes do Total quando houver heterogeneidade importante; não resumir toda a configuração ao Total quando uma escala componente destoar; integrar separadamente Total e Impacto quando apresentarem configurações diferentes; preservar a leitura independente da Pró-Social, sem incorporá-la ao Total. NÃO EXISTE QUANTIDADE MÍNIMA: uma recomendação específica pode bastar. Não fabrique encaminhamento, terapia, medicação, adaptação escolar nem protocolo diagnóstico.
+- Nas Considerações finais, feche a mensagem central. Não repita todas as escalas, não crie diagnóstico, não repita recomendações e não escreva um segundo aviso.
+
+O QUE NUNCA SE FAZ COM O SDQ-POR, mesmo com o Total em Muito Alto ou o Impacto em Grave: não infira TDAH, transtorno de conduta, transtorno emocional, transtorno de ansiedade, transtorno depressivo, TEA nem transtorno opositor a partir de nenhuma escala ou classificação. Não escreva "psicopatologia global", "déficit global" nem "problema comportamental global". Não trate o Total como diagnóstico global, a Pró-Social como fator protetivo comprovado nem o Impacto como prova de prejuízo específico em amizade ou escola. Não explique causa nem preveja prognóstico.
+Ancore as afirmações com "no SDQ-POR", "neste protocolo" ou "nesta escala".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -871,6 +941,7 @@ export function buildCorrigeFacilSystemPrompt(
   const comSnap18 = instrumentCode === CODIGO_SNAP18;
   const comSnap26 = instrumentCode === CODIGO_SNAP26;
   const comBayley3 = instrumentCode === CODIGO_BAYLEY3;
+  const comSdqPor = instrumentCode === CODIGO_SDQ_POR;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -879,7 +950,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
