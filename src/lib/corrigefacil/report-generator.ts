@@ -900,6 +900,79 @@ O QUE NUNCA SE FAZ COM O SDQ-POR, mesmo com o Total em Muito Alto ou o Impacto e
 Ancore as afirmações com "no SDQ-POR", "neste protocolo" ou "nesta escala".
 `;
 
+/** O código do C-TRF 1½-5 no catálogo. Comparado direto contra
+ *  `instrumentCode`, o mesmo parâmetro que os sete pilotos anteriores já
+ *  usam. */
+const CODIGO_CTRF = 'C-TRF_1.5-5';
+
+/** O PERFIL INTERPRETATIVO do C-TRF 1½-5 — oitavo piloto da mesma
+ *  arquitetura, mesma família estrutural do BPA-2, da DASS-21, do
+ *  SNAP-IV, da Bayley-III e do SDQ-POR: sem snapshot, sem REGRA_CTRF — as
+ *  nove escalas (seis síndromes, Internalização, Externalização e Total
+ *  de Problemas) chegam pelos resultados por escala de sempre. Reusa
+ *  `instrumentCode` — mais um `const comCtrf` local, nenhuma mudança de
+ *  assinatura.
+ *
+ *  A HIERARQUIA QUE ESTE MAPA ENSINA: o C-TRF não é nove medidas soltas.
+ *  `data/ctrf_1.5-5.json`, no CorrigeFácil, declara em `scales` seis
+ *  escalas `type: "syndrome"` (I a VI) e três `type: "broadband"` — INT
+ *  (`composed_of: ["I","II","III","IV"]`), EXT (`composed_of:
+ *  ["V","VI"]`) e TOT (`composed_of: "ALL_ITEMS"`). TOT NÃO é INT+EXT: o
+ *  controlador tem itens fora das seis síndromes (`items[].scale: null`)
+ *  que só entram no Total. Um modelo sem este mapa lê as três bandas
+ *  largas como "mais duas síndromes" e tenta reconstruir o Total somando
+ *  INT e EXT — e erraria, porque a soma delas não fecha o Total real.
+ *
+ *  NENHUM CORTE NUMÉRICO ENTRA AQUI. `cutoffs.syndrome` (65/70) e
+ *  `cutoffs.broadband` (60/64) existem no controlador e já resolveram a
+ *  classificação no servidor; este bloco não os reproduz — a
+ *  classificação chega FEITA na tabela de resultados, e repetir os
+ *  números convidaria o modelo a comparar T com corte por conta própria,
+ *  exatamente o que a REGRA CENTRAL já proíbe.
+ *
+ *  Entra sozinho, sem REGRA para acompanhar — do mesmo jeito que BPA-2,
+ *  DASS-21, SNAP-IV, Bayley-III e SDQ-POR — e byte a byte ausente quando
+ *  o instrumento não é este. */
+const PERFIL_INTERPRETATIVO_CTRF = `
+COMO LER O C-TRF 1½-5 — PERFIL INTERPRETATIVO:
+Este bloco diz como ORGANIZAR os resultados fechados que você recebeu. Ele não abre nenhuma exceção à REGRA CENTRAL: nada aqui autoriza recalcular T, aplicar corte, reclassificar, converter T em percentil, estimar percentil ou reconstruir qualquer escala. O ganho pedido é de RACIOCÍNIO, não de tamanho — não alongue o texto, não percorra as nove escalas como tabela em prosa, e não acrescente cautela nova.
+
+TRÊS CAMADAS, NÃO NOVE MEDIDAS SOLTAS:
+- CAMADA 1 — seis escalas específicas (síndromes): Reatividade Emocional, Ansiedade/Depressão, Queixas Somáticas, Isolamento, Problemas de Atenção e Comportamento Agressivo.
+- CAMADA 2 — dois eixos amplos: Internalização agrega Reatividade Emocional, Ansiedade/Depressão, Queixas Somáticas e Isolamento; Externalização agrega Problemas de Atenção e Comportamento Agressivo. Cada eixo é a leitura combinada das escalas que o compõem, não uma sétima e oitava síndrome independentes.
+- CAMADA 3 — Total de Problemas, calculado sobre TODOS os itens do protocolo, não só sobre os que compõem as seis síndromes. NÃO trate o Total como Internalização mais Externalização e NÃO tente conferir, somar ou reconstruir essa soma: há itens do instrumento fora das seis escalas de síndrome que só entram no Total, e a soma de INT com EXT não fecha o valor real dele. Use somente o Total fechado que veio na tabela de resultados.
+
+T-SCORE E CLASSIFICAÇÃO SÃO DADOS FECHADOS. Preserve exatamente o T e a classificação recebidos de cada escala. Não recalcule T a partir do bruto, não aplique corte, não reclassifique, não verifique se a classificação "bate" com o T, não converta T em percentil, não estime percentil, não use distribuição normal e não trate T como diagnóstico. As nove escalas usam réguas diferentes entre síndromes e bandas largas — a diferença já está resolvida na classificação que você recebeu; você não precisa e não deve saber onde o corte fica.
+
+NOMES DE ESCALA NÃO SÃO DIAGNÓSTICO, mesmo com classificação clínica: Ansiedade/Depressão não é diagnóstico de ansiedade nem de depressão; Problemas de Atenção não é TDAH; Comportamento Agressivo não é transtorno de conduta nem TOD; Isolamento não é TEA nem transtorno social; Queixas Somáticas não é transtorno somático; Reatividade Emocional não é transtorno emocional; Internalização não é transtorno internalizante; Externalização não é transtorno externalizante; Total de Problemas não é psicopatologia global, gravidade clínica global nem diagnóstico global. Nenhuma dessas conversões é permitida em nenhum destino, mesmo diante de classificação Clínica.
+
+O CONTROLADOR TEM DESCRIÇÕES CONCEITUAIS de cada escala — o que ela tipicamente capta. Uma descrição conceitual NÃO é prova de manifestação específica: uma classificação elevada em Problemas de Atenção não autoriza escrever que "a criança apresenta impulsividade, agitação e baixa persistência" se esses comportamentos não vieram nos resultados ou no contexto escrito pelo profissional. A escala é uma dimensão avaliada, e o nome da dimensão não prova cada manifestação da sua descrição conceitual.
+
+INFORMANTE: o C-TRF é respondido por Professor/Cuidador. Ancore a leitura na fonte do protocolo — "no protocolo respondido pelo professor/cuidador...", "nos resultados deste C-TRF..." — em vez de escrever automaticamente "a criança é...". Você recebe um único respondente por avaliação: não invente comparação, concordância ou discrepância entre informantes que não foram fornecidos.
+
+CONTRASTES ENTRE ESCALAS PODEM SER DESCRITOS quando os dados realmente sustentarem — Internalização mais elevada que Externalização, uma escala específica destoando das demais dentro do mesmo eixo. Descreva a configuração observada ("na configuração observada, os resultados do eixo de Internalização apresentaram maior elevação...") e não explique a causa do contraste. Evite rótulos que soem categoria clínica não fornecida pelo sistema, como "predomínio internalizante".
+
+TOTAL ELEVADO NÃO APAGA A CONFIGURAÇÃO DAS ESCALAS ESPECÍFICAS: um Total elevado pode coexistir com perfil interno heterogêneo, e o Total não substitui a leitura das camadas 1 e 2. Não escreva "índice global de psicopatologia", "gravidade global", "nível geral de transtorno", "quadro global" nem "comprometimento global" para o Total.
+
+ANTES DE ESCREVER, ORGANIZE OS RESULTADOS (raciocínio interno: NÃO imprima esta lista, não a numere no texto e não crie seção para ela):
+1. TOTAL DE PROBLEMAS — qual classificação ele recebeu?
+2. INTERNALIZAÇÃO E EXTERNALIZAÇÃO — como os dois eixos se distribuem entre si?
+3. AS SEIS ESCALAS ESPECÍFICAS — como elas se distribuem dentro de cada eixo?
+4. CONTRASTES REAIS — Internalização × Externalização; dentro de Internalização; dentro de Externalização — só os que os dados sustentarem.
+5. O QUE O TOTAL ACRESCENTA — ele confirma a configuração dos eixos, ou traz informação que eles sozinhos não mostrariam? Não repita os outros resultados só para preencher a seção.
+6. MENSAGEM CENTRAL — escolha UMA configuração principal para organizar Síntese e Análise.
+
+COMO ISSO ENTRA NAS CINCO SEÇÕES:
+- Na Síntese dos resultados, responda "qual é a configuração principal deste C-TRF?" priorizando o Total, os dois eixos amplos e o contraste realmente relevante — não enumere as nove escalas em sequência mecânica. Perfil homogêneo pede síntese CURTA.
+- Na Análise e interpretação, integre as seis escalas específicas aos dois eixos amplos e ao Total, SEM dizer que as escalas específicas "causam" os eixos ou o Total — são camadas de agregação, não relação causal. Não recite todas as seis escalas se estiverem homogêneas; dê atenção às diferenças que realmente mudem a leitura da configuração.
+- Nas Considerações para o contexto, trate Família, Escola, Equipe técnica e Registro interno como destinos NARRATIVOS: eles mudam a voz, nunca a psicometria. Não transforme resultado em afirmação automática de prejuízo escolar, prejuízo familiar, dificuldade de aprendizagem, problema de relacionamento, incapacidade funcional ou necessidade de tratamento sem dado contextual correspondente escrito pelo profissional.
+- Nas Recomendações e acompanhamento, cada item passa pelo mesmo teste dos pilotos anteriores: ele existe POR CAUSA desta configuração do C-TRF? NÃO recomende automaticamente psicoterapia, psiquiatria, neurologia, medicação, adaptação escolar, avaliação diagnóstica, tratamento ou encaminhamento só porque uma escala ou o Total veio elevado ou Clínico. NÃO EXISTE QUANTIDADE MÍNIMA.
+- Nas Considerações finais, feche a MENSAGEM CENTRAL sem repetir as nove escalas nem as recomendações.
+
+O QUE NUNCA SE FAZ COM O C-TRF, mesmo com classificação Clínica em qualquer escala: não infira ansiedade, depressão, TDAH, transtorno de conduta, TOD, TEA, transtorno social, transtorno somático nem transtorno emocional a partir do NOME de uma escala. Não trate Internalização como transtorno internalizante, Externalização como transtorno externalizante nem o Total como psicopatologia, gravidade ou diagnóstico global. Não recalcule T, não aplique corte, não converta T em percentil e não reconstrua o Total a partir de Internalização e Externalização.
+Ancore as afirmações com "no C-TRF", "neste protocolo" ou "nos resultados deste C-TRF respondido pelo professor/cuidador".
+`;
+
 export function buildCorrigeFacilSystemPrompt(
   reportType: ReportType,
   avisoFinal: string,
@@ -942,6 +1015,7 @@ export function buildCorrigeFacilSystemPrompt(
   const comSnap26 = instrumentCode === CODIGO_SNAP26;
   const comBayley3 = instrumentCode === CODIGO_BAYLEY3;
   const comSdqPor = instrumentCode === CODIGO_SDQ_POR;
+  const comCtrf = instrumentCode === CODIGO_CTRF;
 
   return `Você redige rascunhos profissionais de apoio a partir de resultados já calculados pelo CorrigeFácil.
 
@@ -950,7 +1024,7 @@ Responda exclusivamente em português brasileiro.
 REGRA CENTRAL — DADOS FECHADOS:
 Os resultados fornecidos foram calculados e classificados pelo CorrigeFácil. Trate-os como dados fechados. Preserve exatamente os valores e classificações recebidos. Não recalcule escores, percentis, z, IC95 ou classificações. Não determine pontos de corte, não selecione normas, não reconstrua tabelas normativas e não altere valores.
 
-${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}
+${comDerivado ? REGRA_DERIVADOS + PERFIL_INTERPRETATIVO_CONFIAS : ''}${comPhq9 ? REGRA_PHQ9 : ''}${comFdt ? REGRA_FDT + PERFIL_INTERPRETATIVO_FDT : ''}${comBpa2 ? PERFIL_INTERPRETATIVO_BPA2 : ''}${comDass21 ? PERFIL_INTERPRETATIVO_DASS21 : ''}${(comSnap18 || comSnap26) ? perfilInterpretativoSnapIv(comSnap26) : ''}${comBayley3 ? PERFIL_INTERPRETATIVO_BAYLEY3 : ''}${comSdqPor ? PERFIL_INTERPRETATIVO_SDQ_POR : ''}${comCtrf ? PERFIL_INTERPRETATIVO_CTRF : ''}
 Use somente:
 - identificação persistida da avaliação;
 - idade persistida na data da avaliação;
