@@ -291,9 +291,10 @@ describe('CONFIAS narrativa · os seis passos', () => {
     expect(P).toContain('use para perceber o padrão, não para listar');
   });
 
-  it('22 · silábico × fonêmico exige diferença REALMENTE sustentada', () => {
-    expect(P).toContain('verifique se há diferença REALMENTE sustentada entre os dois grupos');
-    expect(P).toContain('somente se os dados mostrarem isso');
+  it('22 · silábico × fonêmico compara pela distribuição dentro do grupo, nunca por contagem bruta', () => {
+    expect(P).toContain('os dois grupos têm números diferentes de tarefas');
+    expect(P).toContain('a comparação entre eles NUNCA pode ser por contagem bruta');
+    expect(P).toContain('Compare a DISTRIBUIÇÃO das classificações DENTRO de cada grupo');
     expect(P).toContain('Não explique por quê');
   });
 
@@ -612,17 +613,56 @@ describe('CONFIAS narrativa · os quatro cenários', () => {
     expect(P).toContain('Perfil homogêneo pede síntese CURTA');
   });
 
-  it('45 · B silábico mais consolidado que fonêmico · reconhece sem explicar', () => {
+  it('45 · B silábico mais consolidado que fonêmico · reconhece pela distribuição, sem explicar', () => {
     const silabicas = classificacoesSilabicas(CENARIOS.silabicoMaisConsolidado);
     const fonemicas = classificacoesFonemicas(CENARIOS.silabicoMaisConsolidado);
     expect(silabicas.filter((c) => c === CONSOLIDADA)).toHaveLength(8);
     expect(fonemicas.filter((c) => c === CONSOLIDADA)).toHaveLength(0);
-    // o passo 3 existe e autoriza nomear a diferença, sem explicar causa
+    // o passo 3 existe e autoriza nomear a diferença pela DISTRIBUIÇÃO
+    // dentro de cada grupo, sem explicar causa
     expect(P).toContain('SILÁBICAS × FONÊMICAS');
-    expect(P).toContain('maior concentração de habilidades consolidadas num grupo');
+    expect(P).toContain('Compare a DISTRIBUIÇÃO das classificações DENTRO de cada grupo');
     expect(P).toContain('Não explique por quê');
     // e a conversão em atraso ou transtorno continua barrada
     expect(P).toContain('Não infira dislexia, transtorno de aprendizagem, dificuldade escolar ou prognóstico');
+  });
+
+  it('45b · a contagem bruta de tarefas NUNCA é autorizada como comparador entre os grupos', () => {
+    // o bug real: silábico tem nove tarefas e fonêmico tem sete, então
+    // "5 consolidadas" no silábico e "4 consolidadas" no fonêmico não
+    // representam a mesma concentração, mesmo 5 sendo o número maior —
+    // o prompt precisa dizer isso, e nunca autorizar a leitura antiga
+    expect(P).toContain('os dois grupos têm números diferentes de tarefas');
+    expect(P).toContain(
+      'a comparação entre eles NUNCA pode ser por contagem bruta',
+    );
+    expect(P).toContain(
+      'dizer que um grupo tem "mais tarefas consolidadas" ou "mais tarefas em desenvolvimento" que o outro compara quantidades que não têm a mesma base',
+    );
+    expect(P).toContain('cria diferença artificial só pelo tamanho do grupo');
+    // a redação antiga, que comparava por contagem bruta, não pode voltar
+    expect(P).not.toContain('maior concentração de habilidades consolidadas num grupo, maior número de tarefas em desenvolvimento no outro');
+    expect(P).not.toMatch(/maior número de tarefas/);
+  });
+
+  it('45c · quando o contraste entre grupos for o ponto central, o mapa prioriza Sílaba/Fonema fechadas — não a contagem do Perfil por Habilidade', () => {
+    expect(P).toContain(
+      'priorize as escalas fechadas Sílaba e Fonema: elas já chegam calculadas pelo servidor e são a base segura para esse contraste, não a contagem de tarefas do Perfil por Habilidade',
+    );
+  });
+
+  it('45d · o mapa não expõe os denominadores 9/7 nem monta conta nova de percentual para o passo 3', () => {
+    const inicio = GERADOR.indexOf('3. SILÁBICAS × FONÊMICAS');
+    const fim = GERADOR.indexOf('\n4. CONTRASTES INTERNOS', inicio);
+    const passo3 = GERADOR.slice(inicio, fim);
+    // nove tarefas silábicas e sete fonêmicas são fato do controlador,
+    // mas o passo do contraste entre grupos não deve entregá-los como
+    // denominador para conta nova da IA — nem em dígito, nem em fração
+    expect(passo3).not.toMatch(/\b9\b/);
+    expect(passo3).not.toMatch(/\b7\b/);
+    expect(passo3).not.toMatch(/\/\s*9\b/);
+    expect(passo3).not.toMatch(/\/\s*7\b/);
+    expect(passo3).not.toMatch(/percentual/i);
   });
 
   it('46 · C heterogêneo interno · destaca a tarefa destoante, sem generalizar', () => {
